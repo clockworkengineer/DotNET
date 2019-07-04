@@ -52,7 +52,6 @@ namespace ConwaysGameOfLifeConsole
                         cellGrid.stop();
                         RandomizeGrid(cellGrid);
                         cellGrid.Tick = 0;
-
                         break;
                     case '4':
                         Console.Clear();

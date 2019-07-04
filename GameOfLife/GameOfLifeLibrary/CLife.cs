@@ -40,7 +40,7 @@ namespace GameOfLifeLibrary
         /// <summary>
         /// Perform bounds checking on coordinates and wrap them if necessary.
         /// </summary>
-        /// <returns>The bounds.</returns>
+        /// <returns>The y, x coordinates. Wrapping them around if the go out of bounds.</returns>
         /// <param name="y">The y coordinate.</param>
         /// <param name="x">The x coordinate.</param>
         private Tuple<int, int> gridBounds(int y, int x)
@@ -71,7 +71,7 @@ namespace GameOfLifeLibrary
         /// <summary>
         /// Determine whether a grid cell is active.
         /// </summary>
-        /// <returns><c>true</c>, if cell active was ised, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c>, if cell active then true, <c>false</c> otherwise.</returns>
         /// <param name="y">The y coordinate.</param>
         /// <param name="x">The x coordinate.</param>
         private bool isCellActive(int y, int x)
@@ -86,7 +86,7 @@ namespace GameOfLifeLibrary
         /// <summary>
         /// Determine number of active neighbours of a given grid cell.
         /// </summary>
-        /// <returns>The cell neighbours.</returns>
+        /// <returns>The number of active cell neighbours.</returns>
         /// <param name="y">The y coordinate.</param>
         /// <param name="x">The x coordinate.</param>
         private int activeCellNeighbours(int y, int x)
@@ -131,6 +131,11 @@ namespace GameOfLifeLibrary
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:GameOfLifeLibrary.CLife"/> class.
+        /// </summary>
+        /// <param name="height">Height.</param>
+        /// <param name="width">Width.</param>
         public CLife(int height, int width)
         {
             CellGridWidth = width;
@@ -139,6 +144,12 @@ namespace GameOfLifeLibrary
             _cellGridReadOnly = new bool[CellGridWidth * CellGridHeight];
         }
 
+        /// <summary>
+        /// Actives/deativates a cell at coordinates x,y.
+        /// </summary>
+        /// <param name="y">The y coordinate.</param>
+        /// <param name="x">The x coordinate.</param>
+        /// <param name="active">If set to <c>true</c> active.</param>
         public void setCell(int y, int x, bool active)
         {
             var coords = gridBounds(y, x);
@@ -148,13 +159,24 @@ namespace GameOfLifeLibrary
             updateCell(y, x, active);
         }
 
+        /// <summary>
+        /// Gets the cell and cordinate x,y active state.
+        /// </summary>
+        /// <returns><c>true</c>, if cell was active, <c>false</c> otherwise.</returns>
+        /// <param name="y">The y coordinate.</param>
+        /// <param name="x">The x coordinate.</param>
         public bool getCell(int y, int x) 
         {
             var coords = gridBounds(y, x);
 
-            return (Convert.ToBoolean(_cellMasterGrid[cellIndex(coords.Item1, coords.Item2)]));
+            return (_cellMasterGrid[cellIndex(coords.Item1, coords.Item2)]);
         }
 
+        /// <summary>
+        /// Implementation of conway's cellular automaton.Update cell grid using readonly
+        /// copy as a source and change any visual representation through a full refresh() or
+        /// updateCell() which are can be redefined in the superclass.
+        /// </summary>
         public void nextTick()
         {
 
@@ -193,20 +215,35 @@ namespace GameOfLifeLibrary
 
         }
 
+        /// <summary>
+        /// Start automaton.
+        /// </summary>
         public void start() {
             Running = true;
         }
 
+        /// <summary>
+        /// Stop automaton.
+        /// </summary>
         public void stop() 
         {
             Running = false;
         }
 
+        /// <summary>
+        /// Updates a single cells state on a viewable object such as a window.
+        /// </summary>
+        /// <param name="y">The y coordinate.</param>
+        /// <param name="x">The x coordinate.</param>
+        /// <param name="active">If set to <c>true</c> active.</param>
         public virtual void updateCell(int y, int x, bool active)
         {
 
         }
 
+        /// <summary>
+        /// Refresh the whole of a cell grid on a viewable object such as a window.
+        /// </summary>
         public virtual void refresh()
         {
 
