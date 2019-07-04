@@ -35,6 +35,9 @@ namespace ConwaysGameOfLifeConsole
             {
                 cellGrid.nextTick();
                 Thread.Sleep(200);
+                string tickCount = String.Format("Tick: {0, 6}", cellGrid.Tick);
+                Console.SetCursorPosition(Console.LargestWindowWidth-tickCount.Length, Console.WindowHeight - 1);
+                Console.Write(tickCount);
             }
 
         }
