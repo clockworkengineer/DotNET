@@ -5,7 +5,7 @@
 //
 // Description: Base class implementation of Conway's game of life a cellular automaton.
 // 
-// Copyright 2018.
+// Copyright 2019.
 //
 
 using System;
@@ -79,7 +79,7 @@ namespace GameOfLifeLibrary
 
             var coords = gridBounds(y, x);
 
-            return (Convert.ToBoolean(_cellGridReadOnly[cellIndex(coords.Item1, coords.Item2)]));
+            return (_cellGridReadOnly[cellIndex(coords.Item1, coords.Item2)]);
 
         }
 
