@@ -3,7 +3,7 @@
 // 
 // Class: CLife
 //
-// Description: Parent class implementation of CLife that does text output a C# console.
+// Description: Parent class implementation of CLife that does cell grid output in text to a C# console.
 // 
 // Copyright 2019.
 //

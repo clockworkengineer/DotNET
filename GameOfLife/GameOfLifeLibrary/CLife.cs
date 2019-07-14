@@ -173,6 +173,24 @@ namespace GameOfLifeLibrary
         }
 
         /// <summary>
+        /// Randomizes cell grid.
+        /// </summary>
+        /// <param name="cellGrid">Cell grid.</param>
+        public void RandomizeGrid()
+        {
+
+            Random randomizer = new Random();
+
+            for (var y = 0; y < CellGridHeight; y++)
+            {
+                for (var x = 0; x < CellGridWidth; x++)
+                {
+                    setCell(y, x, Convert.ToBoolean((int)randomizer.Next(0, 2)));
+                }
+            }
+        }
+
+        /// <summary>
         /// Implementation of conway's cellular automaton.Update cell grid using readonly
         /// copy as a source and change any visual representation through a full refresh() or
         /// updateCell() which are can be redefined in the superclass.
