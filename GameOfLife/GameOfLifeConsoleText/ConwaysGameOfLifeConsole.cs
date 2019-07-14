@@ -29,32 +29,15 @@ namespace ConwaysGameOfLifeConsole
             Console.SetCursorPosition(0, Console.WindowHeight-1);
             Console.Write("Commands: 1(Start) 2(Stop) 3(Reset) 4(Quit)");
 
-            RandomizeGrid(cellGrid);
+            cellGrid.RandomizeGrid();
 
-            while (processNextTick(cellGrid))
+            while (processCommand(cellGrid))
             {
                 cellGrid.nextTick();
+                drawTickCount(cellGrid);
                 Thread.Sleep(200);
-                string tickCount = String.Format("Tick: {0, 6}", cellGrid.Tick);
-                Console.SetCursorPosition(Console.LargestWindowWidth-tickCount.Length, Console.WindowHeight - 1);
-                Console.Write(tickCount);
             }
 
-        }
-
-        /// <summary>
-        /// Randomizes the game of life cell grid.
-        /// </summary>
-        /// <param name="cellGrid">Cell grid.</param>
-        private static void RandomizeGrid(CLifeText cellGrid) {
-
-            Random randomizer = new Random();
-
-            for (var y = 0; y < cellGrid.CellGridHeight; y++) {
-                for (var x = 0; x < cellGrid.CellGridWidth; x++) {
-                    cellGrid.setCell(y, x, Convert.ToBoolean((int)randomizer.Next(0, 2)));
-                }
-            }
         }
 
         /// <summary>
@@ -62,7 +45,7 @@ namespace ConwaysGameOfLifeConsole
         /// </summary>
         /// <returns><c>true</c>, command not exit, <c>false</c> otherwise exit.</returns>
         /// <param name="cellGrid">Cell grid.</param>
-        private static bool processNextTick(CLifeText cellGrid)
+        private static bool processCommand(CLifeText cellGrid)
         {
             if (Console.KeyAvailable)
             {
@@ -76,7 +59,7 @@ namespace ConwaysGameOfLifeConsole
                         break;
                     case '3':   // Reset automaton
                         cellGrid.stop();
-                        RandomizeGrid(cellGrid);
+                        cellGrid.RandomizeGrid();
                         cellGrid.Tick = 0;
                         break;
                     case '4':   // Exit and clear
@@ -87,6 +70,17 @@ namespace ConwaysGameOfLifeConsole
 
             return (true);
 
+        }
+
+        /// <summary>
+        /// Draws the tick count.
+        /// </summary>
+        /// <param name="cellCrid">Cell crid.</param>
+        static void drawTickCount(CLifeText cellGrid)
+        {
+            string tickCount = String.Format("Tick: {0, 6}", cellGrid.Tick);
+            Console.SetCursorPosition(Console.LargestWindowWidth - tickCount.Length, Console.WindowHeight - 1);
+            Console.Write(tickCount);
         }
     }
 }
