@@ -58,5 +58,11 @@
     <Compile Include="ConwaysGameOfLifeGtk.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GameOfLifeLibrary\GameOfLifeLibrary.csproj">
+      <Project>{B9514D8B-A6B5-43B4-920E-1D81D3B3DD94}</Project>
+      <Name>GameOfLifeLibrary</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

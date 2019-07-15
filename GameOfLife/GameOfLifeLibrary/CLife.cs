@@ -23,8 +23,8 @@ namespace GameOfLifeLibrary
 
         public bool Running { get => _running; set => _running = value; }
         public int Tick { get => _tick; set => _tick = value; }
-        public int CellGridWidth { get => _cellGridWidth; private set => _cellGridWidth = value; }
-        public int CellGridHeight { get => _cellGridHeight; private set => _cellGridHeight = value; }
+        public int CellGridWidth { get => _cellGridWidth; protected set => _cellGridWidth = value; }
+        public int CellGridHeight { get => _cellGridHeight; protected set => _cellGridHeight = value; }
 
         /// <summary>
         /// Returns index of cell at y, x.

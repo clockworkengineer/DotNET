@@ -1,16 +1,88 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <stetic-interface>
+  <configuration>
+    <images-root-path>..</images-root-path>
+  </configuration>
   <import>
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
-    <widget-library name="../bin/Release/ConwaysGameOfLifeGtk.exe" internal="true" />
+    <widget-library name="../bin/Debug/ConwaysGameOfLifeGtk.exe" internal="true" />
   </import>
-  <widget class="Gtk.Window" id="MainWindow" design-size="400 300">
+  <widget class="Gtk.Window" id="MainWindow" design-size="293 267">
     <property name="MemberName" />
     <property name="Title" translatable="yes">MainWindow</property>
     <property name="WindowPosition">CenterOnParent</property>
-    <signal name="DeleteEvent" handler="OnDeleteEvent" />
     <child>
-      <placeholder />
+      <widget class="Gtk.Fixed" id="GameOfLifeFixed">
+        <property name="MemberName" />
+        <property name="HasWindow">False</property>
+        <child>
+          <widget class="Gtk.Button" id="StartButton">
+            <property name="MemberName" />
+            <property name="CanFocus">True</property>
+            <property name="Type">TextOnly</property>
+            <property name="Label" translatable="yes">Start</property>
+            <property name="UseUnderline">True</property>
+            <signal name="Clicked" handler="OnStartButtonClicked" />
+          </widget>
+          <packing>
+            <property name="X">17</property>
+            <property name="Y">23</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.Button" id="StopButton">
+            <property name="MemberName" />
+            <property name="CanFocus">True</property>
+            <property name="Type">TextOnly</property>
+            <property name="Label" translatable="yes">Stop</property>
+            <property name="UseUnderline">True</property>
+            <signal name="Clicked" handler="OnStopButtonClicked" />
+          </widget>
+          <packing>
+            <property name="X">19</property>
+            <property name="Y">62</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.Button" id="ResetButton">
+            <property name="MemberName" />
+            <property name="CanFocus">True</property>
+            <property name="Type">TextOnly</property>
+            <property name="Label" translatable="yes">Reset</property>
+            <property name="UseUnderline">True</property>
+            <signal name="Clicked" handler="OnResetButtonClicked" />
+          </widget>
+          <packing>
+            <property name="X">17</property>
+            <property name="Y">104</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.Button" id="QuitButton">
+            <property name="MemberName" />
+            <property name="CanFocus">True</property>
+            <property name="Type">TextOnly</property>
+            <property name="Label" translatable="yes">Quit</property>
+            <property name="UseUnderline">True</property>
+            <signal name="Clicked" handler="OnQuitButtonClicked" />
+          </widget>
+          <packing>
+            <property name="X">20</property>
+            <property name="Y">145</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="Gtk.DrawingArea" id="GameOfLifeCellGrid">
+            <property name="MemberName" />
+            <property name="WidthRequest">200</property>
+            <property name="HeightRequest">200</property>
+          </widget>
+          <packing>
+            <property name="X">73</property>
+            <property name="Y">22</property>
+          </packing>
+        </child>
+      </widget>
     </child>
   </widget>
 </stetic-interface>
