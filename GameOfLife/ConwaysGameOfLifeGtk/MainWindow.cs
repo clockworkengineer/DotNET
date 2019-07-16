@@ -4,7 +4,16 @@ using Gtk;
 
 public partial class MainWindow : Gtk.Window
 {
-    CLife _cellGrid;
+    private CLife _cellGrid;
+
+    private void ButtonEnable(Button button, bool enabled) {
+        if (enabled) {
+            button.State = StateType.Normal;
+            button.Sensitive = true;
+        } else {
+            button.State = StateType.Insensitive;
+        }
+    }
 
     public MainWindow() : base(Gtk.WindowType.Toplevel)
     {
@@ -18,6 +27,7 @@ public partial class MainWindow : Gtk.Window
 
         GLib.Timeout.Add(200, new GLib.TimeoutHandler(Update));
 
+        ButtonEnable(StopButton, false);
 
     }
 
@@ -47,17 +57,34 @@ public partial class MainWindow : Gtk.Window
     protected void OnStartButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.start();
+
+        ButtonEnable(StartButton, false);
+        ButtonEnable(ResetButton, false);
+        ButtonEnable(QuitButton, false);
+        ButtonEnable(StopButton, true);
+
     }
 
     protected void OnStopButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.stop();
+
+        ButtonEnable(StartButton, true);
+        ButtonEnable(ResetButton, true);
+        ButtonEnable(QuitButton, true);
+        ButtonEnable(StopButton, false);
+ 
     }
 
     protected void OnResetButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.stop();
         _cellGrid.RandomizeGrid();
+
+        ButtonEnable(StartButton, true);
+        ButtonEnable(ResetButton, true);
+        ButtonEnable(QuitButton, true);
+        ButtonEnable(StopButton, false);
 
     }
 
