@@ -18,6 +18,7 @@ public partial class MainWindow : Gtk.Window
 
         GLib.Timeout.Add(200, new GLib.TimeoutHandler(Update));
 
+
     }
 
     bool Update() {
@@ -30,6 +31,8 @@ public partial class MainWindow : Gtk.Window
         {
             _cellGrid.refresh();
         }
+
+        GameOfLifeTickCount.Text = _cellGrid.Tick.ToString();
 
         return (true);
 

@@ -188,6 +188,9 @@ namespace GameOfLifeLibrary
                     setCell(y, x, Convert.ToBoolean((int)randomizer.Next(0, 2)));
                 }
             }
+
+            Tick = 0;
+
         }
 
         /// <summary>

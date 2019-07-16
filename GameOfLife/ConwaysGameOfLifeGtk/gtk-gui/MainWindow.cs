@@ -15,12 +15,16 @@ public partial class MainWindow
 
 	private global::Gtk.DrawingArea GameOfLifeCellGrid;
 
+	private global::Gtk.Label GameOfLifeTickCount;
+
+	private global::Gtk.Label GameOfLifeTickCountLabel;
+
 	protected virtual void Build()
 	{
 		global::Stetic.Gui.Initialize(this);
 		// Widget MainWindow
 		this.Name = "MainWindow";
-		this.Title = global::Mono.Unix.Catalog.GetString("MainWindow");
+		this.Title = global::Mono.Unix.Catalog.GetString("Game Of Life");
 		this.WindowPosition = ((global::Gtk.WindowPosition)(4));
 		// Container child MainWindow.Gtk.Container+ContainerChild
 		this.GameOfLifeFixed = new global::Gtk.Fixed();
@@ -75,13 +79,29 @@ public partial class MainWindow
 		global::Gtk.Fixed.FixedChild w5 = ((global::Gtk.Fixed.FixedChild)(this.GameOfLifeFixed[this.GameOfLifeCellGrid]));
 		w5.X = 73;
 		w5.Y = 22;
+		// Container child GameOfLifeFixed.Gtk.Fixed+FixedChild
+		this.GameOfLifeTickCount = new global::Gtk.Label();
+		this.GameOfLifeTickCount.Name = "GameOfLifeTickCount";
+		this.GameOfLifeTickCount.LabelProp = global::Mono.Unix.Catalog.GetString("0");
+		this.GameOfLifeFixed.Add(this.GameOfLifeTickCount);
+		global::Gtk.Fixed.FixedChild w6 = ((global::Gtk.Fixed.FixedChild)(this.GameOfLifeFixed[this.GameOfLifeTickCount]));
+		w6.X = 250;
+		w6.Y = 250;
+		// Container child GameOfLifeFixed.Gtk.Fixed+FixedChild
+		this.GameOfLifeTickCountLabel = new global::Gtk.Label();
+		this.GameOfLifeTickCountLabel.Name = "GameOfLifeTickCountLabel";
+		this.GameOfLifeTickCountLabel.LabelProp = global::Mono.Unix.Catalog.GetString("Tick Count:");
+		this.GameOfLifeFixed.Add(this.GameOfLifeTickCountLabel);
+		global::Gtk.Fixed.FixedChild w7 = ((global::Gtk.Fixed.FixedChild)(this.GameOfLifeFixed[this.GameOfLifeTickCountLabel]));
+		w7.X = 160;
+		w7.Y = 250;
 		this.Add(this.GameOfLifeFixed);
 		if ((this.Child != null))
 		{
 			this.Child.ShowAll();
 		}
-		this.DefaultWidth = 293;
-		this.DefaultHeight = 267;
+		this.DefaultWidth = 301;
+		this.DefaultHeight = 282;
 		this.Show();
 		this.StartButton.Clicked += new global::System.EventHandler(this.OnStartButtonClicked);
 		this.StopButton.Clicked += new global::System.EventHandler(this.OnStopButtonClicked);
