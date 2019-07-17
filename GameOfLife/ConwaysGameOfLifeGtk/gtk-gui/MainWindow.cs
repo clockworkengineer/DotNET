@@ -72,8 +72,8 @@ public partial class MainWindow
 		w4.Y = 145;
 		// Container child GameOfLifeFixed.Gtk.Fixed+FixedChild
 		this.GameOfLifeCellGrid = new global::Gtk.DrawingArea();
-		this.GameOfLifeCellGrid.WidthRequest = 200;
-		this.GameOfLifeCellGrid.HeightRequest = 200;
+		this.GameOfLifeCellGrid.WidthRequest = 400;
+		this.GameOfLifeCellGrid.HeightRequest = 400;
 		this.GameOfLifeCellGrid.Name = "GameOfLifeCellGrid";
 		this.GameOfLifeFixed.Add(this.GameOfLifeCellGrid);
 		global::Gtk.Fixed.FixedChild w5 = ((global::Gtk.Fixed.FixedChild)(this.GameOfLifeFixed[this.GameOfLifeCellGrid]));
@@ -85,23 +85,23 @@ public partial class MainWindow
 		this.GameOfLifeTickCount.LabelProp = global::Mono.Unix.Catalog.GetString("0");
 		this.GameOfLifeFixed.Add(this.GameOfLifeTickCount);
 		global::Gtk.Fixed.FixedChild w6 = ((global::Gtk.Fixed.FixedChild)(this.GameOfLifeFixed[this.GameOfLifeTickCount]));
-		w6.X = 250;
-		w6.Y = 250;
+		w6.X = 456;
+		w6.Y = 445;
 		// Container child GameOfLifeFixed.Gtk.Fixed+FixedChild
 		this.GameOfLifeTickCountLabel = new global::Gtk.Label();
 		this.GameOfLifeTickCountLabel.Name = "GameOfLifeTickCountLabel";
 		this.GameOfLifeTickCountLabel.LabelProp = global::Mono.Unix.Catalog.GetString("Tick Count:");
 		this.GameOfLifeFixed.Add(this.GameOfLifeTickCountLabel);
 		global::Gtk.Fixed.FixedChild w7 = ((global::Gtk.Fixed.FixedChild)(this.GameOfLifeFixed[this.GameOfLifeTickCountLabel]));
-		w7.X = 160;
-		w7.Y = 250;
+		w7.X = 350;
+		w7.Y = 445;
 		this.Add(this.GameOfLifeFixed);
 		if ((this.Child != null))
 		{
 			this.Child.ShowAll();
 		}
-		this.DefaultWidth = 301;
-		this.DefaultHeight = 282;
+		this.DefaultWidth = 489;
+		this.DefaultHeight = 475;
 		this.Show();
 		this.StartButton.Clicked += new global::System.EventHandler(this.OnStartButtonClicked);
 		this.StopButton.Clicked += new global::System.EventHandler(this.OnStopButtonClicked);

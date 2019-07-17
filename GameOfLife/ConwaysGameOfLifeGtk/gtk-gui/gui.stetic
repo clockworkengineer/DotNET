@@ -7,7 +7,7 @@
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
     <widget-library name="../bin/Debug/ConwaysGameOfLifeGtk.exe" internal="true" />
   </import>
-  <widget class="Gtk.Window" id="MainWindow" design-size="301 282">
+  <widget class="Gtk.Window" id="MainWindow" design-size="489 475">
     <property name="MemberName" />
     <property name="Title" translatable="yes">Game Of Life</property>
     <property name="WindowPosition">CenterOnParent</property>
@@ -74,8 +74,8 @@
         <child>
           <widget class="Gtk.DrawingArea" id="GameOfLifeCellGrid">
             <property name="MemberName" />
-            <property name="WidthRequest">200</property>
-            <property name="HeightRequest">200</property>
+            <property name="WidthRequest">400</property>
+            <property name="HeightRequest">400</property>
           </widget>
           <packing>
             <property name="X">73</property>
@@ -88,8 +88,8 @@
             <property name="LabelProp" translatable="yes">0</property>
           </widget>
           <packing>
-            <property name="X">250</property>
-            <property name="Y">250</property>
+            <property name="X">456</property>
+            <property name="Y">445</property>
           </packing>
         </child>
         <child>
@@ -98,8 +98,8 @@
             <property name="LabelProp" translatable="yes">Tick Count:</property>
           </widget>
           <packing>
-            <property name="X">160</property>
-            <property name="Y">250</property>
+            <property name="X">350</property>
+            <property name="Y">445</property>
           </packing>
         </child>
       </widget>

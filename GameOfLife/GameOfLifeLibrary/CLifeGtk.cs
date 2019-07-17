@@ -8,10 +8,12 @@ namespace GameOfLifeLibrary
     {
       
         Context _cellGridContext;
+        int _scaleFactor;
 
-        public CLifeGtk(Gdk.Window cellWindow, int height, int width) : base(height,width)
+        public CLifeGtk(Gdk.Window cellWindow, int height, int width, int scaleFactor) : base(height,width)
         {
-  
+
+            _scaleFactor = scaleFactor;
             _cellGridContext = Gdk.CairoHelper.Create(cellWindow);
             _cellGridContext.Antialias = Cairo.Antialias.None;
             _cellGridContext.Rotate(0);
@@ -44,7 +46,7 @@ namespace GameOfLifeLibrary
                         _cellGridContext.SetSourceColor(white);
                     }
 
-                    _cellGridContext.Rectangle(new Cairo.Rectangle(x, y, 1, 1));
+                    _cellGridContext.Rectangle(new Cairo.Rectangle(x*_scaleFactor, y*_scaleFactor, _scaleFactor, _scaleFactor));
                     _cellGridContext.Fill();
                 }
             }
