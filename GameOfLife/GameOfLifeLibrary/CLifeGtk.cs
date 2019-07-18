@@ -7,13 +7,18 @@ namespace GameOfLifeLibrary
     public class CLifeGtk : CLife
     {
       
-        Context _cellGridContext;
-        int _scaleFactor;
+        private Context _cellGridContext;
+        private int _scaleFactor=1;
+        private Cairo.Color _inactiveCellColor = new Cairo.Color(0.95, 0.95, 0.95);
+        private Cairo.Color _activeCellColor = new Cairo.Color(0, 0, 0);
 
-        public CLifeGtk(Gdk.Window cellWindow, int height, int width, int scaleFactor) : base(height,width)
+        public int ScaleFactor { get => _scaleFactor; set => _scaleFactor = value; }
+        public Cairo.Color InactiveCellColor { get => _inactiveCellColor; set => _inactiveCellColor = value; }
+        public Cairo.Color ActiveCellColor{ get => _activeCellColor; set => _activeCellColor = value; }
+
+        public CLifeGtk(Gdk.Window cellWindow, int height, int width) : base(height,width)
         {
 
-            _scaleFactor = scaleFactor;
             _cellGridContext = Gdk.CairoHelper.Create(cellWindow);
             _cellGridContext.Antialias = Cairo.Antialias.None;
             _cellGridContext.Rotate(0);
@@ -30,8 +35,10 @@ namespace GameOfLifeLibrary
 
         public override void refresh()
         {
-            Cairo.Color black = new Cairo.Color(0, 0, 0);
-            Cairo.Color white = new Cairo.Color(0.95, 0.95, 0.95);
+
+            if (Running) {
+                clearDrawArea();
+            }
 
             for (var y = 0; y < CellGridHeight; y++)
             {
@@ -39,17 +46,19 @@ namespace GameOfLifeLibrary
                 {
                     if (getCell(y, x))
                     {
-                        _cellGridContext.SetSourceColor(black);
+                        _cellGridContext.SetSourceColor(ActiveCellColor);
+                        _cellGridContext.Rectangle(new Cairo.Rectangle(x * ScaleFactor, y * ScaleFactor, ScaleFactor, ScaleFactor));
+                        _cellGridContext.Fill();
                     }
-                    else
-                    {
-                        _cellGridContext.SetSourceColor(white);
-                    }
-
-                    _cellGridContext.Rectangle(new Cairo.Rectangle(x*_scaleFactor, y*_scaleFactor, _scaleFactor, _scaleFactor));
-                    _cellGridContext.Fill();
                 }
             }
         }
+
+        public void clearDrawArea() {
+            _cellGridContext.SetSourceColor(InactiveCellColor);
+            _cellGridContext.Rectangle(new Cairo.Rectangle(0, 0, CellGridWidth * ScaleFactor, CellGridHeight * ScaleFactor));
+            _cellGridContext.Fill();
+        }
+
     }
 }

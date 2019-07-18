@@ -4,7 +4,8 @@ using Gtk;
 
 public partial class MainWindow : Gtk.Window
 {
-    private CLife _cellGrid;
+    private CLifeGtk _cellGrid;
+    private const int scaleFactor = 4;
 
     private void ButtonEnable(Button button, bool enabled) {
         if (enabled) {
@@ -19,11 +20,12 @@ public partial class MainWindow : Gtk.Window
     {
         Build();
 
-        const int scaleFactor = 4;
         int width, height;
 
         GameOfLifeCellGrid.GdkWindow.GetSize(out width, out height);
-        _cellGrid = new CLifeGtk(GameOfLifeCellGrid.GdkWindow, width/scaleFactor, height/scaleFactor, scaleFactor);
+        _cellGrid = new CLifeGtk(GameOfLifeCellGrid.GdkWindow, width/scaleFactor, height/scaleFactor);
+
+        _cellGrid.ScaleFactor = scaleFactor;
         _cellGrid.RandomizeGrid();
 
         GLib.Timeout.Add(200, new GLib.TimeoutHandler(Update));
@@ -80,6 +82,7 @@ public partial class MainWindow : Gtk.Window
     protected void OnResetButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.stop();
+        _cellGrid.clearDrawArea();
         _cellGrid.RandomizeGrid();
 
         ButtonEnable(StartButton, true);
