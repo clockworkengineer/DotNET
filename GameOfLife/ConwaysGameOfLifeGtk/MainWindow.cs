@@ -143,7 +143,7 @@ public partial class MainWindow : Gtk.Window
     protected void OnResetButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.stop();
-        _cellGrid.clearDrawArea();
+        _cellGrid.drawInActiveCells();
         _cellGrid.RandomizeGrid();
 
         ButtonEnable(StartButton, true);

@@ -74,19 +74,27 @@ namespace GameOfLifeLibrary
         /// </summary>
         public override void refresh()
         {
-            // If automaton running fill in draw area with cell inactive color
+            // If automaton running draw inactive cells (stops flashing on reset)
 
             if (Running) {
-                clearDrawArea();
+                drawInActiveCells();
             }
 
-            // Fill in rest of drawing area with active cells
+            drawActiveCells();
+
+        }
+
+        /// <summary>
+        /// Draw active cells.
+        /// </summary>
+        public void drawActiveCells()
+        {
 
             _cellGridContext.SetSourceColor(_activeCellColor);
 
             for (int y = 0, scaleY = 0; y < CellGridHeight; y++, scaleY += ScaleFactor)
             {
-                for (int  x = 0, scaleX = 0; x < CellGridWidth; x++, scaleX += ScaleFactor)
+                for (int x = 0, scaleX = 0; x < CellGridWidth; x++, scaleX += ScaleFactor)
                 {
                     if (getCell(y, x))
                     {
@@ -98,9 +106,9 @@ namespace GameOfLifeLibrary
         }
 
         /// <summary>
-        /// Clears the cell grid context area (fill with inactive color).
+        /// Draw inactive cells.
         /// </summary>
-        public void clearDrawArea() {
+        public void drawInActiveCells() {
             _cellGridContext.SetSourceColor(_inactiveCellColor);
             _cellGridContext.Rectangle(new Cairo.Rectangle(0, 0, CellGridWidth * ScaleFactor, CellGridHeight * ScaleFactor));
             _cellGridContext.Fill();
