@@ -1,14 +1,29 @@
-﻿using GameOfLifeLibrary;
+﻿//
+// Author: Robert Tizzard
+// 
+// Class: MainWindow
+//
+// Description: Main window for C# Conway's game of life a cellular automaton.
+// 
+// Copyright 2019.
+//
+
+using GameOfLifeLibrary;
 using System;
 using Gtk;
 
 public partial class MainWindow : Gtk.Window
 {
-    private  const int kDefaultScaleFactor = 4;
-    private  const int kUpdateTimer = 200;
+    private  const int kDefaultScaleFactor = 4; // Default cell grid pixel size
+    private  const int kUpdateTimer = 200;      // Default cell grid window update timer
 
-    private CLifeGtk _cellGrid;
+    private CLifeGtk _cellGrid;                 // Cell grid automaton
 
+    /// <summary>
+    /// Enable/disable a UI button.
+    /// </summary>
+    /// <param name="button">Button.</param>
+    /// <param name="enabled">If set to <c>true</c> enabled.</param>
     private void ButtonEnable(Button button, bool enabled) {
         if (enabled) {
             button.State = StateType.Normal;
@@ -18,29 +33,48 @@ public partial class MainWindow : Gtk.Window
         }
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="T:MainWindow"/> class.
+    /// </summary>
     public MainWindow() : base(Gtk.WindowType.Toplevel)
     {
+        // Gtk # house keeping
 
         Build();
 
-        int width, height;
+        // Get width and height of cell grid draw area
 
+        int width, height;
         GameOfLifeCellGrid.GdkWindow.GetSize(out width, out height);
 
-        _cellGrid = new CLifeGtk(GameOfLifeCellGrid.GdkWindow, width / kDefaultScaleFactor, height / kDefaultScaleFactor);
+        // Create cell grid automaton for draw area (scaling down for pixel size
 
+        _cellGrid = new CLifeGtk(GameOfLifeCellGrid.GdkWindow, width / kDefaultScaleFactor, height / kDefaultScaleFactor);
         _cellGrid.ScaleFactor = kDefaultScaleFactor;
+
+        // Create random cell pattern
 
         _cellGrid.RandomizeGrid();
 
+        // Start cell grid updater
+
         GLib.Timeout.Add(kUpdateTimer, new GLib.TimeoutHandler(Update));
+
+        // Set initial button states
 
         ButtonEnable(StopButton, false);
 
     }
 
+    /// <summary>
+    /// Update display context from cell grid.
+    /// </summary>
+    /// <returns>The update.</returns>
     bool Update() {
-        
+
+        // If running then perform next automaton cycle otherwise just display
+        // current cell grid contents
+
         if (_cellGrid.Running)
         {
             _cellGrid.nextTick();
@@ -50,18 +84,30 @@ public partial class MainWindow : Gtk.Window
             _cellGrid.refresh();
         }
 
+        // Display current tick count
+
         GameOfLifeTickCount.Text = _cellGrid.Tick.ToString();
 
         return (true);
 
     }
 
+    /// <summary>
+    /// On the delete event quit application.
+    /// </summary>
+    /// <param name="sender">Sender.</param>
+    /// <param name="a">The alpha component.</param>
     protected void OnDeleteEvent(object sender, DeleteEventArgs a)
     {
         Application.Quit();
         a.RetVal = true;
     }
 
+    /// <summary>
+    /// On the start button clicked flag automaton as running.
+    /// </summary>
+    /// <param name="sender">Sender.</param>
+    /// <param name="e">E.</param>
     protected void OnStartButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.start();
@@ -73,6 +119,11 @@ public partial class MainWindow : Gtk.Window
 
     }
 
+    /// <summary>
+    /// On the stop button clicked stop automaton.
+    /// </summary>
+    /// <param name="sender">Sender.</param>
+    /// <param name="e">E.</param>
     protected void OnStopButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.stop();
@@ -84,6 +135,11 @@ public partial class MainWindow : Gtk.Window
  
     }
 
+    /// <summary>
+    /// On the reset button clicked stop automaton, randomize grid and display.
+    /// </summary>
+    /// <param name="sender">Sender.</param>
+    /// <param name="e">E.</param>
     protected void OnResetButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.stop();
@@ -97,6 +153,11 @@ public partial class MainWindow : Gtk.Window
 
     }
 
+    /// <summary>
+    /// On the quit button clicked stop automaton and quit application.
+    /// </summary>
+    /// <param name="sender">Sender.</param>
+    /// <param name="e">E.</param>
     protected void OnQuitButtonClicked(object sender, EventArgs e)
     {
         _cellGrid.stop();
