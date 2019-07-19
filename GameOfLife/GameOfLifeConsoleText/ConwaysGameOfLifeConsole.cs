@@ -3,7 +3,7 @@
 //
 // Program: Conways Game Of Life.
 //
-// Description: Console implementation of Conway's game of life a cellular automaton the
+// Description: C# Console implementation of Conway's game of life a cellular automaton the
 // details of which can be  found at https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life.
 //
 // Copyright 2019.
