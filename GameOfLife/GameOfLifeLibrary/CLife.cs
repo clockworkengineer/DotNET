@@ -43,7 +43,7 @@ namespace GameOfLifeLibrary
         /// <returns>The y, x coordinates. Wrapping them around if the go out of bounds.</returns>
         /// <param name="y">The y coordinate.</param>
         /// <param name="x">The x coordinate.</param>
-        private Tuple<int, int> gridBounds(int y, int x)
+        private (int, int) gridBounds(int y, int x)
         {
 
             if (y < 0)
@@ -64,7 +64,7 @@ namespace GameOfLifeLibrary
                 x = 0;
             }
 
-            return (new Tuple<int, int>(y, x));
+            return (y, x);
 
         }
 
@@ -156,7 +156,7 @@ namespace GameOfLifeLibrary
 
             _cellMasterGrid[cellIndex(coords.Item1, coords.Item2)] = active;
 
-            updateCell(y, x, active);
+            updateCell(coords.Item1, coords.Item2, active);
         }
 
         /// <summary>
