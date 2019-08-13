@@ -13,7 +13,7 @@ using GameOfLifeLibrary;
 using System;
 using Gtk;
 
-namespace ConwaysGameOfLifeGtk
+namespace GameOfLifeGtk
 {
     class MainClass
     {

@@ -13,7 +13,7 @@ using GameOfLifeLibrary;
 using System;
 using System.Threading;
 
-namespace ConwaysGameOfLifeConsole
+namespace GameOfLifeConsole
 {
     class ConwaysGameOfLife
     {
