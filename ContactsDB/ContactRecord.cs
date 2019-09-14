@@ -1,6 +1,10 @@
 ﻿using System;
+
 namespace ContactsDB
 {
+    /// <summary>
+    /// Contact record.
+    /// </summary>
     public class ContactRecord
     {
         private string _id = String.Empty;
@@ -9,6 +13,9 @@ namespace ContactsDB
         private string _phoneNumber = String.Empty;
         private string _emailAddress = String.Empty;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ContactsDB.ContactRecord"/> class.
+        /// </summary>
         public ContactRecord()
         {
 

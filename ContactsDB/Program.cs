@@ -3,6 +3,9 @@ using Gtk;
 
 namespace ContactsDB
 {
+    /// <summary>
+    /// Main class for a simple contacts database program.
+    /// </summary>
     class MainClass
     {
         public static void Main(string[] args)

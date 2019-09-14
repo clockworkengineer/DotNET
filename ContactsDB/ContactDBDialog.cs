@@ -2,28 +2,30 @@
 
 namespace ContactsDB
 {
-
+    /// <summary>
+    /// Contact dialog used for create/read/update/delete.
+    /// </summary>
     public partial class ContactDBDialog : Gtk.Dialog
     {
         
         private ContactRecord _contact;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:ContactsDB.ContactDBDialog"/> class.
+        /// </summary>
+        /// <param name="contact">Contact.</param>
+        /// <param name="editable">If set to <c>true</c> editable.</param>
         public ContactDBDialog(ContactRecord contact, bool editable)
         {
             Build();
 
             if (contact.LastName != String.Empty)
             {
-             //   lastNameEntry.IsEditable = false;
                 lastNameEntry.Sensitive = false;
             }
-            // firstNameEntry.IsEditable = editable;
             firstNameEntry.Sensitive = editable;
-            //phoneNoEntry.IsEditable = editable;
             phoneNoEntry.Sensitive = editable;
-            //emailEntry.IsEditable = editable;
             emailEntry.Sensitive = editable;
-            //idEntry.IsEditable = false;
             idEntry.Sensitive = false;
 
             lastNameEntry.Text = contact.LastName;
@@ -37,6 +39,11 @@ namespace ContactsDB
             this.ShowAll();
         }
 
+        /// <summary>
+        /// On the button ok clicked.
+        /// </summary>
+        /// <param name="sender">Sender.</param>
+        /// <param name="e">E.</param>
         protected void OnButtonOkClicked(object sender, EventArgs e)
         {
             _contact.LastName = lastNameEntry.Text;
@@ -46,6 +53,11 @@ namespace ContactsDB
             this.Destroy();
         }
 
+        /// <summary>
+        /// On the button cancel clicked.
+        /// </summary>
+        /// <param name="sender">Sender.</param>
+        /// <param name="e">E.</param>
         protected void OnButtonCancelClicked(object sender, EventArgs e)
         {
             this.Destroy();
