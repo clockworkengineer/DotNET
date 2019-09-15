@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using ContactsDB;
 using Gtk;
 
@@ -9,13 +8,10 @@ using Gtk;
 /// </summary>
 public partial class MainWindow : Gtk.Window
 {
-
-    private ListStore _contactsDBStore;
+    private ContactCSV _contactDBStore;
+    private ListStore _contactsListViewStore;
     private TreeIter _selectedContact;
     private Dictionary<string, ContactRecord> _contacts;
-    private Int32 _nextID=0;
-    private const string CONTACTS_FILE = "./contacts.csv";
-    private string _csvHeader = "Id,LastName,FirstName,EMail,PhoneNo";
 
     /// <summary>
     /// Enable/Disable a window button.
@@ -53,78 +49,25 @@ public partial class MainWindow : Gtk.Window
     /// <returns>The selected key.</returns>
     private string GetSelectedKey()
     {
-        return ((string)_contactsDBStore.GetValue(_selectedContact, 4));
+        return ((string)_contactsListViewStore.GetValue(_selectedContact, 4));
     }
 
     /// <summary>
-    /// Adds a contact to internal dictionary and listview window row.
+    /// Adds a contact to list view.
     /// </summary>
     /// <param name="contact">Contact.</param>
-    private void AddContact(ContactRecord contact)
+    private void AddContactToListVew(ContactRecord contact)
     {
-        _contacts[contact.Id] = contact;
-        _contactsDBStore.AppendValues(contact.LastName, contact.FirstName, 
+        _contactsListViewStore.AppendValues(contact.LastName, contact.FirstName, 
                  contact.EmailAddress, contact.PhoneNumber, contact.Id);
     }
 
     /// <summary>
-    /// Removes the selected contact.
+    /// Removes the selected contact from list view.
     /// </summary>
-    private void RemoveSelectedContact()
+    private void RemoveSelectedContactFromListView()
     {
-        _contacts.Remove(GetSelectedKey());
-        _contactsDBStore.Remove(ref _selectedContact);
-    }
-
-    /// <summary>
-    /// Writes the contact records.
-    /// </summary>
-    private void WriteContactRecords()
-    {
-
-        using (var writer = new StreamWriter(CONTACTS_FILE))
-        {
-            writer.WriteLine(_csvHeader);
-            foreach (var id in _contacts.Keys)
-            {
-                var contact = _contacts[id];
-                var line = contact.Id+","+contact.FirstName + "," + contact.LastName + "," + 
-                contact.EmailAddress + "," + contact.PhoneNumber;
-                writer.WriteLine(line);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Loads the contact records from CSV file.
-    /// </summary>
-    private void LoadContactRecords()
-    {
-
-        _contacts = new Dictionary<string, ContactRecord>();
-
-        if (!File.Exists(CONTACTS_FILE))
-        {
-            WriteContactRecords();
-        }
-
-        using (var reader = new StreamReader(CONTACTS_FILE))
-        {
-
-            _csvHeader = reader.ReadLine();
-            while (!reader.EndOfStream)
-            {
-                var contact = new ContactRecord();
-                var values = reader.ReadLine().Split(',');
-                _nextID = Math.Max(Convert.ToInt32(values[0]), _nextID);
-                contact.Id = values[0];
-                contact.FirstName = values[1];
-                contact.LastName = values[2];
-                contact.EmailAddress = values[3];
-                contact.PhoneNumber = values[4];
-                AddContact(contact);
-            }
-        }
+        _contactsListViewStore.Remove(ref _selectedContact);
     }
 
     /// <summary>
@@ -149,21 +92,28 @@ public partial class MainWindow : Gtk.Window
     {
         Build();
 
+        _contactDBStore = new ContactCSV();
+
         AddListViewColumn("Last Name", 0);
         AddListViewColumn("First Name", 1);
         AddListViewColumn("E-Mail", 2);
         AddListViewColumn("Phone No.", 3);
         AddListViewColumn("Id", 4);
 
-        _contactsDBStore = new ListStore(typeof(string), typeof(string), typeof(string), typeof(string), typeof(string));
-        contactsDBTreeView.Model = _contactsDBStore;
-        _contactsDBStore.SetSortColumnId(0, SortType.Ascending);
+        _contactsListViewStore = new ListStore(typeof(string), typeof(string), typeof(string), typeof(string), typeof(string));
+        contactsDBTreeView.Model = _contactsListViewStore;
+        _contactsListViewStore.SetSortColumnId(0, SortType.Ascending);
 
-        LoadContactRecords();
+        _contacts = _contactDBStore.LoadContactRecords();
+
+        foreach(var id in _contacts.Keys)
+        {
+            AddContactToListVew(_contacts[id]);
+        }
 
         if (_contacts.Count > 0)
         {
-            if (_contactsDBStore.GetIterFirst(out _selectedContact))
+            if (_contactsListViewStore.GetIterFirst(out _selectedContact))
             {
                 contactsDBTreeView.Selection.SelectIter(_selectedContact);
             }
@@ -181,6 +131,7 @@ public partial class MainWindow : Gtk.Window
     /// <param name="a">The alpha component.</param>
     protected void OnDeleteEvent(object sender, DeleteEventArgs a)
     {
+        _contactDBStore.FlushContactRecords(_contacts);
         Application.Quit();
         a.RetVal = true;
     }
@@ -193,13 +144,14 @@ public partial class MainWindow : Gtk.Window
     protected void OnCreateButtonClicked(object sender, EventArgs e)
     {
         ContactRecord contact = new ContactRecord();
-        contact.Id = (_nextID + 1).ToString();
+        contact.Id = (_contactDBStore.NextID + 1).ToString();
         ContactDBDialog dialog = new ContactDBDialog(contact, true);
         if ((ResponseType)dialog.Run() == ResponseType.Ok)
         {
-            _nextID++;
-            AddContact(contact);
-            WriteContactRecords();
+            _contactDBStore.NextID++;
+            _contacts[contact.Id] = contact;
+            AddContactToListVew(contact);
+            _contactDBStore.WriteContactRecord(contact);
         }
         SetButtonsStatus();
     }
@@ -228,9 +180,9 @@ public partial class MainWindow : Gtk.Window
         ContactDBDialog dialog = new ContactDBDialog(contact, true);
         if ((ResponseType)dialog.Run() == ResponseType.Ok)
         {
-            _contactsDBStore.SetValues(_selectedContact, contact.LastName, contact.FirstName,
+            _contactsListViewStore.SetValues(_selectedContact, contact.LastName, contact.FirstName,
                                             contact.EmailAddress, contact.PhoneNumber);
-            WriteContactRecords();
+            _contactDBStore.WriteContactRecord(contact);
         }
 
         SetButtonsStatus();
@@ -245,8 +197,13 @@ public partial class MainWindow : Gtk.Window
     protected void OnDeleteButtonClicked(object sender, EventArgs e)
     {
 
-        RemoveSelectedContact();
-        WriteContactRecords();
+        var key = GetSelectedKey();
+
+        _contactDBStore.DeleteContactRecord(_contacts[key]);
+        _contacts.Remove(key);
+
+        RemoveSelectedContactFromListView();
+
         if (contactsDBTreeView.Selection.CountSelectedRows() > 0) {
             contactsDBTreeView.Selection.SelectIter(_selectedContact);
         }
