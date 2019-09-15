@@ -7,14 +7,11 @@ namespace ContactsDB
     /// <summary>
     /// Contact store CSV implementation.
     /// </summary>
-    public class ContactCSV : IContactDB
+    public class ContactCSV : ContactDB
     {
 
         private const string CONTACTS_FILE = "./contacts.csv";
         private string _csvHeader = "Id,LastName,FirstName,EMail,PhoneNo";
-        private Int32 _nextID = 0;
-
-        public int NextID { get => _nextID; set => _nextID = value; }
 
         public ContactCSV()
         {
@@ -23,7 +20,7 @@ namespace ContactsDB
         /// <summary>
         /// Writes a contact records to CSV file.
         /// </summary>
-        public void WriteContactRecord(ContactRecord contact)
+        public override void WriteContactRecord(ContactRecord contact)
         {
        
         }
@@ -31,7 +28,7 @@ namespace ContactsDB
         /// <summary>
         /// Delete a contact record from CSV file.
         /// </summary>
-        public void DeleteContactRecord(ContactRecord contact)
+        public override void DeleteContactRecord(ContactRecord contact)
         {
 
         }
@@ -39,7 +36,7 @@ namespace ContactsDB
         /// <summary>
         /// Writes the contact records to CSV file.
         /// </summary>
-        public void FlushContactRecords(Dictionary<string, ContactRecord> contacts)
+        public override void FlushContactRecords(Dictionary<string, ContactRecord> contacts)
         {
 
             using (var writer = new StreamWriter(CONTACTS_FILE))
@@ -58,7 +55,7 @@ namespace ContactsDB
         /// <summary>
         /// Loads the contact records from CSV file.
         /// </summary>
-        public Dictionary<string, ContactRecord> LoadContactRecords()
+        public override Dictionary<string, ContactRecord> LoadContactRecords()
         {
 
             var _contacts = new Dictionary<string, ContactRecord>();

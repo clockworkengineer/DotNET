@@ -8,7 +8,7 @@ using Gtk;
 /// </summary>
 public partial class MainWindow : Gtk.Window
 {
-    private ContactCSV _contactDBStore;
+    private ContactDB _contactDBStore;
     private ListStore _contactsListViewStore;
     private TreeIter _selectedContact;
     private Dictionary<string, ContactRecord> _contacts;
