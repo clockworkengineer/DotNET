@@ -1,4 +1,14 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Program: Contacts Database.
+//
+// Description: C#/Gtk# based contact database main window class.
+//
+// Copyright 2019.
+//
+
+using System;
 using System.Collections.Generic;
 using ContactsDB;
 using Gtk;
@@ -8,10 +18,10 @@ using Gtk;
 /// </summary>
 public partial class MainWindow : Gtk.Window
 {
-    private ContactDB _contactDBStore;
-    private ListStore _contactsListViewStore;
-    private TreeIter _selectedContact;
-    private Dictionary<string, ContactRecord> _contacts;
+    private ContactDB _contactDBStore;                      // Database store class (CSV/SQlite)
+    private ListStore _contactsListViewStore;               // tree view store for main window
+    private TreeIter _selectedContact;                      // Currently selected tree view contact
+    private Dictionary<string, ContactRecord> _contacts;    // Dictionary of contact records
 
     /// <summary>
     /// Enable/Disable a window button.
@@ -32,7 +42,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Sets the buttons status of create/read/update/delete buttons.
+    /// Sets status of create/read/update/delete buttons.
     /// </summary>
     private void SetButtonsStatus()
     {
@@ -44,7 +54,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Gets the key of the selected listview row.
+    /// Gets the key of the currently selected tree view row.
     /// </summary>
     /// <returns>The selected key.</returns>
     private string GetSelectedKey()
@@ -53,7 +63,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Adds a contact to list view.
+    /// Adds a contact to tree view.
     /// </summary>
     /// <param name="contact">Contact.</param>
     private void AddContactToListVew(ContactRecord contact)
@@ -63,7 +73,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Removes the selected contact from list view.
+    /// Removes the selected contact from tree view.
     /// </summary>
     private void RemoveSelectedContactFromListView()
     {
@@ -71,7 +81,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Adds a column to contact list view row.
+    /// Adds a column to contact tree view row.
     /// </summary>
     /// <param name="title">Title.</param>
     /// <param name="cellNo">Cell no.</param>
@@ -92,7 +102,7 @@ public partial class MainWindow : Gtk.Window
     {
         Build();
 
-        _contactDBStore = new ContactCSV();
+        _contactDBStore = new ContactCSV("./contacts.csv");
 
         AddListViewColumn("Last Name", 0);
         AddListViewColumn("First Name", 1);
@@ -212,7 +222,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// On the contact list view cursor changed.
+    /// On the contact tree view cursor changed.
     /// </summary>
     /// <param name="sender">Sender.</param>
     /// <param name="e">E.</param>

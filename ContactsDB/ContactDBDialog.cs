@@ -1,9 +1,19 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Program: Contacts Database.
+//
+// Description: Contact details entry and display dialog.
+//
+// Copyright 2019.
+//
+
+using System;
 
 namespace ContactsDB
 {
     /// <summary>
-    /// Contact dialog used for create/read/update/delete.
+    /// Contact dialog used for create/read/update.
     /// </summary>
     public partial class ContactDBDialog : Gtk.Dialog
     {

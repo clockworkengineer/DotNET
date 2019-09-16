@@ -111,7 +111,7 @@
       </widget>
     </child>
   </widget>
-  <widget class="Gtk.Dialog" id="ContactsDB.ContactDBDialog" design-size="514 345">
+  <widget class="Gtk.Dialog" id="ContactsDB.ContactDBDialog" design-size="514 224">
     <property name="MemberName" />
     <property name="Title" translatable="yes">Contact Details</property>
     <property name="WindowPosition">CenterOnParent</property>

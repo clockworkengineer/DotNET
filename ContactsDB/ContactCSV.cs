@@ -1,4 +1,14 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Program: Contacts Database.
+//
+// Description: Contact details store CSV file implementation.
+//
+// Copyright 2019.
+//
+
+using System;
 using System.IO;
 using System.Collections.Generic;
 
@@ -10,27 +20,12 @@ namespace ContactsDB
     public class ContactCSV : ContactDB
     {
 
-        private const string CONTACTS_FILE = "./contacts.csv";
+        private  string _contactsFileName;
         private string _csvHeader = "Id,LastName,FirstName,EMail,PhoneNo";
 
-        public ContactCSV()
+        public ContactCSV(string fileName)
         {
-        }
-
-        /// <summary>
-        /// Writes a contact records to CSV file.
-        /// </summary>
-        public override void WriteContactRecord(ContactRecord contact)
-        {
-       
-        }
-
-        /// <summary>
-        /// Delete a contact record from CSV file.
-        /// </summary>
-        public override void DeleteContactRecord(ContactRecord contact)
-        {
-
+            _contactsFileName = fileName;
         }
 
         /// <summary>
@@ -39,15 +34,13 @@ namespace ContactsDB
         public override void FlushContactRecords(Dictionary<string, ContactRecord> contacts)
         {
 
-            using (var writer = new StreamWriter(CONTACTS_FILE))
+            using (var writer = new StreamWriter(_contactsFileName))
             {
                 writer.WriteLine(_csvHeader);
                 foreach (var id in contacts.Keys)
                 {
                     var contact = contacts[id];
-                    var line = contact.Id + "," + contact.FirstName + "," + contact.LastName + "," +
-                    contact.EmailAddress + "," + contact.PhoneNumber;
-                    writer.WriteLine(line);
+                    writer.WriteLine($"{contact.Id},{contact.FirstName},{contact.LastName},{contact.EmailAddress},{contact.PhoneNumber}");
                 }
             }
         }
@@ -60,12 +53,12 @@ namespace ContactsDB
 
             var _contacts = new Dictionary<string, ContactRecord>();
 
-            if (!File.Exists(CONTACTS_FILE))
+            if (!File.Exists(_contactsFileName))
             {
                 FlushContactRecords(_contacts);
             }
 
-            using (var reader = new StreamReader(CONTACTS_FILE))
+            using (var reader = new StreamReader(_contactsFileName))
             {
 
                 _csvHeader = reader.ReadLine();

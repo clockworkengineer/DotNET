@@ -1,4 +1,14 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Program: Contacts Database.
+//
+// Description: Contact details record class.
+//
+// Copyright 2019.
+//
+
+using System;
 
 namespace ContactsDB
 {
@@ -7,11 +17,11 @@ namespace ContactsDB
     /// </summary>
     public class ContactRecord
     {
-        private string _id = String.Empty;
-        private string _firstName = String.Empty;
-        private string _lastName = String.Empty;
-        private string _phoneNumber = String.Empty;
-        private string _emailAddress = String.Empty;
+        private string _id = String.Empty;              // Unique Integer ID
+        private string _firstName = String.Empty;       // First Name
+        private string _lastName = String.Empty;        // Last Name
+        private string _phoneNumber = String.Empty;     // Phone Number
+        private string _emailAddress = String.Empty;    // E-mail address
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ContactsDB.ContactRecord"/> class.

@@ -1,4 +1,14 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Program: Contacts Database.
+//
+// Description: C#/Gtk# based contact database program.
+//
+// Copyright 2019.
+//
+
+using System;
 using Gtk;
 
 namespace ContactsDB

@@ -198,7 +198,7 @@ namespace ContactsDB
 				this.Child.ShowAll();
 			}
 			this.DefaultWidth = 514;
-			this.DefaultHeight = 345;
+			this.DefaultHeight = 224;
 			this.Show();
 			this.buttonCancel.Clicked += new global::System.EventHandler(this.OnButtonCancelClicked);
 			this.buttonOk.Clicked += new global::System.EventHandler(this.OnButtonOkClicked);
