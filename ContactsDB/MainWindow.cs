@@ -69,7 +69,7 @@ public partial class MainWindow : Gtk.Window
     private void AddContactToListVew(ContactRecord contact)
     {
         _contactsListViewStore.AppendValues(contact.LastName, contact.FirstName, 
-                 contact.EmailAddress, contact.PhoneNumber, contact.Id);
+                 contact.Email, contact.PhoneNo, contact.Id);
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public partial class MainWindow : Gtk.Window
     {
         Build();
 
-        _contactDBStore = new ContactCSV("./contacts.csv");
+        _contactDBStore =  new ContactSQLite("./contacts.db");
 
         AddListViewColumn("Last Name", 0);
         AddListViewColumn("First Name", 1);
@@ -191,8 +191,8 @@ public partial class MainWindow : Gtk.Window
         if ((ResponseType)dialog.Run() == ResponseType.Ok)
         {
             _contactsListViewStore.SetValues(_selectedContact, contact.LastName, contact.FirstName,
-                                            contact.EmailAddress, contact.PhoneNumber);
-            _contactDBStore.WriteContactRecord(contact);
+                                            contact.Email, contact.PhoneNo);
+            _contactDBStore.UpdateContactRecord(contact);
         }
 
         SetButtonsStatus();

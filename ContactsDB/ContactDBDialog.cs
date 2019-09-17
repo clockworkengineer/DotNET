@@ -40,8 +40,8 @@ namespace ContactsDB
 
             lastNameEntry.Text = contact.LastName;
             firstNameEntry.Text =  contact.FirstName;
-            phoneNoEntry.Text = contact.PhoneNumber;
-            emailEntry.Text = contact.EmailAddress;
+            phoneNoEntry.Text = contact.PhoneNo;
+            emailEntry.Text = contact.Email;          
             idEntry.Text = contact.Id;
 
             _contact = contact;
@@ -58,8 +58,8 @@ namespace ContactsDB
         {
             _contact.LastName = lastNameEntry.Text;
             _contact.FirstName = firstNameEntry.Text;
-            _contact.EmailAddress = emailEntry.Text;
-            _contact.PhoneNumber = phoneNoEntry.Text;
+            _contact.Email = emailEntry.Text;
+            _contact.PhoneNo = phoneNoEntry.Text;
             this.Destroy();
         }
 

@@ -40,7 +40,7 @@ namespace ContactsDB
                 foreach (var id in contacts.Keys)
                 {
                     var contact = contacts[id];
-                    writer.WriteLine($"{contact.Id},{contact.FirstName},{contact.LastName},{contact.EmailAddress},{contact.PhoneNumber}");
+                    writer.WriteLine($"{contact.Id},{contact.FirstName},{contact.LastName},{contact.Email},{contact.PhoneNo}");
                 }
             }
         }
@@ -70,8 +70,8 @@ namespace ContactsDB
                     contact.Id = values[0];
                     contact.FirstName = values[1];
                     contact.LastName = values[2];
-                    contact.EmailAddress = values[3];
-                    contact.PhoneNumber = values[4];
+                    contact.Email = values[3];
+                    contact.PhoneNo = values[4];
                     _contacts[contact.Id] = contact;
                 }
             }

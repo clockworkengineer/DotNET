@@ -17,11 +17,11 @@ namespace ContactsDB
     /// </summary>
     public class ContactRecord
     {
-        private string _id = String.Empty;              // Unique Integer ID
-        private string _firstName = String.Empty;       // First Name
-        private string _lastName = String.Empty;        // Last Name
-        private string _phoneNumber = String.Empty;     // Phone Number
-        private string _emailAddress = String.Empty;    // E-mail address
+        private string _id = String.Empty;          // Unique Integer ID
+        private string _firstName = String.Empty;   // First Name
+        private string _lastName = String.Empty;    // Last Name
+        private string _phoneNo = String.Empty;     // Phone Number
+        private string _email = String.Empty;       // E-mail address
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ContactsDB.ContactRecord"/> class.
@@ -33,8 +33,8 @@ namespace ContactsDB
 
         public string FirstName { get => _firstName; set => _firstName = value; }
         public string LastName { get => _lastName; set => _lastName = value; }
-        public string PhoneNumber { get => _phoneNumber; set => _phoneNumber = value; }
-        public string EmailAddress { get => _emailAddress; set => _emailAddress = value; }
+        public string PhoneNo { get => _phoneNo; set => _phoneNo = value; }
+        public string Email { get => _email; set => _email = value; }
         public string Id { get => _id; set => _id = value; }
     }
 }

@@ -29,6 +29,16 @@ namespace ContactsDB
         }
 
         /// <summary>
+        /// Updates a contact record.
+        /// </summary>
+        /// <param name="contact">Contact.</param>
+        public virtual void UpdateContactRecord(ContactRecord contact)
+        {
+
+        }
+
+
+        /// <summary>
         /// Deletes a contact record.
         /// </summary>
         /// <param name="contact">Contact.</param>
