@@ -3,7 +3,7 @@
 //
 // Program: Contacts Database.
 //
-// Description: Contact details store CSV file implementation.
+// Description: Contact details database store CSV file implementation.
 //
 // Copyright 2019.
 //
@@ -17,7 +17,7 @@ namespace ContactsDB
     /// <summary>
     /// Contact store CSV implementation.
     /// </summary>
-    public class ContactCSV : ContactDB
+    public class ContactCSV : ContactDBStore
     {
 
         private  string _contactsFileName;

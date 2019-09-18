@@ -1,7 +1,7 @@
 ﻿//
 // Program: Contacts Database.
 //
-// Description: Contact details store SQLite implementation.
+// Description: Contact details database store SQLite implementation.
 //
 // Copyright 2019.
 //
@@ -12,7 +12,7 @@ using System.Collections.Generic;
 
 namespace ContactsDB
 {
-    public class ContactSQLite : ContactDB
+    public class ContactSQLite : ContactDBStore
     {
         private string sqlConnectionString = "URI=file:";
         private const string sqlUpdateContact = "UPDATE contacts SET FirstName=@FirstName,LastName=@LastName,PhoneNo=@PhoneNo,Email=@Email WHERE Id = @Id";

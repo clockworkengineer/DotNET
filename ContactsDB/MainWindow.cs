@@ -18,7 +18,7 @@ using Gtk;
 /// </summary>
 public partial class MainWindow : Gtk.Window
 {
-    private ContactDB _contactDBStore;                      // Database store class (CSV/SQlite)
+    private ContactDBStore _contactDBStore;                 // Database store class (CSV/SQlite)
     private ListStore _contactsListViewStore;               // tree view store for main window
     private TreeIter _selectedContact;                      // Currently selected tree view contact
     private Dictionary<string, ContactRecord> _contacts;    // Dictionary of contact records
