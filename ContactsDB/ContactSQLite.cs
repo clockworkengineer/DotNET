@@ -8,8 +8,8 @@
 
 using System;
 using Mono.Data.Sqlite;
-
 using System.Collections.Generic;
+
 namespace ContactsDB
 {
     public class ContactSQLite : ContactDB
@@ -19,6 +19,7 @@ namespace ContactsDB
         private const string sqlDeleteContact = "DELETE FROM contacts WHERE Id = @Id";
         private const string sqlCreateContact = "INSERT INTO Contacts(FirstName,Lastname,PhoneNo,EMail) VALUES(@FirstName, @LastName, @PhoneNo, @Email)";
         private const string sqlReadAllContacts = "SELECT Id,FirstName,Lastname,PhoneNo,EMail FROM contacts;";
+        private const string sqlCreateContactsTable = "CREATE TABLE IF NOT EXISTS contacts (Id INTEGER PRIMARY KEY, LastName TEXT, FirstName TEXT, PhoneNo TEXT, EMail TEXT)";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ContactsDB.ContactSQLite"/> class.
@@ -26,6 +27,16 @@ namespace ContactsDB
         public ContactSQLite(string fileName)
         {
             sqlConnectionString += fileName;
+
+            using (var dbConnection = new SqliteConnection(sqlConnectionString))
+            {
+                dbConnection.Open();
+                using (var dbCommand = dbConnection.CreateCommand())
+                {
+                    dbCommand.CommandText = sqlCreateContactsTable;
+                    dbCommand.ExecuteNonQuery();
+                }
+            }
         }
 
         /// <summary>
@@ -117,6 +128,7 @@ namespace ContactsDB
                             contact.PhoneNo = dbReader.GetString(3);
                             contact.Email = dbReader.GetString(4);
                             contacts[contact.Id] = contact;
+                            NextID = Math.Max(Convert.ToInt32(contact.Id), NextID);
                         }
                     }
                 }
