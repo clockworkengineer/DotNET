@@ -14,7 +14,7 @@ namespace ContactsDB
 {
     public class ContactSQLite : ContactDBStore
     {
-        private string sqlConnectionString = "URI=file:";
+        private readonly string sqlConnectionString = "URI=file:";
         private const string sqlUpdateContact = "UPDATE contacts SET FirstName=@FirstName,LastName=@LastName,PhoneNo=@PhoneNo,Email=@Email WHERE Id = @Id";
         private const string sqlDeleteContact = "DELETE FROM contacts WHERE Id = @Id";
         private const string sqlCreateContact = "INSERT INTO Contacts(FirstName,Lastname,PhoneNo,EMail) VALUES(@FirstName, @LastName, @PhoneNo, @Email)";

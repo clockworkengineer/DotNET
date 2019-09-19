@@ -102,7 +102,11 @@ public partial class MainWindow : Gtk.Window
     {
         Build();
 
+#if CONTACTCSV
+        _contactDBStore =  new ContactCSV("./contacts.csv");
+#elif CONTACTSQLITE
         _contactDBStore =  new ContactSQLite("./contacts.db");
+#endif
 
         AddListViewColumn("Last Name", 0);
         AddListViewColumn("First Name", 1);
