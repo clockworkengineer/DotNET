@@ -29,6 +29,9 @@ namespace ContactsDB
         {
             Build();
 
+            // For non empty contact record lock last name from change and lock others
+            // depending if its an update or read.
+
             if (contact.LastName != String.Empty)
             {
                 lastNameEntry.Sensitive = false;
@@ -38,6 +41,8 @@ namespace ContactsDB
             emailEntry.Sensitive = editable;
             idEntry.Sensitive = false;
 
+            // Copy contact detailt to dialog and display
+
             lastNameEntry.Text = contact.LastName;
             firstNameEntry.Text =  contact.FirstName;
             phoneNoEntry.Text = contact.PhoneNo;
@@ -45,8 +50,9 @@ namespace ContactsDB
             idEntry.Text = contact.Id;
 
             _contact = contact;
-
+            
             this.ShowAll();
+
         }
 
         /// <summary>
@@ -56,11 +62,17 @@ namespace ContactsDB
         /// <param name="e">E.</param>
         protected void OnButtonOkClicked(object sender, EventArgs e)
         {
+            // Copy modified details back to record
+
             _contact.LastName = lastNameEntry.Text;
             _contact.FirstName = firstNameEntry.Text;
             _contact.Email = emailEntry.Text;
             _contact.PhoneNo = phoneNoEntry.Text;
+
+            // Dispose of dialog resources
+
             this.Destroy();
+
         }
 
         /// <summary>

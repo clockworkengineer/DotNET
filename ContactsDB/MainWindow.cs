@@ -19,8 +19,8 @@ using Gtk;
 public partial class MainWindow : Gtk.Window
 {
     private ContactDBStore _contactDBStore;                 // Database store class (CSV/SQlite)
-    private ListStore _contactsListViewStore;               // tree view store for main window
-    private TreeIter _selectedContact;                      // Currently selected tree view contact
+    private ListStore _contactsListViewStore;               // list view store for main window
+    private TreeIter _selectedContact;                      // Currently selected list view contact
     private Dictionary<string, ContactRecord> _contacts;    // Dictionary of contact records
 
     /// <summary>
@@ -54,7 +54,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Gets the key of the currently selected tree view row.
+    /// Gets the key of the currently selected list view row.
     /// </summary>
     /// <returns>The selected key.</returns>
     private string GetSelectedKey()
@@ -63,7 +63,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Adds a contact to tree view.
+    /// Adds a contact to list view.
     /// </summary>
     /// <param name="contact">Contact.</param>
     private void AddContactToListVew(ContactRecord contact)
@@ -73,7 +73,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Removes the selected contact from tree view.
+    /// Removes the selected contact from list view.
     /// </summary>
     private void RemoveSelectedContactFromListView()
     {
@@ -81,7 +81,7 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
-    /// Adds a column to contact tree view row.
+    /// Adds a column to contact list view row.
     /// </summary>
     /// <param name="title">Title.</param>
     /// <param name="cellNo">Cell no.</param>
@@ -100,6 +100,8 @@ public partial class MainWindow : Gtk.Window
     /// </summary>
     private void SetConfiguration()
     {
+        // Only supports CSV and SQLITE database at the moment.
+
         if (ConfigurationManager.AppSettings["StoreType"] == "CSV")
         {
             _contactDBStore = new ContactCSV(ConfigurationManager.AppSettings["StoreFile"]);
@@ -110,8 +112,9 @@ public partial class MainWindow : Gtk.Window
         }
         else
         {
-            throw new Exception("Invalid Store Type");
+            throw new Exception("Invalid Store type; Can only be CSV or SQLITE.");
         }
+        Title += " (" + ConfigurationManager.AppSettings["StoreType"] + ")";
     }
 
     /// <summary>
@@ -121,7 +124,11 @@ public partial class MainWindow : Gtk.Window
     {
         Build();
 
+        // Set configuration
+
         SetConfiguration();
+
+        // Add list voew columns
 
         AddListViewColumn("Last Name", 0);
         AddListViewColumn("First Name", 1);
@@ -129,9 +136,13 @@ public partial class MainWindow : Gtk.Window
         AddListViewColumn("Phone No.", 3);
         AddListViewColumn("Id", 4);
 
+        // Create list view and store
+
         _contactsListViewStore = new ListStore(typeof(string), typeof(string), typeof(string), typeof(string), typeof(string));
         contactsDBTreeView.Model = _contactsListViewStore;
         _contactsListViewStore.SetSortColumnId(0, SortType.Ascending);
+
+        // Load contacts and display
 
         _contacts = _contactDBStore.LoadContactRecords();
 
@@ -139,6 +150,8 @@ public partial class MainWindow : Gtk.Window
         {
             AddContactToListVew(_contacts[id]);
         }
+
+        // Select first contacts record
 
         if (_contacts.Count > 0)
         {
@@ -149,12 +162,14 @@ public partial class MainWindow : Gtk.Window
 
         }
 
+        // Set button(s) status
+
         SetButtonsStatus();
 
     }
 
     /// <summary>
-    /// On window delete event.
+    /// On window delete event (flush contacts records to store if necessary).
     /// </summary>
     /// <param name="sender">Sender.</param>
     /// <param name="a">The alpha component.</param>
@@ -172,15 +187,21 @@ public partial class MainWindow : Gtk.Window
     /// <param name="e">E.</param>
     protected void OnCreateButtonClicked(object sender, EventArgs e)
     {
+        // Create contacts record and display details dialog to be filled in
+
         ContactRecord contact = new ContactRecord();
         contact.Id = (_contactDBStore.NextID + 1).ToString();
         ContactDBDialog dialog = new ContactDBDialog(contact, true);
+
         if ((ResponseType)dialog.Run() == ResponseType.Ok)
         {
+            // Add new contact record to list view and permanent store
+
             _contactDBStore.NextID++;
             _contacts[contact.Id] = contact;
             AddContactToListVew(contact);
             _contactDBStore.WriteContactRecord(contact);
+
         }
         SetButtonsStatus();
     }
@@ -192,6 +213,7 @@ public partial class MainWindow : Gtk.Window
     /// <param name="e">E.</param>
     protected void OnReadButtonClicked(object sender, EventArgs e)
     {
+        // Display contact details for seelcted record
         ContactDBDialog dialog = new ContactDBDialog(_contacts[GetSelectedKey()], false);
         dialog.Run();
         SetButtonsStatus();
@@ -204,11 +226,14 @@ public partial class MainWindow : Gtk.Window
     /// <param name="e">E.</param>
     protected void OnUpdateButtonClicked(object sender, EventArgs e)
     {
-        ContactRecord contact = _contacts[GetSelectedKey()];
+        // Get currently selected contact record and display update detaisl dialog
 
+        ContactRecord contact = _contacts[GetSelectedKey()];
         ContactDBDialog dialog = new ContactDBDialog(contact, true);
+
         if ((ResponseType)dialog.Run() == ResponseType.Ok)
         {
+            // Update list view and data store to reflect any changes
             _contactsListViewStore.SetValues(_selectedContact, contact.LastName, contact.FirstName,
                                             contact.Email, contact.PhoneNo);
             _contactDBStore.UpdateContactRecord(contact);
@@ -226,6 +251,8 @@ public partial class MainWindow : Gtk.Window
     protected void OnDeleteButtonClicked(object sender, EventArgs e)
     {
 
+        // Get currently selected record key and delete details from store and list view
+
         var key = GetSelectedKey();
 
         _contactDBStore.DeleteContactRecord(_contacts[key]);
@@ -233,15 +260,18 @@ public partial class MainWindow : Gtk.Window
 
         RemoveSelectedContactFromListView();
 
+        // Reselect to record inlist view 
+
         if (contactsDBTreeView.Selection.CountSelectedRows() > 0) {
             contactsDBTreeView.Selection.SelectIter(_selectedContact);
         }
+
         SetButtonsStatus();
 
     }
 
     /// <summary>
-    /// On the contact tree view cursor changed.
+    /// On the contact list view cursor changed store new selected contact list view row
     /// </summary>
     /// <param name="sender">Sender.</param>
     /// <param name="e">E.</param>
