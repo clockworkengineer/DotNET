@@ -7,8 +7,8 @@
 //
 // Copyright 2019.
 //
-
 using System;
+using System.Configuration;
 using System.Collections.Generic;
 using ContactsDB;
 using Gtk;
@@ -96,17 +96,32 @@ public partial class MainWindow : Gtk.Window
     }
 
     /// <summary>
+    /// Sets the configuration.
+    /// </summary>
+    private void SetConfiguration()
+    {
+        if (ConfigurationManager.AppSettings["StoreType"] == "CSV")
+        {
+            _contactDBStore = new ContactCSV(ConfigurationManager.AppSettings["StoreFile"]);
+        }
+        else if (ConfigurationManager.AppSettings["StoreType"] == "SQLITE")
+        {
+            _contactDBStore = new ContactSQLite(ConfigurationManager.AppSettings["StoreFile"]);
+        }
+        else
+        {
+            throw new Exception("Invalid Store Type");
+        }
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="T:MainWindow"/> class.
     /// </summary>
     public MainWindow() : base(Gtk.WindowType.Toplevel)
     {
         Build();
 
-#if CONTACTCSV
-        _contactDBStore =  new ContactCSV("./contacts.csv");
-#elif CONTACTSQLITE
-        _contactDBStore =  new ContactSQLite("./contacts.db");
-#endif
+        SetConfiguration();
 
         AddListViewColumn("Last Name", 0);
         AddListViewColumn("First Name", 1);
