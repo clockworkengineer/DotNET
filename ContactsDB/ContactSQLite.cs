@@ -15,11 +15,11 @@ namespace ContactsDB
     public class ContactSQLite : ContactDBStore
     {
         private readonly string sqlConnectionString = "URI=file:";
-        private const string sqlUpdateContact = "UPDATE contacts SET FirstName=@FirstName,LastName=@LastName,PhoneNo=@PhoneNo,Email=@Email WHERE Id = @Id";
+        private const string sqlUpdateContact = "UPDATE contacts SET FirstName=@FirstName,LastName=@LastName,PhoneNo=@PhoneNo,Email=@Email, Comment=@Comment WHERE Id = @Id";
         private const string sqlDeleteContact = "DELETE FROM contacts WHERE Id = @Id";
-        private const string sqlCreateContact = "INSERT INTO Contacts(FirstName,Lastname,PhoneNo,EMail) VALUES(@FirstName, @LastName, @PhoneNo, @Email)";
-        private const string sqlReadAllContacts = "SELECT Id,FirstName,Lastname,PhoneNo,EMail FROM contacts;";
-        private const string sqlCreateContactsTable = "CREATE TABLE IF NOT EXISTS contacts (Id INTEGER PRIMARY KEY, LastName TEXT, FirstName TEXT, PhoneNo TEXT, EMail TEXT)";
+        private const string sqlCreateContact = "INSERT INTO Contacts(FirstName,Lastname,PhoneNo,EMail) VALUES(@FirstName, @LastName, @PhoneNo, @Email, @Comment)";
+        private const string sqlReadAllContacts = "SELECT Id,FirstName,Lastname,PhoneNo,EMail,Comment FROM contacts;";
+        private const string sqlCreateContactsTable = "CREATE TABLE IF NOT EXISTS contacts (Id INTEGER PRIMARY KEY, LastName TEXT, FirstName TEXT, PhoneNo TEXT, EMail TEXT, Comment TEXT  DEFAULT \"\")";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ContactsDB.ContactSQLite"/> class.
@@ -57,6 +57,7 @@ namespace ContactsDB
                     dbCommand.Parameters.AddWithValue("@PhoneNo", contact.PhoneNo);
                     dbCommand.Parameters.AddWithValue("@Email", contact.Email);
                     dbCommand.Parameters.AddWithValue("@Id", contact.Id);
+                    dbCommand.Parameters.AddWithValue("@Comment", contact.Comment);
                     dbCommand.ExecuteNonQuery();
                 }
             }
@@ -79,6 +80,7 @@ namespace ContactsDB
                     dbCommand.Parameters.AddWithValue("@LastName", contact.LastName);
                     dbCommand.Parameters.AddWithValue("@PhoneNo", contact.PhoneNo);
                     dbCommand.Parameters.AddWithValue("@Email", contact.Email);
+                    dbCommand.Parameters.AddWithValue("@Comment", contact.Comment);
                     dbCommand.ExecuteNonQuery();
                 }
             }
@@ -127,6 +129,7 @@ namespace ContactsDB
                             contact.LastName = dbReader.GetString(2);
                             contact.PhoneNo = dbReader.GetString(3);
                             contact.Email = dbReader.GetString(4);
+                            contact.Comment = dbReader.GetString(5);
                             contacts[contact.Id] = contact;
                             NextID = Math.Max(Convert.ToInt32(contact.Id), NextID);
                         }

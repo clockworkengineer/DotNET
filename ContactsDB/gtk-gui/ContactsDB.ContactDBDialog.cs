@@ -6,6 +6,8 @@ namespace ContactsDB
 	{
 		private global::Gtk.Table table4;
 
+		private global::Gtk.Label commentLabel;
+
 		private global::Gtk.Entry emailEntry;
 
 		private global::Gtk.Label emailLabel;
@@ -13,6 +15,10 @@ namespace ContactsDB
 		private global::Gtk.Entry firstNameEntry;
 
 		private global::Gtk.Label firstNameLabel;
+
+		private global::Gtk.ScrolledWindow GtkScrolledWindow1;
+
+		private global::Gtk.TextView commentsTextView;
 
 		private global::Gtk.Entry idEntry;
 
@@ -42,10 +48,20 @@ namespace ContactsDB
 			w1.Name = "dialog1_VBox";
 			w1.BorderWidth = ((uint)(2));
 			// Container child dialog1_VBox.Gtk.Box+BoxChild
-			this.table4 = new global::Gtk.Table(((uint)(5)), ((uint)(2)), true);
+			this.table4 = new global::Gtk.Table(((uint)(6)), ((uint)(2)), true);
 			this.table4.Name = "table4";
 			this.table4.RowSpacing = ((uint)(6));
 			this.table4.ColumnSpacing = ((uint)(6));
+			// Container child table4.Gtk.Table+TableChild
+			this.commentLabel = new global::Gtk.Label();
+			this.commentLabel.Name = "commentLabel";
+			this.commentLabel.LabelProp = global::Mono.Unix.Catalog.GetString("Comment:");
+			this.table4.Add(this.commentLabel);
+			global::Gtk.Table.TableChild w2 = ((global::Gtk.Table.TableChild)(this.table4[this.commentLabel]));
+			w2.TopAttach = ((uint)(5));
+			w2.BottomAttach = ((uint)(6));
+			w2.XOptions = ((global::Gtk.AttachOptions)(4));
+			w2.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.emailEntry = new global::Gtk.Entry();
 			this.emailEntry.CanFocus = true;
@@ -53,22 +69,22 @@ namespace ContactsDB
 			this.emailEntry.IsEditable = true;
 			this.emailEntry.InvisibleChar = '•';
 			this.table4.Add(this.emailEntry);
-			global::Gtk.Table.TableChild w2 = ((global::Gtk.Table.TableChild)(this.table4[this.emailEntry]));
-			w2.TopAttach = ((uint)(2));
-			w2.BottomAttach = ((uint)(3));
-			w2.LeftAttach = ((uint)(1));
-			w2.RightAttach = ((uint)(2));
-			w2.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w3 = ((global::Gtk.Table.TableChild)(this.table4[this.emailEntry]));
+			w3.TopAttach = ((uint)(2));
+			w3.BottomAttach = ((uint)(3));
+			w3.LeftAttach = ((uint)(1));
+			w3.RightAttach = ((uint)(2));
+			w3.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.emailLabel = new global::Gtk.Label();
 			this.emailLabel.Name = "emailLabel";
 			this.emailLabel.LabelProp = global::Mono.Unix.Catalog.GetString("E-mail:");
 			this.table4.Add(this.emailLabel);
-			global::Gtk.Table.TableChild w3 = ((global::Gtk.Table.TableChild)(this.table4[this.emailLabel]));
-			w3.TopAttach = ((uint)(2));
-			w3.BottomAttach = ((uint)(3));
-			w3.XOptions = ((global::Gtk.AttachOptions)(4));
-			w3.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w4 = ((global::Gtk.Table.TableChild)(this.table4[this.emailLabel]));
+			w4.TopAttach = ((uint)(2));
+			w4.BottomAttach = ((uint)(3));
+			w4.XOptions = ((global::Gtk.AttachOptions)(4));
+			w4.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.firstNameEntry = new global::Gtk.Entry();
 			this.firstNameEntry.CanFocus = true;
@@ -76,22 +92,38 @@ namespace ContactsDB
 			this.firstNameEntry.IsEditable = true;
 			this.firstNameEntry.InvisibleChar = '•';
 			this.table4.Add(this.firstNameEntry);
-			global::Gtk.Table.TableChild w4 = ((global::Gtk.Table.TableChild)(this.table4[this.firstNameEntry]));
-			w4.TopAttach = ((uint)(1));
-			w4.BottomAttach = ((uint)(2));
-			w4.LeftAttach = ((uint)(1));
-			w4.RightAttach = ((uint)(2));
-			w4.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w5 = ((global::Gtk.Table.TableChild)(this.table4[this.firstNameEntry]));
+			w5.TopAttach = ((uint)(1));
+			w5.BottomAttach = ((uint)(2));
+			w5.LeftAttach = ((uint)(1));
+			w5.RightAttach = ((uint)(2));
+			w5.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.firstNameLabel = new global::Gtk.Label();
 			this.firstNameLabel.Name = "firstNameLabel";
 			this.firstNameLabel.LabelProp = global::Mono.Unix.Catalog.GetString("First Name:");
 			this.table4.Add(this.firstNameLabel);
-			global::Gtk.Table.TableChild w5 = ((global::Gtk.Table.TableChild)(this.table4[this.firstNameLabel]));
-			w5.TopAttach = ((uint)(1));
-			w5.BottomAttach = ((uint)(2));
-			w5.XOptions = ((global::Gtk.AttachOptions)(4));
-			w5.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w6 = ((global::Gtk.Table.TableChild)(this.table4[this.firstNameLabel]));
+			w6.TopAttach = ((uint)(1));
+			w6.BottomAttach = ((uint)(2));
+			w6.XOptions = ((global::Gtk.AttachOptions)(4));
+			w6.YOptions = ((global::Gtk.AttachOptions)(4));
+			// Container child table4.Gtk.Table+TableChild
+			this.GtkScrolledWindow1 = new global::Gtk.ScrolledWindow();
+			this.GtkScrolledWindow1.Name = "GtkScrolledWindow1";
+			this.GtkScrolledWindow1.ShadowType = ((global::Gtk.ShadowType)(1));
+			// Container child GtkScrolledWindow1.Gtk.Container+ContainerChild
+			this.commentsTextView = new global::Gtk.TextView();
+			this.commentsTextView.CanFocus = true;
+			this.commentsTextView.Name = "commentsTextView";
+			this.GtkScrolledWindow1.Add(this.commentsTextView);
+			this.table4.Add(this.GtkScrolledWindow1);
+			global::Gtk.Table.TableChild w8 = ((global::Gtk.Table.TableChild)(this.table4[this.GtkScrolledWindow1]));
+			w8.TopAttach = ((uint)(5));
+			w8.BottomAttach = ((uint)(6));
+			w8.LeftAttach = ((uint)(1));
+			w8.RightAttach = ((uint)(2));
+			w8.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.idEntry = new global::Gtk.Entry();
 			this.idEntry.CanFocus = true;
@@ -99,22 +131,22 @@ namespace ContactsDB
 			this.idEntry.IsEditable = true;
 			this.idEntry.InvisibleChar = '•';
 			this.table4.Add(this.idEntry);
-			global::Gtk.Table.TableChild w6 = ((global::Gtk.Table.TableChild)(this.table4[this.idEntry]));
-			w6.TopAttach = ((uint)(4));
-			w6.BottomAttach = ((uint)(5));
-			w6.LeftAttach = ((uint)(1));
-			w6.RightAttach = ((uint)(2));
-			w6.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w9 = ((global::Gtk.Table.TableChild)(this.table4[this.idEntry]));
+			w9.TopAttach = ((uint)(4));
+			w9.BottomAttach = ((uint)(5));
+			w9.LeftAttach = ((uint)(1));
+			w9.RightAttach = ((uint)(2));
+			w9.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.idLabel = new global::Gtk.Label();
 			this.idLabel.Name = "idLabel";
 			this.idLabel.LabelProp = global::Mono.Unix.Catalog.GetString("Id:");
 			this.table4.Add(this.idLabel);
-			global::Gtk.Table.TableChild w7 = ((global::Gtk.Table.TableChild)(this.table4[this.idLabel]));
-			w7.TopAttach = ((uint)(4));
-			w7.BottomAttach = ((uint)(5));
-			w7.XOptions = ((global::Gtk.AttachOptions)(4));
-			w7.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w10 = ((global::Gtk.Table.TableChild)(this.table4[this.idLabel]));
+			w10.TopAttach = ((uint)(4));
+			w10.BottomAttach = ((uint)(5));
+			w10.XOptions = ((global::Gtk.AttachOptions)(4));
+			w10.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.lastNameEntry = new global::Gtk.Entry();
 			this.lastNameEntry.CanFocus = true;
@@ -122,18 +154,18 @@ namespace ContactsDB
 			this.lastNameEntry.IsEditable = true;
 			this.lastNameEntry.InvisibleChar = '•';
 			this.table4.Add(this.lastNameEntry);
-			global::Gtk.Table.TableChild w8 = ((global::Gtk.Table.TableChild)(this.table4[this.lastNameEntry]));
-			w8.LeftAttach = ((uint)(1));
-			w8.RightAttach = ((uint)(2));
-			w8.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w11 = ((global::Gtk.Table.TableChild)(this.table4[this.lastNameEntry]));
+			w11.LeftAttach = ((uint)(1));
+			w11.RightAttach = ((uint)(2));
+			w11.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.lastNameLabel = new global::Gtk.Label();
 			this.lastNameLabel.Name = "lastNameLabel";
 			this.lastNameLabel.LabelProp = global::Mono.Unix.Catalog.GetString("Last Name:");
 			this.table4.Add(this.lastNameLabel);
-			global::Gtk.Table.TableChild w9 = ((global::Gtk.Table.TableChild)(this.table4[this.lastNameLabel]));
-			w9.XOptions = ((global::Gtk.AttachOptions)(4));
-			w9.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w12 = ((global::Gtk.Table.TableChild)(this.table4[this.lastNameLabel]));
+			w12.XOptions = ((global::Gtk.AttachOptions)(4));
+			w12.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.phoneNoEntry = new global::Gtk.Entry();
 			this.phoneNoEntry.CanFocus = true;
@@ -141,33 +173,33 @@ namespace ContactsDB
 			this.phoneNoEntry.IsEditable = true;
 			this.phoneNoEntry.InvisibleChar = '•';
 			this.table4.Add(this.phoneNoEntry);
-			global::Gtk.Table.TableChild w10 = ((global::Gtk.Table.TableChild)(this.table4[this.phoneNoEntry]));
-			w10.TopAttach = ((uint)(3));
-			w10.BottomAttach = ((uint)(4));
-			w10.LeftAttach = ((uint)(1));
-			w10.RightAttach = ((uint)(2));
-			w10.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w13 = ((global::Gtk.Table.TableChild)(this.table4[this.phoneNoEntry]));
+			w13.TopAttach = ((uint)(3));
+			w13.BottomAttach = ((uint)(4));
+			w13.LeftAttach = ((uint)(1));
+			w13.RightAttach = ((uint)(2));
+			w13.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table4.Gtk.Table+TableChild
 			this.phoneNoLabel = new global::Gtk.Label();
 			this.phoneNoLabel.Name = "phoneNoLabel";
 			this.phoneNoLabel.LabelProp = global::Mono.Unix.Catalog.GetString("Phone No:");
 			this.table4.Add(this.phoneNoLabel);
-			global::Gtk.Table.TableChild w11 = ((global::Gtk.Table.TableChild)(this.table4[this.phoneNoLabel]));
-			w11.TopAttach = ((uint)(3));
-			w11.BottomAttach = ((uint)(4));
-			w11.XOptions = ((global::Gtk.AttachOptions)(4));
-			w11.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w14 = ((global::Gtk.Table.TableChild)(this.table4[this.phoneNoLabel]));
+			w14.TopAttach = ((uint)(3));
+			w14.BottomAttach = ((uint)(4));
+			w14.XOptions = ((global::Gtk.AttachOptions)(4));
+			w14.YOptions = ((global::Gtk.AttachOptions)(4));
 			w1.Add(this.table4);
-			global::Gtk.Box.BoxChild w12 = ((global::Gtk.Box.BoxChild)(w1[this.table4]));
-			w12.Position = 0;
-			w12.Expand = false;
-			w12.Fill = false;
+			global::Gtk.Box.BoxChild w15 = ((global::Gtk.Box.BoxChild)(w1[this.table4]));
+			w15.Position = 0;
+			w15.Expand = false;
+			w15.Fill = false;
 			// Internal child ContactsDB.ContactDBDialog.ActionArea
-			global::Gtk.HButtonBox w13 = this.ActionArea;
-			w13.Name = "dialog1_ActionArea";
-			w13.Spacing = 10;
-			w13.BorderWidth = ((uint)(5));
-			w13.LayoutStyle = ((global::Gtk.ButtonBoxStyle)(4));
+			global::Gtk.HButtonBox w16 = this.ActionArea;
+			w16.Name = "dialog1_ActionArea";
+			w16.Spacing = 10;
+			w16.BorderWidth = ((uint)(5));
+			w16.LayoutStyle = ((global::Gtk.ButtonBoxStyle)(4));
 			// Container child dialog1_ActionArea.Gtk.ButtonBox+ButtonBoxChild
 			this.buttonCancel = new global::Gtk.Button();
 			this.buttonCancel.CanDefault = true;
@@ -177,9 +209,9 @@ namespace ContactsDB
 			this.buttonCancel.UseUnderline = true;
 			this.buttonCancel.Label = "gtk-cancel";
 			this.AddActionWidget(this.buttonCancel, -6);
-			global::Gtk.ButtonBox.ButtonBoxChild w14 = ((global::Gtk.ButtonBox.ButtonBoxChild)(w13[this.buttonCancel]));
-			w14.Expand = false;
-			w14.Fill = false;
+			global::Gtk.ButtonBox.ButtonBoxChild w17 = ((global::Gtk.ButtonBox.ButtonBoxChild)(w16[this.buttonCancel]));
+			w17.Expand = false;
+			w17.Fill = false;
 			// Container child dialog1_ActionArea.Gtk.ButtonBox+ButtonBoxChild
 			this.buttonOk = new global::Gtk.Button();
 			this.buttonOk.CanDefault = true;
@@ -189,16 +221,16 @@ namespace ContactsDB
 			this.buttonOk.UseUnderline = true;
 			this.buttonOk.Label = "gtk-ok";
 			this.AddActionWidget(this.buttonOk, -5);
-			global::Gtk.ButtonBox.ButtonBoxChild w15 = ((global::Gtk.ButtonBox.ButtonBoxChild)(w13[this.buttonOk]));
-			w15.Position = 1;
-			w15.Expand = false;
-			w15.Fill = false;
+			global::Gtk.ButtonBox.ButtonBoxChild w18 = ((global::Gtk.ButtonBox.ButtonBoxChild)(w16[this.buttonOk]));
+			w18.Position = 1;
+			w18.Expand = false;
+			w18.Fill = false;
 			if ((this.Child != null))
 			{
 				this.Child.ShowAll();
 			}
 			this.DefaultWidth = 514;
-			this.DefaultHeight = 224;
+			this.DefaultHeight = 410;
 			this.Show();
 			this.buttonCancel.Clicked += new global::System.EventHandler(this.OnButtonCancelClicked);
 			this.buttonOk.Clicked += new global::System.EventHandler(this.OnButtonOkClicked);

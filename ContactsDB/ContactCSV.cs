@@ -21,7 +21,7 @@ namespace ContactsDB
     {
 
         private  string _contactsFileName;
-        private string _csvHeader = "Id,LastName,FirstName,EMail,PhoneNo";
+        private string _csvHeader = "Id,LastName,FirstName,EMail,PhoneNo,Comment";
 
         public ContactCSV(string fileName)
         {
@@ -40,7 +40,7 @@ namespace ContactsDB
                 foreach (var id in contacts.Keys)
                 {
                     var contact = contacts[id];
-                    writer.WriteLine($"{contact.Id},{contact.FirstName},{contact.LastName},{contact.Email},{contact.PhoneNo}");
+                    writer.WriteLine($"{contact.Id},{contact.FirstName},{contact.LastName},{contact.Email},{contact.PhoneNo},{contact.Comment}");
                 }
             }
         }
@@ -72,6 +72,7 @@ namespace ContactsDB
                     contact.LastName = values[2];
                     contact.Email = values[3];
                     contact.PhoneNo = values[4];
+                    contact.Comment = values[5];
                     _contacts[contact.Id] = contact;
                 }
             }

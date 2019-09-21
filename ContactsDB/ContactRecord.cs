@@ -22,6 +22,7 @@ namespace ContactsDB
         private string _lastName = String.Empty;    // Last Name
         private string _phoneNo = String.Empty;     // Phone Number
         private string _email = String.Empty;       // E-mail address
+        private string _comment = String.Empty;     // Comment
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:ContactsDB.ContactRecord"/> class.
@@ -36,5 +37,6 @@ namespace ContactsDB
         public string PhoneNo { get => _phoneNo; set => _phoneNo = value; }
         public string Email { get => _email; set => _email = value; }
         public string Id { get => _id; set => _id = value; }
+        public string Comment { get => _comment; set => _comment = value; }
     }
 }

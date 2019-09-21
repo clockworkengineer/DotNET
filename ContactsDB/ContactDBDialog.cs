@@ -34,19 +34,21 @@ namespace ContactsDB
 
             if (contact.LastName != String.Empty)
             {
-                lastNameEntry.Sensitive = false;
+                lastNameEntry.IsEditable = false;
             }
-            firstNameEntry.Sensitive = editable;
-            phoneNoEntry.Sensitive = editable;
-            emailEntry.Sensitive = editable;
-            idEntry.Sensitive = false;
+            firstNameEntry.IsEditable = editable;
+            phoneNoEntry.IsEditable = editable;
+            emailEntry.IsEditable = editable;
+            commentsTextView.Sensitive = editable;
+            idEntry.IsEditable = false;
 
             // Copy contact detailt to dialog and display
 
             lastNameEntry.Text = contact.LastName;
             firstNameEntry.Text =  contact.FirstName;
             phoneNoEntry.Text = contact.PhoneNo;
-            emailEntry.Text = contact.Email;          
+            emailEntry.Text = contact.Email;
+            commentsTextView.Buffer.Text = contact.Comment;
             idEntry.Text = contact.Id;
 
             _contact = contact;
@@ -68,6 +70,7 @@ namespace ContactsDB
             _contact.FirstName = firstNameEntry.Text;
             _contact.Email = emailEntry.Text;
             _contact.PhoneNo = phoneNoEntry.Text;
+            _contact.Comment = commentsTextView.Buffer.Text;
 
             // Dispose of dialog resources
 
