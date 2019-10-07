@@ -25,10 +25,10 @@ namespace BitTorrent
             {
                 var length = int.Parse(metaInfoData.Substring(position, end - position));
 
-                //if (end + length > metaInfoData.Length)
-                //{
-                //    length = metaInfoData.Length - end - 1;
-                //}
+                if (end + length > metaInfoData.Length)
+                {
+                    length = metaInfoData.Length - end - 1;
+                }
 
                 position = end + length + 1;
                 return (metaInfoData.Substring(end + 1, length));
