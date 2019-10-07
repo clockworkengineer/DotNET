@@ -58,7 +58,7 @@ namespace BitTorrent
                 {
                     break;
                 }
-      //          Console.WriteLine(key);
+
                 switch(fileDict[position])
                 {
                     case 'i':
@@ -115,11 +115,13 @@ namespace BitTorrent
                 {
                     throw new Exception("Error : missing string list.");
                 }
-                position++;
+                position+=2;
+                List<string> announceList = new List<string>();
                 while (_metaInfoData[position]!='e')
                 {
-                    Console.WriteLine(fromBenString(metaInfoData, ref position));
+                    announceList.Add(fromBenString(metaInfoData, ref position));
                 }
+                _metaInfoDict[field] = string.Join(",", announceList);
             }
         }
 
@@ -139,7 +141,7 @@ namespace BitTorrent
         {
 
             loadString(_metaInfoData, "announce");
-           // loadListString(_metaInfoData,"announce-list");
+            loadListString(_metaInfoData,"announce-list");
             loadString(_metaInfoData, "comment");
             loadString(_metaInfoData, "created by");
             loadInteger(_metaInfoData, "creation date");
