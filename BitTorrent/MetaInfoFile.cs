@@ -114,9 +114,9 @@ namespace BitTorrent
                 List<string> announceList = new List<string>();
                 while (_metaInfoData[position]!='e')
                 {
-                    position++;
+                    if (_metaInfoData[position] == 'l') position++;
                     announceList.Add(decodeBenString(metaInfoData, ref position));
-                    position++;
+                    if (_metaInfoData[position] == 'e') position++;
                 }
                 _metaInfoDict[field] = string.Join(",", announceList);
             }
