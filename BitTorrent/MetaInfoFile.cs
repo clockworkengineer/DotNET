@@ -42,25 +42,30 @@ namespace BitTorrent
 
         }
 
-        private void parseInfo(string metaInfoData)
+        private string encodeBenString(string field)
+        {
+            return($"{field.Length}:{field}");
+        }
+
+        private void parseInfo()
         {
 
             if (_metaInfoDict.ContainsKey("info"))
             {
-                var infoDict = _metaInfoDict["info"];
+                var infoData = _metaInfoDict["info"];
 
-                loadString(infoDict, "name");
-                loadInteger(infoDict, "length");
-                loadString(infoDict, "md5sum");
-                loadInteger(infoDict, "piece length");
-                loadString(infoDict, "piece");
-                loadCollection(infoDict, "files");
+                loadString(infoData, "name");
+                loadInteger(infoData, "length");
+                loadString(infoData, "md5sum");
+                loadInteger(infoData, "piece length");
+                loadString(infoData, "piece");
+                loadCollection(infoData, "files");
             
             }
 
         }
 
-        private void parseFiles(string metaInfoData)
+        private void parseFiles()
         {
 
             if (_metaInfoDict.ContainsKey("files"))
@@ -71,13 +76,18 @@ namespace BitTorrent
 
         }
 
+        private int fieldIndex(string metaInfoData, string field)
+        {
+            var position = metaInfoData.IndexOf(encodeBenString(field));
+            return (position);
+        }
+
         private void loadString(string metaInfoData, string field)
         {
-            var benString = $"{field.Length}:{field}";
-            var position = metaInfoData.IndexOf(benString);
+            var position = fieldIndex(metaInfoData, field);
             if (position != -1)
             {
-                position += benString.Length;
+                position += $"{field.Length}:{field}".Length;
                 _metaInfoDict[field] = decodeBenString(metaInfoData, ref position);
             }
         }
@@ -106,17 +116,17 @@ namespace BitTorrent
             if (position != -1)
             {
                 position += benString.Length;
-                if (_metaInfoData[position] != 'l')
+                if (metaInfoData[position] != 'l')
                 {
                     throw new Exception("Error : missing string list.");
                 }
                 position++;
                 List<string> announceList = new List<string>();
-                while (_metaInfoData[position]!='e')
+                while (metaInfoData[position]!='e')
                 {
-                    if (_metaInfoData[position] == 'l') position++;
+                    if (metaInfoData[position] == 'l') position++;
                     announceList.Add(decodeBenString(metaInfoData, ref position));
-                    if (_metaInfoData[position] == 'e') position++;
+                    if (metaInfoData[position] == 'e') position++;
                 }
                 _metaInfoDict[field] = string.Join(",", announceList);
             }
@@ -134,19 +144,48 @@ namespace BitTorrent
            
         }
 
+        private void splitMetaInfoData(string metaInfoData)
+        {
+     
+            List<ValueTuple<string, int>> sections = new List<ValueTuple<string, int>>();
+
+            sections.Add(("announce", fieldIndex(_metaInfoData, "announce")));
+            sections.Add(("announce-list", fieldIndex(_metaInfoData, "announce-list")));
+            sections.Add(("comment", fieldIndex(_metaInfoData, "comment")));
+            sections.Add(("created by", fieldIndex(_metaInfoData, "created by")));
+            sections.Add(("creation date", fieldIndex(_metaInfoData, "creation date")));
+            sections.Add(("info", fieldIndex(_metaInfoData, "info")));
+            sections.Add(("end", _metaInfoData.Length));
+
+            sections.RemoveAll(tuple => tuple.Item2 == -1);
+            sections.Sort((tuple1, tuple2) => tuple1.Item2.CompareTo(tuple2.Item2));
+
+            for (var section = 0; section < sections.Count-1; section++)
+            {
+                Console.WriteLine($"{sections[section].Item1}, {sections[section].Item2} {sections[section + 1].Item2 - 1}");
+                var length = sections[section+1].Item2 - sections[section].Item2;
+                _metaInfoDict[sections[section].Item1] = _metaInfoData.Substring(sections[section].Item2,length);
+            }
+
+
+
+        }
+
         private void loadTorrentDictionary()
         {
 
-            loadString(_metaInfoData, "announce");
-            loadListString(_metaInfoData,"announce-list");
-            loadString(_metaInfoData, "comment");
-            loadString(_metaInfoData, "created by");
-            loadInteger(_metaInfoData, "creation date");
+            splitMetaInfoData(_metaInfoData);
 
-            loadCollection(_metaInfoData, "info");
+            loadString(_metaInfoDict["announce"], "announce");
+            loadListString(_metaInfoDict["announce-list"], "announce-list");
+            loadString(_metaInfoDict["comment"], "comment");
+            loadString(_metaInfoDict["created by"], "created by");
+            loadInteger(_metaInfoDict["creation date"], "creation date");
 
-            parseInfo(_metaInfoData);
-            parseFiles(_metaInfoData);
+            loadCollection(_metaInfoDict["info"], "info");
+
+            parseInfo();
+            parseFiles();
 
             _metaInfoDict.Remove("info");
             _metaInfoDict.Remove("files");
