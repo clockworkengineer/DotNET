@@ -8,12 +8,11 @@ namespace BitTorrent
     {
         private string _fileName = string.Empty;
         private Dictionary<string, string> _metaInfoDict;
-        private Dictionary<string, string> _infoDict;
         private string _metaInfoData;
 
         public string FileName { get => _fileName; set => _fileName = value; }
 
-        private string fromBenString(string metaInfoData, ref int position)
+        private string decodeBenString(string metaInfoData, ref int position)
         {
             int end = position;
             while(metaInfoData[end]!=':')
@@ -31,7 +30,9 @@ namespace BitTorrent
                 }
 
                 position = end + length + 1;
+
                 return (metaInfoData.Substring(end + 1, length));
+
             }
             else
             {
@@ -43,42 +44,31 @@ namespace BitTorrent
 
         private void parseInfo(string metaInfoData)
         {
-            var position = 0;
-            var end = 0;
-            var fileDict = _metaInfoDict["info"];
-            if (fileDict[position] !='d')
-            {
-                throw new Exception("Error : Missing Info dictionary.");
-            }
-            position++;
-            while(position != fileDict.Length)
-            {
-                var key = fromBenString(fileDict, ref position);
-                if (key=="")
-                {
-                    break;
-                }
 
-                switch(fileDict[position])
-                {
-                    case 'i':
-                        end = position;
-                        while (fileDict[end]!='e')
-                        {
-                            end++;
-                        }
-                        _infoDict[key] = fileDict.Substring(position+1, end-position-1);
-                        position = end + 1;
-                        break;
-                    case 'd':
-                    case 'l':
-                        throw new Exception("Error : Unkown Info format.");
-                    default:
-                        _infoDict[key] = fromBenString(fileDict, ref position);
-                        break;
+            if (_metaInfoDict.ContainsKey("info"))
+            {
+                var infoDict = _metaInfoDict["info"];
 
-                }
+                loadString(infoDict, "name");
+                loadInteger(infoDict, "length");
+                loadString(infoDict, "md5sum");
+                loadInteger(infoDict, "piece length");
+                loadString(infoDict, "piece");
+                loadCollection(infoDict, "files");
+            
             }
+
+        }
+
+        private void parseFiles(string metaInfoData)
+        {
+
+            if (_metaInfoDict.ContainsKey("files"))
+            {
+                var infoFiles = _metaInfoDict["files"];
+
+            }
+
         }
 
         private void loadString(string metaInfoData, string field)
@@ -88,7 +78,7 @@ namespace BitTorrent
             if (position != -1)
             {
                 position += benString.Length;
-                _metaInfoDict[field] = fromBenString(metaInfoData, ref position);
+                _metaInfoDict[field] = decodeBenString(metaInfoData, ref position);
             }
         }
 
@@ -98,8 +88,13 @@ namespace BitTorrent
             var position = metaInfoData.IndexOf(benString);
             if (position != -1)
             {
-                position += benString.Length+1;
-                _metaInfoDict[field] = metaInfoData.Substring(position, metaInfoData.IndexOf('e'));
+                position += benString.Length + 1;
+                int end = position;
+                while (metaInfoData[end] != 'e')
+                {
+                    end++;
+                }
+                _metaInfoDict[field] = metaInfoData.Substring(position, end-position);
 
             }
         }
@@ -115,17 +110,19 @@ namespace BitTorrent
                 {
                     throw new Exception("Error : missing string list.");
                 }
-                position+=2;
+                position++;
                 List<string> announceList = new List<string>();
                 while (_metaInfoData[position]!='e')
                 {
-                    announceList.Add(fromBenString(metaInfoData, ref position));
+                    position++;
+                    announceList.Add(decodeBenString(metaInfoData, ref position));
+                    position++;
                 }
                 _metaInfoDict[field] = string.Join(",", announceList);
             }
         }
 
-        private void loadDictionary(string metaInfoData, string field)
+        private void loadCollection(string metaInfoData, string field)
         {
             var benString = $"{field.Length}:{field}";
             var position = metaInfoData.IndexOf(benString);
@@ -134,7 +131,7 @@ namespace BitTorrent
                 position += benString.Length;
                 _metaInfoDict[field] = metaInfoData.Substring(position, metaInfoData.LastIndexOf('e') - position);
             }
-            parseInfo(_metaInfoData);
+           
         }
 
         private void loadTorrentDictionary()
@@ -145,21 +142,20 @@ namespace BitTorrent
             loadString(_metaInfoData, "comment");
             loadString(_metaInfoData, "created by");
             loadInteger(_metaInfoData, "creation date");
-            loadDictionary(_metaInfoData, "info");
+
+            loadCollection(_metaInfoData, "info");
+
+            parseInfo(_metaInfoData);
+            parseFiles(_metaInfoData);
+
+            _metaInfoDict.Remove("info");
+            _metaInfoDict.Remove("files");
 
             foreach (var key in _metaInfoDict.Keys)
             {
-                if (key != "info")
-                {
-                    Console.WriteLine($"{key}={_metaInfoDict[key]}");
-                }
-            }
-
-            foreach (var key in _infoDict.Keys)
-            {
                 if (key != "pieces")
                 {
-                    Console.WriteLine($"{key}={_infoDict[key]}");
+                    Console.WriteLine($"{key}={_metaInfoDict[key]}");
                 }
             }
 
@@ -169,7 +165,6 @@ namespace BitTorrent
         {
             FileName = fileName;
             _metaInfoDict = new Dictionary<string, string>();
-            _infoDict = new Dictionary<string, string>();
         }
 
         public void load()
