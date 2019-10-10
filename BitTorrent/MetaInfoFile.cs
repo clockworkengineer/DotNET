@@ -9,36 +9,25 @@ namespace BitTorrent
         private string _fileName = string.Empty;
         private Dictionary<string, string> _metaInfoDict;
         private string _metaInfoData;
+        private  string _kPathSeparator = $"{Path.DirectorySeparatorChar}";
 
         public string FileName { get => _fileName; set => _fileName = value; }
 
         private string decodeBenString(string metaInfoData, ref int position)
         {
-            int end = position;
-            while(metaInfoData[end]!=':')
+
+            int end = metaInfoData.IndexOf(':', position);
+            int length = int.Parse(metaInfoData.Substring(position, end - position));
+
+            if (end + length > metaInfoData.Length)
             {
-                end++;
+                length = metaInfoData.Length - end - 1;
             }
 
-            if (end > position)
-            {
-                var length = int.Parse(metaInfoData.Substring(position, end - position));
+            position = end + length + 1;
 
-                if (end + length > metaInfoData.Length)
-                {
-                    length = metaInfoData.Length - end - 1;
-                }
+            return (metaInfoData.Substring(end + 1, length));
 
-                position = end + length + 1;
-
-                return (metaInfoData.Substring(end + 1, length));
-
-            }
-            else
-            {
-                position++;
-                return ("");
-            }
 
         }
 
@@ -53,7 +42,7 @@ namespace BitTorrent
             return (position);
         }
 
-        private void loadString(string field)
+        private void parseString(string field)
         {
             if (_metaInfoDict.ContainsKey(field))
             {
@@ -67,7 +56,7 @@ namespace BitTorrent
             }
         }
 
-        private void loadInteger(string field)
+        private void parseInteger(string field)
         {
             if (_metaInfoDict.ContainsKey(field))
             {
@@ -77,18 +66,14 @@ namespace BitTorrent
                 if (position != -1)
                 {
                     position += benString.Length + 1;
-                    int end = position;
-                    while (metaInfoData[end] != 'e')
-                    {
-                        end++;
-                    }
+                    int end = metaInfoData.IndexOf('e', position);
                     _metaInfoDict[field] = metaInfoData.Substring(position, end - position);
 
                 }
             }
         }
 
-        private void loadListString(string field)
+        private void parseStringList(string field)
         {
             if (_metaInfoDict.ContainsKey(field))
             {
@@ -97,12 +82,7 @@ namespace BitTorrent
                 var position = metaInfoData.IndexOf(benString);
                 if (position != -1)
                 {
-                    position += benString.Length;
-                    if (metaInfoData[position] != 'l')
-                    {
-                        throw new Exception("Error : missing string list.");
-                    }
-                    position++;
+                    position += benString.Length+1;
                     List<string> announceList = new List<string>();
                     while (metaInfoData[position] != 'e')
                     {
@@ -115,7 +95,7 @@ namespace BitTorrent
             }
         }
 
-        private void loadFiles(string field)
+        private void parseFiles(string field)
         {
 
             if (_metaInfoDict.ContainsKey(field))
@@ -137,22 +117,13 @@ namespace BitTorrent
                         if (position != -1)
                         {
                             position += ":length".Length + 1;
-                            int end = position;
-                            while (file[end] != 'e')
-                            {
-                                end++;
-                            }
+                            int end = file.IndexOf('e', position);
                             lengths.Add(file.Substring(position, end - position));
                         }
                         position = file.IndexOf("4:path", StringComparison.Ordinal);
                         if (position != -1)
                         {
-                            position += "4:path".Length;
-                            if (file[position] != 'l')
-                            {
-                                throw new Exception("Error : missing string list.");
-                            }
-                            position++;
+                            position += "4:path".Length + 1;
                             List<string> announceList = new List<string>();
                             while (position!=file.Length)
                             {
@@ -160,12 +131,12 @@ namespace BitTorrent
                                 announceList.Add(decodeBenString(file, ref position));
 
                             }
-                            fileNames.Add(string.Join(",", announceList));
+                            fileNames.Add(string.Join(_kPathSeparator, announceList));
                         }
                     }
                     for (var fileNo=0; fileNo < files.Length; fileNo++)
                     {
-                        _metaInfoDict[fileNo.ToString()] = fileNames[fileNo] + " " + lengths[fileNo];
+                        _metaInfoDict[fileNo.ToString()] = _kPathSeparator + fileNames[fileNo] + ", " + lengths[fileNo];
                     }
 
                 }
@@ -215,18 +186,18 @@ namespace BitTorrent
 
             splitMetaInfoData();
 
-            loadString("announce");
-            loadListString("announce-list");
-            loadString("comment");
-            loadString("created by");
-            loadInteger("creation date");
-            loadString("name");
-            loadInteger("piece length");
-            loadString("pieces");
-            loadString("md5sum");
-            loadInteger("length");
+            parseString("announce");
+            parseStringList("announce-list");
+            parseString("comment");
+            parseString("created by");
+            parseInteger("creation date");
+            parseString("name");
+            parseInteger("piece length");
+            parseString("pieces");
+            parseString("md5sum");
+            parseInteger("length");
 
-            loadFiles("files");
+            parseFiles("files");
 
             _metaInfoDict.Remove("files");
 
@@ -253,10 +224,6 @@ namespace BitTorrent
 
         public void parse()
         {
-            if ((_metaInfoData[0] != 'd') || (_metaInfoData[_metaInfoData.Length-1]!='e'))
-            {
-                throw new Exception("Error : Invalid torrent file.");
-            }
 
             loadTorrentDictionary();
 
