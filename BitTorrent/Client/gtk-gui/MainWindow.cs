@@ -33,6 +33,10 @@ public partial class MainWindow
 
 	private global::Gtk.Entry trackersEntry;
 
+	private global::Gtk.ScrolledWindow GtkScrolledWindow2;
+
+	private global::Gtk.TreeView filesListView;
+
 	protected virtual void Build()
 	{
 		global::Stetic.Gui.Initialize(this);
@@ -42,7 +46,6 @@ public partial class MainWindow
 		this.WindowPosition = ((global::Gtk.WindowPosition)(4));
 		// Container child MainWindow.Gtk.Container+ContainerChild
 		this.vbox1 = new global::Gtk.VBox();
-		this.vbox1.Name = "vbox1";
 		this.vbox1.Spacing = 6;
 		// Container child vbox1.Gtk.Box+BoxChild
 		this.filechooserwidget1 = new global::Gtk.FileChooserWidget(((global::Gtk.FileChooserAction)(0)));
@@ -51,7 +54,7 @@ public partial class MainWindow
 		global::Gtk.Box.BoxChild w1 = ((global::Gtk.Box.BoxChild)(this.vbox1[this.filechooserwidget1]));
 		w1.Position = 0;
 		// Container child vbox1.Gtk.Box+BoxChild
-		this.table1 = new global::Gtk.Table(((uint)(7)), ((uint)(2)), true);
+		this.table1 = new global::Gtk.Table(((uint)(6)), ((uint)(2)), false);
 		this.table1.Name = "table1";
 		this.table1.RowSpacing = ((uint)(6));
 		this.table1.ColumnSpacing = ((uint)(6));
@@ -192,13 +195,27 @@ public partial class MainWindow
 		this.vbox1.Add(this.table1);
 		global::Gtk.Box.BoxChild w14 = ((global::Gtk.Box.BoxChild)(this.vbox1[this.table1]));
 		w14.Position = 1;
+		w14.Expand = false;
+		w14.Fill = false;
+		// Container child vbox1.Gtk.Box+BoxChild
+		this.GtkScrolledWindow2 = new global::Gtk.ScrolledWindow();
+		this.GtkScrolledWindow2.Name = "GtkScrolledWindow2";
+		this.GtkScrolledWindow2.ShadowType = ((global::Gtk.ShadowType)(1));
+		// Container child GtkScrolledWindow2.Gtk.Container+ContainerChild
+		this.filesListView = new global::Gtk.TreeView();
+		this.filesListView.CanFocus = true;
+		this.filesListView.Name = "filesListView";
+		this.GtkScrolledWindow2.Add(this.filesListView);
+		this.vbox1.Add(this.GtkScrolledWindow2);
+		global::Gtk.Box.BoxChild w16 = ((global::Gtk.Box.BoxChild)(this.vbox1[this.GtkScrolledWindow2]));
+		w16.Position = 2;
 		this.Add(this.vbox1);
 		if ((this.Child != null))
 		{
 			this.Child.ShowAll();
 		}
-		this.DefaultWidth = 1029;
-		this.DefaultHeight = 595;
+		this.DefaultWidth = 1089;
+		this.DefaultHeight = 537;
 		this.Show();
 		this.DeleteEvent += new global::Gtk.DeleteEventHandler(this.OnDeleteEvent);
 		this.filechooserwidget1.FileActivated += new global::System.EventHandler(this.OnFilechooserwidget1FileActivated);

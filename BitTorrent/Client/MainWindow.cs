@@ -4,19 +4,39 @@ using BitTorrent;
 
 public partial class MainWindow : Gtk.Window
 {
-    MetaInfoFile torrentFile;
+    private MetaInfoFile _torrentFile;
+    private ListStore _filesListViewStore;
+
+    private void AddListViewColumn(string title, int cellNo)
+    {
+        TreeViewColumn column = new TreeViewColumn();
+        column.Title = title;
+        CellRendererText cell = new CellRendererText();
+        column.PackStart(cell, true);
+        filesListView.AppendColumn(column);
+        column.AddAttribute(cell, "text", cellNo);
+    }
 
     private void SetText(Entry entry, string field)
     {
-        if (torrentFile.MetaInfoDict.ContainsKey(field))
+        if (_torrentFile.MetaInfoDict.ContainsKey(field))
         {
-            entry.Text = torrentFile.MetaInfoDict[field];
+            entry.IsEditable = false;
+            entry.Text = _torrentFile.MetaInfoDict[field];
         }
     }
 
     public MainWindow() : base(Gtk.WindowType.Toplevel)
     {
         Build();
+
+        AddListViewColumn("No", 0);
+        AddListViewColumn("File Name", 1);
+        AddListViewColumn("Length", 2);
+
+        _filesListViewStore = new ListStore(typeof(string), typeof(string), typeof(string));
+        filesListView.Model = _filesListViewStore;
+
     }
 
     protected void OnDeleteEvent(object sender, DeleteEventArgs a)
@@ -29,15 +49,14 @@ public partial class MainWindow : Gtk.Window
     {
         FileChooser fileChooser = (Gtk.FileChooser)sender;
      
-
         if (fileChooser.Filename.LastIndexOf(".torrent", System.StringComparison.Ordinal) + 8 == fileChooser.Filename.Length)
         {
             Console.WriteLine(fileChooser.Filename);
 
-            torrentFile = new MetaInfoFile(fileChooser.Filename);
+            _torrentFile = new MetaInfoFile(fileChooser.Filename);
 
-            torrentFile.load();
-            torrentFile.parse();
+            _torrentFile.load();
+            _torrentFile.parse();
 
             SetText(trackerEntry, "announce");
             SetText(trackersEntry, "announce-list");
@@ -45,6 +64,26 @@ public partial class MainWindow : Gtk.Window
             SetText(createdByEntry, "created by");
             SetText(creationDateEntry, "creation date");
             SetText(pieceLengthEntry, "piece length");
+
+            int fileNo = 0;
+
+            _filesListViewStore.Clear();
+
+
+            if (!_torrentFile.MetaInfoDict.ContainsKey("0"))
+            {
+                _filesListViewStore.AppendValues(fileNo.ToString()+1, _torrentFile.MetaInfoDict["name"], _torrentFile.MetaInfoDict["length"]);
+            }
+            else
+            {
+              
+                while (_torrentFile.MetaInfoDict.ContainsKey(fileNo.ToString()))
+                {
+                    string[] rowDetails = _torrentFile.MetaInfoDict[fileNo.ToString()].Split(',');
+                    _filesListViewStore.AppendValues((fileNo+1).ToString(), _torrentFile.MetaInfoDict["name"]+rowDetails[0], rowDetails[1]);
+                    fileNo++;
+                }
+            }
 
         }
 
