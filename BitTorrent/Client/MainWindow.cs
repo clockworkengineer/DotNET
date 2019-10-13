@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Gtk;
 using BitTorrent;
 
@@ -22,7 +23,7 @@ public partial class MainWindow : Gtk.Window
         if (_torrentFile.MetaInfoDict.ContainsKey(field))
         {
             entry.IsEditable = false;
-            entry.Text = _torrentFile.MetaInfoDict[field];
+            entry.Text = Encoding.ASCII.GetString(_torrentFile.MetaInfoDict[field]);
         }
     }
 
@@ -79,7 +80,7 @@ public partial class MainWindow : Gtk.Window
               
                 while (_torrentFile.MetaInfoDict.ContainsKey(fileNo.ToString()))
                 {
-                    string[] rowDetails = _torrentFile.MetaInfoDict[fileNo.ToString()].Split(',');
+                    string[] rowDetails = Encoding.ASCII.GetString(_torrentFile.MetaInfoDict[fileNo.ToString()]).Split(',');
                     _filesListViewStore.AppendValues((fileNo+1).ToString(), _torrentFile.MetaInfoDict["name"]+rowDetails[0], rowDetails[1]);
                     fileNo++;
                 }

@@ -42,10 +42,11 @@ public partial class MainWindow
 		global::Stetic.Gui.Initialize(this);
 		// Widget MainWindow
 		this.Name = "MainWindow";
-		this.Title = global::Mono.Unix.Catalog.GetString("MainWindow");
+		this.Title = global::Mono.Unix.Catalog.GetString("BitTorrent Client");
 		this.WindowPosition = ((global::Gtk.WindowPosition)(4));
 		// Container child MainWindow.Gtk.Container+ContainerChild
 		this.vbox1 = new global::Gtk.VBox();
+		this.vbox1.Name = "vbox1";
 		this.vbox1.Spacing = 6;
 		// Container child vbox1.Gtk.Box+BoxChild
 		this.filechooserwidget1 = new global::Gtk.FileChooserWidget(((global::Gtk.FileChooserAction)(0)));
@@ -205,6 +206,7 @@ public partial class MainWindow
 		this.filesListView = new global::Gtk.TreeView();
 		this.filesListView.CanFocus = true;
 		this.filesListView.Name = "filesListView";
+		this.filesListView.EnableSearch = false;
 		this.GtkScrolledWindow2.Add(this.filesListView);
 		this.vbox1.Add(this.GtkScrolledWindow2);
 		global::Gtk.Box.BoxChild w16 = ((global::Gtk.Box.BoxChild)(this.vbox1[this.GtkScrolledWindow2]));
