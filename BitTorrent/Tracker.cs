@@ -25,7 +25,7 @@ namespace BitTorrent
             //buffer += metaFile.MetaInfoDict["piece length"];
             //buffer += metaFile.MetaInfoDict["pieces"];
 
-            //string tmp = metaFile.MetaInfoDict["pieces"];
+            var tmp = metaFile.MetaInfoDict["pieces"];
 
             //byte[] data = new byte[buffer.Length];
 

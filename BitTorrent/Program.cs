@@ -19,18 +19,18 @@ namespace BitTorrent
 
                 file1.load();
                 file1.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file2.load();
-                //file2.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file3.load();
-                //file3.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file4.load();
-                //file4.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file5.load();
-                //file5.parse();
+                Console.WriteLine(new string('*', 80));
+                file2.load();
+                file2.parse();
+                Console.WriteLine(new string('*', 80));
+                file3.load();
+                file3.parse();
+                Console.WriteLine(new string('*', 80));
+                file4.load();
+                file4.parse();
+                Console.WriteLine(new string('*', 80));
+                file5.load();
+                file5.parse();
 
                 Tracker tracker1 = new Tracker("http://torrent.resonatingmedia.com:6969/announce");
 

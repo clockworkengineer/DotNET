@@ -182,42 +182,43 @@ namespace BitTorrent
             for (int section = 0; section < sections.Count-1; section++)
             {
                 int length = sections[section+1].Item2 - sections[section].Item2;
-                MetaInfoDict[sections[section].Item1] = Encoding.ASCII.GetBytes(_metaInfoData.Substring(sections[section].Item2,length));
-            }
-            byte[] tmp = _metaInfoDict["pieces"];
+                byte[] buffer = new byte[length];
+                Buffer.BlockCopy(_metaInfoDataRaw, sections[section].Item2, buffer, 0, length);
+                MetaInfoDict[sections[section].Item1] = buffer;
+            } 
 
-            sections.Clear();
-            sections.Add(("info", fieldIndex(_metaInfoData, "info")));
-            sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
-            sections.Add(("end", _metaInfoData.Length));
+            //sections.Clear();
+            //sections.Add(("info", fieldIndex(_metaInfoData, "info")));
+            //sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
+            //sections.Add(("end", _metaInfoData.Length));
 
-            for (int section = 0; section < sections.Count - 1; section++)
-            {
-                int length = sections[section + 1].Item2 - sections[section].Item2;
-                MetaInfoDict[sections[section].Item1] = Encoding.ASCII.GetBytes(_metaInfoData.Substring(sections[section].Item2, length));
-            }
+            //for (int section = 0; section < sections.Count - 1; section++)
+            //{
+            //    int length = sections[section + 1].Item2 - sections[section].Item2;
+            //    MetaInfoDict[sections[section].Item1] = Encoding.ASCII.GetBytes(_metaInfoData.Substring(sections[section].Item2, length));
+            //}
 
-            byte[] data = new byte[sections[1].Item2- sections[0].Item2-6];
+            //byte[] data = new byte[sections[1].Item2- sections[0].Item2-6];
 
-            int ii = 0;
-            for (var i = sections[0].Item2+6; i < sections[1].Item2; i++)
-            {
-                data[ii] = (byte)_metaInfoDataRaw[i];
-                ii++;
-            }
+            //int ii = 0;
+            //for (var i = sections[0].Item2+6; i < sections[1].Item2; i++)
+            //{
+            //    data[ii] = (byte)_metaInfoDataRaw[i];
+            //    ii++;
+            //}
 
 
-            string tmp1= Encoding.ASCII.GetString(data);
-            byte[] result;
+            //string tmp1= Encoding.ASCII.GetString(data);
+            //byte[] result;
 
-            SHA1 sha = new SHA1CryptoServiceProvider();
+            //SHA1 sha = new SHA1CryptoServiceProvider();
 
-            result = sha.ComputeHash(data);
+            //result = sha.ComputeHash(data);
 
-            StringBuilder hex = new StringBuilder(result.Length);
-            foreach (byte b in result)
-                hex.AppendFormat("{0:x2}", b);
-            Console.WriteLine(hex);
+            //StringBuilder hex = new StringBuilder(result.Length);
+            //foreach (byte b in result)
+            //    hex.AppendFormat("{0:x2}", b);
+            //Console.WriteLine(hex);
 
         }
 
