@@ -1,7 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
-using System.Security.Cryptography;
+using System.IO;
 using System.Text;
 
 namespace BitTorrent
@@ -35,10 +34,88 @@ namespace BitTorrent
 
         }
 
+        private byte[] decodeBenString(byte[] metaInfoData, ref int position)
+        {
+            int end = position;
+
+            while (metaInfoData[end] != ':')
+            {
+                end++;
+            }
+
+            byte[] lengthBytes = new byte[end - position];
+            Buffer.BlockCopy(metaInfoData, position, lengthBytes, 0, end - position);
+
+            int length = int.Parse(Encoding.ASCII.GetString(lengthBytes));
+
+            if (end + length > metaInfoData.Length)
+            {
+                length = metaInfoData.Length - end - 1; 
+            }
+
+            position = end + length + 1;
+
+            byte[] retBuffer = new byte[length];
+            Buffer.BlockCopy(metaInfoData, end + 1, retBuffer, 0, length);
+
+            return (retBuffer);
+
+        }
+
         private string encodeBenString(string field)
         {
             return($"{field.Length}:{field}");
         }
+
+        private int fieldIndex(byte[] searchIn, string field, int start = 0)
+        {
+            int found = -1;
+            bool matched = false;
+            byte[] searchBytes = Encoding.ASCII.GetBytes(encodeBenString(field));
+
+            //only look at this if we have a populated search array and search bytes with a sensible start
+            if (searchIn.Length > 0 && searchBytes.Length > 0 && start <= (searchIn.Length - searchBytes.Length) && searchIn.Length >= searchBytes.Length)
+            {
+                //iterate through the array to be searched
+                for (int i = start; i <= searchIn.Length - searchBytes.Length; i++)
+                {
+                    //if the start bytes match we will start comparing all other bytes
+                    if (searchIn[i] == searchBytes[0])
+                    {
+                        if (searchIn.Length > 1)
+                        {
+                            //multiple bytes to be searched we have to compare byte by byte
+                            matched = true;
+                            for (int y = 1; y <= searchBytes.Length - 1; y++)
+                            {
+                                if (searchIn[i + y] != searchBytes[y])
+                                {
+                                    matched = false;
+                                    break;
+                                }
+                            }
+                            //everything matched up
+                            if (matched)
+                            {
+                                found = i;
+                                break;
+                            }
+
+                        }
+                        else
+                        {
+                            //search byte is only one bit nothing else to do
+                            found = i;
+                            break; //stop the loop
+                        }
+
+                    }
+                }
+
+            }
+            return found;
+        }
+
 
         private int fieldIndex(string metaInfoData,string field)
         {
@@ -50,12 +127,12 @@ namespace BitTorrent
         {
             if (MetaInfoDict.ContainsKey(field))
             {
-                string metaInfoData = Encoding.ASCII.GetString(MetaInfoDict[field]);
+                byte[] metaInfoData = MetaInfoDict[field];
                 int position = fieldIndex(metaInfoData, field);
                 if (position != -1)
                 {
                     position += encodeBenString(field).Length;
-                    MetaInfoDict[field] = Encoding.ASCII.GetBytes(decodeBenString(metaInfoData, ref position));
+                    MetaInfoDict[field] = decodeBenString(metaInfoData, ref position);
                 }
             }
         }
@@ -64,14 +141,19 @@ namespace BitTorrent
         {
             if (MetaInfoDict.ContainsKey(field))
             {
-                string metaInfoData = Encoding.ASCII.GetString(MetaInfoDict[field]);
-                string benString = encodeBenString(field);
-                int position = metaInfoData.IndexOf(benString, StringComparison.Ordinal);
+                byte[] metaInfoData = MetaInfoDict[field];
+                int position = fieldIndex(metaInfoData, field);
                 if (position != -1)
                 {
-                    position += benString.Length + 1;
-                    int end = metaInfoData.IndexOf('e', position);
-                    MetaInfoDict[field] = Encoding.ASCII.GetBytes(metaInfoData.Substring(position, end - position));
+                    position += encodeBenString(field).Length + 1;
+                    int end = position;
+                    while(metaInfoData[end]!='e')
+                    {
+                        end++;
+                    }
+                    byte[] buffer = new byte[end - position];
+                    Buffer.BlockCopy(metaInfoData, position, buffer, 0, end - position);
+                    MetaInfoDict[field] = buffer;
 
                 }
             }
@@ -81,17 +163,16 @@ namespace BitTorrent
         {
             if (MetaInfoDict.ContainsKey(field))
             {
-                string metaInfoData = Encoding.ASCII.GetString(MetaInfoDict[field]);
-                string benString = encodeBenString(field);
-                int position = metaInfoData.IndexOf(benString, StringComparison.Ordinal);
+                byte[] metaInfoData = MetaInfoDict[field];
+                int position = fieldIndex(metaInfoData, field);
                 if (position != -1)
                 {
-                    position += benString.Length+1;
+                    position += encodeBenString(field).Length+1;
                     List<string> announceList = new List<string>();
                     while (metaInfoData[position] != 'e')
                     {
                         if (metaInfoData[position] == 'l') position++;
-                        announceList.Add(decodeBenString(metaInfoData, ref position));
+                        announceList.Add(Encoding.ASCII.GetString(decodeBenString(metaInfoData, ref position)));
                         if (metaInfoData[position] == 'e') position++;
                     }
                     MetaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",", announceList));
@@ -105,9 +186,8 @@ namespace BitTorrent
             if (MetaInfoDict.ContainsKey(field))
             {
                 string metaInfoData = Encoding.ASCII.GetString(MetaInfoDict[field]);
-                string benString = encodeBenString(field);
-                int position = metaInfoData.IndexOf(benString, StringComparison.Ordinal);
 
+                int position = fieldIndex(metaInfoData, field);
                 if (position != -1)
                 {
                     string[] sep = { "eed6" };
@@ -116,7 +196,7 @@ namespace BitTorrent
                     int fileNo = 0;
                     string[] files = Encoding.ASCII.GetString(MetaInfoDict[field]).Split(sep, StringSplitOptions.RemoveEmptyEntries);
 
-                    position += benString.Length;
+                    position += encodeBenString(field).Length;
                     MetaInfoDict[field] = Encoding.ASCII.GetBytes((metaInfoData.Substring(position, metaInfoData.LastIndexOf('e') - position)));
 
                     foreach (var file in files)
@@ -155,26 +235,26 @@ namespace BitTorrent
      
             List<ValueTuple<string, int>> sections = new List<ValueTuple<string, int>>();
 
-            sections.Add(("announce", fieldIndex(_metaInfoData, "announce")));
-            sections.Add(("announce-list", fieldIndex(_metaInfoData, "announce-list")));
-            sections.Add(("comment", fieldIndex(_metaInfoData, "comment")));
-            sections.Add(("created by", fieldIndex(_metaInfoData, "created by")));
-            sections.Add(("creation date", fieldIndex(_metaInfoData, "creation date")));
-            sections.Add(("name", fieldIndex(_metaInfoData, "name")));
-            sections.Add(("piece length", fieldIndex(_metaInfoData, "piece length")));
-            sections.Add(("pieces", fieldIndex(_metaInfoData, "pieces")));
-            sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
+            sections.Add(("announce", fieldIndex(_metaInfoDataRaw, "announce")));
+            sections.Add(("announce-list", fieldIndex(_metaInfoDataRaw, "announce-list")));
+            sections.Add(("comment", fieldIndex(_metaInfoDataRaw, "comment")));
+            sections.Add(("created by", fieldIndex(_metaInfoDataRaw, "created by")));
+            sections.Add(("creation date", fieldIndex(_metaInfoDataRaw, "creation date")));
+            sections.Add(("name", fieldIndex(_metaInfoDataRaw, "name")));
+            sections.Add(("piece length", fieldIndex(_metaInfoDataRaw, "piece length")));
+            sections.Add(("pieces", fieldIndex(_metaInfoDataRaw, "pieces")));
+            sections.Add(("url-list", fieldIndex(_metaInfoDataRaw, "url-list")));
 
             if (fieldIndex(_metaInfoData, "files") == -1) 
             {
-                sections.Add(("length", fieldIndex(_metaInfoData, "length")));
-                sections.Add(("md5sum", fieldIndex(_metaInfoData, "md5sum")));
+                sections.Add(("length", fieldIndex(_metaInfoDataRaw, "length")));
+                sections.Add(("md5sum", fieldIndex(_metaInfoDataRaw, "md5sum")));
             }
             else
             {
-                sections.Add(("files", fieldIndex(_metaInfoData, "files")));
+                sections.Add(("files", fieldIndex(_metaInfoDataRaw, "files")));
             }
-            sections.Add(("end", _metaInfoData.Length));
+            sections.Add(("end", _metaInfoDataRaw.Length));
 
             sections.RemoveAll(tuple => tuple.Item2 == -1);
             sections.Sort((tuple1, tuple2) => tuple1.Item2.CompareTo(tuple2.Item2));
