@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Security.Cryptography;
 
 namespace BitTorrent
 {
@@ -9,8 +10,7 @@ namespace BitTorrent
     {
         private string _torrentFileName = string.Empty;
         private Dictionary<string, byte[]> _metaInfoDict;
-        private byte[] _metaInfoDataRaw;
-        private string _metaInfoData;
+        private byte[] _metaInfoData;
         private  string _kPathSeparator = $"{Path.DirectorySeparatorChar}";
 
         public string TorrentFileName { get => _torrentFileName; set => _torrentFileName = value; }
@@ -117,11 +117,11 @@ namespace BitTorrent
         }
 
 
-        private int fieldIndex(string metaInfoData,string field)
-        {
-            int position = metaInfoData.IndexOf(encodeBenString(field), StringComparison.Ordinal);
-            return position;
-        }
+        //private int fieldIndex(string metaInfoData,string field)
+        //{
+        //    int position = metaInfoData.IndexOf(encodeBenString(field), StringComparison.Ordinal);
+        //    return position;
+        //}
 
         private void parseString(string field)
         {
@@ -185,7 +185,7 @@ namespace BitTorrent
 
             if (MetaInfoDict.ContainsKey(field))
             {
-                string metaInfoData = Encoding.ASCII.GetString(MetaInfoDict[field]);
+                byte[] metaInfoData = MetaInfoDict[field];
 
                 int position = fieldIndex(metaInfoData, field);
                 if (position != -1)
@@ -197,7 +197,14 @@ namespace BitTorrent
                     string[] files = Encoding.ASCII.GetString(MetaInfoDict[field]).Split(sep, StringSplitOptions.RemoveEmptyEntries);
 
                     position += encodeBenString(field).Length;
-                    MetaInfoDict[field] = Encoding.ASCII.GetBytes((metaInfoData.Substring(position, metaInfoData.LastIndexOf('e') - position)));
+                    int end = metaInfoData.Length-1;
+                    while (metaInfoData[end]!='e')
+                    {
+                        end--;
+                    }
+                    byte[] buffer = new byte[end - position];
+                    Buffer.BlockCopy(metaInfoData, position, buffer, 0, end - position);
+                    MetaInfoDict[field] = buffer;
 
                     foreach (var file in files)
                     {
@@ -205,7 +212,7 @@ namespace BitTorrent
                         if (position != -1)
                         {
                             position += ":length".Length + 1;
-                            int end = file.IndexOf('e', position);
+                            end = file.IndexOf('e', position);
                             length = file.Substring(position, end - position);
                         }
                         position = file.IndexOf("4:path", StringComparison.Ordinal);
@@ -235,26 +242,28 @@ namespace BitTorrent
      
             List<ValueTuple<string, int>> sections = new List<ValueTuple<string, int>>();
 
-            sections.Add(("announce", fieldIndex(_metaInfoDataRaw, "announce")));
-            sections.Add(("announce-list", fieldIndex(_metaInfoDataRaw, "announce-list")));
-            sections.Add(("comment", fieldIndex(_metaInfoDataRaw, "comment")));
-            sections.Add(("created by", fieldIndex(_metaInfoDataRaw, "created by")));
-            sections.Add(("creation date", fieldIndex(_metaInfoDataRaw, "creation date")));
-            sections.Add(("name", fieldIndex(_metaInfoDataRaw, "name")));
-            sections.Add(("piece length", fieldIndex(_metaInfoDataRaw, "piece length")));
-            sections.Add(("pieces", fieldIndex(_metaInfoDataRaw, "pieces")));
-            sections.Add(("url-list", fieldIndex(_metaInfoDataRaw, "url-list")));
+            sections.Add(("announce", fieldIndex(_metaInfoData, "announce")));
+            sections.Add(("announce-list", fieldIndex(_metaInfoData, "announce-list")));
+            sections.Add(("comment", fieldIndex(_metaInfoData, "comment")));
+            sections.Add(("created by", fieldIndex(_metaInfoData, "created by")));
+            sections.Add(("creation date", fieldIndex(_metaInfoData, "creation date")));
+            sections.Add(("name", fieldIndex(_metaInfoData, "name")));
+            sections.Add(("piece length", fieldIndex(_metaInfoData, "piece length")));
+            sections.Add(("pieces", fieldIndex(_metaInfoData, "pieces")));
+            sections.Add(("private", fieldIndex(_metaInfoData, "private")));
+            sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
+
 
             if (fieldIndex(_metaInfoData, "files") == -1) 
             {
-                sections.Add(("length", fieldIndex(_metaInfoDataRaw, "length")));
-                sections.Add(("md5sum", fieldIndex(_metaInfoDataRaw, "md5sum")));
+                sections.Add(("length", fieldIndex(_metaInfoData, "length")));
+                sections.Add(("md5sum", fieldIndex(_metaInfoData, "md5sum")));
             }
             else
             {
-                sections.Add(("files", fieldIndex(_metaInfoDataRaw, "files")));
+                sections.Add(("files", fieldIndex(_metaInfoData, "files")));
             }
-            sections.Add(("end", _metaInfoDataRaw.Length));
+            sections.Add(("end", _metaInfoData.Length));
 
             sections.RemoveAll(tuple => tuple.Item2 == -1);
             sections.Sort((tuple1, tuple2) => tuple1.Item2.CompareTo(tuple2.Item2));
@@ -263,42 +272,37 @@ namespace BitTorrent
             {
                 int length = sections[section+1].Item2 - sections[section].Item2;
                 byte[] buffer = new byte[length];
-                Buffer.BlockCopy(_metaInfoDataRaw, sections[section].Item2, buffer, 0, length);
+                Buffer.BlockCopy(_metaInfoData, sections[section].Item2, buffer, 0, length);
                 MetaInfoDict[sections[section].Item1] = buffer;
             } 
 
-            //sections.Clear();
-            //sections.Add(("info", fieldIndex(_metaInfoData, "info")));
-            //sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
-            //sections.Add(("end", _metaInfoData.Length));
+            sections.Clear();
+            sections.Add(("info", fieldIndex(_metaInfoData, "info")));
+            sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
+            sections.Add(("end", _metaInfoData.Length));
+            sections.RemoveAll(tuple => tuple.Item2 == -1);
 
-            //for (int section = 0; section < sections.Count - 1; section++)
-            //{
-            //    int length = sections[section + 1].Item2 - sections[section].Item2;
-            //    MetaInfoDict[sections[section].Item1] = Encoding.ASCII.GetBytes(_metaInfoData.Substring(sections[section].Item2, length));
-            //}
+            for (int section = 0; section < sections.Count - 1; section++)
+            {
+                int length = sections[section + 1].Item2 - sections[section].Item2;
+                byte[] buffer = new byte[length-6];
+                Buffer.BlockCopy(_metaInfoData, sections[section].Item2+6, buffer, 0, length-6);
+                MetaInfoDict[sections[section].Item1] = buffer;
+            }
 
-            //byte[] data = new byte[sections[1].Item2- sections[0].Item2-6];
+            byte[] infoHash = _metaInfoDict["info"];
 
-            //int ii = 0;
-            //for (var i = sections[0].Item2+6; i < sections[1].Item2; i++)
-            //{
-            //    data[ii] = (byte)_metaInfoDataRaw[i];
-            //    ii++;
-            //}
+            if (!_metaInfoDict.ContainsKey("url-list"))
+            {
+                byte[] truncArray = new byte[infoHash.Length - 1];
+                Array.Copy(infoHash, truncArray, truncArray.Length);
+                infoHash = truncArray;
+            }
 
+            SHA1 sha = new SHA1CryptoServiceProvider();
 
-            //string tmp1= Encoding.ASCII.GetString(data);
-            //byte[] result;
+            _metaInfoDict["info hash"] = sha.ComputeHash(infoHash);
 
-            //SHA1 sha = new SHA1CryptoServiceProvider();
-
-            //result = sha.ComputeHash(data);
-
-            //StringBuilder hex = new StringBuilder(result.Length);
-            //foreach (byte b in result)
-            //    hex.AppendFormat("{0:x2}", b);
-            //Console.WriteLine(hex);
 
         }
 
@@ -317,6 +321,7 @@ namespace BitTorrent
             parseString("pieces");
             parseString("md5sum");
             parseInteger("length");
+            parseInteger("private");
             parseString("url-list");
 
             parseFiles("files");
@@ -341,8 +346,7 @@ namespace BitTorrent
 
         public void load()
         {
-            _metaInfoDataRaw = File.ReadAllBytes(TorrentFileName);
-            _metaInfoData = Encoding.ASCII.GetString(_metaInfoDataRaw);
+            _metaInfoData = File.ReadAllBytes(TorrentFileName);
         }
 
         public void parse()

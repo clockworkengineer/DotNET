@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Security.Cryptography;
+
 using System.Text;
 namespace BitTorrent
 {
@@ -16,33 +16,15 @@ namespace BitTorrent
 
         }
 
-        public void createInfoHash(MetaInfoFile metaFile)
+        public void printInfoHash(MetaInfoFile metaFile)
         {
 
-            //string buffer = string.Empty;
-            //buffer = Encoding.ASCII.GetString(metaFile.MetaInfoDict["name"]);
-            //buffer += metaFile.MetaInfoDict["length"];
-            //buffer += metaFile.MetaInfoDict["piece length"];
-            //buffer += metaFile.MetaInfoDict["pieces"];
+            byte[] infoHash = metaFile.MetaInfoDict["info hash"];
 
-            var tmp = metaFile.MetaInfoDict["pieces"];
-
-            //byte[] data = new byte[buffer.Length];
-
-            //for (var i=0;  i <buffer.Length; i++){
-            //    data[i] = (byte) buffer[i];
-            //}
-
-            //byte[] result;
-
-            //SHA1 sha = new SHA1CryptoServiceProvider();
-
-            //result = sha.ComputeHash(data);
-
-            //StringBuilder hex = new StringBuilder(result.Length);
-            //foreach (byte b in result)
-            //    hex.AppendFormat("{0:x2}", b);
-            //Console.WriteLine(hex);
+            StringBuilder hex = new StringBuilder(infoHash.Length);
+            foreach (byte b in infoHash)
+                hex.AppendFormat("{0:x2}", b);
+            Console.WriteLine(hex);
 
         }
 
