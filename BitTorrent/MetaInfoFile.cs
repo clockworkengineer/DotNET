@@ -67,28 +67,29 @@ namespace BitTorrent
             return($"{field.Length}:{field}");
         }
 
-        private int fieldIndex(byte[] searchIn, string field, int start = 0)
+        private int fieldIndex(byte[] metaInfoData, string field, int start = 0)
         {
             int found = -1;
             bool matched = false;
             byte[] searchBytes = Encoding.ASCII.GetBytes(encodeBenString(field));
 
             //only look at this if we have a populated search array and search bytes with a sensible start
-            if (searchIn.Length > 0 && searchBytes.Length > 0 && start <= (searchIn.Length - searchBytes.Length) && searchIn.Length >= searchBytes.Length)
+            if (metaInfoData.Length > 0 && searchBytes.Length > 0 && start <= 
+                (metaInfoData.Length - searchBytes.Length) && metaInfoData.Length >= searchBytes.Length)
             {
                 //iterate through the array to be searched
-                for (int i = start; i <= searchIn.Length - searchBytes.Length; i++)
+                for (int i = start; i <= metaInfoData.Length - searchBytes.Length; i++)
                 {
                     //if the start bytes match we will start comparing all other bytes
-                    if (searchIn[i] == searchBytes[0])
+                    if (metaInfoData[i] == searchBytes[0])
                     {
-                        if (searchIn.Length > 1)
+                        if (metaInfoData.Length > 1)
                         {
                             //multiple bytes to be searched we have to compare byte by byte
                             matched = true;
                             for (int y = 1; y <= searchBytes.Length - 1; y++)
                             {
-                                if (searchIn[i + y] != searchBytes[y])
+                                if (metaInfoData[i + y] != searchBytes[y])
                                 {
                                     matched = false;
                                     break;
@@ -115,13 +116,6 @@ namespace BitTorrent
             }
             return found;
         }
-
-
-        //private int fieldIndex(string metaInfoData,string field)
-        //{
-        //    int position = metaInfoData.IndexOf(encodeBenString(field), StringComparison.Ordinal);
-        //    return position;
-        //}
 
         private void parseString(string field)
         {
@@ -328,13 +322,13 @@ namespace BitTorrent
 
             MetaInfoDict.Remove("files");
 
-            foreach (var key in MetaInfoDict.Keys)
-            {
-                if ((key != "pieces")&&(key!="info"))
-                {
-                    Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
-                }
-            }
+            //foreach (var key in MetaInfoDict.Keys)
+            //{
+            //    if ((key != "pieces")&&(key!="info"))
+            //    {
+            //        Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
+            //    }
+            //}
 
         }
 
