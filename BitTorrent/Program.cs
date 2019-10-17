@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace BitTorrent
 {
@@ -40,6 +41,8 @@ namespace BitTorrent
                 string status = tracker1.connect();
 
                 Console.WriteLine(status);
+                Bencoding.BNodeBase bNode = Bencoding.decode(Encoding.ASCII.GetBytes(status));
+                Console.WriteLine(Bencoding.decode(bNode));
 
             }
             catch (Exception ex)

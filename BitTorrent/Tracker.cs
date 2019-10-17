@@ -55,8 +55,6 @@ namespace BitTorrent
             }
             if (connectResponse.StatusCode== HttpStatusCode.OK)
             {
-                Bencoding.BNodeBase bNode = Bencoding.decode(Encoding.ASCII.GetBytes(connectResult));
-                Console.WriteLine(Bencoding.decode(bNode));
                 return (connectResult);
             }
             else
