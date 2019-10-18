@@ -139,6 +139,7 @@ namespace BitTorrent
                         break;
 
                 }
+                if (position == buffer.Length) break;
 
             }
 
@@ -175,6 +176,7 @@ namespace BitTorrent
                         bNode.dict[key] = decodeString(buffer, ref position);
                         break;
                 }
+                if (position == buffer.Length) break;
 
             }
     
@@ -182,7 +184,7 @@ namespace BitTorrent
 
         }
         
-        public static BNodeBase DecodeBNodes(byte[] buffer, ref int position)
+        public static BNodeBase decodeBNodes(byte[] buffer, ref int position)
         {
             BNodeBase bNode=null;
 
@@ -207,6 +209,7 @@ namespace BitTorrent
                         break;
 
                 }
+                if (position == buffer.Length) break;
             }
 
             return (bNode);
@@ -217,45 +220,51 @@ namespace BitTorrent
         {
             int position = 0;
 
-            BNodeBase bNodeRoot = DecodeBNodes(buffer, ref position);
+            BNodeBase bNodeRoot = decodeBNodes(buffer, ref position);
 
             return (bNodeRoot);
 
         }
 
-        static public string decode (BNodeBase bNode)
+        static public byte[] encode(BNodeBase bNode)
         {
-            string result = string.Empty;
+            List<byte> result = new List<byte>();
 
             if (bNode is BNodeDictionary)
             {
-                result += "d";
-                foreach (var key in ((BNodeDictionary) bNode).dict.Keys)
+                result.Add((byte)'d');
+
+                foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
                 {
-                    result += $"{key.Length}:{key}";
-                    result += decode(((BNodeDictionary)bNode).dict[key]);
+                    result.AddRange(Encoding.ASCII.GetBytes($"{key.Length}:{key}"));
+                    result.AddRange(encode(((BNodeDictionary)bNode).dict[key]));
                 }
-                result += "e";
-            } else if (bNode is BNodeList) {
+                result.Add((byte)'e');
+            }
+            else if (bNode is BNodeList)
+            {
                 foreach (var node in ((BNodeList)bNode).list)
                 {
-                    result += "l";
-                    result += decode(node);
-                    result += "e";
+                    result.Add((byte) 'l'); ;
+                    result.AddRange(encode(node));
+                    result.Add((byte)'e');
                 }
             }
             else if (bNode is BNodeNumber)
             {
-                result += "i";
-                result += Encoding.ASCII.GetString(((BNodeNumber)bNode).number);
-                result += "e";
+                result.Add((byte)'d');
+
+                result.AddRange(((BNodeNumber)bNode).number);
+                result.Add((byte)'e');
             }
-            else if(bNode is BNodeString)
+            else if (bNode is BNodeString)
             {
-                result  += $"{((BNodeString)bNode).str.Length}:{Encoding.ASCII.GetString(((BNodeString)bNode).str)}";
+                result.AddRange(Encoding.ASCII.GetBytes($"{((BNodeString)bNode).str.Length}:")); 
+                result.AddRange(((BNodeString)bNode).str);
+                    
             }
 
-            return (result);
+            return (result.ToArray());
         }
 
     }

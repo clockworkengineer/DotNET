@@ -322,13 +322,13 @@ namespace BitTorrent
 
             MetaInfoDict.Remove("files");
 
-            //foreach (var key in MetaInfoDict.Keys)
-            //{
-            //    if ((key != "pieces")&&(key!="info"))
-            //    {
-            //        Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
-            //    }
-            //}
+            foreach (var key in MetaInfoDict.Keys)
+            {
+                if ((key != "pieces")&&(key!="info"))
+                {
+                    Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
+                }
+            }
 
         }
 

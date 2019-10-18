@@ -5,44 +5,47 @@ namespace BitTorrent
 {
     class MainClass
     {
+        public static void printInfoHash(MetaInfoFile metaFile)
+        {
+            byte[] infoHash = metaFile.MetaInfoDict["info hash"];
+
+            StringBuilder hex = new StringBuilder(infoHash.Length);
+            foreach (byte b in infoHash)
+                hex.AppendFormat("{0:x2}", b);
+
+            Console.WriteLine(hex);
+        }
+
+        public static void printTrackers(MetaInfoFile metaFile)
+        {
+            byte[] tracker = metaFile.MetaInfoDict["announce"];
+            byte[] trackers = metaFile.MetaInfoDict["announce-list"];
+
+            Console.WriteLine(Encoding.ASCII.GetString(tracker));
+            Console.WriteLine(Encoding.ASCII.GetString(trackers));
+        }
+
         public static void Main(string[] args)
         {
 
             try
             {
                 string peerID = PeerID.get();
-                MetaInfoFile file1 = new MetaInfoFile("/home/robt/utorrent/Jobs Email Content.torrent");
-                //MetaInfoFile file2 = new MetaInfoFile("./sample02.torrent");
-                //MetaInfoFile file3 = new MetaInfoFile("./sample03.torrent");
-                //MetaInfoFile file4 = new MetaInfoFile("./sample04.torrent");
-                //MetaInfoFile file5 = new MetaInfoFile("./sample05.torrent");
-                //MetaInfoFile file6 = new MetaInfoFile("./sample06.torrent");
+                MetaInfoFile file10 = new MetaInfoFile("./sample10.torrent");
+                file10.load();
+                file10.parse();
 
-                file1.load();
-                file1.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file2.load();
-                //file2.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file3.load();
-                //file3.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file4.load();
-                //file4.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file5.load();
-                //file5.parse();
-                //Console.WriteLine(new string('*', 80));
-                //file6.load();
-                //file6.parse();
+                printInfoHash(file10);
+                printTrackers(file10);
+                string[] trackers = Encoding.ASCII.GetString(file10.MetaInfoDict["announce-list"]).Split(',');
+                Console.WriteLine(trackers[0]);
+                Tracker tracker10 = new Tracker(file10, trackers[0], peerID);
 
-                Tracker tracker1 = new Tracker(file1, "http://vimes:9000/announce", peerID);
+                Tracker.Response status = tracker10.announce();
 
-                string status = tracker1.connect();
-
-                Console.WriteLine(status);
-                Bencoding.BNodeBase bNode = Bencoding.decode(Encoding.ASCII.GetBytes(status));
-                Console.WriteLine(Bencoding.decode(bNode));
+                //Console.WriteLine(status);
+                //Bencoding.BNodeBase bNode = Bencoding.decode(Encoding.ASCII.GetBytes(status));
+                //Console.WriteLine(Encoding.ASCII.GetString(Bencoding.encode(bNode)));
 
             }
             catch (Exception ex)
