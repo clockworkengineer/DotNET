@@ -231,71 +231,117 @@ namespace BitTorrent
             }
         }
 
+        private void getStringOrNumeric(Bencoding.BNodeBase bNodeRoot, string field)
+        {
+            Bencoding.BNodeBase fieldBytes = Bencoding.getDictionaryEntry(bNodeRoot, field);
+            if (fieldBytes is Bencoding.BNodeNumber)
+            {
+                _metaInfoDict[field] = ((Bencoding.BNodeNumber)fieldBytes).number;
+            }
+            else if (fieldBytes is Bencoding.BNodeString)
+            {
+                _metaInfoDict[field] = ((Bencoding.BNodeString)fieldBytes).str;
+            }
+
+        }
+
+        private void getListOfStrings(Bencoding.BNodeBase bNodeRoot, string field)
+        {
+            Bencoding.BNodeBase fieldBytes = Bencoding.getDictionaryEntry(bNodeRoot, field);
+            if (fieldBytes is Bencoding.BNodeList)
+            {
+                List<string> listString = new List<string>();
+                foreach(var innerList in ((Bencoding.BNodeList)(fieldBytes)).list)
+                {
+                    if (innerList is Bencoding.BNodeList)
+                    {
+                        Bencoding.BNodeString stringItem = (Bencoding.BNodeString)((Bencoding.BNodeList)(innerList)).list[0];
+                        listString.Add(Encoding.ASCII.GetString(stringItem.str));
+                    }
+                }
+                _metaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",",listString));
+            }
+
+        }
+
         private void splitMetaInfoData()
         {
-     
-            List<ValueTuple<string, int>> sections = new List<ValueTuple<string, int>>();
 
-            sections.Add(("announce", fieldIndex(_metaInfoData, "announce")));
-            sections.Add(("announce-list", fieldIndex(_metaInfoData, "announce-list")));
-            sections.Add(("comment", fieldIndex(_metaInfoData, "comment")));
-            sections.Add(("created by", fieldIndex(_metaInfoData, "created by")));
-            sections.Add(("creation date", fieldIndex(_metaInfoData, "creation date")));
-            sections.Add(("name", fieldIndex(_metaInfoData, "name")));
-            sections.Add(("piece length", fieldIndex(_metaInfoData, "piece length")));
-            sections.Add(("pieces", fieldIndex(_metaInfoData, "pieces")));
-            sections.Add(("private", fieldIndex(_metaInfoData, "private")));
-            sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
+            Bencoding.BNodeBase bNodeRoot = Bencoding.decode(_metaInfoData);
+
+            getStringOrNumeric(bNodeRoot, "announce");
+            getListOfStrings(bNodeRoot, "announce-list");
+            getStringOrNumeric(bNodeRoot, "comment");
+            getStringOrNumeric(bNodeRoot, "created by");
+            getStringOrNumeric(bNodeRoot, "creation date");
+            getStringOrNumeric(bNodeRoot, "name");
+            getStringOrNumeric(bNodeRoot, "piece length");
+            getStringOrNumeric(bNodeRoot, "pieces");
+            getStringOrNumeric(bNodeRoot, "private");
+            getStringOrNumeric(bNodeRoot, "url-list");
+
+            //List<ValueTuple<string, int>> sections = new List<ValueTuple<string, int>>();
+
+            //sections.Add(("announce", fieldIndex(_metaInfoData, "announce")));
+            //sections.Add(("announce-list", fieldIndex(_metaInfoData, "announce-list")));
+            //sections.Add(("comment", fieldIndex(_metaInfoData, "comment")));
+            //sections.Add(("created by", fieldIndex(_metaInfoData, "created by")));
+            //sections.Add(("creation date", fieldIndex(_metaInfoData, "creation date")));
+            //sections.Add(("name", fieldIndex(_metaInfoData, "name")));
+            //sections.Add(("piece length", fieldIndex(_metaInfoData, "piece length")));
+            //sections.Add(("pieces", fieldIndex(_metaInfoData, "pieces")));
+            //sections.Add(("private", fieldIndex(_metaInfoData, "private")));
+            //sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
 
 
-            if (fieldIndex(_metaInfoData, "files") == -1) 
-            {
-                sections.Add(("length", fieldIndex(_metaInfoData, "length")));
-                sections.Add(("md5sum", fieldIndex(_metaInfoData, "md5sum")));
-            }
-            else
-            {
-                sections.Add(("files", fieldIndex(_metaInfoData, "files")));
-            }
-            sections.Add(("end", _metaInfoData.Length));
+            //if (fieldIndex(_metaInfoData, "files") == -1) 
+            //{
+            //    sections.Add(("length", fieldIndex(_metaInfoData, "length")));
+            //    sections.Add(("md5sum", fieldIndex(_metaInfoData, "md5sum")));
+            //}
+            //else
+            //{
+            //    sections.Add(("files", fieldIndex(_metaInfoData, "files")));
+            //}
+            //sections.Add(("end", _metaInfoData.Length));
 
-            sections.RemoveAll(tuple => tuple.Item2 == -1);
-            sections.Sort((tuple1, tuple2) => tuple1.Item2.CompareTo(tuple2.Item2));
+            //sections.RemoveAll(tuple => tuple.Item2 == -1);
+            //sections.Sort((tuple1, tuple2) => tuple1.Item2.CompareTo(tuple2.Item2));
 
-            for (int section = 0; section < sections.Count-1; section++)
-            {
-                int length = sections[section+1].Item2 - sections[section].Item2;
-                byte[] buffer = new byte[length];
-                Buffer.BlockCopy(_metaInfoData, sections[section].Item2, buffer, 0, length);
-                MetaInfoDict[sections[section].Item1] = buffer;
-            } 
+            //for (int section = 0; section < sections.Count-1; section++)
+            //{
+            //    int length = sections[section+1].Item2 - sections[section].Item2;
+            //    byte[] buffer = new byte[length];
+            //    Buffer.BlockCopy(_metaInfoData, sections[section].Item2, buffer, 0, length);
+            //    MetaInfoDict[sections[section].Item1] = buffer;
+            //} 
 
-            sections.Clear();
-            sections.Add(("info", fieldIndex(_metaInfoData, "info")));
-            sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
-            sections.Add(("end", _metaInfoData.Length));
-            sections.RemoveAll(tuple => tuple.Item2 == -1);
+            //sections.Clear();
+            //sections.Add(("info", fieldIndex(_metaInfoData, "info")));
+            //sections.Add(("url-list", fieldIndex(_metaInfoData, "url-list")));
+            //sections.Add(("end", _metaInfoData.Length));
+            //sections.RemoveAll(tuple => tuple.Item2 == -1);
 
-            for (int section = 0; section < sections.Count - 1; section++)
-            {
-                int length = sections[section + 1].Item2 - sections[section].Item2;
-                byte[] buffer = new byte[length-6];
-                Buffer.BlockCopy(_metaInfoData, sections[section].Item2+6, buffer, 0, length-6);
-                MetaInfoDict[sections[section].Item1] = buffer;
-            }
+            //for (int section = 0; section < sections.Count - 1; section++)
+            //{
+            //    int length = sections[section + 1].Item2 - sections[section].Item2;
+            //    byte[] buffer = new byte[length-6];
+            //    Buffer.BlockCopy(_metaInfoData, sections[section].Item2+6, buffer, 0, length-6);
+            //    MetaInfoDict[sections[section].Item1] = buffer;
+            //}
 
-            byte[] infoHash = _metaInfoDict["info"];
+            //byte[] infoHash = _metaInfoDict["info"];
 
-            if (!_metaInfoDict.ContainsKey("url-list"))
-            {
-                byte[] truncArray = new byte[infoHash.Length - 1];
-                Array.Copy(infoHash, truncArray, truncArray.Length);
-                infoHash = truncArray;
-            }
+            //if (!_metaInfoDict.ContainsKey("url-list"))
+            //{
+            //    byte[] truncArray = new byte[infoHash.Length - 1];
+            //    Array.Copy(infoHash, truncArray, truncArray.Length);
+            //    infoHash = truncArray;
+            //}
 
-            SHA1 sha = new SHA1CryptoServiceProvider();
+            //SHA1 sha = new SHA1CryptoServiceProvider();
 
-            _metaInfoDict["info hash"] = sha.ComputeHash(infoHash);
+            //_metaInfoDict["info hash"] = sha.ComputeHash(infoHash);
 
 
         }
@@ -305,31 +351,32 @@ namespace BitTorrent
 
             splitMetaInfoData();
 
-            parseString("announce");
-            parseStringList("announce-list");
-            parseString("comment");
-            parseString("created by");
-            parseInteger("creation date");
-            parseString("name");
-            parseInteger("piece length");
-            parseString("pieces");
-            parseString("md5sum");
-            parseInteger("length");
-            parseInteger("private");
-            parseString("url-list");
+            //parseString("announce");
+            //parseStringList("announce-list");
+            //parseString("comment");
+            //parseString("created by");
+            //parseInteger("creation date");
+            //parseString("name");
+            //parseInteger("piece length");
+            //parseString("pieces");
+            //parseString("md5sum");
+            //parseInteger("length");
+            //parseInteger("private");
+            //parseString("url-list");
 
-            parseFiles("files");
+            //parseFiles("files");
 
-            MetaInfoDict.Remove("files");
+            //MetaInfoDict.Remove("files");
 
-            //foreach (var key in MetaInfoDict.Keys)
-            //{
-            //    if ((key != "pieces")&&(key!="info"))
-            //    {
-            //        Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
-            //    }
-            //}
+            foreach (var key in MetaInfoDict.Keys)
+            {
+                if ((key != "pieces")&&(key!="info"))
+                {
+                    Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
+                }
+            }
 
+  
         }
 
         public MetaInfoFile(string fileName)

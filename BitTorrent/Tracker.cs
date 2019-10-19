@@ -158,7 +158,7 @@ namespace BitTorrent
 
             TrackerURL = trackerURL;
             TorrentFile = torrentFile;
-            _peerID = peerID;
+            PeerID = peerID;
 
         }
 
@@ -166,23 +166,23 @@ namespace BitTorrent
         public Response announce() 
         { 
        
-            HttpWebRequest getRequest = WebRequest.Create(encodeTrackerURL()) as HttpWebRequest;
-            HttpWebResponse getResponse;
+            HttpWebRequest httpGetRequest = WebRequest.Create(encodeTrackerURL()) as HttpWebRequest;
+            HttpWebResponse httpGetResponse;
             byte[] announceResponse;
 
-            getRequest.Method = "GET";
-            getRequest.ContentType = "text/xml";
+            httpGetRequest.Method = "GET";
+            httpGetRequest.ContentType = "text/xml";
 
-            using (getResponse =  getRequest.GetResponse() as HttpWebResponse)
+            using (httpGetResponse =  httpGetRequest.GetResponse() as HttpWebResponse)
             {
-                StreamReader reader = new StreamReader(getResponse.GetResponseStream());
+                StreamReader reader = new StreamReader(httpGetResponse.GetResponseStream());
                 using (var memstream = new MemoryStream())
                 {
                     reader.BaseStream.CopyTo(memstream);
                     announceResponse = memstream.ToArray();
                 }
             }
-            if (getResponse.StatusCode== HttpStatusCode.OK)
+            if (httpGetResponse.StatusCode== HttpStatusCode.OK)
             {
 
                 return (constructResponse(announceResponse));
@@ -190,8 +190,8 @@ namespace BitTorrent
             else
             {
                 Response error = new Response();
-                error.statusCode = (int)getResponse.StatusCode;
-                error.statusMessage = getResponse.StatusDescription;
+                error.statusCode = (int)httpGetResponse.StatusCode;
+                error.statusMessage = httpGetResponse.StatusDescription;
                 return (error);
             }
         }

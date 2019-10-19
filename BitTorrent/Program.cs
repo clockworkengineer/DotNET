@@ -59,20 +59,20 @@ namespace BitTorrent
             try
             {
                 string peerID = PeerID.get();
-                MetaInfoFile file01 = new MetaInfoFile("./sample10.torrent");
+                MetaInfoFile file01 = new MetaInfoFile("./sample03.torrent");
 
                 file01.load();
                 file01.parse();
 
-                torrentHasInfo(file01);
+                //torrentHasInfo(file01);
 
-                torrentTrackers(file01);
+                //torrentTrackers(file01);
 
-                Tracker tracker10 = new Tracker(file01, Encoding.ASCII.GetString(file01.MetaInfoDict["announce"]), peerID);
+                //Tracker tracker10 = new Tracker(file01, Encoding.ASCII.GetString(file01.MetaInfoDict["announce"]), peerID);
 
-                Tracker.Response status = tracker10.announce();
+                //Tracker.Response status = tracker10.announce();
 
-                annouceReply(status);
+                //annouceReply(status);
 
 
             }
