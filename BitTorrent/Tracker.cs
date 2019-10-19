@@ -10,12 +10,13 @@ namespace BitTorrent
     {
         public struct Peer
         {
-            public string _peerID;
+            public string _peerID; 
             public string ip;
             public int port;
         }
         public struct  Response
         {
+            public int statusCode;
             public string statusMessage;
             public int interval;
             public int minInterval;
@@ -39,13 +40,87 @@ namespace BitTorrent
         private string _key = "";
         private string _trackerID = "";
         private int _numWanted = 1;
+
         public string PeerID { get => _peerID; set => _peerID = value; }
         public int Port { get => _port; set => _port = value; }
+        public string Ip { get => _ip; set => _ip = value; }
+        public int Compact { get => _compact; set => _compact = value; }
+        public int NoPeerID { get => _noPeerID; set => _noPeerID = value; }
+        public int Uploaded { get => _uploaded; set => _uploaded = value; }
+        public int Downloaded { get => _downloaded; set => _downloaded = value; }
+        public int Left { get => _left; set => _left = value; }
+        public string Event { get => _event; set => _event = value; }
+        public string Key { get => _key; set => _key = value; }
+        public string TrackerID { get => _trackerID; set => _trackerID = value; }
+        public int NumWanted { get => _numWanted; set => _numWanted = value; }
+        public string TrackerURL { get => _trackerURL; set => _trackerURL = value; }
+        public MetaInfoFile TorrentFile { get => _torrentFile; set => _torrentFile = value; }
 
-        private Response constructRespone(string connectResult)
+        private Response constructResponse(byte[] announceResponse)
         {
             Response response = new Response();
 
+            response.statusCode = (int)HttpStatusCode.OK;
+
+            Bencoding.BNodeBase decodedAnnounce= Bencoding.decode(announceResponse);
+            Bencoding.BNodeBase field;
+
+            field = Bencoding.getDictionaryEntry(decodedAnnounce, "complete");
+            if (field != null)
+            {
+                response.complete = int.Parse(Encoding.ASCII.GetString(((Bencoding.BNodeNumber)field).number));
+            }
+            field = Bencoding.getDictionaryEntry(decodedAnnounce, "incomplete");
+            if (field != null)
+            {
+
+                response.incomplete = int.Parse(Encoding.ASCII.GetString(((Bencoding.BNodeNumber)field).number));
+            }
+            field = Bencoding.getDictionaryEntry(decodedAnnounce, "peers");
+            if (field != null)
+            {
+                response.peers = new List<Peer>();
+                byte[] peers = ((Bencoding.BNodeString)field).str;
+                int numberPeers = peers.Length / 6;
+                for (var num = 0; num < (peers.Length / 6); num += 6)
+                {
+                    Peer peer = new Peer();
+                    peer._peerID = "";
+                    peer.ip = $"{peers[num]}.{peers[num+1]}.{peers[num+2]}.{peers[num+3]}";
+                    peer.port = peers[num + 4] * 256 + peers[num + 5];
+                    response.peers.Add(peer);
+                }
+
+            }
+            field = Bencoding.getDictionaryEntry(decodedAnnounce, "interval");
+            if (field != null)
+            {
+                response.interval = int.Parse(Encoding.ASCII.GetString(((Bencoding.BNodeNumber)field).number));
+
+            }
+            field = Bencoding.getDictionaryEntry(decodedAnnounce, "min interval");
+            if (field != null)
+            {
+                response.minInterval = int.Parse(Encoding.ASCII.GetString(((Bencoding.BNodeNumber)field).number));
+            }
+            field = Bencoding.getDictionaryEntry(decodedAnnounce, "tracker id");
+            if (field != null)
+            {
+                response.trackerID = Encoding.ASCII.GetString(((Bencoding.BNodeString)field).str);
+            }
+ 
+            field = Bencoding.getDictionaryEntry(decodedAnnounce, "failure reason");
+            if (field != null)
+            {
+                response.statusMessage = Encoding.ASCII.GetString(((Bencoding.BNodeString)field).str);
+
+            }
+            field = Bencoding.getDictionaryEntry(decodedAnnounce, "warning message");
+            if (field != null)
+            {
+
+                response.statusMessage = Encoding.ASCII.GetString(((Bencoding.BNodeString)field).str);
+            }
 
             return (response);
 
@@ -59,20 +134,20 @@ namespace BitTorrent
 
         private string encodeTrackerURL ()
         {
-            string  url = _trackerURL +
-            "?info_hash=" + Encoding.ASCII.GetString(encodeBytesToURL(_torrentFile.MetaInfoDict["info hash"])) +
+            string  url = TrackerURL +
+            "?info_hash=" + Encoding.ASCII.GetString(encodeBytesToURL(TorrentFile.MetaInfoDict["info hash"])) +
             "&peer_id=" + _peerID +
-            "&port=" + _port +
-            "&compact=" + _compact +
-            "&no_peer_id=" + _noPeerID +
-            "&uploaded=" + _uploaded +
-            "&downloaded=" + _downloaded +
-            "&left=" + _left +
-            "&event=" + _event +
-            "&ip=" + _ip +
-            "&key=" + _key +
-            "&trackerid=" + _trackerID +
-            "&numwanted=" + _numWanted;
+            "&port=" + Port +
+            "&compact=" + Compact +
+            "&no_peer_id=" + NoPeerID +
+            "&uploaded=" + Uploaded +
+            "&downloaded=" + Downloaded +
+            "&left=" + Left +
+            "&event=" + Event +
+            "&ip=" + Ip +
+            "&key=" + Key +
+            "&trackerid=" + TrackerID +
+            "&numwanted=" + NumWanted;
 
             return (url);
 
@@ -81,8 +156,8 @@ namespace BitTorrent
         public Tracker(MetaInfoFile torrentFile, string trackerURL, string peerID)
         {
 
-            _trackerURL = trackerURL;
-            _torrentFile = torrentFile;
+            TrackerURL = trackerURL;
+            TorrentFile = torrentFile;
             _peerID = peerID;
 
         }
@@ -91,25 +166,32 @@ namespace BitTorrent
         public Response announce() 
         { 
        
-            HttpWebRequest connectRequest = WebRequest.Create(encodeTrackerURL()) as HttpWebRequest;  
-            connectRequest.Method = "GET";
-            connectRequest.ContentType = "text/xml";
-            string connectResult = string.Empty;
-            HttpWebResponse connectResponse;
-            using (connectResponse =  connectRequest.GetResponse() as HttpWebResponse)
+            HttpWebRequest getRequest = WebRequest.Create(encodeTrackerURL()) as HttpWebRequest;
+            HttpWebResponse getResponse;
+            byte[] announceResponse;
+
+            getRequest.Method = "GET";
+            getRequest.ContentType = "text/xml";
+
+            using (getResponse =  getRequest.GetResponse() as HttpWebResponse)
             {
-                StreamReader reader = new StreamReader(connectResponse.GetResponseStream());
-                connectResult = reader.ReadToEnd();
+                StreamReader reader = new StreamReader(getResponse.GetResponseStream());
+                using (var memstream = new MemoryStream())
+                {
+                    reader.BaseStream.CopyTo(memstream);
+                    announceResponse = memstream.ToArray();
+                }
             }
-            if (connectResponse.StatusCode== HttpStatusCode.OK)
+            if (getResponse.StatusCode== HttpStatusCode.OK)
             {
 
-                return (constructRespone(connectResult));
+                return (constructResponse(announceResponse));
             }
             else
             {
                 Response error = new Response();
-                error.statusMessage = connectResponse.StatusDescription;
+                error.statusCode = (int)getResponse.StatusCode;
+                error.statusMessage = getResponse.StatusDescription;
                 return (error);
             }
         }

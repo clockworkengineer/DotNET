@@ -5,7 +5,33 @@ namespace BitTorrent
 {
     class MainClass
     {
-        public static void printInfoHash(MetaInfoFile metaFile)
+
+        public static void annouceReply(Tracker.Response response)
+        {
+            Console.WriteLine("\nAnnouce Reply\n-------------");
+            Console.WriteLine("\nStatus: "+response.statusCode);
+            Console.WriteLine("Status Message: " + response.statusMessage);
+            Console.WriteLine("Interval: " + response.interval);
+            Console.WriteLine("Min Interval: " + response.minInterval);
+            Console.WriteLine("trackerID: " + response.trackerID);
+            Console.WriteLine("Complete: " + response.complete);
+            Console.WriteLine("Incomplete: " + response.incomplete);
+            Console.WriteLine("\nPeers\n------");
+            foreach (var peer in response.peers)
+            {
+                if (peer._peerID != string.Empty)
+                {
+                    Console.WriteLine("Peer ID: " + peer._peerID);
+                }
+                Console.WriteLine("IP: " + peer.ip);
+                Console.WriteLine("Port: " + peer.port);
+
+            }
+
+        }
+    
+
+        public static void torrentHasInfo(MetaInfoFile metaFile)
         {
             byte[] infoHash = metaFile.MetaInfoDict["info hash"];
 
@@ -13,14 +39,16 @@ namespace BitTorrent
             foreach (byte b in infoHash)
                 hex.AppendFormat("{0:x2}", b);
 
+            Console.WriteLine("Info Hash\n-----------\n");
             Console.WriteLine(hex);
         }
 
-        public static void printTrackers(MetaInfoFile metaFile)
+        public static void torrentTrackers(MetaInfoFile metaFile)
         {
             byte[] tracker = metaFile.MetaInfoDict["announce"];
             byte[] trackers = metaFile.MetaInfoDict["announce-list"];
 
+            Console.WriteLine("\nTrackers\n--------\n");
             Console.WriteLine(Encoding.ASCII.GetString(tracker));
             Console.WriteLine(Encoding.ASCII.GetString(trackers));
         }
@@ -31,21 +59,21 @@ namespace BitTorrent
             try
             {
                 string peerID = PeerID.get();
-                MetaInfoFile file10 = new MetaInfoFile("./sample10.torrent");
-                file10.load();
-                file10.parse();
+                MetaInfoFile file01 = new MetaInfoFile("./sample10.torrent");
 
-                printInfoHash(file10);
-                printTrackers(file10);
-                string[] trackers = Encoding.ASCII.GetString(file10.MetaInfoDict["announce-list"]).Split(',');
-                Console.WriteLine(trackers[0]);
-                Tracker tracker10 = new Tracker(file10, trackers[0], peerID);
+                file01.load();
+                file01.parse();
+
+                torrentHasInfo(file01);
+
+                torrentTrackers(file01);
+
+                Tracker tracker10 = new Tracker(file01, Encoding.ASCII.GetString(file01.MetaInfoDict["announce"]), peerID);
 
                 Tracker.Response status = tracker10.announce();
 
-                //Console.WriteLine(status);
-                //Bencoding.BNodeBase bNode = Bencoding.decode(Encoding.ASCII.GetBytes(status));
-                //Console.WriteLine(Encoding.ASCII.GetString(Bencoding.encode(bNode)));
+                annouceReply(status);
+
 
             }
             catch (Exception ex)

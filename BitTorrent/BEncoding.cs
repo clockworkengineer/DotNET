@@ -253,7 +253,6 @@ namespace BitTorrent
             else if (bNode is BNodeNumber)
             {
                 result.Add((byte)'d');
-
                 result.AddRange(((BNodeNumber)bNode).number);
                 result.Add((byte)'e');
             }
@@ -265,6 +264,49 @@ namespace BitTorrent
             }
 
             return (result.ToArray());
+        }
+
+        static public BNodeBase getDictionaryEntry(BNodeBase bNode, string entryKey)
+        {
+            BNodeBase bNodeEntry=null;
+
+            if (bNode is BNodeDictionary)
+            {
+                if (((BNodeDictionary)bNode).dict.ContainsKey(entryKey))
+                {
+                    return (((BNodeDictionary)bNode).dict[entryKey]);
+                } 
+                else 
+                {
+
+                    foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
+                    {
+                        bNodeEntry = getDictionaryEntry(((BNodeDictionary)bNode).dict[key],entryKey);
+                        if (bNodeEntry != null) break;
+                    }
+                }
+
+            }
+            else if (bNode is BNodeList)
+            {
+                foreach (var node in ((BNodeList)bNode).list)
+                {
+                    bNodeEntry = getDictionaryEntry(node, entryKey);
+                    if (bNodeEntry != null) break;
+                }
+            }
+            else if (bNode is BNodeNumber)
+            {
+
+            }
+            else if (bNode is BNodeString)
+            {
+           
+
+            }
+
+            return (bNodeEntry);
+
         }
 
     }
