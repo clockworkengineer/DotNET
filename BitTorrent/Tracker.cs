@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Collections.Generic;
 using System.Timers;
 
 namespace BitTorrent
@@ -143,20 +143,20 @@ namespace BitTorrent
 
         private string encodeTrackerURL ()
         {
-            string  url = TrackerURL +
-            "?info_hash=" + Encoding.ASCII.GetString(encodeBytesToURL(TorrentFile.MetaInfoDict["info hash"])) +
+            string  url = _trackerURL +
+            "?info_hash=" + Encoding.ASCII.GetString(encodeBytesToURL(_torrentFile.MetaInfoDict["info hash"])) +
             "&peer_id=" + _peerID +
-            "&port=" + Port +
-            "&compact=" + Compact +
-            "&no_peer_id=" + NoPeerID +
-            "&uploaded=" + Uploaded +
-            "&downloaded=" + Downloaded +
-            "&left=" + Left +
-            "&event=" + Event +
-            "&ip=" + Ip +
-            "&key=" + Key +
-            "&trackerid=" + TrackerID +
-            "&numwanted=" + NumWanted;
+            "&port=" + _port +
+            "&compact=" + _compact +
+            "&no_peer_id=" + _noPeerID +
+            "&uploaded=" + _uploaded +
+            "&downloaded=" + _downloaded +
+            "&left=" + _left +
+            "&event=" + _event +
+            "&ip=" + _ip +
+            "&key=" + _key +
+            "&trackerid=" + _trackerID +
+            "&numwanted=" + _numWanted;
 
             return (url);
 
@@ -169,12 +169,12 @@ namespace BitTorrent
 
         }
 
-        public Tracker(MetaInfoFile torrentFile, string trackerURL, string peerID)
+        public Tracker(MetaInfoFile torrentFile, string peerID)
         {
 
-            TrackerURL = trackerURL;
-            TorrentFile = torrentFile;
-            PeerID = peerID;
+            _trackerURL = torrentFile.getTrackerURL();
+            _torrentFile = torrentFile;
+            _peerID = peerID;
 
         }
 
@@ -212,31 +212,31 @@ namespace BitTorrent
 
         public void startAnnouncing()
         {
-            AnnounceTimer = new System.Timers.Timer(Interval);
-            AnnounceTimer.Elapsed += (sender, e) => OnAnnounceEvent(sender, e, this);
-            AnnounceTimer.AutoReset = true;
-            AnnounceTimer.Enabled = true;
+            _announceTimer = new System.Timers.Timer(_interval);
+            _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(sender, e, this);
+            _announceTimer.AutoReset = true;
+            _announceTimer.Enabled = true;
         }
 
         public void stopAnnonncing()
         {
-            AnnounceTimer.Stop();
-            AnnounceTimer.Dispose();
+            _announceTimer.Stop();
+            _announceTimer.Dispose();
         }
 
         public void update(Response response)
         {
-            int oldInterval = Interval;
+            int oldInterval = _interval;
             if (response.minInterval != 0)
             {
-                Interval = response.minInterval;
+                _interval = response.minInterval;
             }
             else
             {
-                Interval = response.interval;
+                _interval = response.interval;
             }
-            TrackerID = response.trackerID;
-            if (oldInterval!=Interval)
+            _trackerID = response.trackerID;
+            if (oldInterval!=_interval)
             {
                 stopAnnonncing();
                 startAnnouncing();

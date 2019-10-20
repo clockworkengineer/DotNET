@@ -67,7 +67,7 @@ namespace BitTorrent
 
                 torrentTrackers(file01);
 
-                Tracker tracker10 = new Tracker(file01, Encoding.ASCII.GetString(file01.MetaInfoDict["announce"]), PeerID.get());
+                Tracker tracker10 = new Tracker(file01, PeerID.get());
 
                 Tracker.Response status = tracker10.announce();
 

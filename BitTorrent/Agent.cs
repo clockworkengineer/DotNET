@@ -24,6 +24,9 @@ namespace BitTorrent
             TorrentMetaInfo = new MetaInfoFile(TorrentFileName);
             TorrentMetaInfo.load();
             TorrentMetaInfo.parse();
+
+            MainTracker = new Tracker(TorrentMetaInfo, PeerID.get());
+
         }
     }
 }

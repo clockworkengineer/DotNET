@@ -37,7 +37,7 @@ namespace BitTorrent
                             string path = string.Empty;
                             foreach (var file in ((BNodeList)(fileField)).list)
                             {
-                                path += "/"+Encoding.ASCII.GetString(((BitTorrent.BNodeString)file).str);
+                                path += _kPathSeparator + Encoding.ASCII.GetString(((BitTorrent.BNodeString)file).str);
                             }
                             fileEntry = path;
                         
@@ -138,6 +138,8 @@ namespace BitTorrent
 
             calculateInfoHash(bNodeRoot);
 
+            byte[] pieces = _metaInfoDict["pieces"];
+            Console.WriteLine($"Total Pieces: {pieces.Length / 20}");
 
             //foreach (var key in MetaInfoDict.Keys)
             //{
@@ -150,15 +152,20 @@ namespace BitTorrent
 
         }
 
+        public string getTrackerURL()
+        {
+            return (Encoding.ASCII.GetString(_metaInfoDict["announce"]));
+        }
+
         public MetaInfoFile(string fileName)
         {
-            TorrentFileName = fileName;
-            MetaInfoDict = new Dictionary<string, byte[]>();
+            _torrentFileName = fileName;
+            _metaInfoDict = new Dictionary<string, byte[]>();
         }
 
         public void load()
         {
-            _metaInfoData = File.ReadAllBytes(TorrentFileName);
+            _metaInfoData = System.IO.File.ReadAllBytes(_torrentFileName);
         }
 
         public void parse()
