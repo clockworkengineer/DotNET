@@ -6,9 +6,9 @@ namespace BitTorrent
     class MainClass
     {
 
-        public static void annouceReply(Tracker.Response response)
+        public static void annouceResponse(Tracker.Response response)
         {
-            Console.WriteLine("\nAnnouce Reply\n-------------");
+            Console.WriteLine("\nAnnouce Response\n-------------");
             Console.WriteLine("\nStatus: "+response.statusCode);
             Console.WriteLine("Status Message: " + response.statusMessage);
             Console.WriteLine("Interval: " + response.interval);
@@ -58,7 +58,6 @@ namespace BitTorrent
 
             try
             {
-                string peerID = PeerID.get();
                 MetaInfoFile file01 = new MetaInfoFile("./sample10.torrent");
 
                 file01.load();
@@ -68,11 +67,19 @@ namespace BitTorrent
 
                 torrentTrackers(file01);
 
-                Tracker tracker10 = new Tracker(file01, Encoding.ASCII.GetString(file01.MetaInfoDict["announce"]), peerID);
+                Tracker tracker10 = new Tracker(file01, Encoding.ASCII.GetString(file01.MetaInfoDict["announce"]), PeerID.get());
 
                 Tracker.Response status = tracker10.announce();
 
-                annouceReply(status);
+                annouceResponse(status);
+           
+                tracker10.Interval = status.interval;
+
+                tracker10.startAnnouncing();
+
+                Console.ReadKey();
+
+                tracker10.stopAnnonncing();
 
 
             }

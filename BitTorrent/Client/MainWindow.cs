@@ -73,7 +73,9 @@ public partial class MainWindow : Gtk.Window
 
             if (!_torrentFile.MetaInfoDict.ContainsKey("0"))
             {
-                _filesListViewStore.AppendValues(fileNo.ToString()+1, _torrentFile.MetaInfoDict["name"], _torrentFile.MetaInfoDict["length"]);
+                _filesListViewStore.AppendValues(fileNo.ToString()+1,  
+                    Encoding.ASCII.GetString(_torrentFile.MetaInfoDict["name"]), 
+                    Encoding.ASCII.GetString(_torrentFile.MetaInfoDict["length"]));
             }
             else
             {
@@ -81,7 +83,8 @@ public partial class MainWindow : Gtk.Window
                 while (_torrentFile.MetaInfoDict.ContainsKey(fileNo.ToString()))
                 {
                     string[] rowDetails = Encoding.ASCII.GetString(_torrentFile.MetaInfoDict[fileNo.ToString()]).Split(',');
-                    _filesListViewStore.AppendValues((fileNo+1).ToString(), _torrentFile.MetaInfoDict["name"]+rowDetails[0], rowDetails[1]);
+                    _filesListViewStore.AppendValues((fileNo+1).ToString(), 
+                        Encoding.ASCII.GetString(_torrentFile.MetaInfoDict["name"])+rowDetails[0], rowDetails[1]);
                     fileNo++;
                 }
             }

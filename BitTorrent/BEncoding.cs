@@ -41,8 +41,6 @@ namespace BitTorrent
     }
     public class Bencoding
     {
-
-
         static public byte[] extractString(byte[] buffer, ref int position)
         {
 
@@ -281,7 +279,6 @@ namespace BitTorrent
                 } 
                 else 
                 {
-
                     foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
                     {
                         bNodeEntry = getDictionaryEntry(((BNodeDictionary)bNode).dict[key],entryKey);

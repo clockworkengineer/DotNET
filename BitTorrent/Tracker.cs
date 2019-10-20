@@ -3,17 +3,28 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Collections.Generic;
+using System.Timers;
 
 namespace BitTorrent
 {
     public class Tracker
     {
+        private static System.Timers.Timer _announceTimer;
+
+        public enum TrackerEvent
+        {
+            started = 0,
+            stopped,
+            completed
+        };
+
         public struct Peer
         {
             public string _peerID; 
             public string ip;
             public int port;
         }
+
         public struct  Response
         {
             public int statusCode;
@@ -30,16 +41,17 @@ namespace BitTorrent
         private string _peerID = String.Empty;
         private MetaInfoFile _torrentFile = null;
         private int _port = 6681;
-        private string _ip = "";
+        private string _ip = String.Empty;
         private int _compact = 1;
         private int _noPeerID = 0;
         private int _uploaded = 0;
         private int _downloaded = 0;
         private int _left = 0;
-        private string _event = "started";
-        private string _key = "";
-        private string _trackerID = "";
+        private TrackerEvent _event = TrackerEvent.started;
+        private string _key = String.Empty;
+        private string _trackerID = String.Empty;
         private int _numWanted = 1;
+        private int _interval = 0;
 
         public string PeerID { get => _peerID; set => _peerID = value; }
         public int Port { get => _port; set => _port = value; }
@@ -49,12 +61,14 @@ namespace BitTorrent
         public int Uploaded { get => _uploaded; set => _uploaded = value; }
         public int Downloaded { get => _downloaded; set => _downloaded = value; }
         public int Left { get => _left; set => _left = value; }
-        public string Event { get => _event; set => _event = value; }
+        public TrackerEvent Event { get => _event; set => _event = value; }
         public string Key { get => _key; set => _key = value; }
         public string TrackerID { get => _trackerID; set => _trackerID = value; }
         public int NumWanted { get => _numWanted; set => _numWanted = value; }
         public string TrackerURL { get => _trackerURL; set => _trackerURL = value; }
         public MetaInfoFile TorrentFile { get => _torrentFile; set => _torrentFile = value; }
+        public static Timer AnnounceTimer { get => _announceTimer; set => _announceTimer = value; }
+        public int Interval { get => _interval; set => _interval = value; }
 
         private Response constructResponse(byte[] announceResponse)
         {
@@ -73,7 +87,6 @@ namespace BitTorrent
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "incomplete");
             if (field != null)
             {
-
                 response.incomplete = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
             }
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "peers");
@@ -85,7 +98,7 @@ namespace BitTorrent
                 for (var num = 0; num < (peers.Length / 6); num += 6)
                 {
                     Peer peer = new Peer();
-                    peer._peerID = "";
+                    peer._peerID = String.Empty;
                     peer.ip = $"{peers[num]}.{peers[num+1]}.{peers[num+2]}.{peers[num+3]}";
                     peer.port = peers[num + 4] * 256 + peers[num + 5];
                     response.peers.Add(peer);
@@ -149,6 +162,13 @@ namespace BitTorrent
 
         }
 
+        private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
+        {
+            Response  response = tracker.announce();
+            MainClass.annouceResponse(response);
+
+        }
+
         public Tracker(MetaInfoFile torrentFile, string trackerURL, string peerID)
         {
 
@@ -157,7 +177,6 @@ namespace BitTorrent
             PeerID = peerID;
 
         }
-
 
         public Response announce() 
         { 
@@ -188,6 +207,39 @@ namespace BitTorrent
                 error.statusCode = (int)httpGetResponse.StatusCode;
                 error.statusMessage = httpGetResponse.StatusDescription;
                 return (error);
+            }
+        }
+
+        public void startAnnouncing()
+        {
+            AnnounceTimer = new System.Timers.Timer(Interval);
+            AnnounceTimer.Elapsed += (sender, e) => OnAnnounceEvent(sender, e, this);
+            AnnounceTimer.AutoReset = true;
+            AnnounceTimer.Enabled = true;
+        }
+
+        public void stopAnnonncing()
+        {
+            AnnounceTimer.Stop();
+            AnnounceTimer.Dispose();
+        }
+
+        public void update(Response response)
+        {
+            int oldInterval = Interval;
+            if (response.minInterval != 0)
+            {
+                Interval = response.minInterval;
+            }
+            else
+            {
+                Interval = response.interval;
+            }
+            TrackerID = response.trackerID;
+            if (oldInterval!=Interval)
+            {
+                stopAnnonncing();
+                startAnnouncing();
             }
         }
     }

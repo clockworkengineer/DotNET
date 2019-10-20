@@ -96,12 +96,12 @@ namespace BitTorrent
 
         }
 
-        private void calcInfoHash(BNodeBase bNodeRoot)
+        private void calculateInfoHash(BNodeBase bNodeRoot)
         {
-            BNodeBase fieldBytes = Bencoding.getDictionaryEntry(bNodeRoot, "info");
-            if (fieldBytes != null)
+            BNodeBase infoEncodedBytes = Bencoding.getDictionaryEntry(bNodeRoot, "info");
+            if (infoEncodedBytes != null)
             {
-                byte[] infoHash = Bencoding.encode(fieldBytes);
+                byte[] infoHash = Bencoding.encode(infoEncodedBytes);
                 SHA1 sha = new SHA1CryptoServiceProvider();
                 _metaInfoDict["info hash"] = sha.ComputeHash(infoHash);
             
@@ -136,7 +136,7 @@ namespace BitTorrent
                 getListOfDictionarys(bNodeRoot, "files");
             }
 
-            calcInfoHash(bNodeRoot);
+            calculateInfoHash(bNodeRoot);
 
 
             //foreach (var key in MetaInfoDict.Keys)
