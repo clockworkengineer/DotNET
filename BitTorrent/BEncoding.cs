@@ -4,43 +4,43 @@ using System.Text;
 
 namespace BitTorrent
 {
+    public class BNodeBase
+    {
+
+    }
+
+    public class BNodeDictionary : BNodeBase
+    {
+        public Dictionary<string, BNodeBase> dict;
+
+        public BNodeDictionary()
+        {
+            dict = new Dictionary<string, BNodeBase>();
+        }
+    }
+
+    public class BNodeList : BNodeBase
+    {
+
+        public List<BNodeBase> list;
+
+        public BNodeList()
+        {
+            list = new List<BNodeBase>();
+        }
+    }
+
+    public class BNodeNumber : BNodeBase
+    {
+        public byte[] number;
+    }
+
+    public class BNodeString : BNodeBase
+    {
+        public byte[] str;
+    }
     public class Bencoding
     {
-        public class BNodeBase
-        {
-            
-        }
-
-        public class BNodeDictionary : BNodeBase
-        {
-            public Dictionary<string, BNodeBase> dict;
-
-            public  BNodeDictionary()
-            {
-                dict = new Dictionary<string, BNodeBase>();
-            }
-        }
-
-        public class BNodeList : BNodeBase
-        {
-
-            public List<BNodeBase> list;
-
-            public BNodeList()
-            {
-                list = new List<BNodeBase>();
-            }
-        }
-
-        public class BNodeNumber : BNodeBase
-        {
-            public byte[] number;
-        }
-
-        public class BNodeString: BNodeBase
-        {
-            public byte[] str;
-        }
 
 
         static public byte[] extractString(byte[] buffer, ref int position)

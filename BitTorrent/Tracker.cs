@@ -62,25 +62,25 @@ namespace BitTorrent
 
             response.statusCode = (int)HttpStatusCode.OK;
 
-            Bencoding.BNodeBase decodedAnnounce= Bencoding.decode(announceResponse);
-            Bencoding.BNodeBase field;
+            BNodeBase decodedAnnounce= Bencoding.decode(announceResponse);
+            BNodeBase field;
 
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "complete");
             if (field != null)
             {
-                response.complete = int.Parse(Encoding.ASCII.GetString(((Bencoding.BNodeNumber)field).number));
+                response.complete = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
             }
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "incomplete");
             if (field != null)
             {
 
-                response.incomplete = int.Parse(Encoding.ASCII.GetString(((Bencoding.BNodeNumber)field).number));
+                response.incomplete = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
             }
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "peers");
             if (field != null)
             {
                 response.peers = new List<Peer>();
-                byte[] peers = ((Bencoding.BNodeString)field).str;
+                byte[] peers = ((BNodeString)field).str;
                 int numberPeers = peers.Length / 6;
                 for (var num = 0; num < (peers.Length / 6); num += 6)
                 {
@@ -95,31 +95,27 @@ namespace BitTorrent
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "interval");
             if (field != null)
             {
-                response.interval = int.Parse(Encoding.ASCII.GetString(((Bencoding.BNodeNumber)field).number));
-
+                response.interval = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
             }
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "min interval");
             if (field != null)
             {
-                response.minInterval = int.Parse(Encoding.ASCII.GetString(((Bencoding.BNodeNumber)field).number));
+                response.minInterval = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
             }
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "tracker id");
             if (field != null)
             {
-                response.trackerID = Encoding.ASCII.GetString(((Bencoding.BNodeString)field).str);
+                response.trackerID = Encoding.ASCII.GetString(((BNodeString)field).str);
             }
- 
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "failure reason");
             if (field != null)
             {
-                response.statusMessage = Encoding.ASCII.GetString(((Bencoding.BNodeString)field).str);
-
+                response.statusMessage = Encoding.ASCII.GetString(((BNodeString)field).str);
             }
             field = Bencoding.getDictionaryEntry(decodedAnnounce, "warning message");
             if (field != null)
             {
-
-                response.statusMessage = Encoding.ASCII.GetString(((Bencoding.BNodeString)field).str);
+                response.statusMessage = Encoding.ASCII.GetString(((BNodeString)field).str);
             }
 
             return (response);
@@ -184,7 +180,6 @@ namespace BitTorrent
             }
             if (httpGetResponse.StatusCode== HttpStatusCode.OK)
             {
-
                 return (constructResponse(announceResponse));
             }
             else
