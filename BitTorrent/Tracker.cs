@@ -93,15 +93,42 @@ namespace BitTorrent
             if (field != null)
             {
                 response.peers = new List<Peer>();
-                byte[] peers = ((BNodeString)field).str;
-                int numberPeers = peers.Length / 6;
-                for (var num = 0; num < (peers.Length / 6); num += 6)
+                if (field is BNodeString)
                 {
-                    Peer peer = new Peer();
-                    peer._peerID = String.Empty;
-                    peer.ip = $"{peers[num]}.{peers[num+1]}.{peers[num+2]}.{peers[num+3]}";
-                    peer.port = peers[num + 4] * 256 + peers[num + 5];
-                    response.peers.Add(peer);
+                    byte[] peers = ((BNodeString)field).str;
+                    int numberPeers = peers.Length / 6;
+                    for (var num = 0; num < (peers.Length / 6); num += 6)
+                    {
+                        Peer peer = new Peer();
+                        peer._peerID = String.Empty;
+                        peer.ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}";
+                        peer.port = peers[num + 4] * 256 + peers[num + 5];
+                        response.peers.Add(peer);
+                    }
+                }
+                else if (field is BNodeList)
+                {
+                    foreach (var listItem in ((BNodeList)(field)).list)
+                    {
+                        if (listItem is BNodeDictionary)
+                        {
+                            Peer peer = new Peer();
+                            BNodeBase peerDictionaryItem = ((BitTorrent.BNodeDictionary)listItem);
+                            BNodeBase peerField = Bencoding.getDictionaryEntry(peerDictionaryItem, "ip");
+                            if (peerField != null)
+                            {
+                                string path = string.Empty;
+                                peer.ip = Encoding.ASCII.GetString(((BitTorrent.BNodeString)peerField).str);
+                            }
+                            peerField = Bencoding.getDictionaryEntry(peerDictionaryItem, "port");
+                            if (peerField != null)
+                            {
+                                string path = string.Empty;
+                                peer.port = int.Parse(Encoding.ASCII.GetString(((BitTorrent.BNodeNumber)peerField).number));
+                            }
+                            response.peers.Add(peer);
+                        }
+                    }
                 }
 
             }

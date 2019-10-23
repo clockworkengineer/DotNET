@@ -46,11 +46,15 @@ namespace BitTorrent
         public static void torrentTrackers(MetaInfoFile metaFile)
         {
             byte[] tracker = metaFile.MetaInfoDict["announce"];
-            byte[] trackers = metaFile.MetaInfoDict["announce-list"];
-
+ 
             Console.WriteLine("\nTrackers\n--------\n");
             Console.WriteLine(Encoding.ASCII.GetString(tracker));
-            Console.WriteLine(Encoding.ASCII.GetString(trackers));
+
+            if (metaFile.MetaInfoDict.ContainsKey("announce-list"))
+            {
+                byte[] trackers = metaFile.MetaInfoDict["announce-list"];
+                Console.WriteLine(Encoding.ASCII.GetString(trackers));
+            }
         }
 
         public static void Main(string[] args)
@@ -58,7 +62,7 @@ namespace BitTorrent
 
             try
             {
-                MetaInfoFile file01 = new MetaInfoFile("./sample10.torrent");
+                MetaInfoFile file01 = new MetaInfoFile("./wired.torrent");
 
                 file01.load();
                 file01.parse();
@@ -71,15 +75,25 @@ namespace BitTorrent
 
                 Tracker.Response status = tracker10.announce();
 
-                annouceResponse(status);
+                if (status.peers.Count > 0)
+                {
+                    Peer peer01 = new Peer(status.peers[0].ip, status.peers[0].port, file01.MetaInfoDict["info hash"]);
+                    peer01.connect();
+                }
+
+                //annouceResponse(status);
            
-                tracker10.Interval = status.interval;
 
-                tracker10.startAnnouncing();
+                //tracker10.Interval = status.interval;
 
-                Console.ReadKey();
+                //tracker10.startAnnouncing();
 
-                tracker10.stopAnnonncing();
+                //Console.ReadKey();
+
+             
+                //tracker10.stopAnnonncing();
+
+              
 
 
             }
