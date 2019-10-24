@@ -43,22 +43,13 @@ namespace BitTorrent
                         
                         }
                         fileEntry += ",";
-                        fileField = Bencoding.getDictionaryEntry(fileDictionaryItem, "length");
-                        if (fileField != null)
-                        {
-                            fileEntry+= Encoding.ASCII.GetString(((BNodeNumber)fileField).number);
-                        }
+                        fileEntry += Bencoding.getDictionaryEntryString(fileDictionaryItem, "length");
                         fileEntry += ",";
-                        fileField = Bencoding.getDictionaryEntry(fileDictionaryItem, "md5sum");
-                        if (fileField != null)
-                        {
-                            fileEntry += Encoding.ASCII.GetString(((BNodeString)fileField).str);
-                        }
+                        fileEntry += Bencoding.getDictionaryEntryString(fileDictionaryItem, "md5string");
                         _metaInfoDict[fileNo.ToString()] = Encoding.ASCII.GetBytes(fileEntry);
                         fileNo++;
                     }
                 }
-
 
             }
         }
@@ -138,16 +129,13 @@ namespace BitTorrent
 
             calculateInfoHash(bNodeRoot);
 
-            byte[] pieces = _metaInfoDict["pieces"];
-            Console.WriteLine($"Total Pieces: {pieces.Length / 20}");
-
-            //foreach (var key in MetaInfoDict.Keys)
-            //{
-            //    if ((key != "pieces")&&(key!="info"))
-            //    {
-            //        Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
-            //    }
-            //}
+            foreach (var key in MetaInfoDict.Keys)
+            {
+                if ((key != "pieces")&&(key!="info")&&(key!="info hash"))
+                {
+                    Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
+                }
+            }
 
 
         }

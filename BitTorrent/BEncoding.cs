@@ -41,7 +41,7 @@ namespace BitTorrent
     }
     public class Bencoding
     {
-        static public byte[] extractString(byte[] buffer, ref int position)
+        static private byte[] extractString(byte[] buffer, ref int position)
         {
 
             int end = position;
@@ -70,7 +70,7 @@ namespace BitTorrent
 
         }
 
-        static public BNodeBase decodeNumber(byte[] buffer, ref int position)
+        static private BNodeBase decodeNumber(byte[] buffer, ref int position)
         {
             BNodeNumber bNode = new BNodeNumber();
 
@@ -90,7 +90,7 @@ namespace BitTorrent
 
         }
 
-        static public BNodeBase decodeString(byte[] buffer, ref int position)
+        static private BNodeBase decodeString(byte[] buffer, ref int position)
         {
             BNodeString bNode = new BNodeString();
 
@@ -100,7 +100,7 @@ namespace BitTorrent
 
         }
 
-        static public string decodeKey(byte[] buffer, ref int position)
+        static private string decodeKey(byte[] buffer, ref int position)
         {
             string key = Encoding.ASCII.GetString(extractString(buffer, ref position));
 
@@ -108,7 +108,7 @@ namespace BitTorrent
 
         }
 
-        static public BNodeBase decodeList(byte[] buffer, ref int position)
+        static private BNodeBase decodeList(byte[] buffer, ref int position)
         {
 
             BNodeList bNode = new BNodeList();
@@ -147,7 +147,7 @@ namespace BitTorrent
 
         }
 
-        static public BNodeBase decodeDictionary(byte[] buffer, ref int position)
+        static private BNodeBase decodeDictionary(byte[] buffer, ref int position)
         {
 
             BNodeDictionary bNode = new BNodeDictionary();
@@ -186,7 +186,7 @@ namespace BitTorrent
 
         }
         
-        public static BNodeBase decodeBNodes(byte[] buffer, ref int position)
+        static private BNodeBase decodeBNodes(byte[] buffer, ref int position)
         {
             BNodeBase bNode=null;
 
@@ -218,7 +218,7 @@ namespace BitTorrent
 
         }
 
-        public static BNodeBase decode(byte[] buffer)
+        static public BNodeBase decode(byte[] buffer)
         {
             int position = 0;
 
@@ -298,6 +298,24 @@ namespace BitTorrent
 
             return (bNodeEntry);
 
+        }
+
+        static public string getDictionaryEntryString(BNodeBase bNode, string entryKey)
+        {
+            BNodeBase entryNode = null;
+
+            entryNode = getDictionaryEntry(bNode, entryKey);
+            if (entryNode != null)
+            {
+                if (entryNode is BNodeString) 
+                {
+                    return (Encoding.ASCII.GetString(((BNodeString)entryNode).str));
+                } else if (entryNode is BNodeNumber)
+                {
+                    return (Encoding.ASCII.GetString(((BNodeNumber)entryNode).number));
+                }
+            }
+            return ("");
         }
 
     }

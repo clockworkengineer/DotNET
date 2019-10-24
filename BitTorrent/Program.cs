@@ -39,7 +39,7 @@ namespace BitTorrent
             foreach (byte b in infoHash)
                 hex.AppendFormat("{0:x2}", b);
 
-            Console.WriteLine("Info Hash\n-----------\n");
+            Console.WriteLine("\nInfo Hash\n-----------\n");
             Console.WriteLine(hex);
         }
 
@@ -75,11 +75,11 @@ namespace BitTorrent
 
                 Tracker.Response status = tracker10.announce();
 
-                if (status.peers.Count > 0)
-                {
-                    Peer peer01 = new Peer(status.peers[0].ip, status.peers[0].port, file01.MetaInfoDict["info hash"]);
-                    peer01.connect();
-                }
+                //if (status.peers.Count > 0)
+                //{
+                //    Peer peer01 = new Peer(status.peers[0].ip, status.peers[0].port, file01.MetaInfoDict["info hash"]);
+                //    peer01.connect();
+                //}
 
                 //annouceResponse(status);
            

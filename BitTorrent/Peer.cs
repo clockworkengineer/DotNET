@@ -18,19 +18,19 @@ namespace BitTorrent
         private bool _connected = false;
         private byte[] _remotePeerID;
 
-        private bool validatePeerConnect(byte[] initialPacket, byte[]initialResponse)
+        private bool validatePeerConnect(byte[] handshakePacket, byte[]handshakeResponse)
         {
 
             for (int byteNumber = 0; byteNumber < _protocolName.Length + 1; byteNumber++)
             {
-                if (initialPacket[byteNumber] != initialResponse[byteNumber])
+                if (handshakePacket[byteNumber] != handshakeResponse[byteNumber])
                 {
                     return(false);
                 }
             }
             for (int byteNumber = _protocolName.Length + 9; byteNumber < _protocolName.Length + 29; byteNumber++)
             {
-                if (initialPacket[byteNumber] != initialResponse[byteNumber])
+                if (handshakePacket[byteNumber] != handshakeResponse[byteNumber])
                 {
                     return(false);
                 }
@@ -38,7 +38,7 @@ namespace BitTorrent
 
            _remotePeerID = new byte[20];
 
-            Buffer.BlockCopy(initialResponse, _protocolName.Length + 29, _remotePeerID, 0, _remotePeerID.Length);
+            Buffer.BlockCopy(handshakeResponse, _protocolName.Length + 29, _remotePeerID, 0, _remotePeerID.Length);
 
             return (true);
 
@@ -62,21 +62,21 @@ namespace BitTorrent
 
         private void performIntialHandshake()
         {
-            List<byte> initialPacket = new List<byte>();
+            List<byte> handshakePacket = new List<byte>();
 
-            initialPacket.Add((byte)_protocolName.Length);
-            initialPacket.AddRange(_protocolName);
-            initialPacket.AddRange(new byte[8]);
-            initialPacket.AddRange(_infoHash);
-            initialPacket.AddRange(Encoding.ASCII.GetBytes(PeerID.get()));
+            handshakePacket.Add((byte)_protocolName.Length);
+            handshakePacket.AddRange(_protocolName);
+            handshakePacket.AddRange(new byte[8]);
+            handshakePacket.AddRange(_infoHash);
+            handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.get()));
 
-            _peerStream.Write(initialPacket.ToArray(), 0, initialPacket.Count);
+            _peerStream.Write(handshakePacket.ToArray(), 0, handshakePacket.Count);
 
-            byte[] initialResponse = new byte[initialPacket.Count];
+            byte[] handshakeResponse = new byte[handshakePacket.Count];
 
-            _peerStream.Read(initialResponse, 0, initialResponse.Length);
+            _peerStream.Read(handshakeResponse, 0, handshakeResponse.Length);
 
-            _connected = validatePeerConnect(initialPacket.ToArray(), initialResponse);
+            _connected = validatePeerConnect(handshakePacket.ToArray(), handshakeResponse);
 
             if (_connected)
             { 
