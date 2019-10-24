@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace BitTorrent
 {
@@ -17,31 +18,57 @@ namespace BitTorrent
         private byte[] _infoHash;
         private bool _connected = false;
         private byte[] _remotePeerID;
+        private Thread _peerReadThread;
 
-        private bool validatePeerConnect(byte[] handshakePacket, byte[]handshakeResponse)
+        private void processRemotePeerRead(byte[] buffer, Int32 length)
         {
 
-            for (int byteNumber = 0; byteNumber < _protocolName.Length + 1; byteNumber++)
+            switch (buffer[0])
             {
-                if (handshakePacket[byteNumber] != handshakeResponse[byteNumber])
-                {
-                    return(false);
-                }
+                case 0x0:
+                    Console.WriteLine("CHOKE");
+                    break;
+                case 0x1:
+                    Console.WriteLine("UNCHOKE");
+                    break;
+                case 0x2:
+                    Console.WriteLine("INTERESTED");
+                    break;
+                case 0x3:
+                    Console.WriteLine("UNINTERESTED");
+                    break;
+                case 0x4:
+                    Console.WriteLine("HAVE");
+                    break;
+                case 0x5:
+                    Console.WriteLine("BITFIELD");
+                    break;
+                case 0x6:
+                    Console.WriteLine("REQUEST");
+                    break;
+                case 0x7:
+                    Console.WriteLine("PIECE");
+                    break;
+                case 0x8:
+                    Console.WriteLine("CANCEL");
+                    break;
+                default:
+                    Console.WriteLine("UNKOWN");
+                    break;
             }
-            for (int byteNumber = _protocolName.Length + 9; byteNumber < _protocolName.Length + 29; byteNumber++)
+            Thread.Sleep(1000);
+        }
+
+        private void performPeerThreadRead()
+        {
+            byte[] messageLength = new byte[4];
+            Int32 convertedLength = 0;
+
+            while (true)
             {
-                if (handshakePacket[byteNumber] != handshakeResponse[byteNumber])
-                {
-                    return(false);
-                }
+                PWP.processRemotePeerRead(_peerStream);
+
             }
-
-           _remotePeerID = new byte[20];
-
-            Buffer.BlockCopy(handshakeResponse, _protocolName.Length + 29, _remotePeerID, 0, _remotePeerID.Length);
-
-            return (true);
-
         }
 
         public Peer(string ip ,int port, byte[] infoHash)
@@ -56,34 +83,7 @@ namespace BitTorrent
             }
             _port = port;
             _infoHash = infoHash;
-            _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
-            
-        }
-
-        private void performIntialHandshake()
-        {
-            List<byte> handshakePacket = new List<byte>();
-
-            handshakePacket.Add((byte)_protocolName.Length);
-            handshakePacket.AddRange(_protocolName);
-            handshakePacket.AddRange(new byte[8]);
-            handshakePacket.AddRange(_infoHash);
-            handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.get()));
-
-            _peerStream.Write(handshakePacket.ToArray(), 0, handshakePacket.Count);
-
-            byte[] handshakeResponse = new byte[handshakePacket.Count];
-
-            _peerStream.Read(handshakeResponse, 0, handshakeResponse.Length);
-
-            _connected = validatePeerConnect(handshakePacket.ToArray(), handshakeResponse);
-
-            if (_connected)
-            { 
-                Console.WriteLine($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(_remotePeerID)}].");
-            }
-
-
+       
         }
 
         public void connect()
@@ -93,8 +93,16 @@ namespace BitTorrent
 
             _peerStream = peerClient.GetStream();
 
-            performIntialHandshake();
- 
+            ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(_peerStream, _infoHash);
+
+            if (peerResponse.Item1)
+            {
+                Console.WriteLine($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(peerResponse.Item2)}].");
+            }
+
+            _peerReadThread = new Thread(performPeerThreadRead);
+            _peerReadThread.Start();
+
         }
     }
 }

@@ -77,19 +77,11 @@ namespace BitTorrent
             response.statusCode = (int)HttpStatusCode.OK;
 
             BNodeBase decodedAnnounce= Bencoding.decode(announceResponse);
-            BNodeBase field;
 
-            field = Bencoding.getDictionaryEntry(decodedAnnounce, "complete");
-            if (field != null)
-            {
-                response.complete = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
-            }
-            field = Bencoding.getDictionaryEntry(decodedAnnounce, "incomplete");
-            if (field != null)
-            {
-                response.incomplete = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
-            }
-            field = Bencoding.getDictionaryEntry(decodedAnnounce, "peers");
+            int.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "complete"), out response.complete);
+            int.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "incomplete"), out response.incomplete);
+
+            BNodeBase field = Bencoding.getDictionaryEntry(decodedAnnounce, "peers");
             if (field != null)
             {
                 response.peers = new List<Peer>();
@@ -132,31 +124,12 @@ namespace BitTorrent
                 }
 
             }
-            field = Bencoding.getDictionaryEntry(decodedAnnounce, "interval");
-            if (field != null)
-            {
-                response.interval = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
-            }
-            field = Bencoding.getDictionaryEntry(decodedAnnounce, "min interval");
-            if (field != null)
-            {
-                response.minInterval = int.Parse(Encoding.ASCII.GetString(((BNodeNumber)field).number));
-            }
-            field = Bencoding.getDictionaryEntry(decodedAnnounce, "tracker id");
-            if (field != null)
-            {
-                response.trackerID = Encoding.ASCII.GetString(((BNodeString)field).str);
-            }
-            field = Bencoding.getDictionaryEntry(decodedAnnounce, "failure reason");
-            if (field != null)
-            {
-                response.statusMessage = Encoding.ASCII.GetString(((BNodeString)field).str);
-            }
-            field = Bencoding.getDictionaryEntry(decodedAnnounce, "warning message");
-            if (field != null)
-            {
-                response.statusMessage = Encoding.ASCII.GetString(((BNodeString)field).str);
-            }
+
+            int.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "interval"), out response.interval);
+            int.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "min interval"), out response.minInterval);
+            response.trackerID = Bencoding.getDictionaryEntryString(decodedAnnounce, "tracker id");
+            response.statusMessage = Bencoding.getDictionaryEntryString(decodedAnnounce, "failure reason");
+            response.statusMessage = Bencoding.getDictionaryEntryString(decodedAnnounce, "warning message");
 
             return (response);
 
