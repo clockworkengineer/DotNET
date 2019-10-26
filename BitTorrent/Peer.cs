@@ -19,59 +19,22 @@ namespace BitTorrent
         private bool _connected = false;
         private byte[] _remotePeerID;
         private Thread _peerReadThread;
+        private FileDownloader _fileDownloader;
 
-        private void processRemotePeerRead(byte[] buffer, Int32 length)
+        public bool PeerChoking { get => _peerChoking; set => _peerChoking = value; }
+        public NetworkStream PeerStream { get => _peerStream; set => _peerStream = value; }
+        public FileDownloader FileDownloader { get => _fileDownloader; set => _fileDownloader = value; }
+
+        private void remotePeerReadMessages()
         {
-
-            switch (buffer[0])
+            while (PeerStream.DataAvailable)
             {
-                case 0x0:
-                    Console.WriteLine("CHOKE");
-                    break;
-                case 0x1:
-                    Console.WriteLine("UNCHOKE");
-                    break;
-                case 0x2:
-                    Console.WriteLine("INTERESTED");
-                    break;
-                case 0x3:
-                    Console.WriteLine("UNINTERESTED");
-                    break;
-                case 0x4:
-                    Console.WriteLine("HAVE");
-                    break;
-                case 0x5:
-                    Console.WriteLine("BITFIELD");
-                    break;
-                case 0x6:
-                    Console.WriteLine("REQUEST");
-                    break;
-                case 0x7:
-                    Console.WriteLine("PIECE");
-                    break;
-                case 0x8:
-                    Console.WriteLine("CANCEL");
-                    break;
-                default:
-                    Console.WriteLine("UNKOWN");
-                    break;
+                PWP.readRemotePeerMessages(this, PeerStream);
             }
-            Thread.Sleep(1000);
+            Console.WriteLine("END");
         }
 
-        private void performPeerThreadRead()
-        {
-            byte[] messageLength = new byte[4];
-            Int32 convertedLength = 0;
-
-            while (true)
-            {
-                PWP.processRemotePeerRead(_peerStream);
-
-            }
-        }
-
-        public Peer(string ip ,int port, byte[] infoHash)
+        public Peer(FileDownloader fileDownloader, string ip ,int port, byte[] infoHash)
         {
             if (ip.Contains(":"))
             {
@@ -83,7 +46,8 @@ namespace BitTorrent
             }
             _port = port;
             _infoHash = infoHash;
-       
+            FileDownloader = fileDownloader;
+
         }
 
         public void connect()
@@ -91,16 +55,16 @@ namespace BitTorrent
 
             TcpClient peerClient = new TcpClient(_ip, _port);
 
-            _peerStream = peerClient.GetStream();
+            PeerStream = peerClient.GetStream();
 
-            ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(_peerStream, _infoHash);
+            ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(this, _infoHash);
 
             if (peerResponse.Item1)
             {
                 Console.WriteLine($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(peerResponse.Item2)}].");
             }
 
-            _peerReadThread = new Thread(performPeerThreadRead);
+            _peerReadThread = new Thread(remotePeerReadMessages);
             _peerReadThread.Start();
 
         }

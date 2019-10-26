@@ -8,6 +8,7 @@ namespace BitTorrent
 {
     public class MetaInfoFile
     {
+    
         private string _torrentFileName = string.Empty;
         private Dictionary<string, byte[]> _metaInfoDict;
         private byte[] _metaInfoData;
@@ -15,7 +16,7 @@ namespace BitTorrent
 
         public string TorrentFileName { get => _torrentFileName; set => _torrentFileName = value; }
         public Dictionary<string, byte[]> MetaInfoDict { get => _metaInfoDict; set => _metaInfoDict = value; }
-
+      
         private void getListOfDictionarys(BNodeBase bNodeRoot, string field)
         {
             BNodeBase fieldBytes = Bencoding.getDictionaryEntry(bNodeRoot, field);
@@ -100,6 +101,7 @@ namespace BitTorrent
 
         }
 
+ 
         private void loadTorrentDictionary()
         {
 

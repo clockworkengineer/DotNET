@@ -27,6 +27,7 @@ namespace BitTorrent
 
         public struct  Response
         {
+            public int announceCount;
             public int statusCode;
             public string statusMessage;
             public int interval;
@@ -40,6 +41,7 @@ namespace BitTorrent
         private string _trackerURL = String.Empty;
         private string _peerID = String.Empty;
         private MetaInfoFile _torrentFile = null;
+        private Response _currentTrackerResponse;
         private int _port = 6681;
         private string _ip = String.Empty;
         private int _compact = 1;
@@ -69,6 +71,7 @@ namespace BitTorrent
         public MetaInfoFile TorrentFile { get => _torrentFile; set => _torrentFile = value; }
         public static Timer AnnounceTimer { get => _announceTimer; set => _announceTimer = value; }
         public int Interval { get => _interval; set => _interval = value; }
+        public Response CurrentTrackerResponse { get => _currentTrackerResponse; set => _currentTrackerResponse = value; }
 
         private Response constructResponse(byte[] announceResponse)
         {
@@ -131,6 +134,8 @@ namespace BitTorrent
             response.statusMessage = Bencoding.getDictionaryEntryString(decodedAnnounce, "failure reason");
             response.statusMessage = Bencoding.getDictionaryEntryString(decodedAnnounce, "warning message");
 
+            response.announceCount++;
+
             return (response);
 
         }
@@ -164,8 +169,8 @@ namespace BitTorrent
 
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
-            Response  response = tracker.announce();
-            MainClass.annouceResponse(response);
+            tracker.CurrentTrackerResponse = tracker.announce();
+            MainClass.annouceResponse(tracker._currentTrackerResponse);
 
         }
 

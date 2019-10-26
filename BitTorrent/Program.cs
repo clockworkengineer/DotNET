@@ -62,24 +62,25 @@ namespace BitTorrent
 
             try
             {
-                MetaInfoFile file01 = new MetaInfoFile("./wired.torrent");
+                FileAgent fileAgent01 = new FileAgent("./sample66.torrent", "/home/robt/utorrent");
+ 
+                fileAgent01.load();
 
-                file01.load();
-                file01.parse();
+                fileAgent01.download();
 
-                torrentHasInfo(file01);
+               // torrentHasInfo(fileAgent01.TorrentMetaInfo);
 
-                torrentTrackers(file01);
+               // torrentTrackers(fileAgent01.TorrentMetaInfo);
 
-                Tracker tracker10 = new Tracker(file01, PeerID.get());
+                //Tracker tracker10 = new Tracker(file01, PeerID.get());
 
-                Tracker.Response status = tracker10.announce();
+                //Tracker.Response status = tracker10.announce();
 
-                if (status.peers.Count > 0)
-                {
-                    Peer peer01 = new Peer(status.peers[0].ip, status.peers[0].port, file01.MetaInfoDict["info hash"]);
-                    peer01.connect();
-                }
+                //if (status.peers.Count > 0)
+                //{
+                //    Peer peer01 = new Peer(status.peers[0].ip, status.peers[0].port, file01.MetaInfoDict["info hash"]);
+                //    peer01.connect();
+                //}
 
                 //annouceResponse(status);
            
