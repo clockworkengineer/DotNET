@@ -24,14 +24,14 @@ namespace BitTorrent
         public bool PeerChoking { get => _peerChoking; set => _peerChoking = value; }
         public NetworkStream PeerStream { get => _peerStream; set => _peerStream = value; }
         public FileDownloader FileDownloader { get => _fileDownloader; set => _fileDownloader = value; }
+        public bool AmChoking { get => _amChoking; set => _amChoking = value; }
 
         private void remotePeerReadMessages()
         {
-            while (PeerStream.DataAvailable)
+            while (true)
             {
                 PWP.readRemotePeerMessages(this, PeerStream);
             }
-            Console.WriteLine("END");
         }
 
         public Peer(FileDownloader fileDownloader, string ip ,int port, byte[] infoHash)

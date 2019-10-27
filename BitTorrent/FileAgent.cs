@@ -12,21 +12,50 @@ namespace BitTorrent
         private FileDownloader _fileToDownloader;
         private Peer _remotePeer;
         private Tracker.Response _currentAnnouneResponse;
-
+ 
         public string TorrentFileName { get => _torrentFileName; set => _torrentFileName = value; }
         public MetaInfoFile TorrentMetaInfo { get => _torrentMetaInfo; set => _torrentMetaInfo = value; }
         public string DownloadPath { get => _downloadPath; set => _downloadPath = value; }
         public Tracker MainTracker { get => _mainTracker; set => _mainTracker = value; }
 
-        private void getBlocksOfPiece()
+        private int blockSizeToDownload(int pieceNumber)
         {
+            int blockSize = 1024;
 
+            if (pieceNumber == _fileToDownloader.NumberOfPieces - 1)
+            {
+                if (_fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded < 1024)
+                {
+                    blockSize = _fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded;
+                }
+            }
+
+            return (blockSize);
+      
+        }     
+
+        private void getBlocksOfPiece(int pieceNumber)
+        {
+            Console.WriteLine($"Get blocks for piece {pieceNumber}.");
+
+            for (var blockNumber = 0; blockNumber < _fileToDownloader.BlocksPerPiece; blockNumber++)
+            {
+                PWP.request(_remotePeer, pieceNumber, blockNumber * 1024, blockSizeToDownload(pieceNumber));
+                for(; !_fileToDownloader.ReceivedMap[pieceNumber, blockNumber];) { }
+                if (_fileToDownloader.TotalBytesDownloaded >= _fileToDownloader.Length)
+                {
+                    break;
+                }
+
+            }
+            Console.WriteLine($"All blocks for piece {pieceNumber} received");
         }
 
         public FileAgent(string torrentFileName, String downloadPath)
         {
             _torrentFileName = torrentFileName;
             _downloadPath = downloadPath;
+       
         }
 
         public void load()
@@ -47,7 +76,7 @@ namespace BitTorrent
 
             _currentAnnouneResponse =  _mainTracker.announce();
 
-            _remotePeer = new Peer(_fileToDownloader, _currentAnnouneResponse.peers[0].ip, _currentAnnouneResponse.peers[0].port,
+            _remotePeer = new Peer(_fileToDownloader, _currentAnnouneResponse.peers[1].ip, _currentAnnouneResponse.peers[1].port,
                                    _torrentMetaInfo.MetaInfoDict["info hash"]);
 
             _remotePeer.connect();
@@ -60,32 +89,12 @@ namespace BitTorrent
 
             PWP.unchoke(_remotePeer);
 
-            while (_fileToDownloader.ReceivedMapEnries!=_fileToDownloader.ReceivedMap.Length)
+            while (_fileToDownloader.TotalBytesDownloaded < _fileToDownloader.Length)
             {
-                while (_remotePeer.PeerChoking)
-                {
-                   // Console.WriteLine("Waiting");
-                }
-                int nextPiece = _fileToDownloader.selectNextPiece();
-                Console.WriteLine($"Get Piece {nextPiece}");
-                int pieceLength = int.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
-                int numberOfBlocks = (pieceLength / 1024);
-                if (pieceLength % 1024 != 0)
-                {
-                    numberOfBlocks++;
-                }
-                int blockOffset = 0;
-           //     for (var block = 0; block < numberOfBlocks; block++)
-          //      {
-                    //while (_remotePeer.PeerChoking)
-                    //{
-                    //    // Console.WriteLine("Waiting");
-                    //}
-                    PWP.request(_remotePeer, nextPiece, blockOffset, 1024);
-                    blockOffset += 1024;
-                    //Thread.Sleep(5000);
-             //   }
-              //  Console.ReadKey();
+                int nextPiece;
+                for (;_remotePeer.PeerChoking;) { }
+                nextPiece = _fileToDownloader.selectNextPiece();
+                getBlocksOfPiece(nextPiece);
             }
         }
     }
