@@ -15,6 +15,7 @@ namespace BitTorrent
         private bool[,] _receivedMap;
         private bool[,] _remotePeerMap;
         private int totalBytesDownloaded = 0;
+        private byte[] _currentPiece;
 
         public int PieceLength { get => _pieceLength; set => _pieceLength = value; }
         public int Length { get => _length; set => _length = value; }
@@ -23,6 +24,7 @@ namespace BitTorrent
         public bool[,] ReceivedMap { get => _receivedMap; set => _receivedMap = value; }
         public bool[,] RemotePeerMap { get => _remotePeerMap; set => _remotePeerMap = value; }
         public int TotalBytesDownloaded { get => totalBytesDownloaded; set => totalBytesDownloaded = value; }
+        public byte[] CurrentPiece { get => _currentPiece; set => _currentPiece = value; }
 
         public bool compareBytes(byte[] hash, int pieceNumber)
         {
@@ -96,7 +98,7 @@ namespace BitTorrent
                 NumberOfPieces++;
             }
 
-          //  RemotePeerMap = new bool[NumberOfPieces, BlocksPerPiece];
+            CurrentPiece = new byte[pieceLength];
 
         }
 
@@ -136,6 +138,17 @@ namespace BitTorrent
                 }
             }
             return (-1);
+        }
+
+        public void writePieceToFile(int pieceNumber)
+        {
+            using (Stream stream = new FileStream(_name, FileMode.OpenOrCreate))
+            {
+                stream.Seek(pieceNumber*PieceLength, SeekOrigin.Begin);
+                stream.Write(_currentPiece, 0, CurrentPiece.Length);
+                Array.Clear(CurrentPiece, 0, CurrentPiece.Length);
+            }
+
         }
     }
 }

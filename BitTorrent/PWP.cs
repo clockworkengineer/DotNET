@@ -206,7 +206,7 @@ namespace BitTorrent
                 remotePeer.FileDownloader.ReceivedMap[pieceNumber, blockOffset / 1024] = true;
             }
 
-        
+            Buffer.BlockCopy(messageBody, 9, remotePeer.FileDownloader.CurrentPiece, (int) blockOffset, messageBody.Length-9);
 
         }
 

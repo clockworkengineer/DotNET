@@ -49,6 +49,9 @@ namespace BitTorrent
 
             }
             Console.WriteLine($"All blocks for piece {pieceNumber} received");
+
+            _fileToDownloader.writePieceToFile(pieceNumber);
+
         }
 
         public FileAgent(string torrentFileName, String downloadPath)
