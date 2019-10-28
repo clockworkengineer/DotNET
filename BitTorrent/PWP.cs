@@ -136,7 +136,7 @@ namespace BitTorrent
                 PWP.interested(remotePeer);
                 for (var blockNumber=0; blockNumber < remotePeer.FileDownloader.BlocksPerPiece; blockNumber++)
                 {
-                    remotePeer.FileDownloader.RemotePeerMap[pieceNumber, blockNumber] = true;
+                    remotePeer.FileDownloader.RemotePeerMap[pieceNumber].blocks[blockNumber] = true;
                 }
             }
 
@@ -182,7 +182,7 @@ namespace BitTorrent
                 {
                     for (var blockNumber=0; blockNumber <remotePeer.FileDownloader.BlocksPerPiece; blockNumber++)
                     {
-                        remotePeer.FileDownloader.RemotePeerMap[pieceNumber, blockNumber] = true;
+                        remotePeer.FileDownloader.RemotePeerMap[pieceNumber].blocks[blockNumber] = true;
                     }
                 }
             }
@@ -201,9 +201,9 @@ namespace BitTorrent
 
             Console.WriteLine($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {messageBody.Length-9}\n");
 
-            if (!remotePeer.FileDownloader.ReceivedMap[pieceNumber, blockOffset / 1024]) {
+            if (!remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / 1024]) {
                 remotePeer.FileDownloader.TotalBytesDownloaded += 1024;
-                remotePeer.FileDownloader.ReceivedMap[pieceNumber, blockOffset / 1024] = true;
+                remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / 1024] = true;
             }
 
             Buffer.BlockCopy(messageBody, 9, remotePeer.FileDownloader.CurrentPiece, (int) blockOffset, messageBody.Length-9);

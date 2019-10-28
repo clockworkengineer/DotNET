@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.IO;
 using System.Threading;
 namespace BitTorrent
 {
@@ -41,7 +42,7 @@ namespace BitTorrent
             for (var blockNumber = 0; blockNumber < _fileToDownloader.BlocksPerPiece; blockNumber++)
             {
                 PWP.request(_remotePeer, pieceNumber, blockNumber * 1024, blockSizeToDownload(pieceNumber));
-                for(; !_fileToDownloader.ReceivedMap[pieceNumber, blockNumber];) { }
+                for(; !_fileToDownloader.ReceivedMap[pieceNumber].blocks[blockNumber];) { }
                 if (_fileToDownloader.TotalBytesDownloaded >= _fileToDownloader.Length)
                 {
                     break;
@@ -79,7 +80,7 @@ namespace BitTorrent
 
             _currentAnnouneResponse =  _mainTracker.announce();
 
-            _remotePeer = new Peer(_fileToDownloader, _currentAnnouneResponse.peers[1].ip, _currentAnnouneResponse.peers[1].port,
+            _remotePeer = new Peer(_fileToDownloader, _currentAnnouneResponse.peers[0].ip, _currentAnnouneResponse.peers[0].port,
                                    _torrentMetaInfo.MetaInfoDict["info hash"]);
 
             _remotePeer.connect();
@@ -99,6 +100,12 @@ namespace BitTorrent
                 nextPiece = _fileToDownloader.selectNextPiece();
                 getBlocksOfPiece(nextPiece);
             }
+
+            using (Stream stream = new FileStream(_fileToDownloader.FileName, FileMode.OpenOrCreate))
+            {
+                stream.SetLength(_fileToDownloader.Length);
+            }
+
         }
     }
 }
