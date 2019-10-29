@@ -21,11 +21,11 @@ namespace BitTorrent
 
         private int blockSizeToDownload(int pieceNumber)
         {
-            int blockSize = 1024;
+            int blockSize = Constants.kBlockSize;
 
             if (pieceNumber == _fileToDownloader.NumberOfPieces - 1)
             {
-                if (_fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded < 1024)
+                if (_fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded < Constants.kBlockSize)
                 {
                     blockSize = _fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded;
                 }
@@ -41,14 +41,12 @@ namespace BitTorrent
 
             for (var blockNumber = 0; blockNumber < _fileToDownloader.BlocksPerPiece; blockNumber++)
             {
-                PWP.request(_remotePeer, pieceNumber, blockNumber * 1024, blockSizeToDownload(pieceNumber));
+                PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, blockSizeToDownload(pieceNumber));
                 for(; !_fileToDownloader.ReceivedMap[pieceNumber].blocks[blockNumber];) { }
-                if (_fileToDownloader.TotalBytesDownloaded >= _fileToDownloader.Length)
-                {
-                    break;
-                }
+                if (_fileToDownloader.TotalBytesDownloaded >= _fileToDownloader.Length) { break; }
 
             }
+
             Console.WriteLine($"All blocks for piece {pieceNumber} received");
 
             _fileToDownloader.writePieceToFile(pieceNumber);
@@ -98,14 +96,20 @@ namespace BitTorrent
                 int nextPiece;
                 for (;_remotePeer.PeerChoking;) { }
                 nextPiece = _fileToDownloader.selectNextPiece();
+                if (nextPiece==-1)
+                {
+                    break;
+                }
                 getBlocksOfPiece(nextPiece);
             }
+            Console.WriteLine("File downloaded.");
+        
+        }
 
-            using (Stream stream = new FileStream(_fileToDownloader.FileName, FileMode.OpenOrCreate))
-            {
-                stream.SetLength(_fileToDownloader.Length);
-            }
-
+        public void close()
+        {
+            _remotePeer.ReadFromRemotePeer = false;
+            _remotePeer.PeerStream.Close();
         }
     }
 }

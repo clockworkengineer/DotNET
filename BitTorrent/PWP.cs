@@ -10,25 +10,19 @@ namespace BitTorrent
     public class PWP
     {
         private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
-        private static  readonly object balanceLock = new object();
+
         private static void peerWrite(NetworkStream peerStream, byte[] buffer, int length)
         {
-           // lock (balanceLock)
-            {
-                peerStream.Write(buffer, 0, buffer.Length);
-                peerStream.Flush();
+
+            peerStream.Write(buffer, 0, buffer.Length);
+            peerStream.Flush();
              
-            }
         }
 
         private static int peerRead(NetworkStream peerStream, byte[] buffer, int length)
         {
-            int len = 0;
-         //   lock (balanceLock)
-            {
-                len = peerStream.Read(buffer, 0, buffer.Length);
-            }
-            return (len);
+ 
+            return (peerStream.Read(buffer, 0, buffer.Length));
         }
 
         private static UInt32 unpackUInt32(byte[] buffer, int offset)
@@ -75,7 +69,7 @@ namespace BitTorrent
                 }
             }
 
-            remotePeerID = new byte[20];
+            remotePeerID = new byte[Constants.kHashLength];
 
             Buffer.BlockCopy(handshakeResponse, _protocolName.Length + 29, remotePeerID, 0, remotePeerID.Length);
 
@@ -109,21 +103,23 @@ namespace BitTorrent
         private static void handleCHOKE(Peer remotePeer, byte[] messageBody)
         {
             remotePeer.PeerChoking = true;
+            Console.WriteLine("CHOKE");
         }
 
         private static void handleUNCHOKE(Peer remotePeer, byte[] messageBody)
         {
             remotePeer.PeerChoking = false;
+            Console.WriteLine("UNCHOKED");
         }
 
         private static void handleINTERESTED(Peer remotePeer, byte[] messageBody)
         {
-
+            Console.WriteLine("INTERESTED");
         }
 
         private static void handleUNINTERESTED(Peer remotePeer, byte[] messageBody)
         {
-
+            Console.WriteLine("UNINTERESTED");
         }
 
         private static void handleHAVE(Peer remotePeer, byte[] messageBody)
@@ -190,7 +186,7 @@ namespace BitTorrent
 
         private static void handleREQUEST(Peer remotePeer, byte[] messageBody)
         {
-
+            Console.WriteLine("REQUEST");
         }
 
         private static void handlePIECE(Peer remotePeer, byte[] messageBody)
@@ -201,9 +197,9 @@ namespace BitTorrent
 
             Console.WriteLine($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {messageBody.Length-9}\n");
 
-            if (!remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / 1024]) {
-                remotePeer.FileDownloader.TotalBytesDownloaded += 1024;
-                remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / 1024] = true;
+            if (!remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize]) {
+                remotePeer.FileDownloader.TotalBytesDownloaded += Constants.kBlockSize;
+                remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize] = true;
             }
 
             Buffer.BlockCopy(messageBody, 9, remotePeer.FileDownloader.CurrentPiece, (int) blockOffset, messageBody.Length-9);
@@ -212,7 +208,7 @@ namespace BitTorrent
 
         private static void handleCANCEL(Peer remotePeer, byte[] messageBody)
         {
-
+            Console.WriteLine("CANCEL");
         }
 
         public static void readRemotePeerMessages(Peer remotePeer, NetworkStream peerStream)
@@ -234,43 +230,34 @@ namespace BitTorrent
                 switch (messageBody[0])
                 {
                     case 0x0:
-                        Console.WriteLine("CHOKE");
                         handleCHOKE(remotePeer, messageBody);
                         break;
                     case 0x1:
-                        Console.WriteLine("UNCHOKE");
                         handleUNCHOKE(remotePeer, messageBody);
                         break;
                     case 0x2:
-                        Console.WriteLine("INTERESTED");
                         handleINTERESTED(remotePeer, messageBody);
                         break;
                     case 0x3:
-                        Console.WriteLine("UNINTERESTED");
                         handleUNINTERESTED(remotePeer, messageBody);
                         break;
                     case 0x4:
-                        Console.WriteLine("HAVE");
                         handleHAVE(remotePeer, messageBody);
                         break;
                     case 0x5:
-                        Console.WriteLine("BITFIELD");
                         handleBITMAP(remotePeer, messageBody);
                         break;
                     case 0x6:
-                        Console.WriteLine("REQUEST");
                         handleREQUEST(remotePeer, messageBody);
                         break;
                     case 0x7:
-                        Console.WriteLine("PIECE");
                         handlePIECE(remotePeer, messageBody);
                         break;
                     case 0x8:
-                        Console.WriteLine("CANCEL");
                         handleCANCEL(remotePeer, messageBody);
                         break;
                     default:
-                        Console.WriteLine($"UNKOWN {messageBody[0]}");
+                        Console.WriteLine($"UNKOWN REQUEST{messageBody[0]}");
                         break;
                   
                 }

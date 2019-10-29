@@ -8,7 +8,7 @@ namespace BitTorrent
     {
         public struct FileRecievedMap{
             public bool[] blocks;
-            public UInt32 pieceSize;
+            public int pieceSize;
         }
 
         private string _fileName = String.Empty;
@@ -31,6 +31,7 @@ namespace BitTorrent
         public FileRecievedMap[] ReceivedMap { get => _receivedMap; set => _receivedMap = value; }
         public FileRecievedMap[] RemotePeerMap { get => _remotePeerMap; set => _remotePeerMap = value; }
         public string FileName { get => _fileName; set => _fileName = value; }
+        public byte[] Pieces { get => _pieces; set => _pieces = value; }
 
         private void createPieceMaps()
         {
@@ -39,28 +40,27 @@ namespace BitTorrent
 
             for (int pieceNubmer = 0; pieceNubmer < NumberOfPieces; pieceNubmer++) {
                 ReceivedMap[pieceNubmer].blocks = new bool[BlocksPerPiece];
-                ReceivedMap[pieceNubmer].pieceSize = (UInt32) PieceLength;
+                ReceivedMap[pieceNubmer].pieceSize = PieceLength;
                 RemotePeerMap[pieceNubmer].blocks = new bool[BlocksPerPiece];
-                RemotePeerMap[pieceNubmer].pieceSize = (UInt32) PieceLength;
+                RemotePeerMap[pieceNubmer].pieceSize =  PieceLength;
             }
 
-            ReceivedMap[NumberOfPieces - 1].pieceSize = (UInt32)(Length % PieceLength);
-            RemotePeerMap[NumberOfPieces - 1].pieceSize = (UInt32)(Length % PieceLength);
-
+            ReceivedMap[NumberOfPieces - 1].pieceSize = (Length % PieceLength);
+            RemotePeerMap[NumberOfPieces - 1].pieceSize = (Length % PieceLength);
 
         }
 
-        public bool compareBytes(byte[] hash, int pieceNumber)
+        public bool checkPieceHash(byte[] hash, int pieceNumber)
         {
-            int pieceOffset = pieceNumber * 20;
-            for (var byteNumber = 0; byteNumber < 20; byteNumber++)
+            int pieceOffset = pieceNumber * Constants.kHashLength;
+            for (var byteNumber = 0; byteNumber < Constants.kHashLength; byteNumber++)
             {
-                if (hash[byteNumber] != _pieces[pieceOffset + byteNumber])
+                if (hash[byteNumber] != Pieces[pieceOffset + byteNumber])
                 {
                     return (false);
                 }
             }
-            return (false);
+            return (true);
 
         }
 
@@ -79,8 +79,14 @@ namespace BitTorrent
 
                 while (bytesRead > 0)
                 {
+                    if (bytesRead < _pieceLength)
+                    {
+                        byte[] lastBuffer = new byte[bytesRead];
+                        Buffer.BlockCopy(buffer, 0, lastBuffer, 0, lastBuffer.Length);
+                        buffer = lastBuffer;
+                    }
                     byte[] hash = sha.ComputeHash(buffer);
-                    if (compareBytes(hash, pieceNumber)) {
+                    if (checkPieceHash(hash, pieceNumber)) {
                         for (int block =0; block < _blocksPerPiece; block++)
                         {
                             ReceivedMap[pieceNumber].blocks[block] = true;
@@ -106,10 +112,10 @@ namespace BitTorrent
             FileName = name;
             _length = length;
             _pieceLength = pieceLength;
-            _pieces = pieces;;
+            Pieces = pieces;;
 
-            BlocksPerPiece = (pieceLength / 1024);
-            if (pieceLength % 1024 != 0)
+            BlocksPerPiece = (pieceLength / Constants.kBlockSize);
+            if (pieceLength % Constants.kBlockSize != 0)
             {
                 BlocksPerPiece++;
             }
@@ -167,7 +173,7 @@ namespace BitTorrent
             using (Stream stream = new FileStream(FileName, FileMode.OpenOrCreate))
             {
                 stream.Seek(pieceNumber*PieceLength, SeekOrigin.Begin);
-                stream.Write(_currentPiece, 0, (int) RemotePeerMap[pieceNumber].pieceSize);
+                stream.Write(_currentPiece, 0,  RemotePeerMap[pieceNumber].pieceSize);
                 Array.Clear(CurrentPiece, 0, CurrentPiece.Length);
             }
 

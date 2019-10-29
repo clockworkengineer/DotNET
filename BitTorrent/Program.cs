@@ -62,39 +62,13 @@ namespace BitTorrent
 
             try
             {
-                FileAgent fileAgent01 = new FileAgent("./sample66.torrent", "/home/robt/utorrent");
+                FileAgent fileAgent01 = new FileAgent("./sample10.torrent", "/home/robt/utorrent");
  
                 fileAgent01.load();
 
                 fileAgent01.download();
 
-               // torrentHasInfo(fileAgent01.TorrentMetaInfo);
-
-               // torrentTrackers(fileAgent01.TorrentMetaInfo);
-
-                //Tracker tracker10 = new Tracker(file01, PeerID.get());
-
-                //Tracker.Response status = tracker10.announce();
-
-                //if (status.peers.Count > 0)
-                //{
-                //    Peer peer01 = new Peer(status.peers[0].ip, status.peers[0].port, file01.MetaInfoDict["info hash"]);
-                //    peer01.connect();
-                //}
-
-                //annouceResponse(status);
-           
-
-                //tracker10.Interval = status.interval;
-
-                //tracker10.startAnnouncing();
-
-                //Console.ReadKey();
-
-             
-                //tracker10.stopAnnonncing();
-
-              
+                fileAgent01.close();
 
 
             }

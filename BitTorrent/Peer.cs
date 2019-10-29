@@ -20,17 +20,26 @@ namespace BitTorrent
         private byte[] _remotePeerID;
         private Thread _peerReadThread;
         private FileDownloader _fileDownloader;
+        private bool readFromRemotePeer = true;
 
         public bool PeerChoking { get => _peerChoking; set => _peerChoking = value; }
         public NetworkStream PeerStream { get => _peerStream; set => _peerStream = value; }
         public FileDownloader FileDownloader { get => _fileDownloader; set => _fileDownloader = value; }
         public bool AmChoking { get => _amChoking; set => _amChoking = value; }
+        public bool ReadFromRemotePeer { get => readFromRemotePeer; set => readFromRemotePeer = value; }
 
         private void remotePeerReadMessages()
         {
-            while (true)
+            try
             {
-                PWP.readRemotePeerMessages(this, PeerStream);
+                while (ReadFromRemotePeer)
+                {
+                    PWP.readRemotePeerMessages(this, PeerStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
 
