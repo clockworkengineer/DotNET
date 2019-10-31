@@ -101,6 +101,7 @@ namespace BitTorrent
                     break;
                 }
                 getBlocksOfPiece(nextPiece);
+                Console.WriteLine((int)((((double)_fileToDownloader.TotalBytesDownloaded)/_fileToDownloader.Length)*100.0));
             }
             Console.WriteLine("File downloaded.");
         

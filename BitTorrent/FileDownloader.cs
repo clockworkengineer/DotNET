@@ -90,7 +90,10 @@ namespace BitTorrent
                         for (int block =0; block < _blocksPerPiece; block++)
                         {
                             ReceivedMap[pieceNumber].blocks[block] = true;
+                           
                         }
+
+                        totalBytesDownloaded += (UInt64) ReceivedMap[pieceNumber].pieceSize;
                     }
                     bytesRead = inFileSteam.Read(buffer, 0, buffer.Length);
                     pieceNumber++;
