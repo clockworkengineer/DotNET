@@ -12,21 +12,21 @@ namespace BitTorrent
         }
 
         private string _fileName = String.Empty;
-        private int _length = 0;
+        private UInt64 _length = 0;
         private int _pieceLength = 0;
         private int _blocksPerPiece = 0;
         private byte[] _pieces;
         private int _numberOfPieces = 0;
         private FileRecievedMap[] _receivedMap;
         private FileRecievedMap[] _remotePeerMap;
-        private int totalBytesDownloaded = 0;
+        private UInt64 totalBytesDownloaded = 0;
         private byte[] _currentPiece;
 
         public int PieceLength { get => _pieceLength; set => _pieceLength = value; }
-        public int Length { get => _length; set => _length = value; }
+        public UInt64 Length { get => _length; set => _length = value; }
         public int BlocksPerPiece { get => _blocksPerPiece; set => _blocksPerPiece = value; }
         public int NumberOfPieces { get => _numberOfPieces; set => _numberOfPieces = value; }
-        public int TotalBytesDownloaded { get => totalBytesDownloaded; set => totalBytesDownloaded = value; }
+        public UInt64 TotalBytesDownloaded { get => totalBytesDownloaded; set => totalBytesDownloaded = value; }
         public byte[] CurrentPiece { get => _currentPiece; set => _currentPiece = value; }
         public FileRecievedMap[] ReceivedMap { get => _receivedMap; set => _receivedMap = value; }
         public FileRecievedMap[] RemotePeerMap { get => _remotePeerMap; set => _remotePeerMap = value; }
@@ -45,8 +45,8 @@ namespace BitTorrent
                 RemotePeerMap[pieceNubmer].pieceSize =  PieceLength;
             }
 
-            ReceivedMap[NumberOfPieces - 1].pieceSize = (Length % PieceLength);
-            RemotePeerMap[NumberOfPieces - 1].pieceSize = (Length % PieceLength);
+            ReceivedMap[NumberOfPieces - 1].pieceSize = (int) (Length % ((UInt64) PieceLength));
+            RemotePeerMap[NumberOfPieces - 1].pieceSize = (int) (Length % ((UInt64)PieceLength));
 
         }
 
@@ -103,11 +103,15 @@ namespace BitTorrent
 
         private void createFile()
         {
-            System.IO.File.WriteAllBytes(FileName, new byte[Length]);
+            using (var fs = new FileStream(FileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                fs.SetLength((Int64) Length);
+            }
+
             createPieceMaps();
         }
 
-        public FileDownloader(String name, int length, int pieceLength, byte[] pieces)
+        public FileDownloader(String name, UInt64 length, int pieceLength, byte[] pieces)
         {
             FileName = name;
             _length = length;
@@ -119,10 +123,9 @@ namespace BitTorrent
             {
                 BlocksPerPiece++;
             }
-            NumberOfPieces = (_length / _pieceLength );
-            if (_length %_pieceLength != 0)
+            NumberOfPieces = (int) (_length / ((UInt64) _pieceLength ));
+            if (_length % ((UInt64) _pieceLength) != 0)
             {
-                int rem = _length % _pieceLength;
                 NumberOfPieces++;
             }
 

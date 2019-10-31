@@ -25,9 +25,9 @@ namespace BitTorrent
 
             if (pieceNumber == _fileToDownloader.NumberOfPieces - 1)
             {
-                if (_fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded < Constants.kBlockSize)
+                if (_fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded < (UInt64)Constants.kBlockSize)
                 {
-                    blockSize = _fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded;
+                    blockSize = (int) (_fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded);
                 }
             }
 
@@ -70,7 +70,7 @@ namespace BitTorrent
             _mainTracker = new Tracker(_torrentMetaInfo, PeerID.get());
 
             string fileName = _downloadPath + "/" + Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
-            int fileLength = int.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["length"]));
+            UInt64 fileLength = UInt64.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["length"]));
             int pieceLength = int.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
             _fileToDownloader = new FileDownloader(fileName, fileLength, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
 
@@ -109,7 +109,7 @@ namespace BitTorrent
         public void close()
         {
             _remotePeer.ReadFromRemotePeer = false;
-            _remotePeer.PeerStream.Close();
+            _remotePeer.PeerSocket.Close();
         }
     }
 }

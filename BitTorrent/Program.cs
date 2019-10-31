@@ -62,7 +62,7 @@ namespace BitTorrent
 
             try
             {
-                FileAgent fileAgent01 = new FileAgent("./sample10.torrent", "/home/robt/utorrent");
+                FileAgent fileAgent01 = new FileAgent("./suf.torrent", "/home/robt/utorrent");
  
                 fileAgent01.load();
 

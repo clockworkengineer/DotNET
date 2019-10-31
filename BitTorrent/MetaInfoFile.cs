@@ -144,7 +144,7 @@ namespace BitTorrent
 
         public string getTrackerURL()
         {
-            return (Encoding.ASCII.GetString(_metaInfoDict["announce"]));
+            return(Encoding.ASCII.GetString(_metaInfoDict["announce"]));
         }
 
         public MetaInfoFile(string fileName)
