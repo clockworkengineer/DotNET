@@ -170,7 +170,7 @@ namespace BitTorrent
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
             tracker.CurrentTrackerResponse = tracker.announce();
-            MainClass.annouceResponse(tracker._currentTrackerResponse);
+            Program.annouceResponse(tracker._currentTrackerResponse);
 
         }
 

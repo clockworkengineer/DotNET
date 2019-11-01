@@ -1,11 +1,19 @@
 ﻿using System;
 using System.Text;
-using System.IO;
-using System.Threading;
+using System.Collections.Generic;
+
 namespace BitTorrent
 {
     public class FileAgent
     {
+
+        public class FileDetails
+        {
+            public string name;
+            public UInt64 length;
+            public string md5sum;
+        }
+
         private string _torrentFileName;
         private MetaInfoFile _torrentMetaInfo;
         private string _downloadPath;
@@ -13,7 +21,8 @@ namespace BitTorrent
         private FileDownloader _fileToDownloader;
         private Peer _remotePeer;
         private Tracker.Response _currentAnnouneResponse;
- 
+        private List<FileDetails> _filesToDownload;
+
         public string TorrentFileName { get => _torrentFileName; set => _torrentFileName = value; }
         public MetaInfoFile TorrentMetaInfo { get => _torrentMetaInfo; set => _torrentMetaInfo = value; }
         public string DownloadPath { get => _downloadPath; set => _downloadPath = value; }
@@ -37,7 +46,7 @@ namespace BitTorrent
 
         private void getBlocksOfPiece(int pieceNumber)
         {
-            Console.WriteLine($"Get blocks for piece {pieceNumber}.");
+            Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
 
             for (var blockNumber = 0; blockNumber < _fileToDownloader.BlocksPerPiece; blockNumber++)
             {
@@ -47,7 +56,7 @@ namespace BitTorrent
 
             }
 
-            Console.WriteLine($"All blocks for piece {pieceNumber} received");
+            Program.Logger.Debug($"All blocks for piece {pieceNumber} received");
 
             _fileToDownloader.writePieceToFile(pieceNumber);
 
@@ -69,10 +78,34 @@ namespace BitTorrent
 
             _mainTracker = new Tracker(_torrentMetaInfo, PeerID.get());
 
-            string fileName = _downloadPath + "/" + Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
-            UInt64 fileLength = UInt64.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["length"]));
+            _filesToDownload = new List<FileDetails>();
+
+            if (!_torrentMetaInfo.MetaInfoDict.ContainsKey("0"))
+            {
+                FileDetails fileDetail = new FileDetails();
+                fileDetail.name = _downloadPath + "/" + Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
+                fileDetail.length = UInt64.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["length"]));
+                _filesToDownload.Add(fileDetail);
+            }
+            else
+            {
+                int fileNo = 0;
+                string name = Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
+                while (_torrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
+                {
+                    string[] details = Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict[fileNo.ToString()]).Split(',');
+                    FileDetails fileDetail = new FileDetails();
+                    fileDetail.name = _downloadPath + "/" + name+ details[0];
+                    fileDetail.length = UInt64.Parse(details[1]);
+                    fileDetail.md5sum = details[2];
+                    _filesToDownload.Add(fileDetail);
+                    fileNo++;
+                }
+
+            }
             int pieceLength = int.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
-            _fileToDownloader = new FileDownloader(fileName, fileLength, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
+
+            _fileToDownloader = new FileDownloader(_filesToDownload, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
 
             _fileToDownloader.check();
 
@@ -101,9 +134,9 @@ namespace BitTorrent
                     break;
                 }
                 getBlocksOfPiece(nextPiece);
-                Console.WriteLine((int)((((double)_fileToDownloader.TotalBytesDownloaded)/_fileToDownloader.Length)*100.0));
+                Program.Logger.Debug($"{(int)((((double)_fileToDownloader.TotalBytesDownloaded) / _fileToDownloader.Length) * 100.0)}%");
             }
-            Console.WriteLine("File downloaded.");
+            Program.Logger.Debug("File downloaded.");
         
         }
 

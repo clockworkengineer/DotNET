@@ -135,7 +135,7 @@ namespace BitTorrent
             {
                 if ((key != "pieces")&&(key!="info")&&(key!="info hash"))
                 {
-                    Console.WriteLine($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
+                    Program.Logger.Debug($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
                 }
             }
 

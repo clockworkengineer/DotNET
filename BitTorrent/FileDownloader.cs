@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Collections.Generic;
 
 namespace BitTorrent
 {
+
     public class FileDownloader
     {
         public struct FileRecievedMap{
@@ -19,34 +21,36 @@ namespace BitTorrent
         private int _numberOfPieces = 0;
         private FileRecievedMap[] _receivedMap;
         private FileRecievedMap[] _remotePeerMap;
-        private UInt64 totalBytesDownloaded = 0;
+        private UInt64 _totalBytesDownloaded = 0;
         private byte[] _currentPiece;
+        private List<FileAgent.FileDetails> _filesToDownload;
 
+        public string FileName { get => _fileName; set => _fileName = value; }
+        public ulong Length { get => _length; set => _length = value; }
         public int PieceLength { get => _pieceLength; set => _pieceLength = value; }
-        public UInt64 Length { get => _length; set => _length = value; }
         public int BlocksPerPiece { get => _blocksPerPiece; set => _blocksPerPiece = value; }
+        public byte[] Pieces { get => _pieces; set => _pieces = value; }
         public int NumberOfPieces { get => _numberOfPieces; set => _numberOfPieces = value; }
-        public UInt64 TotalBytesDownloaded { get => totalBytesDownloaded; set => totalBytesDownloaded = value; }
-        public byte[] CurrentPiece { get => _currentPiece; set => _currentPiece = value; }
         public FileRecievedMap[] ReceivedMap { get => _receivedMap; set => _receivedMap = value; }
         public FileRecievedMap[] RemotePeerMap { get => _remotePeerMap; set => _remotePeerMap = value; }
-        public string FileName { get => _fileName; set => _fileName = value; }
-        public byte[] Pieces { get => _pieces; set => _pieces = value; }
+        public ulong TotalBytesDownloaded { get => _totalBytesDownloaded; set => _totalBytesDownloaded = value; }
+        public byte[] CurrentPiece { get => _currentPiece; set => _currentPiece = value; }
+        public List<FileAgent.FileDetails> FilesToDownload { get => _filesToDownload; set => _filesToDownload = value; }
 
         private void createPieceMaps()
         {
-            RemotePeerMap = new FileRecievedMap[NumberOfPieces];
-            ReceivedMap = new FileRecievedMap[NumberOfPieces];
+            _remotePeerMap = new FileRecievedMap[_numberOfPieces];
+            _receivedMap = new FileRecievedMap[_numberOfPieces];
 
-            for (int pieceNubmer = 0; pieceNubmer < NumberOfPieces; pieceNubmer++) {
-                ReceivedMap[pieceNubmer].blocks = new bool[BlocksPerPiece];
-                ReceivedMap[pieceNubmer].pieceSize = PieceLength;
-                RemotePeerMap[pieceNubmer].blocks = new bool[BlocksPerPiece];
-                RemotePeerMap[pieceNubmer].pieceSize =  PieceLength;
+            for (int pieceNubmer = 0; pieceNubmer < _numberOfPieces; pieceNubmer++) {
+                _receivedMap[pieceNubmer].blocks = new bool[_blocksPerPiece];
+                _receivedMap[pieceNubmer].pieceSize = _pieceLength;
+                _remotePeerMap[pieceNubmer].blocks = new bool[_blocksPerPiece];
+                _remotePeerMap[pieceNubmer].pieceSize = _pieceLength;
             }
 
-            ReceivedMap[NumberOfPieces - 1].pieceSize = (int) (Length % ((UInt64) PieceLength));
-            RemotePeerMap[NumberOfPieces - 1].pieceSize = (int) (Length % ((UInt64)PieceLength));
+            _receivedMap[_numberOfPieces - 1].pieceSize = (int) (_length % ((UInt64)_pieceLength));
+            _remotePeerMap[_numberOfPieces - 1].pieceSize = (int) (_length % ((UInt64)_pieceLength));
 
         }
 
@@ -55,7 +59,7 @@ namespace BitTorrent
             int pieceOffset = pieceNumber * Constants.kHashLength;
             for (var byteNumber = 0; byteNumber < Constants.kHashLength; byteNumber++)
             {
-                if (hash[byteNumber] != Pieces[pieceOffset + byteNumber])
+                if (hash[byteNumber] != _pieces[pieceOffset + byteNumber])
                 {
                     return (false);
                 }
@@ -89,11 +93,11 @@ namespace BitTorrent
                     if (checkPieceHash(hash, pieceNumber)) {
                         for (int block =0; block < _blocksPerPiece; block++)
                         {
-                            ReceivedMap[pieceNumber].blocks[block] = true;
+                            _receivedMap[pieceNumber].blocks[block] = true;
                            
                         }
 
-                        totalBytesDownloaded += (UInt64) ReceivedMap[pieceNumber].pieceSize;
+                        _totalBytesDownloaded += (UInt64)_receivedMap[pieceNumber].pieceSize;
                     }
                     bytesRead = inFileSteam.Read(buffer, 0, buffer.Length);
                     pieceNumber++;
@@ -106,39 +110,39 @@ namespace BitTorrent
 
         private void createFile()
         {
-            using (var fs = new FileStream(FileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var fs = new FileStream(_fileName, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                fs.SetLength((Int64) Length);
+                fs.SetLength((Int64)_length);
             }
 
             createPieceMaps();
         }
 
-        public FileDownloader(String name, UInt64 length, int pieceLength, byte[] pieces)
+        public FileDownloader(List<FileAgent.FileDetails> filesToDownload, int pieceLength, byte[] pieces)
         {
-            FileName = name;
-            _length = length;
+
+            _filesToDownload = filesToDownload;
             _pieceLength = pieceLength;
-            Pieces = pieces;;
+            _pieces = pieces;;
 
-            BlocksPerPiece = (pieceLength / Constants.kBlockSize);
-            if (pieceLength % Constants.kBlockSize != 0)
+            _blocksPerPiece = (_pieceLength / Constants.kBlockSize);
+            if (_pieceLength % Constants.kBlockSize != 0)
             {
-                BlocksPerPiece++;
+                _blocksPerPiece++;
             }
-            NumberOfPieces = (int) (_length / ((UInt64) _pieceLength ));
-            if (_length % ((UInt64) _pieceLength) != 0)
+            _numberOfPieces = (int) (_length / ((UInt64)_pieceLength));
+            if (_length % ((UInt64)_pieceLength) != 0)
             {
-                NumberOfPieces++;
+                _numberOfPieces++;
             }
 
-            CurrentPiece = new byte[pieceLength];
+            _currentPiece = new byte[_pieceLength];
 
         }
 
         public void check()
         {
-            if (!System.IO.File.Exists(FileName))
+            if (!System.IO.File.Exists(_fileName))
             {
                 createFile();
             }
@@ -152,7 +156,7 @@ namespace BitTorrent
         {
             for (int block=0; block < _blocksPerPiece; block++)
             {
-                if (!ReceivedMap[pieceNumber].blocks[block])
+                if (!_receivedMap[pieceNumber].blocks[block])
                 {
                     return (false);
                 }
@@ -161,11 +165,11 @@ namespace BitTorrent
         }
         public int selectNextPiece()
         {
-            for (var pieceNumber=0; pieceNumber < NumberOfPieces; pieceNumber++)
+            for (var pieceNumber=0; pieceNumber < _numberOfPieces; pieceNumber++)
             {
-                for (var blockNumber = 0; blockNumber < BlocksPerPiece; blockNumber++)
+                for (var blockNumber = 0; blockNumber < _blocksPerPiece; blockNumber++)
                 {
-                    if (RemotePeerMap[pieceNumber].blocks[blockNumber] && !ReceivedMap[pieceNumber].blocks[blockNumber])
+                    if (_remotePeerMap[pieceNumber].blocks[blockNumber] && !_receivedMap[pieceNumber].blocks[blockNumber])
                     {
                         return (pieceNumber);
                     }
@@ -176,11 +180,11 @@ namespace BitTorrent
 
         public void writePieceToFile(int pieceNumber)
         {
-            using (Stream stream = new FileStream(FileName, FileMode.OpenOrCreate))
+            using (Stream stream = new FileStream(_fileName, FileMode.OpenOrCreate))
             {
-                stream.Seek(pieceNumber*PieceLength, SeekOrigin.Begin);
-                stream.Write(_currentPiece, 0,  RemotePeerMap[pieceNumber].pieceSize);
-                Array.Clear(CurrentPiece, 0, CurrentPiece.Length);
+                stream.Seek(pieceNumber* _pieceLength, SeekOrigin.Begin);
+                stream.Write(_currentPiece, 0, _remotePeerMap[pieceNumber].pieceSize);
+                Array.Clear(_currentPiece, 0, _currentPiece.Length);
             }
 
         }

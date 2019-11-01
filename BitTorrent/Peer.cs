@@ -66,7 +66,7 @@ namespace BitTorrent
 
             if (peerResponse.Item1)
             {
-                Console.WriteLine($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(peerResponse.Item2)}].");
+                Program.Logger.Debug($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(peerResponse.Item2)}].");
             }
 
             PeerSocket.BeginReceive(_readBuffer, 0, ReadBuffer.Length, 0, readPacketCallBack, this);
@@ -112,7 +112,7 @@ namespace BitTorrent
             }
             catch (Exception e)
             {
-                Console.WriteLine("ERROR : "+e.Message);
+                Program.Logger.Debug("ERROR : "+e.Message);
             }
         }
 
