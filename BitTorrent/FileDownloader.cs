@@ -37,20 +37,19 @@ namespace BitTorrent
         public byte[] CurrentPiece { get => _currentPiece; set => _currentPiece = value; }
         public List<FileAgent.FileDetails> FilesToDownload { get => _filesToDownload; set => _filesToDownload = value; }
 
-        private void createPieceMaps()
+        private void createFileMapEntries(FileAgent.FileDetails fileDetails)
         {
-            _remotePeerMap = new FileRecievedMap[_numberOfPieces];
-            _receivedMap = new FileRecievedMap[_numberOfPieces];
+            int lastPiece = fileDetails.startPiece + fileDetails.numberOfPieces;
 
-            for (int pieceNubmer = 0; pieceNubmer < _numberOfPieces; pieceNubmer++) {
+            for (int pieceNubmer = fileDetails.startPiece; pieceNubmer < lastPiece; pieceNubmer++) {
                 _receivedMap[pieceNubmer].blocks = new bool[_blocksPerPiece];
                 _receivedMap[pieceNubmer].pieceSize = _pieceLength;
                 _remotePeerMap[pieceNubmer].blocks = new bool[_blocksPerPiece];
                 _remotePeerMap[pieceNubmer].pieceSize = _pieceLength;
             }
 
-            _receivedMap[_numberOfPieces - 1].pieceSize = (int) (_length % ((UInt64)_pieceLength));
-            _remotePeerMap[_numberOfPieces - 1].pieceSize = (int) (_length % ((UInt64)_pieceLength));
+            _receivedMap[lastPiece - 1].pieceSize = (int) (fileDetails.length % ((UInt64)_pieceLength));
+            _remotePeerMap[lastPiece - 1].pieceSize = (int) (fileDetails.length % ((UInt64)_pieceLength));
 
         }
 
@@ -68,17 +67,17 @@ namespace BitTorrent
 
         }
 
-        private void generateMap()
+        private void fillInFilePiecesDownloaded(FileAgent.FileDetails fileDetails)
         {
             byte[] buffer = new byte[_pieceLength];
 
-            createPieceMaps();
+            createFileMapEntries(fileDetails);
 
-            using (var inFileSteam = new FileStream(FileName, FileMode.Open))
+            using (var inFileSteam = new FileStream(fileDetails.name, FileMode.Open))
             {
                 SHA1 sha = new SHA1CryptoServiceProvider();
 
-                int pieceNumber = 0;
+                int pieceNumber = fileDetails.startPiece;
                 int bytesRead = inFileSteam.Read(buffer, 0, buffer.Length);
 
                 while (bytesRead > 0)
@@ -108,14 +107,27 @@ namespace BitTorrent
 
         }
 
-        private void createFile()
+        private void createEmptyFile(FileAgent.FileDetails fileDetails)
         {
-            using (var fs = new FileStream(_fileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            Directory.CreateDirectory(Path.GetDirectoryName(fileDetails.name));
+            using (var fs = new FileStream(fileDetails.name, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
-                fs.SetLength((Int64)_length);
+                fs.SetLength((Int64)fileDetails.length);
             }
 
-            createPieceMaps();
+            createFileMapEntries(fileDetails);
+
+        }
+
+        private FileAgent.FileDetails getFileFromPieceNumber(int pieceNumber)
+        {
+            foreach (var file in _filesToDownload)
+            {
+                if ((pieceNumber >= file.startPiece) && (pieceNumber < file.startPiece+file.numberOfPieces)) {
+                    return (file);
+                }
+            }
+            return (null);
         }
 
         public FileDownloader(List<FileAgent.FileDetails> filesToDownload, int pieceLength, byte[] pieces)
@@ -123,32 +135,45 @@ namespace BitTorrent
 
             _filesToDownload = filesToDownload;
             _pieceLength = pieceLength;
-            _pieces = pieces;;
+            _pieces = pieces;
+
+            foreach (var file in filesToDownload)
+            {
+                int filePieces = (int)(file.length / ((UInt64)_pieceLength));
+                if (file.length % ((UInt64)_pieceLength) != 0)
+                {
+                    filePieces++;
+                }
+
+                _numberOfPieces += filePieces;
+                _length += file.length;
+            }
 
             _blocksPerPiece = (_pieceLength / Constants.kBlockSize);
             if (_pieceLength % Constants.kBlockSize != 0)
             {
                 _blocksPerPiece++;
             }
-            _numberOfPieces = (int) (_length / ((UInt64)_pieceLength));
-            if (_length % ((UInt64)_pieceLength) != 0)
-            {
-                _numberOfPieces++;
-            }
 
             _currentPiece = new byte[_pieceLength];
+
+            _remotePeerMap = new FileRecievedMap[_numberOfPieces];
+            _receivedMap = new FileRecievedMap[_numberOfPieces];
 
         }
 
         public void check()
         {
-            if (!System.IO.File.Exists(_fileName))
+            foreach (var file in _filesToDownload)
             {
-                createFile();
-            }
-            else
-            {
-                generateMap();
+                if (!System.IO.File.Exists(_fileName))
+                {
+                    createEmptyFile(file);
+                }
+                else
+                {
+                    fillInFilePiecesDownloaded(file);
+                }
             }
         }
 
@@ -180,9 +205,11 @@ namespace BitTorrent
 
         public void writePieceToFile(int pieceNumber)
         {
-            using (Stream stream = new FileStream(_fileName, FileMode.OpenOrCreate))
+            FileAgent.FileDetails file = getFileFromPieceNumber(pieceNumber);
+
+            using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
             {
-                stream.Seek(pieceNumber* _pieceLength, SeekOrigin.Begin);
+                stream.Seek((pieceNumber-file.startPiece) * _pieceLength, SeekOrigin.Begin);
                 stream.Write(_currentPiece, 0, _remotePeerMap[pieceNumber].pieceSize);
                 Array.Clear(_currentPiece, 0, _currentPiece.Length);
             }

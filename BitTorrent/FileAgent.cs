@@ -12,6 +12,8 @@ namespace BitTorrent
             public string name;
             public UInt64 length;
             public string md5sum;
+            public int startPiece;
+            public int numberOfPieces;
         }
 
         private string _torrentFileName;
@@ -80,16 +82,25 @@ namespace BitTorrent
 
             _filesToDownload = new List<FileDetails>();
 
+            int pieceLength = int.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
+
             if (!_torrentMetaInfo.MetaInfoDict.ContainsKey("0"))
             {
                 FileDetails fileDetail = new FileDetails();
                 fileDetail.name = _downloadPath + "/" + Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
                 fileDetail.length = UInt64.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["length"]));
+                fileDetail.startPiece = 0;
+                fileDetail.numberOfPieces = (int)fileDetail.length / pieceLength;
+                if (fileDetail.length % (UInt64)pieceLength != 0)
+                {
+                    fileDetail.numberOfPieces++;
+                }
                 _filesToDownload.Add(fileDetail);
             }
             else
             {
                 int fileNo = 0;
+                UInt64 totalBytes = 0;
                 string name = Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
                 while (_torrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
                 {
@@ -98,12 +109,23 @@ namespace BitTorrent
                     fileDetail.name = _downloadPath + "/" + name+ details[0];
                     fileDetail.length = UInt64.Parse(details[1]);
                     fileDetail.md5sum = details[2];
+                    fileDetail.startPiece = (int) totalBytes / pieceLength;
+                    if (totalBytes%(UInt64) pieceLength !=0)
+                    {
+                        fileDetail.startPiece++;
+                    }
+                    fileDetail.numberOfPieces = (int)fileDetail.length / pieceLength;
+                    if (fileDetail.length % (UInt64)pieceLength != 0)
+                    {
+                        fileDetail.numberOfPieces++;
+                    }
                     _filesToDownload.Add(fileDetail);
                     fileNo++;
+                    totalBytes += fileDetail.length;
                 }
 
             }
-            int pieceLength = int.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
+           
 
             _fileToDownloader = new FileDownloader(_filesToDownload, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
 

@@ -73,7 +73,6 @@ namespace BitTorrent
 
                 fileAgent01.close();
 
-
             }
             catch (Exception ex)
             {

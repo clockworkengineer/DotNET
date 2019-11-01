@@ -101,9 +101,10 @@ namespace BitTorrent
                 {
                     PWP.remotePeerMessageProcess(remotePeer);
                     remotePeer.ReadBuffer = new byte[Constants.kMessageLength];
+                    _lengthRead = false;
                     remotePeer.BytesRead = 0;
                     bytesRead = 0;
-                    _lengthRead = false;
+
                 }
 
                 remotePeer.PeerSocket.BeginReceive(remotePeer.ReadBuffer, remotePeer.BytesRead, 
