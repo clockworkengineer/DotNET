@@ -14,7 +14,6 @@ namespace BitTorrent
         private byte[] _metaInfoData;
         private  string _kPathSeparator = $"{Path.DirectorySeparatorChar}";
 
-        public string TorrentFileName { get => _torrentFileName; set => _torrentFileName = value; }
         public Dictionary<string, byte[]> MetaInfoDict { get => _metaInfoDict; set => _metaInfoDict = value; }
       
         private void getListOfDictionarys(BNodeBase bNodeRoot, string field)

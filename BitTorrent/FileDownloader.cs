@@ -30,17 +30,12 @@ namespace BitTorrent
         private byte[] _currentPiece;
         private List<FileAgent.FileDetails> _filesToDownload;
 
-        public string FileName { get => _fileName; set => _fileName = value; }
         public ulong Length { get => _length; set => _length = value; }
-        public int PieceLength { get => _pieceLength; set => _pieceLength = value; }
         public int BlocksPerPiece { get => _blocksPerPiece; set => _blocksPerPiece = value; }
-        public byte[] Pieces { get => _pieces; set => _pieces = value; }
         public int NumberOfPieces { get => _numberOfPieces; set => _numberOfPieces = value; }
         public FileRecievedMap[] ReceivedMap { get => _receivedMap; set => _receivedMap = value; }
         public FileRecievedMap[] RemotePeerMap { get => _remotePeerMap; set => _remotePeerMap = value; }
         public ulong TotalBytesDownloaded { get => _totalBytesDownloaded; set => _totalBytesDownloaded = value; }
-        public byte[] CurrentPiece { get => _currentPiece; set => _currentPiece = value; }
-        public List<FileAgent.FileDetails> FilesToDownload { get => _filesToDownload; set => _filesToDownload = value; }
      
         private void createEmptyFilesOnDisk()
         {
@@ -145,23 +140,15 @@ namespace BitTorrent
                 }
             }
         }
-      
-        bool Overlap(UInt64 s, UInt64 e, UInt64 s1, UInt64 e1)
-        {
-            return (s <= e1 && s1 <= e);
-        }
 
         public void writePieceToFile(FileAgent.FileDetails file, UInt64 startOffset, UInt64 length)
         {
 
-                using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
-                {
-                    UInt64 seekOffset = startOffset - file.offset;
-                    UInt64 fromOffset = file.offset-((file.offset/(UInt64)_pieceLength)*(UInt64)_pieceLength);
-                    stream.Seek((int)seekOffset, SeekOrigin.Begin);
-                    stream.Write(_currentPiece, (int)fromOffset, (int)length);
-                   // Array.Clear(_currentPiece, (int)startOffset, (int)length);
-                }
+            using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
+            {
+                stream.Seek((int)(startOffset - file.offset), SeekOrigin.Begin);
+                stream.Write(_currentPiece, (int)(file.offset - ((file.offset / (UInt64)_pieceLength) * (UInt64)_pieceLength)), (int)length);;
+            }
 
         }
 
@@ -210,6 +197,7 @@ namespace BitTorrent
             }
             return (true);
         }
+
         public int selectNextPiece()
         {
 
@@ -236,18 +224,15 @@ namespace BitTorrent
         {
 
             UInt64 startOffset = (UInt64) (pieceNumber * _pieceLength);
-            UInt64 endOffset = startOffset+ (UInt64) PieceLength;
+            UInt64 endOffset = startOffset+ (UInt64) _pieceLength;
 
             foreach (var file in _filesToDownload)
             {
-              
-                if (Overlap(startOffset, endOffset, file.offset, file.offset + file.length))
+                if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
                 {
-                    Console.WriteLine(file.name);
                     UInt64 startWrite = Math.Max(startOffset, file.offset);
                     UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
                     writePieceToFile(file, startWrite, endWrite - startWrite);
-                    Console.WriteLine($"OVERLAPS  {startWrite} {endWrite}");
                 }
             }
         }

@@ -55,24 +55,6 @@ namespace BitTorrent
         private int _numWanted = 1;
         private int _interval = 0;
 
-        public string PeerID { get => _peerID; set => _peerID = value; }
-        public int Port { get => _port; set => _port = value; }
-        public string Ip { get => _ip; set => _ip = value; }
-        public int Compact { get => _compact; set => _compact = value; }
-        public int NoPeerID { get => _noPeerID; set => _noPeerID = value; }
-        public int Uploaded { get => _uploaded; set => _uploaded = value; }
-        public int Downloaded { get => _downloaded; set => _downloaded = value; }
-        public int Left { get => _left; set => _left = value; }
-        public TrackerEvent Event { get => _event; set => _event = value; }
-        public string Key { get => _key; set => _key = value; }
-        public string TrackerID { get => _trackerID; set => _trackerID = value; }
-        public int NumWanted { get => _numWanted; set => _numWanted = value; }
-        public string TrackerURL { get => _trackerURL; set => _trackerURL = value; }
-        public MetaInfoFile TorrentFile { get => _torrentFile; set => _torrentFile = value; }
-        public static Timer AnnounceTimer { get => _announceTimer; set => _announceTimer = value; }
-        public int Interval { get => _interval; set => _interval = value; }
-        public Response CurrentTrackerResponse { get => _currentTrackerResponse; set => _currentTrackerResponse = value; }
-
         private Response constructResponse(byte[] announceResponse)
         {
             Response response = new Response();
@@ -169,7 +151,7 @@ namespace BitTorrent
 
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
-            tracker.CurrentTrackerResponse = tracker.announce();
+            tracker._currentTrackerResponse = tracker.announce();
             Program.annouceResponse(tracker._currentTrackerResponse);
 
         }

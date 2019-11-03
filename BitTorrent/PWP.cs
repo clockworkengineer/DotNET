@@ -11,14 +11,11 @@ namespace BitTorrent
 
         private static void peerWrite(Socket peerSocket, byte[] buffer, int length)
         {
-
             peerSocket.Send(buffer);
-             
         }
 
         private static int peerRead(Socket peerSocket, byte[] buffer, int length)
         {
- 
             return (peerSocket.Receive(buffer, length, SocketFlags.None));
         }
 
@@ -173,7 +170,7 @@ namespace BitTorrent
             {
                 if (usage[pieceNumber])
                 {
-                    for (var blockNumber=0; blockNumber <remotePeer.FileDownloader.BlocksPerPiece; blockNumber++)
+                    for (var blockNumber=0; blockNumber < remotePeer.FileDownloader.BlocksPerPiece; blockNumber++)
                     {
                         remotePeer.FileDownloader.RemotePeerMap[pieceNumber].blocks[blockNumber].mapped = true;
                     }
