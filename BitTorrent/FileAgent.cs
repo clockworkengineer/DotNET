@@ -12,8 +12,7 @@ namespace BitTorrent
             public string name;
             public UInt64 length;
             public string md5sum;
-            public int startPiece;
-            public int numberOfPieces;
+            public UInt64 offset;
         }
 
         private string _torrentFileName;
@@ -50,17 +49,17 @@ namespace BitTorrent
         {
             Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
 
-            for (var blockNumber = 0; blockNumber < _fileToDownloader.BlocksPerPiece; blockNumber++)
+            for (var blockNumber = 0; blockNumber < _fileToDownloader.ReceivedMap[pieceNumber].blocks.Length; blockNumber++)
             {
-                PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, blockSizeToDownload(pieceNumber));
-                for(; !_fileToDownloader.ReceivedMap[pieceNumber].blocks[blockNumber];) { }
+                PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, _fileToDownloader.ReceivedMap[pieceNumber].blocks[blockNumber].size);
+                for(; !_fileToDownloader.ReceivedMap[pieceNumber].blocks[blockNumber].mapped;) { }
                 if (_fileToDownloader.TotalBytesDownloaded >= _fileToDownloader.Length) { break; }
 
             }
 
             Program.Logger.Debug($"All blocks for piece {pieceNumber} received");
 
-            _fileToDownloader.writePieceToFile(pieceNumber);
+            _fileToDownloader.writePieceToFiles(pieceNumber);
 
         }
 
@@ -89,12 +88,7 @@ namespace BitTorrent
                 FileDetails fileDetail = new FileDetails();
                 fileDetail.name = _downloadPath + "/" + Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
                 fileDetail.length = UInt64.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["length"]));
-                fileDetail.startPiece = 0;
-                fileDetail.numberOfPieces = (int)fileDetail.length / pieceLength;
-                if (fileDetail.length % (UInt64)pieceLength != 0)
-                {
-                    fileDetail.numberOfPieces++;
-                }
+                fileDetail.offset = 0;
                 _filesToDownload.Add(fileDetail);
             }
             else
@@ -109,32 +103,30 @@ namespace BitTorrent
                     fileDetail.name = _downloadPath + "/" + name+ details[0];
                     fileDetail.length = UInt64.Parse(details[1]);
                     fileDetail.md5sum = details[2];
-                    fileDetail.startPiece = (int) totalBytes / pieceLength;
-                    if (totalBytes%(UInt64) pieceLength !=0)
-                    {
-                        fileDetail.startPiece++;
-                    }
-                    fileDetail.numberOfPieces = (int)fileDetail.length / pieceLength;
-                    if (fileDetail.length % (UInt64)pieceLength != 0)
-                    {
-                        fileDetail.numberOfPieces++;
-                    }
+                    fileDetail.offset = totalBytes;
                     _filesToDownload.Add(fileDetail);
                     fileNo++;
                     totalBytes += fileDetail.length;
                 }
 
             }
-           
 
             _fileToDownloader = new FileDownloader(_filesToDownload, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
 
-            _fileToDownloader.check();
+            _fileToDownloader.buildDownloadedPiecesMap();
 
             _currentAnnouneResponse =  _mainTracker.announce();
 
-            _remotePeer = new Peer(_fileToDownloader, _currentAnnouneResponse.peers[0].ip, _currentAnnouneResponse.peers[0].port,
-                                   _torrentMetaInfo.MetaInfoDict["info hash"]);
+            try
+            {
+                _remotePeer = new Peer(_fileToDownloader, _currentAnnouneResponse.peers[0].ip, _currentAnnouneResponse.peers[0].port,
+                                       _torrentMetaInfo.MetaInfoDict["info hash"]);
+            }
+            catch (Exception ex)
+            {
+                _remotePeer = new Peer(_fileToDownloader, _currentAnnouneResponse.peers[1].ip, _currentAnnouneResponse.peers[1].port,
+                                       _torrentMetaInfo.MetaInfoDict["info hash"]);
+            }
 
             _remotePeer.connect();
 

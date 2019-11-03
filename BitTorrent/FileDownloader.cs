@@ -8,9 +8,14 @@ namespace BitTorrent
 
     public class FileDownloader
     {
+        public struct BlockData
+        {
+            public bool mapped;
+            public int size;
+        }
+
         public struct FileRecievedMap{
-            public bool[] blocks;
-            public int pieceSize;
+            public BlockData[] blocks;
         }
 
         private string _fileName = String.Empty;
@@ -36,20 +41,22 @@ namespace BitTorrent
         public ulong TotalBytesDownloaded { get => _totalBytesDownloaded; set => _totalBytesDownloaded = value; }
         public byte[] CurrentPiece { get => _currentPiece; set => _currentPiece = value; }
         public List<FileAgent.FileDetails> FilesToDownload { get => _filesToDownload; set => _filesToDownload = value; }
-
-        private void createFileMapEntries(FileAgent.FileDetails fileDetails)
+     
+        private void createEmptyFilesOnDisk()
         {
-            int lastPiece = fileDetails.startPiece + fileDetails.numberOfPieces;
+            foreach (var file in _filesToDownload)
+            {
+                if (!System.IO.File.Exists(file.name))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(file.name));
+                    using (var fs = new FileStream(file.name, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+                    {
+                        fs.SetLength((Int64)file.length);
+                    }
 
-            for (int pieceNubmer = fileDetails.startPiece; pieceNubmer < lastPiece; pieceNubmer++) {
-                _receivedMap[pieceNubmer].blocks = new bool[_blocksPerPiece];
-                _receivedMap[pieceNubmer].pieceSize = _pieceLength;
-                _remotePeerMap[pieceNubmer].blocks = new bool[_blocksPerPiece];
-                _remotePeerMap[pieceNubmer].pieceSize = _pieceLength;
+                }
+
             }
-
-            _receivedMap[lastPiece - 1].pieceSize = (int) (fileDetails.length % ((UInt64)_pieceLength));
-            _remotePeerMap[lastPiece - 1].pieceSize = (int) (fileDetails.length % ((UInt64)_pieceLength));
 
         }
 
@@ -67,67 +74,95 @@ namespace BitTorrent
 
         }
 
-        private void fillInFilePiecesDownloaded(FileAgent.FileDetails fileDetails)
+        private void createReceivedMap()
         {
-            byte[] buffer = new byte[_pieceLength];
+            SHA1 sha = new SHA1CryptoServiceProvider();
+            List<byte> pieceBuffer = new List<byte>();
+            int pieceNumber = 0;
 
-            createFileMapEntries(fileDetails);
-
-            using (var inFileSteam = new FileStream(fileDetails.name, FileMode.Open))
-            {
-                SHA1 sha = new SHA1CryptoServiceProvider();
-
-                int pieceNumber = fileDetails.startPiece;
-                int bytesRead = inFileSteam.Read(buffer, 0, buffer.Length);
-
-                while (bytesRead > 0)
-                {
-                    if (bytesRead < _pieceLength)
-                    {
-                        byte[] lastBuffer = new byte[bytesRead];
-                        Buffer.BlockCopy(buffer, 0, lastBuffer, 0, lastBuffer.Length);
-                        buffer = lastBuffer;
-                    }
-                    byte[] hash = sha.ComputeHash(buffer);
-                    if (checkPieceHash(hash, pieceNumber)) {
-                        for (int block =0; block < _blocksPerPiece; block++)
-                        {
-                            _receivedMap[pieceNumber].blocks[block] = true;
-                           
-                        }
-
-                        _totalBytesDownloaded += (UInt64)_receivedMap[pieceNumber].pieceSize;
-                    }
-                    bytesRead = inFileSteam.Read(buffer, 0, buffer.Length);
-                    pieceNumber++;
-
-                }
-
-            }
-
-        }
-
-        private void createEmptyFile(FileAgent.FileDetails fileDetails)
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(fileDetails.name));
-            using (var fs = new FileStream(fileDetails.name, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
-            {
-                fs.SetLength((Int64)fileDetails.length);
-            }
-
-            createFileMapEntries(fileDetails);
-
-        }
-
-        private FileAgent.FileDetails getFileFromPieceNumber(int pieceNumber)
-        {
             foreach (var file in _filesToDownload)
             {
-                if ((pieceNumber >= file.startPiece) && (pieceNumber < file.startPiece+file.numberOfPieces)) {
-                    return (file);
+                using (var inFileSteam = new FileStream(file.name, FileMode.Open))
+                {
+                    int bytesRead = inFileSteam.Read(_currentPiece, 0, _currentPiece.Length - pieceBuffer.Count);
+
+                    while (bytesRead > 0)
+                    {
+                        for (var byteNumber = 0; byteNumber < bytesRead; byteNumber++)
+                        {
+                            pieceBuffer.Add(_currentPiece[byteNumber]);
+                        }
+
+                        if (pieceBuffer.Count == _pieceLength)
+                        {
+                            byte[] hash = sha.ComputeHash(pieceBuffer.ToArray());
+                            bool pieceThere = checkPieceHash(hash, pieceNumber);
+                            if (pieceThere)
+                            {
+                                _totalBytesDownloaded += (UInt64) _pieceLength;
+                            }
+                            for (int block = 0; block < _blocksPerPiece; block++)
+                            {
+                                _receivedMap[pieceNumber].blocks[block].mapped = pieceThere;
+                                _receivedMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
+                                _remotePeerMap[pieceNumber].blocks[block].mapped = false;
+                                _remotePeerMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
+
+                            }
+                            pieceBuffer.Clear();
+                            pieceNumber++;
+                        }
+                        bytesRead = inFileSteam.Read(_currentPiece, 0, _currentPiece.Length - pieceBuffer.Count);
+
+                    }
+
+                }
+
+            }
+
+            if (pieceBuffer.Count > 0)
+            {
+                byte[] hash = sha.ComputeHash(pieceBuffer.ToArray());
+                bool pieceThere = checkPieceHash(hash, pieceNumber);
+                if (pieceThere)
+                {
+                    _totalBytesDownloaded += (UInt64)pieceBuffer.Count;
+                }
+                for (int block = 0; block < pieceBuffer.Count/Constants.kBlockSize; block++)
+                {
+                    _receivedMap[pieceNumber].blocks[block].mapped = pieceThere;
+                    _receivedMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
+                    _remotePeerMap[pieceNumber].blocks[block].mapped = false;
+                    _remotePeerMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
+
+                }
+                if (pieceBuffer.Count % Constants.kBlockSize != 0)
+                {
+                    _receivedMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].mapped = pieceThere;
+                    _receivedMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].size = pieceBuffer.Count % Constants.kBlockSize;
+                    _remotePeerMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].mapped = false;
+                    _remotePeerMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].size = pieceBuffer.Count % Constants.kBlockSize;
                 }
             }
-            return (null);
+        }
+      
+        bool Overlap(UInt64 s, UInt64 e, UInt64 s1, UInt64 e1)
+        {
+            return (s <= e1 && s1 <= e);
+        }
+
+        public void writePieceToFile(FileAgent.FileDetails file, UInt64 startOffset, UInt64 length)
+        {
+
+                using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
+                {
+                    UInt64 seekOffset = startOffset - file.offset;
+                    UInt64 fromOffset = file.offset-((file.offset/(UInt64)_pieceLength)*(UInt64)_pieceLength);
+                    stream.Seek((int)seekOffset, SeekOrigin.Begin);
+                    stream.Write(_currentPiece, (int)fromOffset, (int)length);
+                   // Array.Clear(_currentPiece, (int)startOffset, (int)length);
+                }
+
         }
 
         public FileDownloader(List<FileAgent.FileDetails> filesToDownload, int pieceLength, byte[] pieces)
@@ -136,52 +171,39 @@ namespace BitTorrent
             _filesToDownload = filesToDownload;
             _pieceLength = pieceLength;
             _pieces = pieces;
+            _numberOfPieces = _pieces.Length / Constants.kHashLength;
+            _blocksPerPiece = _pieceLength / Constants.kBlockSize;
 
             foreach (var file in filesToDownload)
             {
-                int filePieces = (int)(file.length / ((UInt64)_pieceLength));
-                if (file.length % ((UInt64)_pieceLength) != 0)
-                {
-                    filePieces++;
-                }
-
-                _numberOfPieces += filePieces;
                 _length += file.length;
             }
 
-            _blocksPerPiece = (_pieceLength / Constants.kBlockSize);
-            if (_pieceLength % Constants.kBlockSize != 0)
-            {
-                _blocksPerPiece++;
-            }
-
             _currentPiece = new byte[_pieceLength];
-
             _remotePeerMap = new FileRecievedMap[_numberOfPieces];
             _receivedMap = new FileRecievedMap[_numberOfPieces];
 
+            for (var pieceNuber=0; pieceNuber < _numberOfPieces; pieceNuber++)
+            {
+                _receivedMap[pieceNuber].blocks = new BlockData[_blocksPerPiece];
+                _remotePeerMap[pieceNuber].blocks = new BlockData[_blocksPerPiece];
+            }
+
         }
 
-        public void check()
+        public void buildDownloadedPiecesMap()
         {
-            foreach (var file in _filesToDownload)
-            {
-                if (!System.IO.File.Exists(_fileName))
-                {
-                    createEmptyFile(file);
-                }
-                else
-                {
-                    fillInFilePiecesDownloaded(file);
-                }
-            }
+
+            createEmptyFilesOnDisk();
+            createReceivedMap();
+
         }
 
         public bool havePiece(int pieceNumber)
         {
             for (int block=0; block < _blocksPerPiece; block++)
             {
-                if (!_receivedMap[pieceNumber].blocks[block])
+                if (!_receivedMap[pieceNumber].blocks[block].mapped)
                 {
                     return (false);
                 }
@@ -190,30 +212,44 @@ namespace BitTorrent
         }
         public int selectNextPiece()
         {
-            for (var pieceNumber=0; pieceNumber < _numberOfPieces; pieceNumber++)
+
+            for (var pieceNumber = 0; pieceNumber < _numberOfPieces; pieceNumber++)
             {
                 for (var blockNumber = 0; blockNumber < _blocksPerPiece; blockNumber++)
                 {
-                    if (_remotePeerMap[pieceNumber].blocks[blockNumber] && !_receivedMap[pieceNumber].blocks[blockNumber])
+                    if (_remotePeerMap[pieceNumber].blocks[blockNumber].mapped && !_receivedMap[pieceNumber].blocks[blockNumber].mapped)
                     {
                         return (pieceNumber);
                     }
                 }
             }
             return (-1);
+
+        }
+     
+        public void placeBlockIntoPiece (byte[] buffer, int offset, int blockOffset, int length)
+        {
+            Buffer.BlockCopy(buffer, 9, _currentPiece, blockOffset, length);
         }
 
-        public void writePieceToFile(int pieceNumber)
+        public void writePieceToFiles(int pieceNumber)
         {
-            FileAgent.FileDetails file = getFileFromPieceNumber(pieceNumber);
 
-            using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
+            UInt64 startOffset = (UInt64) (pieceNumber * _pieceLength);
+            UInt64 endOffset = startOffset+ (UInt64) PieceLength;
+
+            foreach (var file in _filesToDownload)
             {
-                stream.Seek((pieceNumber-file.startPiece) * _pieceLength, SeekOrigin.Begin);
-                stream.Write(_currentPiece, 0, _remotePeerMap[pieceNumber].pieceSize);
-                Array.Clear(_currentPiece, 0, _currentPiece.Length);
+              
+                if (Overlap(startOffset, endOffset, file.offset, file.offset + file.length))
+                {
+                    Console.WriteLine(file.name);
+                    UInt64 startWrite = Math.Max(startOffset, file.offset);
+                    UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
+                    writePieceToFile(file, startWrite, endWrite - startWrite);
+                    Console.WriteLine($"OVERLAPS  {startWrite} {endWrite}");
+                }
             }
-
         }
     }
 }
