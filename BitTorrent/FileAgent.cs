@@ -6,39 +6,14 @@ namespace BitTorrent
 {
     public class FileAgent
     {
-
-        public class FileDetails
-        {
-            public string name;
-            public UInt64 length;
-            public string md5sum;
-            public UInt64 offset;
-        }
-
         private string _torrentFileName = String.Empty;
         private MetaInfoFile _torrentMetaInfo;
         private string _downloadPath;
         private Tracker _mainTracker;
         private FileDownloader _fileToDownloader;
         private Peer _remotePeer;
-        private Tracker.Response _currentAnnouneResponse;
+        private AnnounceResponse _currentAnnouneResponse;
         private List<FileDetails> _filesToDownload;
-
-        private int blockSizeToDownload(int pieceNumber)
-        {
-            int blockSize = Constants.kBlockSize;
-
-            if (pieceNumber == _fileToDownloader.NumberOfPieces - 1)
-            {
-                if (_fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded < (UInt64)Constants.kBlockSize)
-                {
-                    blockSize = (int) (_fileToDownloader.Length - _fileToDownloader.TotalBytesDownloaded);
-                }
-            }
-
-            return (blockSize);
-      
-        }     
 
         private void getBlocksOfPiece(int pieceNumber)
         {

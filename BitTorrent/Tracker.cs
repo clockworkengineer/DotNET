@@ -9,7 +9,6 @@ namespace BitTorrent
 {
     public class Tracker
     {
-        private static System.Timers.Timer _announceTimer;
 
         public enum TrackerEvent
         {
@@ -18,30 +17,11 @@ namespace BitTorrent
             completed
         };
 
-        public struct Peer
-        {
-            public string _peerID; 
-            public string ip;
-            public int port;
-        }
-
-        public struct  Response
-        {
-            public int announceCount;
-            public int statusCode;
-            public string statusMessage;
-            public int interval;
-            public int minInterval;
-            public string trackerID;
-            public int complete;
-            public int incomplete;
-            public List<Peer> peers;
-        };
-
+        private System.Timers.Timer _announceTimer;
         private string _trackerURL = String.Empty;
         private string _peerID = String.Empty;
         private MetaInfoFile _torrentFile = null;
-        private Response _currentTrackerResponse;
+        private AnnounceResponse _currentTrackerResponse;
         private int _port = 6681;
         private string _ip = String.Empty;
         private int _compact = 1;
@@ -55,9 +35,9 @@ namespace BitTorrent
         private int _numWanted = 1;
         private int _interval = 0;
 
-        private Response constructResponse(byte[] announceResponse)
+        private AnnounceResponse constructResponse(byte[] announceResponse)
         {
-            Response response = new Response();
+            AnnounceResponse response = new AnnounceResponse();
 
             response.statusCode = (int)HttpStatusCode.OK;
 
@@ -69,14 +49,14 @@ namespace BitTorrent
             BNodeBase field = Bencoding.getDictionaryEntry(decodedAnnounce, "peers");
             if (field != null)
             {
-                response.peers = new List<Peer>();
+                response.peers = new List<PeerDetails>();
                 if (field is BNodeString)
                 {
                     byte[] peers = ((BNodeString)field).str;
                     int numberPeers = peers.Length / 6;
                     for (var num = 0; num < (peers.Length / 6); num += 6)
                     {
-                        Peer peer = new Peer();
+                        PeerDetails peer = new PeerDetails();
                         peer._peerID = String.Empty;
                         peer.ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}";
                         peer.port = peers[num + 4] * 256 + peers[num + 5];
@@ -89,7 +69,7 @@ namespace BitTorrent
                     {
                         if (listItem is BNodeDictionary)
                         {
-                            Peer peer = new Peer();
+                            PeerDetails peer = new PeerDetails();
                             BNodeBase peerDictionaryItem = ((BitTorrent.BNodeDictionary)listItem);
                             BNodeBase peerField = Bencoding.getDictionaryEntry(peerDictionaryItem, "ip");
                             if (peerField != null)
@@ -165,7 +145,7 @@ namespace BitTorrent
 
         }
 
-        public Response announce() 
+        public AnnounceResponse announce() 
         { 
        
             HttpWebRequest httpGetRequest = WebRequest.Create(encodeTrackerURL()) as HttpWebRequest;
@@ -190,7 +170,7 @@ namespace BitTorrent
             }
             else
             {
-                Response error = new Response();
+                AnnounceResponse error = new AnnounceResponse();
                 error.statusCode = (int)httpGetResponse.StatusCode;
                 error.statusMessage = httpGetResponse.StatusDescription;
                 return (error);
@@ -211,7 +191,7 @@ namespace BitTorrent
             _announceTimer.Dispose();
         }
 
-        public void update(Response response)
+        public void update(AnnounceResponse response)
         {
             int oldInterval = _interval;
             if (response.minInterval != 0)

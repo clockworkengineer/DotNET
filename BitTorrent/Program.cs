@@ -9,7 +9,7 @@ namespace BitTorrent
 
         public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public static void annouceResponse(Tracker.Response response)
+        public static void annouceResponse(AnnounceResponse response)
         {
             Logger.Debug("\nAnnouce Response\n-------------");
             Logger.Debug("\nStatus: "+response.statusCode);
@@ -65,7 +65,7 @@ namespace BitTorrent
         
             try
             {
-                FileAgent fileAgent01 = new FileAgent("./Test.torrent", "/home/robt/utorrent");
+                FileAgent fileAgent01 = new FileAgent("./suf.torrent", "/home/robt/utorrent");
  
                 fileAgent01.load();
 

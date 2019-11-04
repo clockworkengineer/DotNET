@@ -28,7 +28,7 @@ namespace BitTorrent
         private FileRecievedMap[] _remotePeerMap;
         private UInt64 _totalBytesDownloaded = 0;
         private byte[] _currentPiece;
-        private List<FileAgent.FileDetails> _filesToDownload;
+        private List<FileDetails> _filesToDownload;
 
         public ulong Length { get => _length; set => _length = value; }
         public int BlocksPerPiece { get => _blocksPerPiece; set => _blocksPerPiece = value; }
@@ -141,7 +141,7 @@ namespace BitTorrent
             }
         }
 
-        public void writePieceToFile(FileAgent.FileDetails file, UInt64 startOffset, UInt64 length)
+        public void writePieceToFile(FileDetails file, UInt64 startOffset, UInt64 length)
         {
 
             using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
@@ -152,7 +152,7 @@ namespace BitTorrent
 
         }
 
-        public FileDownloader(List<FileAgent.FileDetails> filesToDownload, int pieceLength, byte[] pieces)
+        public FileDownloader(List<FileDetails> filesToDownload, int pieceLength, byte[] pieces)
         {
 
             _filesToDownload = filesToDownload;

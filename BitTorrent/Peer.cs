@@ -7,7 +7,6 @@ namespace BitTorrent
     public class Peer
     {   
 
-
         private string _ip;
         private int _port;
         private bool _peerChoking=true;
