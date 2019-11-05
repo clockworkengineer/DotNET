@@ -19,14 +19,14 @@ namespace BitTorrent
         {
             Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
 
-            for (var blockNumber = 0; blockNumber < _fileToDownloader.ReceivedMap[pieceNumber].blocks.Length; blockNumber++)
+            for (var blockNumber = 0; blockNumber < _fileToDownloader.Dc.receivedMap[pieceNumber].blocks.Length; blockNumber++)
             {
                 PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
-                            _fileToDownloader.ReceivedMap[pieceNumber].blocks[blockNumber].size);
+                            _fileToDownloader.Dc.receivedMap[pieceNumber].blocks[blockNumber].size);
 
-                for(; !_fileToDownloader.ReceivedMap[pieceNumber].blocks[blockNumber].mapped;) { }
+                for(; ((_fileToDownloader.Dc.receivedMap[pieceNumber].blocks[blockNumber].flags & Mapping.none)==Mapping.none);) { }
 
-                if (_fileToDownloader.TotalBytesDownloaded >= _fileToDownloader.Length) { break; }
+                if (_fileToDownloader.Dc.totalBytesDownloaded >= _fileToDownloader.Dc.totalLength) { break; }
 
             }
 
@@ -126,7 +126,7 @@ namespace BitTorrent
 
             PWP.unchoke(_remotePeer);
 
-            while (_fileToDownloader.TotalBytesDownloaded < _fileToDownloader.Length)
+            while (_fileToDownloader.Dc.totalBytesDownloaded < _fileToDownloader.Dc.totalLength)
             {
                 int nextPiece;
                 for (;_remotePeer.PeerChoking;) { }
@@ -136,7 +136,7 @@ namespace BitTorrent
                     break;
                 }
                 getBlocksOfPiece(nextPiece);
-                Program.Logger.Info($"Downloaded {(int)((((double)_fileToDownloader.TotalBytesDownloaded) / _fileToDownloader.Length) * 100.0)}%");
+                Program.Logger.Info($"Downloaded {(int)((((double)_fileToDownloader.Dc.totalBytesDownloaded) / _fileToDownloader.Dc.totalLength) * 100.0)}%");
             }
             Program.Logger.Debug("File downloaded.");
         

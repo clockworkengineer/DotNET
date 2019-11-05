@@ -122,11 +122,11 @@ namespace BitTorrent
 
             pieceNumber = unpackUInt32(remotePeer.ReadBuffer, 1);
 
-            if (!remotePeer.FileDownloader.havePiece((int) pieceNumber)) { 
+            if (!remotePeer.TorrentDownloader.havePiece((int) pieceNumber)) { 
                 PWP.interested(remotePeer);
-                for (var blockNumber=0; blockNumber < remotePeer.FileDownloader.BlocksPerPiece; blockNumber++)
+                for (var blockNumber=0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                 {
-                    remotePeer.FileDownloader.RemotePeerMap[pieceNumber].blocks[blockNumber].mapped = true;
+                    remotePeer.TorrentDownloader.Dc.remotePeerMap[pieceNumber].blocks[blockNumber].flags = Mapping.have;
                 }
             }
 
@@ -166,13 +166,13 @@ namespace BitTorrent
                 usage.Add((map & 0x01) != 0);
             }
 
-            for (var pieceNumber=0; pieceNumber < remotePeer.FileDownloader.NumberOfPieces; pieceNumber++)
+            for (var pieceNumber=0; pieceNumber < remotePeer.TorrentDownloader.Dc.numberOfPieces; pieceNumber++)
             {
                 if (usage[pieceNumber])
                 {
-                    for (var blockNumber=0; blockNumber < remotePeer.FileDownloader.BlocksPerPiece; blockNumber++)
+                    for (var blockNumber=0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                     {
-                        remotePeer.FileDownloader.RemotePeerMap[pieceNumber].blocks[blockNumber].mapped = true;
+                        remotePeer.TorrentDownloader.Dc.remotePeerMap[pieceNumber].blocks[blockNumber].flags = Mapping.have;
                     }
                 }
             }
@@ -191,12 +191,12 @@ namespace BitTorrent
 
             Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {remotePeer.ReadBuffer.Length - 9}\n");
 
-            if (!remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].mapped) {
-                remotePeer.FileDownloader.TotalBytesDownloaded += (UInt64)remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
-                remotePeer.FileDownloader.ReceivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].mapped = true;
+            if ((remotePeer.TorrentDownloader.Dc.receivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].flags & Mapping.none)==Mapping.none) {
+                remotePeer.TorrentDownloader.Dc.totalBytesDownloaded += (UInt64)remotePeer.TorrentDownloader.Dc.receivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
+                remotePeer.TorrentDownloader.Dc.receivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].flags = Mapping.have;
             }
 
-            remotePeer.FileDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, 9,  (int) blockOffset, remotePeer.ReadBuffer.Length-9);
+            remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, 9,  (int) blockOffset, remotePeer.ReadBuffer.Length-9);
 
         }
 

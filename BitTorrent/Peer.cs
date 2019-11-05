@@ -15,20 +15,20 @@ namespace BitTorrent
         private byte[] _infoHash;
         private bool _connected = false;
         private byte[] _remotePeerID;
-        private FileDownloader _fileDownloader;
+        private FileDownloader _torrentDownloader;
         private bool _readFromRemotePeer = true;
         private byte[] _readBuffer;
         private int _bytesRead = 0;
         private bool _lengthRead = false;
 
         public bool PeerChoking { get => _peerChoking; set => _peerChoking = value; }
-        public FileDownloader FileDownloader { get => _fileDownloader; set => _fileDownloader = value; }
         public bool AmChoking { get => _amChoking; set => _amChoking = value; }
         public bool ReadFromRemotePeer { get => _readFromRemotePeer; set => _readFromRemotePeer = value; }
         public Socket PeerSocket { get => _peerSocket; set => _peerSocket = value; }
         public byte[] ReadBuffer { get => _readBuffer; set => _readBuffer = value; }
         public bool Connected { get => _connected; set => _connected = value; }
         public byte[] RemotePeerID { get => _remotePeerID; set => _remotePeerID = value; }
+        public FileDownloader TorrentDownloader { get => _torrentDownloader; set => _torrentDownloader = value; }
 
         public Peer(FileDownloader fileDownloader, string ip ,int port, byte[] infoHash)
         {
@@ -43,7 +43,7 @@ namespace BitTorrent
             }
             _port = port;
             _infoHash = infoHash;
-            _fileDownloader = fileDownloader;
+            _torrentDownloader = fileDownloader;
             _readBuffer = new byte[Constants.kMessageLength];
 
         }
