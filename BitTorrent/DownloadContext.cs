@@ -5,9 +5,8 @@ namespace BitTorrent
     public static class Mapping
     {
          public const byte NoneLocal = 0x01;
-         public const byte Requested = 0x02;
-         public const byte Havelocal = 0x4;
-         public const byte OnPeer = 0x8;
+         public const byte Havelocal = 0x2;
+         public const byte OnPeer = 0x4;
     }
 
     public struct BlockData
@@ -50,6 +49,11 @@ namespace BitTorrent
             {
                 pieceMap[pieceNuber].blocks = new BlockData[blocksPerPiece];
             }
+        }
+
+        public bool isMappingEqualTo(int pieceNumber, int blockNumber, byte flagMask)
+        {
+            return (((pieceMap[pieceNumber].blocks[blockNumber].flags & flagMask)) == (flagMask));
         }
     }
 }

@@ -24,7 +24,7 @@ namespace BitTorrent
                 PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
                             _fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size);
 
-                for(; ((_fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.NoneLocal)==Mapping.NoneLocal);) { }
+                for(; _fileToDownloader.Dc.isMappingEqualTo(pieceNumber, blockNumber, Mapping.OnPeer|Mapping.NoneLocal);) { }
 
                 if (_fileToDownloader.Dc.totalBytesDownloaded >= _fileToDownloader.Dc.totalLength) { break; }
 

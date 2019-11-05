@@ -141,9 +141,9 @@ namespace BitTorrent
 
         public bool havePiece(int pieceNumber)
         {
-            for (int block=0; block < _dc.blocksPerPiece; block++)
+            for (int blockNumber=0; blockNumber < _dc.blocksPerPiece; blockNumber++)
             {
-                if ((_dc.pieceMap[pieceNumber].blocks[block].flags & Mapping.NoneLocal)==Mapping.NoneLocal)
+                if (_dc.isMappingEqualTo(pieceNumber, blockNumber, Mapping.NoneLocal))
                 {
                     return (false);
                 }
@@ -158,8 +158,7 @@ namespace BitTorrent
             {
                 for (var blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                 {
-                    if (((_dc.pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.OnPeer) == Mapping.OnPeer) && 
-                         ((_dc.pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.NoneLocal)==Mapping.NoneLocal))
+                    if (_dc.isMappingEqualTo(pieceNumber, blockNumber, Mapping.OnPeer | Mapping.NoneLocal))
                     {
                         return (pieceNumber);
                     }
