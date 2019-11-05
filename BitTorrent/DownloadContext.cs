@@ -4,27 +4,26 @@ namespace BitTorrent
 {
     public static class Mapping
     {
-         public const byte none = 0x01;
-         public const byte requested = 0x02;
-         public const byte have = 0x4;
+         public const byte NoneLocal = 0x01;
+         public const byte Requested = 0x02;
+         public const byte Havelocal = 0x4;
+         public const byte OnPeer = 0x8;
     }
 
     public struct BlockData
     {
-        public bool mapped;
         public byte flags;
         public int size;
     }
 
-    public struct FileRecievedMap
+    public struct PieceBlockMap
     {
         public BlockData[] blocks;
     }
 
     public class DownloadContext
     {
-        public FileRecievedMap[] receivedMap;
-        public FileRecievedMap[] remotePeerMap;
+        public PieceBlockMap[] pieceMap;
         public UInt64 totalBytesDownloaded;
         public byte[] pieceInProgress;
         public UInt64 totalLength = 0;
@@ -45,13 +44,11 @@ namespace BitTorrent
             numberOfPieces = pieces.Length / Constants.kHashLength;
             blocksPerPiece = pieceLength / Constants.kBlockSize;
             pieceInProgress = new byte[pieceLength];
-            remotePeerMap = new FileRecievedMap[numberOfPieces];
-            receivedMap = new FileRecievedMap[numberOfPieces];
+            pieceMap = new PieceBlockMap[numberOfPieces];
 
             for (var pieceNuber = 0; pieceNuber < numberOfPieces; pieceNuber++)
             {
-                receivedMap[pieceNuber].blocks = new BlockData[blocksPerPiece];
-                remotePeerMap[pieceNuber].blocks = new BlockData[blocksPerPiece];
+                pieceMap[pieceNuber].blocks = new BlockData[blocksPerPiece];
             }
         }
     }

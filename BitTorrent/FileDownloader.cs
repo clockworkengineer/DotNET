@@ -75,11 +75,8 @@ namespace BitTorrent
                             }
                             for (int block = 0; block < _dc.blocksPerPiece; block++)
                             {
-                                _dc.receivedMap[pieceNumber].blocks[block].flags = (pieceThere) ? Mapping.have : Mapping.none;
-                                _dc.receivedMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
-                                _dc.remotePeerMap[pieceNumber].blocks[block].flags = Mapping.none;
-                                _dc.remotePeerMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
-
+                                _dc.pieceMap[pieceNumber].blocks[block].flags = (pieceThere) ? Mapping.Havelocal : Mapping.NoneLocal;
+                                _dc.pieceMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
                             }
                             pieceBuffer.Clear();
                             pieceNumber++;
@@ -102,19 +99,15 @@ namespace BitTorrent
                 }
                 for (int block = 0; block < pieceBuffer.Count/Constants.kBlockSize; block++)
                 {
-                    _dc.receivedMap[pieceNumber].blocks[block].flags = (pieceThere) ? Mapping.have : Mapping.none;
-                    _dc.receivedMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
-                    _dc.remotePeerMap[pieceNumber].blocks[block].flags = Mapping.none;
-                    _dc.remotePeerMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
-
+                    _dc.pieceMap[pieceNumber].blocks[block].flags = (pieceThere) ? Mapping.Havelocal : Mapping.NoneLocal;
+                    _dc.pieceMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
+    
                 }
                 if (pieceBuffer.Count % Constants.kBlockSize != 0)
                 {
-                    _dc.receivedMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].flags = (pieceThere) ? Mapping.have : Mapping.none;
-                    _dc.receivedMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].size = pieceBuffer.Count % Constants.kBlockSize;
-                    _dc.remotePeerMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].flags = Mapping.none;
-                    _dc.remotePeerMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].size = pieceBuffer.Count % Constants.kBlockSize;
-                }
+                    _dc.pieceMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].flags = (pieceThere) ? Mapping.Havelocal : Mapping.NoneLocal;
+                    _dc.pieceMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].size = pieceBuffer.Count % Constants.kBlockSize;
+                 }
             }
         }
 
@@ -150,7 +143,7 @@ namespace BitTorrent
         {
             for (int block=0; block < _dc.blocksPerPiece; block++)
             {
-                if ((_dc.receivedMap[pieceNumber].blocks[block].flags & Mapping.none)==Mapping.none)
+                if ((_dc.pieceMap[pieceNumber].blocks[block].flags & Mapping.NoneLocal)==Mapping.NoneLocal)
                 {
                     return (false);
                 }
@@ -165,8 +158,8 @@ namespace BitTorrent
             {
                 for (var blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                 {
-                    if (((_dc.remotePeerMap[pieceNumber].blocks[blockNumber].flags & Mapping.have) == Mapping.have) && 
-                         ((_dc.receivedMap[pieceNumber].blocks[blockNumber].flags & Mapping.none)==Mapping.none))
+                    if (((_dc.pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.OnPeer) == Mapping.OnPeer) && 
+                         ((_dc.pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.NoneLocal)==Mapping.NoneLocal))
                     {
                         return (pieceNumber);
                     }

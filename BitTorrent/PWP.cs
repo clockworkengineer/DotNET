@@ -126,7 +126,7 @@ namespace BitTorrent
                 PWP.interested(remotePeer);
                 for (var blockNumber=0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                 {
-                    remotePeer.TorrentDownloader.Dc.remotePeerMap[pieceNumber].blocks[blockNumber].flags = Mapping.have;
+                    remotePeer.TorrentDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].flags = Mapping.OnPeer|Mapping.NoneLocal;
                 }
             }
 
@@ -172,7 +172,7 @@ namespace BitTorrent
                 {
                     for (var blockNumber=0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                     {
-                        remotePeer.TorrentDownloader.Dc.remotePeerMap[pieceNumber].blocks[blockNumber].flags = Mapping.have;
+                        remotePeer.TorrentDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].flags = Mapping.OnPeer|Mapping.NoneLocal;
                     }
                 }
             }
@@ -191,9 +191,9 @@ namespace BitTorrent
 
             Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {remotePeer.ReadBuffer.Length - 9}\n");
 
-            if ((remotePeer.TorrentDownloader.Dc.receivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].flags & Mapping.none)==Mapping.none) {
-                remotePeer.TorrentDownloader.Dc.totalBytesDownloaded += (UInt64)remotePeer.TorrentDownloader.Dc.receivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
-                remotePeer.TorrentDownloader.Dc.receivedMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].flags = Mapping.have;
+            if ((remotePeer.TorrentDownloader.Dc.pieceMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].flags & Mapping.NoneLocal)==Mapping.NoneLocal) {
+                remotePeer.TorrentDownloader.Dc.totalBytesDownloaded += (UInt64)remotePeer.TorrentDownloader.Dc.pieceMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
+                remotePeer.TorrentDownloader.Dc.pieceMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].flags = Mapping.Havelocal;
             }
 
             remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, 9,  (int) blockOffset, remotePeer.ReadBuffer.Length-9);

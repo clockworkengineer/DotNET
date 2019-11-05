@@ -19,12 +19,12 @@ namespace BitTorrent
         {
             Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
 
-            for (var blockNumber = 0; blockNumber < _fileToDownloader.Dc.receivedMap[pieceNumber].blocks.Length; blockNumber++)
+            for (var blockNumber = 0; blockNumber < _fileToDownloader.Dc.pieceMap[pieceNumber].blocks.Length; blockNumber++)
             {
                 PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
-                            _fileToDownloader.Dc.receivedMap[pieceNumber].blocks[blockNumber].size);
+                            _fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size);
 
-                for(; ((_fileToDownloader.Dc.receivedMap[pieceNumber].blocks[blockNumber].flags & Mapping.none)==Mapping.none);) { }
+                for(; ((_fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.NoneLocal)==Mapping.NoneLocal);) { }
 
                 if (_fileToDownloader.Dc.totalBytesDownloaded >= _fileToDownloader.Dc.totalLength) { break; }
 
