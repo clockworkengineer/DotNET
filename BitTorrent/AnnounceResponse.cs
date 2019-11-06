@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace BitTorrent
 {
@@ -6,19 +7,19 @@ namespace BitTorrent
     {
         public string _peerID;
         public string ip;
-        public int port;
+        public UInt32 port;
     }
 
     public struct AnnounceResponse
     {
-        public int announceCount;
-        public int statusCode;
+        public UInt32 announceCount;
+        public UInt32 statusCode;
         public string statusMessage;
-        public int interval;
-        public int minInterval;
+        public UInt32 interval;
+        public UInt32 minInterval;
         public string trackerID;
-        public int complete;
-        public int incomplete;
+        public UInt32 complete;
+        public UInt32 incomplete;
         public List<PeerDetails> peers;
     };
 }

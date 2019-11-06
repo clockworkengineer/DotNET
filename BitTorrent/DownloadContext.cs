@@ -4,15 +4,14 @@ namespace BitTorrent
 {
     public static class Mapping
     {
-         public const byte NoneLocal = 0x01;
-         public const byte Havelocal = 0x2;
-         public const byte OnPeer = 0x4;
+         public const byte HaveLocal = 0x01;
+         public const byte OnPeer = 0x02;
     }
 
     public struct BlockData
     {
         public byte flags;
-        public int size;
+        public UInt32 size;
     }
 
     public struct PieceBlockMap
@@ -26,12 +25,12 @@ namespace BitTorrent
         public UInt64 totalBytesDownloaded;
         public byte[] pieceInProgress;
         public UInt64 totalLength = 0;
-        public int pieceLength = 0;
-        public int blocksPerPiece = 0;
+        public UInt32 pieceLength = 0;
+        public UInt32 blocksPerPiece = 0;
         public byte[] pieces;
-        public int numberOfPieces = 0;
+        public UInt32 numberOfPieces = 0;
 
-        public DownloadContext(List<FileDetails> filesToDownload, int pieceLength, byte[] pieces)
+        public DownloadContext(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
         {
             foreach (var file in filesToDownload)
             {
@@ -40,7 +39,7 @@ namespace BitTorrent
 
             this.pieceLength = pieceLength;
             this.pieces = pieces;
-            numberOfPieces = pieces.Length / Constants.kHashLength;
+            numberOfPieces = ((UInt32)(pieces.Length / Constants.kHashLength));
             blocksPerPiece = pieceLength / Constants.kBlockSize;
             pieceInProgress = new byte[pieceLength];
             pieceMap = new PieceBlockMap[numberOfPieces];
@@ -51,9 +50,53 @@ namespace BitTorrent
             }
         }
 
-        public bool isMappingEqualTo(int pieceNumber, int blockNumber, byte flagMask)
+        public void blockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber, bool local)
         {
-            return (((pieceMap[pieceNumber].blocks[blockNumber].flags & flagMask)) == (flagMask));
+            if (local)
+            {
+                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.HaveLocal;
+            }
+            else
+            {
+                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.HaveLocal ^ 0xff);
+            }
         }
+
+        public void blockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber, bool noPeer)
+        {
+            if (noPeer)
+            {
+                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.OnPeer;
+            }
+            else
+            {
+                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.OnPeer ^ 0xff);
+            }
+        }
+
+        public void blockPieceDownloaded(UInt32 pieceNumber, UInt32 blockNumber, bool downloaded)
+        {
+            if (downloaded)
+            {
+                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.OnPeer;
+                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.HaveLocal;
+            }
+            else
+            {
+                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.HaveLocal ^ 0xff);
+            }
+        }
+
+        public bool isBlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber)
+        {
+            return ((pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.OnPeer)==Mapping.OnPeer);
+        }
+
+        public bool isBlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber)
+        {
+            return ((pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.HaveLocal) == Mapping.HaveLocal);
+        }
+
+
     }
 }

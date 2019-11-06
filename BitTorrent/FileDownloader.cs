@@ -32,9 +32,9 @@ namespace BitTorrent
 
         }
 
-        public bool checkPieceHash(byte[] hash, int pieceNumber)
+        public bool checkPieceHash(byte[] hash, UInt32 pieceNumber)
         {
-            int pieceOffset = pieceNumber * Constants.kHashLength;
+            UInt32 pieceOffset = pieceNumber * Constants.kHashLength;
             for (var byteNumber = 0; byteNumber < Constants.kHashLength; byteNumber++)
             {
                 if (hash[byteNumber] != _dc.pieces[pieceOffset + byteNumber])
@@ -46,17 +46,17 @@ namespace BitTorrent
 
         }
 
-        private void createReceivedMap()
+        private void createDownloadedPieceMap()
         {
             SHA1 sha = new SHA1CryptoServiceProvider();
             List<byte> pieceBuffer = new List<byte>();
-            int pieceNumber = 0;
+            UInt32 pieceNumber = 0;
 
             foreach (var file in _filesToDownload)
             {
                 using (var inFileSteam = new FileStream(file.name, FileMode.Open))
                 {
-                    int bytesRead = inFileSteam.Read(_dc.pieceInProgress, 0, _dc.pieceInProgress.Length - pieceBuffer.Count);
+                    int bytesRead = inFileSteam.Read(_dc.pieceInProgress, 0,  _dc.pieceInProgress.Length - pieceBuffer.Count);
 
                     while (bytesRead > 0)
                     {
@@ -73,10 +73,10 @@ namespace BitTorrent
                             {
                                 _dc.totalBytesDownloaded += (UInt64) _dc.pieceLength;
                             }
-                            for (int block = 0; block < _dc.blocksPerPiece; block++)
+                            for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                             {
-                                _dc.pieceMap[pieceNumber].blocks[block].flags = (pieceThere) ? Mapping.Havelocal : Mapping.NoneLocal;
-                                _dc.pieceMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
+                                _dc.blockPieceLocal(pieceNumber, blockNumber, pieceThere);
+                                _dc.pieceMap[pieceNumber].blocks[blockNumber].size = Constants.kBlockSize;
                             }
                             pieceBuffer.Clear();
                             pieceNumber++;
@@ -97,16 +97,16 @@ namespace BitTorrent
                 {
                     _dc.totalBytesDownloaded += (UInt64)pieceBuffer.Count;
                 }
-                for (int block = 0; block < pieceBuffer.Count/Constants.kBlockSize; block++)
+                for (UInt32 blockNumber = 0; blockNumber < pieceBuffer.Count/Constants.kBlockSize; blockNumber++)
                 {
-                    _dc.pieceMap[pieceNumber].blocks[block].flags = (pieceThere) ? Mapping.Havelocal : Mapping.NoneLocal;
-                    _dc.pieceMap[pieceNumber].blocks[block].size = Constants.kBlockSize;
+                    _dc.blockPieceLocal(pieceNumber, blockNumber, pieceThere);
+                    _dc.pieceMap[pieceNumber].blocks[blockNumber].size = Constants.kBlockSize;
     
                 }
                 if (pieceBuffer.Count % Constants.kBlockSize != 0)
                 {
-                    _dc.pieceMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].flags = (pieceThere) ? Mapping.Havelocal : Mapping.NoneLocal;
-                    _dc.pieceMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].size = pieceBuffer.Count % Constants.kBlockSize;
+                    _dc.blockPieceLocal(pieceNumber, (UInt32) pieceBuffer.Count / Constants.kBlockSize, pieceThere);
+                     _dc.pieceMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].size = (UInt32) pieceBuffer.Count % Constants.kBlockSize;
                  }
             }
         }
@@ -122,7 +122,7 @@ namespace BitTorrent
 
         }
 
-        public FileDownloader(List<FileDetails> filesToDownload, int pieceLength, byte[] pieces)
+        public FileDownloader(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
         {
 
             _filesToDownload = filesToDownload;
@@ -135,15 +135,15 @@ namespace BitTorrent
         {
 
             createEmptyFilesOnDisk();
-            createReceivedMap();
+            createDownloadedPieceMap();
 
         }
 
-        public bool havePiece(int pieceNumber)
+        public bool havePiece(UInt32 pieceNumber)
         {
-            for (int blockNumber=0; blockNumber < _dc.blocksPerPiece; blockNumber++)
+            for (UInt32 blockNumber=0; blockNumber < _dc.blocksPerPiece; blockNumber++)
             {
-                if (_dc.isMappingEqualTo(pieceNumber, blockNumber, Mapping.NoneLocal))
+                if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
                 {
                     return (false);
                 }
@@ -151,29 +151,29 @@ namespace BitTorrent
             return (true);
         }
 
-        public int selectNextPiece()
+        public Int64 selectNextPiece()
         {
 
-            for (var pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
+            for (UInt32 pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
             {
-                for (var blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
+                for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                 {
-                    if (_dc.isMappingEqualTo(pieceNumber, blockNumber, Mapping.OnPeer | Mapping.NoneLocal))
+                    if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         return (pieceNumber);
                     }
                 }
             }
-            return (-1);
+            return (-1 );
 
         }
      
-        public void placeBlockIntoPiece (byte[] buffer, int offset, int blockOffset, int length)
+        public void placeBlockIntoPiece (byte[] buffer, UInt32 offset, UInt32 blockOffset, UInt32 length)
         {
-            Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, blockOffset, length);
+            Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32) blockOffset, (Int32)length);
         }
 
-        public void writePieceToFiles(int pieceNumber)
+        public void writePieceToFiles(UInt32 pieceNumber)
         {
 
             UInt64 startOffset = (UInt64) (pieceNumber * _dc.pieceLength);

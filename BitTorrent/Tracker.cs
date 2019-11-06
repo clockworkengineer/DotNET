@@ -22,18 +22,18 @@ namespace BitTorrent
         private string _peerID = String.Empty;
         private MetaInfoFile _torrentFile = null;
         private AnnounceResponse _currentTrackerResponse;
-        private int _port = 6681;
+        private UInt32 _port = 6681;
         private string _ip = String.Empty;
-        private int _compact = 1;
-        private int _noPeerID = 0;
-        private int _uploaded = 0;
-        private int _downloaded = 0;
-        private int _left = 0;
+        private UInt32 _compact = 1;
+        private UInt32 _noPeerID = 0;
+        private UInt32 _uploaded = 0;
+        private UInt32 _downloaded = 0;
+        private UInt32 _left = 0;
         private TrackerEvent _event = TrackerEvent.started;
         private string _key = String.Empty;
         private string _trackerID = String.Empty;
-        private int _numWanted = 1;
-        private int _interval = 0;
+        private UInt32 _numWanted = 1;
+        private UInt32 _interval = 0;
 
         private AnnounceResponse constructResponse(byte[] announceResponse)
         {
@@ -43,8 +43,8 @@ namespace BitTorrent
 
             BNodeBase decodedAnnounce= Bencoding.decode(announceResponse);
 
-            int.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "complete"), out response.complete);
-            int.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "incomplete"), out response.incomplete);
+            UInt32.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "complete"), out response.complete);
+            UInt32.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "incomplete"), out response.incomplete);
 
             BNodeBase field = Bencoding.getDictionaryEntry(decodedAnnounce, "peers");
             if (field != null)
@@ -53,13 +53,13 @@ namespace BitTorrent
                 if (field is BNodeString)
                 {
                     byte[] peers = ((BNodeString)field).str;
-                    int numberPeers = peers.Length / 6;
+                    UInt32 numberPeers = (UInt32) peers.Length / 6;
                     for (var num = 0; num < (peers.Length / 6); num += 6)
                     {
                         PeerDetails peer = new PeerDetails();
                         peer._peerID = String.Empty;
                         peer.ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}";
-                        peer.port = peers[num + 4] * 256 + peers[num + 5];
+                        peer.port = (UInt32) peers[num + 4] * 256 + peers[num + 5];
                         response.peers.Add(peer);
                     }
                 }
@@ -81,7 +81,7 @@ namespace BitTorrent
                             if (peerField != null)
                             {
                                 string path = string.Empty;
-                                peer.port = int.Parse(Encoding.ASCII.GetString(((BitTorrent.BNodeNumber)peerField).number));
+                                peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrent.BNodeNumber)peerField).number));
                             }
                             response.peers.Add(peer);
                         }
@@ -90,8 +90,8 @@ namespace BitTorrent
 
             }
 
-            int.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "interval"), out response.interval);
-            int.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "min interval"), out response.minInterval);
+            UInt32.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "interval"), out response.interval);
+            UInt32.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "min interval"), out response.minInterval);
             response.trackerID = Bencoding.getDictionaryEntryString(decodedAnnounce, "tracker id");
             response.statusMessage = Bencoding.getDictionaryEntryString(decodedAnnounce, "failure reason");
             response.statusMessage = Bencoding.getDictionaryEntryString(decodedAnnounce, "warning message");
@@ -171,7 +171,7 @@ namespace BitTorrent
             else
             {
                 AnnounceResponse error = new AnnounceResponse();
-                error.statusCode = (int)httpGetResponse.StatusCode;
+                error.statusCode = (UInt32) httpGetResponse.StatusCode;
                 error.statusMessage = httpGetResponse.StatusDescription;
                 return (error);
             }
@@ -193,7 +193,7 @@ namespace BitTorrent
 
         public void update(AnnounceResponse response)
         {
-            int oldInterval = _interval;
+            UInt32 oldInterval = _interval;
             if (response.minInterval != 0)
             {
                 _interval = response.minInterval;

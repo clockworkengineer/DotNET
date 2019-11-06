@@ -22,7 +22,7 @@ namespace BitTorrent
 
             if (fieldBytes is BNodeList)
             {
-                int fileNo = 0;
+                UInt32 fileNo = 0;
                 List<string> listString = new List<string>();
                 foreach (var listItem in ((BNodeList)(fieldBytes)).list)
                 {
@@ -117,8 +117,7 @@ namespace BitTorrent
             getStringOrNumeric(bNodeRoot, "private");
             getStringOrNumeric(bNodeRoot, "url-list");
 
-            BNodeBase tmp = Bencoding.getDictionaryEntry(bNodeRoot, "files");
-            if (tmp == null)
+            if (Bencoding.getDictionaryEntry(bNodeRoot, "files") == null)
             {
                 getStringOrNumeric(bNodeRoot, "length");
                 getStringOrNumeric(bNodeRoot, "md5sum");

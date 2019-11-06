@@ -10,23 +10,25 @@ namespace BitTorrent
         private MetaInfoFile _torrentMetaInfo;
         private string _downloadPath;
         private Tracker _mainTracker;
+        private AnnounceResponse _currentAnnouneResponse;
         private FileDownloader _fileToDownloader;
         private Peer _remotePeer;
-        private AnnounceResponse _currentAnnouneResponse;
+
         private List<FileDetails> _filesToDownload;
 
-        private void getBlocksOfPiece(int pieceNumber)
+        private void assemblePiece(UInt32 pieceNumber)
         {
             Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
 
-            for (var blockNumber = 0; blockNumber < _fileToDownloader.Dc.pieceMap[pieceNumber].blocks.Length; blockNumber++)
+            for (UInt32 blockNumber = 0; blockNumber < _fileToDownloader.Dc.pieceMap[pieceNumber].blocks.Length; blockNumber++)
             {
-                PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
-                            _fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size);
+                if (_fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size > 0)
+                {
+                    PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize,
+                         (UInt32)_fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size);
 
-                for(; _fileToDownloader.Dc.isMappingEqualTo(pieceNumber, blockNumber, Mapping.OnPeer|Mapping.NoneLocal);) { }
-
-                if (_fileToDownloader.Dc.totalBytesDownloaded >= _fileToDownloader.Dc.totalLength) { break; }
+                    for (; !_fileToDownloader.Dc.isBlockPieceLocal(pieceNumber, blockNumber);) { }
+                }
 
             }
 
@@ -80,7 +82,7 @@ namespace BitTorrent
 
             _filesToDownload = new List<FileDetails>();
 
-            int pieceLength = int.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
+            UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
 
             if (!_torrentMetaInfo.MetaInfoDict.ContainsKey("0"))
             {
@@ -92,7 +94,7 @@ namespace BitTorrent
             }
             else
             {
-                int fileNo = 0;
+                UInt32 fileNo = 0;
                 UInt64 totalBytes = 0;
                 string name = Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
                 while (_torrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
@@ -128,17 +130,22 @@ namespace BitTorrent
 
             while (_fileToDownloader.Dc.totalBytesDownloaded < _fileToDownloader.Dc.totalLength)
             {
-                int nextPiece;
-                for (;_remotePeer.PeerChoking;) { }
-                nextPiece = _fileToDownloader.selectNextPiece();
-                if (nextPiece==-1)
+
+                for (; _remotePeer.PeerChoking;) { }
+
+                Int64 nextPiece = _fileToDownloader.selectNextPiece();
+                if (nextPiece == -1)
                 {
                     break;
                 }
-                getBlocksOfPiece(nextPiece);
-                Program.Logger.Info($"Downloaded {(int)((((double)_fileToDownloader.Dc.totalBytesDownloaded) / _fileToDownloader.Dc.totalLength) * 100.0)}%");
-            }
-            Program.Logger.Debug("File downloaded.");
+
+                assemblePiece((UInt32)nextPiece);
+
+                Program.Logger.Info((_fileToDownloader.Dc.totalBytesDownloaded / _fileToDownloader.Dc.totalLength).ToString("0.00%"));
+              
+             }
+
+            Program.Logger.Debug("Whole Torrent finished downloading.");
         
         }
 
