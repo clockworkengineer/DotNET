@@ -16,10 +16,13 @@ namespace BitTorrent
 
         private void createEmptyFilesOnDisk()
         {
+            Program.Logger.Debug("Creating empty files as placeholders for downloading ...");
+
             foreach (var file in _filesToDownload)
             {
                 if (!System.IO.File.Exists(file.name))
                 {
+                    Program.Logger.Debug($"File: {file.name}");
                     Directory.CreateDirectory(Path.GetDirectoryName(file.name));
                     using (var fs = new FileStream(file.name, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
                     {
@@ -74,8 +77,12 @@ namespace BitTorrent
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
 
+            Program.Logger.Debug("Generate pieces downloaded map from local files ...");
+
             foreach (var file in _filesToDownload)
             {
+                Program.Logger.Debug($"File: {file.name}");
+
                 using (var inFileSteam = new FileStream(file.name, FileMode.Open))
                 {
                     int bytesRead = inFileSteam.Read(_dc.pieceInProgress, (Int32) bytesInBuffer,  _dc.pieceInProgress.Length - (Int32) bytesInBuffer);
@@ -108,6 +115,8 @@ namespace BitTorrent
         public void writePieceToFile(FileDetails file, UInt64 startOffset, UInt64 length)
         {
 
+            Program.Logger.Trace($"writePieceToFile({file.name},{startOffset},{length})");
+
             using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
             {
                 stream.Seek((int)(startOffset - file.offset), SeekOrigin.Begin);
@@ -135,6 +144,8 @@ namespace BitTorrent
 
         public bool havePiece(UInt32 pieceNumber)
         {
+            Program.Logger.Trace($"havePiece({pieceNumber})");
+
             for (UInt32 blockNumber=0; blockNumber < _dc.blocksPerPiece; blockNumber++)
             {
                 if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
@@ -147,6 +158,7 @@ namespace BitTorrent
 
         public Int64 selectNextPiece()
         {
+            Program.Logger.Trace($"selectNextPiece()");
 
             for (UInt32 pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
             {
@@ -164,15 +176,19 @@ namespace BitTorrent
      
         public void placeBlockIntoPiece (byte[] buffer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 length)
         {
+            Program.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{length})");
+
             Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32) blockOffset, (Int32)length);
 
             _dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
+            _dc.blockPieceRequested(pieceNumber, blockOffset / Constants.kBlockSize, false);
             _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
 
         }
 
         public void writePieceToFiles(UInt32 pieceNumber)
         {
+            Program.Logger.Trace($"writePieceToFiles({pieceNumber})");
 
             UInt64 startOffset = (UInt64) (pieceNumber * _dc.pieceLength);
             UInt64 endOffset = startOffset+ (UInt64) _dc.pieceLength;

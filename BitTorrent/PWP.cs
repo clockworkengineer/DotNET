@@ -326,6 +326,8 @@ namespace BitTorrent
 
             peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
 
+            remotePeer.TorrentDownloader.Dc.blockPieceRequested(pieceNumber, blockOffset / Constants.kBlockSize, true);
+
         }
 
          public static void piece(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)

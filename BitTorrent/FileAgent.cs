@@ -41,6 +41,8 @@ namespace BitTorrent
         private void connectToFirstWorkingPeer()
         {
 
+            Program.Logger.Info("Connecting to first available peer....");
+
             foreach (var peer in _currentAnnouneResponse.peers) {
                 try
                 {
@@ -74,15 +76,21 @@ namespace BitTorrent
         public void load()
         {
 
+            Program.Logger.Info("Loading MetaInfo for torrent file ....");
+
             _torrentMetaInfo = new MetaInfoFile(_torrentFileName);
             _torrentMetaInfo.load();
             _torrentMetaInfo.parse();
+
+            Program.Logger.Info("Loading main tracker ....");
 
             _mainTracker = new Tracker(_torrentMetaInfo, PeerID.get());
 
             _filesToDownload = new List<FileDetails>();
 
             UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
+
+            Program.Logger.Info("Create files to download details structure ...");
 
             if (!_torrentMetaInfo.MetaInfoDict.ContainsKey("0"))
             {
@@ -112,9 +120,13 @@ namespace BitTorrent
 
             }
 
+            Program.Logger.Info("Setup file downloader ...");
+
             _fileToDownloader = new FileDownloader(_filesToDownload, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
 
             _fileToDownloader.buildDownloadedPiecesMap();
+
+            Program.Logger.Info("Initial main tracker announce ...");
 
             _currentAnnouneResponse =  _mainTracker.announce();
 
@@ -125,6 +137,8 @@ namespace BitTorrent
 
         public void download()
         {
+
+            Program.Logger.Info("Starting torrent download for MetaInfo data ...");
 
             PWP.unchoke(_remotePeer);
 
@@ -141,16 +155,17 @@ namespace BitTorrent
 
                 assemblePiece((UInt32)nextPiece);
 
-                Program.Logger.Info((_fileToDownloader.Dc.totalBytesDownloaded / _fileToDownloader.Dc.totalLength).ToString("0.00%"));
+                Program.Logger.Info((_fileToDownloader.Dc.totalBytesDownloaded / (double) _fileToDownloader.Dc.totalLength).ToString("0.00%"));
               
              }
 
-            Program.Logger.Debug("Whole Torrent finished downloading.");
+            Program.Logger.Info("Whole Torrent finished downloading.");
         
         }
 
         public void close()
         {
+            Program.Logger.Info("Closing peer socket.");
             _remotePeer.ReadFromRemotePeer = false;
             _remotePeer.PeerSocket.Close();
         }
