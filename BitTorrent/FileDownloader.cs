@@ -46,53 +46,52 @@ namespace BitTorrent
 
         }
 
-        private void generatePieceMapFromBuffer(SHA1 sha, UInt32 pieceNumber, byte[] pieceBuffer)
+        private void generatePieceMapFromBuffer(SHA1 sha, UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
-            byte[] hash = sha.ComputeHash(pieceBuffer);
+
+            byte[] hash = sha.ComputeHash(pieceBuffer,0, (Int32) numberOfBytes);
             bool pieceThere = checkPieceHash(hash, pieceNumber);
             if (pieceThere)
             {
-                _dc.totalBytesDownloaded += (UInt64)pieceBuffer.Length;
+                _dc.totalBytesDownloaded += (UInt64)numberOfBytes;
             }
-            for (UInt32 blockNumber = 0; blockNumber < pieceBuffer.Length / Constants.kBlockSize; blockNumber++)
+            for (UInt32 blockNumber = 0; blockNumber < numberOfBytes / Constants.kBlockSize; blockNumber++)
             {
                 _dc.blockPieceLocal(pieceNumber, blockNumber, pieceThere);
                 _dc.pieceMap[pieceNumber].blocks[blockNumber].size = Constants.kBlockSize;
 
             }
-            if (pieceBuffer.Length % Constants.kBlockSize != 0)
+            if (numberOfBytes % Constants.kBlockSize != 0)
             {
-                _dc.blockPieceLocal(pieceNumber, (UInt32)pieceBuffer.Length / Constants.kBlockSize, pieceThere);
-                _dc.pieceMap[pieceNumber].blocks[(pieceBuffer.Length / Constants.kBlockSize)].size = (UInt32)pieceBuffer.Length % Constants.kBlockSize;
+                _dc.blockPieceLocal(pieceNumber, (UInt32)numberOfBytes / Constants.kBlockSize, pieceThere);
+                _dc.pieceMap[pieceNumber].blocks[(numberOfBytes / Constants.kBlockSize)].size = (UInt32)numberOfBytes % Constants.kBlockSize;
             }
         }
 
         private void createPieceMap()
         {
             SHA1 sha = new SHA1CryptoServiceProvider();
-            List<byte> pieceBuffer = new List<byte>();
             UInt32 pieceNumber = 0;
+            UInt32 bytesInBuffer = 0;
 
             foreach (var file in _filesToDownload)
             {
                 using (var inFileSteam = new FileStream(file.name, FileMode.Open))
                 {
-                    int bytesRead = inFileSteam.Read(_dc.pieceInProgress, 0,  _dc.pieceInProgress.Length - pieceBuffer.Count);
+                    int bytesRead = inFileSteam.Read(_dc.pieceInProgress, (Int32) bytesInBuffer,  _dc.pieceInProgress.Length - (Int32) bytesInBuffer);
 
                     while (bytesRead > 0)
                     {
-                        for (var byteNumber = 0; byteNumber < bytesRead; byteNumber++)
-                        {
-                            pieceBuffer.Add(_dc.pieceInProgress[byteNumber]);
-                        }
+                        bytesInBuffer += (UInt32)bytesRead;
 
-                        if (pieceBuffer.Count == _dc.pieceLength)
+                        if (bytesInBuffer == _dc.pieceLength)
                         {
-                            generatePieceMapFromBuffer(sha, pieceNumber, pieceBuffer.ToArray());
-                            pieceBuffer.Clear();
+                            generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceInProgress, (UInt32)bytesInBuffer);
+                            bytesInBuffer = 0;
                             pieceNumber++;
                         }
-                        bytesRead = inFileSteam.Read(_dc.pieceInProgress, 0, _dc.pieceInProgress.Length - pieceBuffer.Count);
+
+                        bytesRead = inFileSteam.Read(_dc.pieceInProgress, (Int32)bytesInBuffer, _dc.pieceInProgress.Length - (Int32)bytesInBuffer);
 
                     }
 
@@ -100,10 +99,9 @@ namespace BitTorrent
 
             }
 
-            if (pieceBuffer.Count > 0)
+            if (bytesInBuffer > 0)
             {
-                generatePieceMapFromBuffer(sha, pieceNumber, pieceBuffer.ToArray());
-     
+                generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceInProgress, (UInt32)bytesInBuffer);
             }
         }
 
