@@ -46,7 +46,28 @@ namespace BitTorrent
 
         }
 
-        private void createDownloadedPieceMap()
+        private void generatePieceMapFromBuffer(SHA1 sha, UInt32 pieceNumber, byte[] pieceBuffer)
+        {
+            byte[] hash = sha.ComputeHash(pieceBuffer);
+            bool pieceThere = checkPieceHash(hash, pieceNumber);
+            if (pieceThere)
+            {
+                _dc.totalBytesDownloaded += (UInt64)pieceBuffer.Length;
+            }
+            for (UInt32 blockNumber = 0; blockNumber < pieceBuffer.Length / Constants.kBlockSize; blockNumber++)
+            {
+                _dc.blockPieceLocal(pieceNumber, blockNumber, pieceThere);
+                _dc.pieceMap[pieceNumber].blocks[blockNumber].size = Constants.kBlockSize;
+
+            }
+            if (pieceBuffer.Length % Constants.kBlockSize != 0)
+            {
+                _dc.blockPieceLocal(pieceNumber, (UInt32)pieceBuffer.Length / Constants.kBlockSize, pieceThere);
+                _dc.pieceMap[pieceNumber].blocks[(pieceBuffer.Length / Constants.kBlockSize)].size = (UInt32)pieceBuffer.Length % Constants.kBlockSize;
+            }
+        }
+
+        private void createPieceMap()
         {
             SHA1 sha = new SHA1CryptoServiceProvider();
             List<byte> pieceBuffer = new List<byte>();
@@ -67,17 +88,7 @@ namespace BitTorrent
 
                         if (pieceBuffer.Count == _dc.pieceLength)
                         {
-                            byte[] hash = sha.ComputeHash(pieceBuffer.ToArray());
-                            bool pieceThere = checkPieceHash(hash, pieceNumber);
-                            if (pieceThere)
-                            {
-                                _dc.totalBytesDownloaded += (UInt64) _dc.pieceLength;
-                            }
-                            for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
-                            {
-                                _dc.blockPieceLocal(pieceNumber, blockNumber, pieceThere);
-                                _dc.pieceMap[pieceNumber].blocks[blockNumber].size = Constants.kBlockSize;
-                            }
+                            generatePieceMapFromBuffer(sha, pieceNumber, pieceBuffer.ToArray());
                             pieceBuffer.Clear();
                             pieceNumber++;
                         }
@@ -91,23 +102,8 @@ namespace BitTorrent
 
             if (pieceBuffer.Count > 0)
             {
-                byte[] hash = sha.ComputeHash(pieceBuffer.ToArray());
-                bool pieceThere = checkPieceHash(hash, pieceNumber);
-                if (pieceThere)
-                {
-                    _dc.totalBytesDownloaded += (UInt64)pieceBuffer.Count;
-                }
-                for (UInt32 blockNumber = 0; blockNumber < pieceBuffer.Count/Constants.kBlockSize; blockNumber++)
-                {
-                    _dc.blockPieceLocal(pieceNumber, blockNumber, pieceThere);
-                    _dc.pieceMap[pieceNumber].blocks[blockNumber].size = Constants.kBlockSize;
-    
-                }
-                if (pieceBuffer.Count % Constants.kBlockSize != 0)
-                {
-                    _dc.blockPieceLocal(pieceNumber, (UInt32) pieceBuffer.Count / Constants.kBlockSize, pieceThere);
-                     _dc.pieceMap[pieceNumber].blocks[(pieceBuffer.Count / Constants.kBlockSize)].size = (UInt32) pieceBuffer.Count % Constants.kBlockSize;
-                 }
+                generatePieceMapFromBuffer(sha, pieceNumber, pieceBuffer.ToArray());
+     
             }
         }
 
@@ -135,7 +131,7 @@ namespace BitTorrent
         {
 
             createEmptyFilesOnDisk();
-            createDownloadedPieceMap();
+            createPieceMap();
 
         }
 
@@ -168,9 +164,13 @@ namespace BitTorrent
 
         }
      
-        public void placeBlockIntoPiece (byte[] buffer, UInt32 offset, UInt32 blockOffset, UInt32 length)
+        public void placeBlockIntoPiece (byte[] buffer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 length)
         {
             Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32) blockOffset, (Int32)length);
+
+            _dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
+            _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
+
         }
 
         public void writePieceToFiles(UInt32 pieceNumber)

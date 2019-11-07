@@ -191,12 +191,7 @@ namespace BitTorrent
 
             Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {remotePeer.ReadBuffer.Length - 9}\n");
 
-            if (!remotePeer.TorrentDownloader.Dc.isBlockPieceLocal(pieceNumber, blockOffset / Constants.kBlockSize)) {
-                remotePeer.TorrentDownloader.Dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
-                remotePeer.TorrentDownloader.Dc.totalBytesDownloaded += (UInt64)remotePeer.TorrentDownloader.Dc.pieceMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
-             }
-
-            remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, 9,   blockOffset, (UInt32) remotePeer.ReadBuffer.Length-9);
+            remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, pieceNumber, blockOffset, (UInt32) remotePeer.ReadBuffer.Length-9);
 
         }
 
