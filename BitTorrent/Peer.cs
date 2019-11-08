@@ -10,7 +10,8 @@ namespace BitTorrent
         private string _ip;
         private UInt32 _port;
         private bool _peerChoking=true;
-        private bool _amChoking=true;
+    //    private bool _amChoking=true;
+        private bool _interested = true;
         private Socket _peerSocket;
         private byte[] _infoHash;
         private bool _connected = false;
@@ -22,13 +23,14 @@ namespace BitTorrent
         private bool _lengthRead = false;
 
         public bool PeerChoking { get => _peerChoking; set => _peerChoking = value; }
-        public bool AmChoking { get => _amChoking; set => _amChoking = value; }
+     //   public bool AmChoking { get => _amChoking; set => _amChoking = value; }
         public bool ReadFromRemotePeer { get => _readFromRemotePeer; set => _readFromRemotePeer = value; }
         public Socket PeerSocket { get => _peerSocket; set => _peerSocket = value; }
         public byte[] ReadBuffer { get => _readBuffer; set => _readBuffer = value; }
         public bool Connected { get => _connected; set => _connected = value; }
         public byte[] RemotePeerID { get => _remotePeerID; set => _remotePeerID = value; }
         public FileDownloader TorrentDownloader { get => _torrentDownloader; set => _torrentDownloader = value; }
+        public bool Interested { get => _interested; set => _interested = value; }
 
         public Peer(FileDownloader fileDownloader, string ip ,UInt32 port, byte[] infoHash)
         {
@@ -77,7 +79,8 @@ namespace BitTorrent
      
                 remotePeer._bytesRead += bytesRead;
 
-                if (!_lengthRead) {
+                if (!_lengthRead)
+                {
 
                     if (remotePeer._bytesRead == Constants.kMessageLength)
                     {
@@ -92,7 +95,7 @@ namespace BitTorrent
                         bytesRead = 0;
                     }
                 }
-                else if (remotePeer._bytesRead==remotePeer._readBuffer.Length) 
+                else if (remotePeer._bytesRead == remotePeer._readBuffer.Length)
                 {
                     PWP.remotePeerMessageProcess(remotePeer);
                     remotePeer._readBuffer = new byte[Constants.kMessageLength];
@@ -103,7 +106,7 @@ namespace BitTorrent
                 }
 
                 remotePeer._peerSocket.BeginReceive(remotePeer._readBuffer, (Int32) remotePeer._bytesRead, 
-                           remotePeer._readBuffer.Length - (Int32) bytesRead, 0, readPacketCallBack, remotePeer);
+                           remotePeer._readBuffer.Length - (Int32)remotePeer._bytesRead, 0, readPacketCallBack, remotePeer);
             
             }
             catch (Exception e)

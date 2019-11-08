@@ -251,7 +251,7 @@ namespace BitTorrent
     
             peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
 
-            remotePeer.AmChoking = true;
+        //    remotePeer.AmChoking = true;
         }
 
         public static void unchoke(Peer remotePeer)
@@ -263,7 +263,7 @@ namespace BitTorrent
     
             peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
 
-            remotePeer.AmChoking = false;
+        //    remotePeer.AmChoking = false;
 
         }
 
@@ -276,6 +276,8 @@ namespace BitTorrent
 
             peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
 
+            remotePeer.Interested = true;
+
         }
 
         public static void uninterested(Peer remotePeer)
@@ -286,6 +288,8 @@ namespace BitTorrent
             requestPacket.Add(Constants.kMessageUNINTERESTED);
 
             peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
+
+            remotePeer.Interested = false;
 
         }
 

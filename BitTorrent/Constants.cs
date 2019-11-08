@@ -4,7 +4,7 @@ namespace BitTorrent
 {
     public static class Constants
     {
-        public const int kBlockSize = 1024;
+        public const int kBlockSize = 1024*16;
         public const int kHashLength = 20;
         public const byte kMessageLength = 4;
         public const byte kMessageCHOKE = 0;

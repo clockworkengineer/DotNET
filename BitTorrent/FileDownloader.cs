@@ -164,7 +164,9 @@ namespace BitTorrent
             {
                 for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                 {
-                    if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                    if ((_dc.pieceMap[pieceNumber].blocks[blockNumber].size!=0) &&
+                        !_dc.isBlockPieceRequested(pieceNumber, blockNumber)&&
+                        !_dc.isBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         return (pieceNumber);
                     }

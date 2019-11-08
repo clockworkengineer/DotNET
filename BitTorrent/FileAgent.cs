@@ -27,10 +27,11 @@ namespace BitTorrent
                     PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize,
                          (UInt32)_fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size);
 
-                    for (; !_fileToDownloader.Dc.isBlockPieceLocal(pieceNumber, blockNumber);) { }
                 }
 
             }
+
+            for (; !_fileToDownloader.Dc.hasPieceBeenAssembled(pieceNumber);) { }
 
             Program.Logger.Debug($"All blocks for piece {pieceNumber} received");
 
