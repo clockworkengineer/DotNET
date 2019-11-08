@@ -68,6 +68,7 @@ namespace BitTorrent
             {
                 _dc.blockPieceLocal(pieceNumber, (UInt32)numberOfBytes / Constants.kBlockSize, pieceThere);
                 _dc.pieceMap[pieceNumber].blocks[(numberOfBytes / Constants.kBlockSize)].size = (UInt32)numberOfBytes % Constants.kBlockSize;
+                _dc.pieceMap[pieceNumber].lastBlockLength = (UInt32)numberOfBytes % Constants.kBlockSize;
             }
         }
 
@@ -165,7 +166,6 @@ namespace BitTorrent
                 for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                 {
                     if ((_dc.pieceMap[pieceNumber].blocks[blockNumber].size!=0) &&
-                        !_dc.isBlockPieceRequested(pieceNumber, blockNumber)&&
                         !_dc.isBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         return (pieceNumber);
@@ -183,7 +183,7 @@ namespace BitTorrent
             Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32) blockOffset, (Int32)length);
 
             _dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
-            _dc.blockPieceRequested(pieceNumber, blockOffset / Constants.kBlockSize, false);
+;
             _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
 
         }

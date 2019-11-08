@@ -135,15 +135,15 @@ namespace BitTorrent
        
         private static void handleBITFIELD(Peer remotePeer)
         {
-            byte[] usageMap = new byte [remotePeer.ReadBuffer.Length-1];
-            List<bool> usage = new List<bool>();
 
-            Buffer.BlockCopy(remotePeer.ReadBuffer, 1, usageMap, 0, remotePeer.ReadBuffer.Length-1);
+            remotePeer.RemotePieceBitfield = new byte [remotePeer.ReadBuffer.Length-1];
+
+            Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, remotePeer.ReadBuffer.Length-1);
 
             Program.Logger.Debug("\nUsage Map\n---------\n");
-            StringBuilder hex = new StringBuilder(usageMap.Length);
+            StringBuilder hex = new StringBuilder(remotePeer.RemotePieceBitfield.Length);
             int byteCOunt = 0;
-            foreach (byte b in usageMap)
+            foreach (byte b in remotePeer.RemotePieceBitfield)
             {
                 hex.AppendFormat("{0:x2}", b);
                 if (++byteCOunt % 16 == 0)
@@ -152,30 +152,9 @@ namespace BitTorrent
                 }
             }
             Program.Logger.Debug(hex+"\n");
-             
-            for (int i=0; i < usageMap.Length; i++)
-            {
-                byte map = usageMap[i];
-                usage.Add((map & 0x80)!=0);
-                usage.Add((map & 0x40) != 0);
-                usage.Add((map & 0x20) != 0);
-                usage.Add((map & 0x10) != 0);
-                usage.Add((map & 0x08) != 0);
-                usage.Add((map & 0x04) != 0);
-                usage.Add((map & 0x02) != 0);
-                usage.Add((map & 0x01) != 0);
-            }
 
-            for (UInt32 pieceNumber=0; pieceNumber < remotePeer.TorrentDownloader.Dc.numberOfPieces; pieceNumber++)
-            {
-                if (usage[(int)pieceNumber])
-                {
-                    for (UInt32 blockNumber=0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
-                    {
-                        remotePeer.TorrentDownloader.Dc.blockPieceOnPeer(pieceNumber, blockNumber, true);
-                    }
-                }
-            }
+            remotePeer.TorrentDownloader.Dc.mergePieceBitfield (remotePeer);
+
         }
 
         private static void handleREQUEST(Peer remotePeer)
@@ -203,40 +182,38 @@ namespace BitTorrent
         public static void remotePeerMessageProcess(Peer remotePeer)
         {
           
- 
-                switch (remotePeer.ReadBuffer[0])
-                {
-                    case Constants.kMessageCHOKE:
-                        handleCHOKE(remotePeer);
-                        break;
-                    case Constants.kMessageUNCHOKE:
-                        handleUNCHOKE(remotePeer);
-                        break;
-                    case Constants.kMessageINTERESTED:
-                        handleINTERESTED(remotePeer);
-                        break;
-                    case Constants.kMessageUNINTERESTED:
-                        handleUNINTERESTED(remotePeer);
-                        break;
-                    case Constants.kMessageHAVE:
-                        handleHAVE(remotePeer);
-                        break;
-                    case Constants.kMessageBITFIELD:
-                        handleBITFIELD(remotePeer);
-                        break;
-                    case Constants.kMessageREQUEST:
-                        handleREQUEST(remotePeer);
-                        break;
-                    case Constants.kMessagePIECE:
-                        handlePIECE(remotePeer);
-                        break;
-                    case Constants.kMessageCANCEL:
-                        handleCANCEL(remotePeer);
-                        break;
-                    default:
-                        Program.Logger.Debug($"UNKOWN REQUEST{remotePeer.ReadBuffer[0]}");
-                        break;
-
+            switch (remotePeer.ReadBuffer[0])
+            {
+                case Constants.kMessageCHOKE:
+                    handleCHOKE(remotePeer);
+                    break;
+                case Constants.kMessageUNCHOKE:
+                    handleUNCHOKE(remotePeer);
+                    break;
+                case Constants.kMessageINTERESTED:
+                    handleINTERESTED(remotePeer);
+                    break;
+                case Constants.kMessageUNINTERESTED:
+                    handleUNINTERESTED(remotePeer);
+                    break;
+                case Constants.kMessageHAVE:
+                    handleHAVE(remotePeer);
+                    break;
+                case Constants.kMessageBITFIELD:
+                    handleBITFIELD(remotePeer);
+                    break;
+                case Constants.kMessageREQUEST:
+                    handleREQUEST(remotePeer);
+                    break;
+                case Constants.kMessagePIECE:
+                    handlePIECE(remotePeer);
+                    break;
+                case Constants.kMessageCANCEL:
+                    handleCANCEL(remotePeer);
+                    break;
+                default:
+                    Program.Logger.Debug($"UNKOWN REQUEST{remotePeer.ReadBuffer[0]}");
+                    break;
                
             }
 
@@ -250,8 +227,7 @@ namespace BitTorrent
             requestPacket.Add(Constants.kMessageCHOKE);
     
             peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
-
-        //    remotePeer.AmChoking = true;
+               
         }
 
         public static void unchoke(Peer remotePeer)
@@ -262,8 +238,6 @@ namespace BitTorrent
             requestPacket.Add(Constants.kMessageUNCHOKE);
     
             peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
-
-        //    remotePeer.AmChoking = false;
 
         }
 
@@ -329,8 +303,6 @@ namespace BitTorrent
             Program.Logger.Debug($"Request Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
             peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
-
-            remotePeer.TorrentDownloader.Dc.blockPieceRequested(pieceNumber, blockOffset / Constants.kBlockSize, true);
 
         }
 

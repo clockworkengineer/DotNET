@@ -4,9 +4,9 @@ namespace BitTorrent
 {
     public static class Mapping
     {
-        public const byte Requested = 0x01;
-        public const byte HaveLocal = 0x02;
-        public const byte OnPeer = 0x04;
+        public const byte HaveLocal = 0x01;
+        public const byte OnPeer = 0x02;
+        public const byte LastBlock = 0x04;
     }
 
     public struct BlockData
@@ -18,6 +18,8 @@ namespace BitTorrent
     public struct PieceBlockMap
     {
         public BlockData[] blocks;
+        public UInt16 peerCount;
+        public UInt32 lastBlockLength;
     }
 
     public class DownloadContext
@@ -43,8 +45,8 @@ namespace BitTorrent
             numberOfPieces = ((UInt32)(pieces.Length / Constants.kHashLength));
             blocksPerPiece = pieceLength / Constants.kBlockSize;
             pieceInProgress = new byte[pieceLength];
-            pieceMap = new PieceBlockMap[numberOfPieces];
 
+            pieceMap = new PieceBlockMap[numberOfPieces];
             for (var pieceNuber = 0; pieceNuber < numberOfPieces; pieceNuber++)
             {
                 pieceMap[pieceNuber].blocks = new BlockData[blocksPerPiece];
@@ -88,15 +90,16 @@ namespace BitTorrent
             }
         }
 
-        public void blockPieceRequested(UInt32 pieceNumber, UInt32 blockNumber, bool requested)
+        public void blockPieceLast(UInt32 pieceNumber, UInt32 blockNumber, bool last)
         {
-            if (requested)
+            if (last)
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.Requested;
+                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.LastBlock;
+           
             }
             else
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.Requested ^ 0xff);
+                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.LastBlock ^ 0xff);
             }
         }
 
@@ -110,9 +113,9 @@ namespace BitTorrent
             return ((pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.HaveLocal) == Mapping.HaveLocal);
         }
 
-        public bool isBlockPieceRequested(UInt32 pieceNumber, UInt32 blockNumber)
+        public bool isBlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber)
         {
-            return ((pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.Requested) == Mapping.Requested);
+            return ((pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.LastBlock) == Mapping.LastBlock);
         }
 
         public bool hasPieceBeenAssembled(UInt32 pieceNumber)
@@ -125,7 +128,7 @@ namespace BitTorrent
                     break;
                 }
           
-                if (isBlockPieceRequested(pieceNumber, blockNumber)) {
+                if (!isBlockPieceLocal(pieceNumber, blockNumber)) {
                     return(false);
                 }
 
@@ -133,6 +136,27 @@ namespace BitTorrent
             return (true);
         }
 
+        public void mergePieceBitfield(Peer remotePeer)
+        {
 
+            UInt32  pieceNumber= 0;
+            for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
+            {
+                byte map = remotePeer.RemotePieceBitfield[i];
+                for (byte bit = 0x80; bit != 0; bit >>= 1, pieceNumber++)
+                {
+                    if ((map & bit) != 0)
+                    {
+                        pieceMap[pieceNumber].peerCount++;
+                        for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
+                        {
+                            remotePeer.TorrentDownloader.Dc.blockPieceOnPeer(pieceNumber, blockNumber, true);
+                        }
+                   
+                    }
+
+                }
+            }
+        }
     }
 }

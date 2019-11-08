@@ -26,7 +26,6 @@ namespace BitTorrent
                 {
                     PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize,
                          (UInt32)_fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size);
-
                 }
 
             }
