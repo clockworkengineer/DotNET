@@ -125,7 +125,7 @@ namespace BitTorrent
 
             using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
             {
-                stream.Seek((int)(startOffset - file.offset), SeekOrigin.Begin);
+                stream.Seek((Int64)(startOffset - file.offset), SeekOrigin.Begin);
                 stream.Write(_dc.pieceInProgress, (int)(file.offset - ((file.offset / (UInt64)_dc.pieceLength) * (UInt64)_dc.pieceLength)), (int)length);;
             }
 
@@ -162,7 +162,7 @@ namespace BitTorrent
             return (true);
         }
 
-        public Int64 selectNextPiece()
+        public bool selectNextPiece(ref UInt32 nextPiece)
         {
             Program.Logger.Trace($"selectNextPiece()");
 
@@ -173,15 +173,17 @@ namespace BitTorrent
                 {
                     if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
                     {
-                        return (pieceNumber);
+                        nextPiece = pieceNumber;
+                        return (true);
                     }
                 }
                 if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
                 {
-                    return (pieceNumber);
+                    nextPiece = pieceNumber;
+                    return (true);
                 }
             }
-            return (-1 );
+            return (false);
 
         }
 

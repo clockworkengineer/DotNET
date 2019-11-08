@@ -6,6 +6,8 @@ namespace BitTorrent
 {
     public class FileAgent
     {
+        public delegate void ProgessCallBack(Object progressData);
+
         private string _torrentFileName = String.Empty;
         private MetaInfoFile _torrentMetaInfo;
         private string _downloadPath;
@@ -134,25 +136,23 @@ namespace BitTorrent
 
         }
 
-        public void download()
+        public void download(ProgessCallBack progressFunction=null, Object progressData=null)
         {
 
             Program.Logger.Info("Starting torrent download for MetaInfo data ...");
 
             PWP.unchoke(_remotePeer);
 
-            while (_fileToDownloader.Dc.totalBytesDownloaded < _fileToDownloader.Dc.totalLength)
+            for(UInt32 nextPiece = 0; _fileToDownloader.selectNextPiece(ref nextPiece);)
             {
-
                 for (; _remotePeer.PeerChoking;) { }
 
-                Int64 nextPiece = _fileToDownloader.selectNextPiece();
-                if (nextPiece == -1)
-                {
-                    break;
-                }
-
                 assemblePiece((UInt32)nextPiece);
+
+                if (progressFunction != null)
+                {
+                    progressFunction(progressData);
+                }
 
                 Program.Logger.Info((_fileToDownloader.Dc.totalBytesDownloaded / (double) _fileToDownloader.Dc.totalLength).ToString("0.00%"));
               
