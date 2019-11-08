@@ -20,15 +20,14 @@ namespace BitTorrent
         {
             Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
 
-            for (UInt32 blockNumber = 0; blockNumber < _fileToDownloader.Dc.pieceMap[pieceNumber].blocks.Length; blockNumber++)
-            {
-                if (_fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size > 0)
-                {
-                    PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize,
-                         (UInt32)_fileToDownloader.Dc.pieceMap[pieceNumber].blocks[blockNumber].size);
-                }
-
+            UInt32 blockNumber = 0;
+            for (; !_remotePeer.TorrentDownloader.Dc.isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+            {    
+                PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
             }
+
+            PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
+                         (UInt32)_fileToDownloader.Dc.pieceMap[pieceNumber].lastBlockLength);
 
             for (; !_fileToDownloader.Dc.hasPieceBeenAssembled(pieceNumber);) { }
 

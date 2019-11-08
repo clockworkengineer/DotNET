@@ -58,17 +58,22 @@ namespace BitTorrent
             {
                 _dc.totalBytesDownloaded += (UInt64)numberOfBytes;
             }
-            for (UInt32 blockNumber = 0; blockNumber < numberOfBytes / Constants.kBlockSize; blockNumber++)
+            UInt32 blockNumber = 0;
+            for (; blockNumber < numberOfBytes / Constants.kBlockSize; blockNumber++)
             {
                 _dc.blockPieceLocal(pieceNumber, blockNumber, pieceThere);
-                _dc.pieceMap[pieceNumber].blocks[blockNumber].size = Constants.kBlockSize;
 
             }
             if (numberOfBytes % Constants.kBlockSize != 0)
             {
                 _dc.blockPieceLocal(pieceNumber, (UInt32)numberOfBytes / Constants.kBlockSize, pieceThere);
-                _dc.pieceMap[pieceNumber].blocks[(numberOfBytes / Constants.kBlockSize)].size = (UInt32)numberOfBytes % Constants.kBlockSize;
                 _dc.pieceMap[pieceNumber].lastBlockLength = (UInt32)numberOfBytes % Constants.kBlockSize;
+                _dc.blockPieceLast(pieceNumber, (numberOfBytes / Constants.kBlockSize), true);
+            }
+            else
+            {
+                _dc.pieceMap[pieceNumber].lastBlockLength = Constants.kBlockSize;
+                _dc.blockPieceLast(pieceNumber, blockNumber-1, true);
             }
         }
 
@@ -163,29 +168,39 @@ namespace BitTorrent
 
             for (UInt32 pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
             {
-                for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
+                UInt32 blockNumber = 0;
+                for (; !_dc.isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                 {
-                    if ((_dc.pieceMap[pieceNumber].blocks[blockNumber].size!=0) &&
-                        !_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                    if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         return (pieceNumber);
                     }
+                }
+                if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                {
+                    return (pieceNumber);
                 }
             }
             return (-1 );
 
         }
-     
-        public void placeBlockIntoPiece (byte[] buffer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 length)
+
+        public void placeBlockIntoPiece(byte[] buffer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 length)
         {
             Program.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{length})");
 
-            Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32) blockOffset, (Int32)length);
+            Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32)blockOffset, (Int32)length);
 
             _dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
-;
-            _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].blocks[blockOffset / Constants.kBlockSize].size;
 
+            if (!_dc.isBlockPieceLast(pieceNumber, blockOffset / Constants.kBlockSize))
+            {
+                _dc.totalBytesDownloaded += (UInt64)Constants.kBlockSize;
+            }
+            else
+            {
+                _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].lastBlockLength;
+            }
         }
 
         public void writePieceToFiles(UInt32 pieceNumber)

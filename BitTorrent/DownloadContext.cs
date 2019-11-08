@@ -9,15 +9,9 @@ namespace BitTorrent
         public const byte LastBlock = 0x04;
     }
 
-    public struct BlockData
-    {
-        public byte flags;
-        public UInt32 size;
-    }
-
     public struct PieceBlockMap
     {
-        public BlockData[] blocks;
+        public byte[] blocks;
         public UInt16 peerCount;
         public UInt32 lastBlockLength;
     }
@@ -49,7 +43,7 @@ namespace BitTorrent
             pieceMap = new PieceBlockMap[numberOfPieces];
             for (var pieceNuber = 0; pieceNuber < numberOfPieces; pieceNuber++)
             {
-                pieceMap[pieceNuber].blocks = new BlockData[blocksPerPiece];
+                pieceMap[pieceNuber].blocks = new byte[blocksPerPiece];
             }
         }
 
@@ -57,11 +51,11 @@ namespace BitTorrent
         {
             if (local)
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.HaveLocal;
+                pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
             }
             else
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.HaveLocal ^ 0xff);
+                pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
             }
         }
 
@@ -69,11 +63,11 @@ namespace BitTorrent
         {
             if (noPeer)
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.OnPeer;
+                pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
             }
             else
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.OnPeer ^ 0xff);
+                pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.OnPeer ^ 0xff);
             }
         }
 
@@ -81,12 +75,12 @@ namespace BitTorrent
         {
             if (downloaded)
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.OnPeer;
-                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.HaveLocal;
+                pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
+                pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
             }
             else
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.HaveLocal ^ 0xff);
+                pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
             }
         }
 
@@ -94,28 +88,28 @@ namespace BitTorrent
         {
             if (last)
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags |= Mapping.LastBlock;
+                pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.LastBlock;
            
             }
             else
             {
-                pieceMap[pieceNumber].blocks[blockNumber].flags &= (Mapping.LastBlock ^ 0xff);
+                pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.LastBlock ^ 0xff);
             }
         }
 
         public bool isBlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber)
         {
-            return ((pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.OnPeer)==Mapping.OnPeer);
+            return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer)==Mapping.OnPeer);
         }
 
         public bool isBlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber)
         {
-            return ((pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.HaveLocal) == Mapping.HaveLocal);
+            return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal);
         }
 
         public bool isBlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber)
         {
-            return ((pieceMap[pieceNumber].blocks[blockNumber].flags & Mapping.LastBlock) == Mapping.LastBlock);
+            return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock);
         }
 
         public bool hasPieceBeenAssembled(UInt32 pieceNumber)
@@ -123,13 +117,12 @@ namespace BitTorrent
        
             for (UInt32 blockNumber=0; blockNumber < pieceMap[pieceNumber].blocks.Length; blockNumber++)
             {
-                if (pieceMap[pieceNumber].blocks[blockNumber].size == 0)
-                {
-                    break;
-                }
-          
                 if (!isBlockPieceLocal(pieceNumber, blockNumber)) {
                     return(false);
+                }
+                if (isBlockPieceLast(pieceNumber, blockNumber))
+                {
+                    break;
                 }
 
             }
