@@ -82,6 +82,7 @@ namespace BitTorrent
             SHA1 sha = new SHA1CryptoServiceProvider();
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
+            int bytesRead = 0;
 
             Program.Logger.Debug("Generate pieces downloaded map from local files ...");
 
@@ -91,20 +92,17 @@ namespace BitTorrent
 
                 using (var inFileSteam = new FileStream(file.name, FileMode.Open))
                 {
-                    int bytesRead = inFileSteam.Read(_dc.pieceInProgress, (Int32) bytesInBuffer,  _dc.pieceInProgress.Length - (Int32) bytesInBuffer);
-
-                    while (bytesRead > 0)
+                
+                    while ((bytesRead = inFileSteam.Read(_dc.pieceBuffer, (Int32)bytesInBuffer, _dc.pieceBuffer.Length - (Int32)bytesInBuffer)) > 0)
                     {
                         bytesInBuffer += (UInt32)bytesRead;
 
                         if (bytesInBuffer == _dc.pieceLength)
                         {
-                            generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceInProgress, (UInt32)bytesInBuffer);
+                            generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
                             bytesInBuffer = 0;
                             pieceNumber++;
                         }
-
-                        bytesRead = inFileSteam.Read(_dc.pieceInProgress, (Int32)bytesInBuffer, _dc.pieceInProgress.Length - (Int32)bytesInBuffer);
 
                     }
 
@@ -114,7 +112,7 @@ namespace BitTorrent
 
             if (bytesInBuffer > 0)
             {
-                generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceInProgress, (UInt32)bytesInBuffer);
+                generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
             }
         }
 
@@ -128,7 +126,7 @@ namespace BitTorrent
                 using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
                 {
                     stream.Seek((Int64)(startOffset - file.offset), SeekOrigin.Begin);
-                    stream.Write(_dc.pieceInProgress, (int)(file.offset - ((file.offset / (UInt64)_dc.pieceLength) * (UInt64)_dc.pieceLength)), (int)length); ;
+                    stream.Write(_dc.pieceBuffer, (int)(file.offset - ((file.offset / (UInt64)_dc.pieceLength) * (UInt64)_dc.pieceLength)), (int)length); ;
                 }
             }
             catch (Exception ex)
@@ -225,7 +223,7 @@ namespace BitTorrent
             {
                 Program.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{length})");
 
-                Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32)blockOffset, (Int32)length);
+                Buffer.BlockCopy(buffer, 9, _dc.pieceBuffer, (Int32)blockOffset, (Int32)length);
 
                 _dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
 

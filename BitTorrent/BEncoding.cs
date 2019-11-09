@@ -232,36 +232,43 @@ namespace BitTorrent
         {
             List<byte> result = new List<byte>();
 
-            if (bNode is BNodeDictionary)
+            try
             {
-                result.Add((byte)'d');
-                foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
+                if (bNode is BNodeDictionary)
                 {
-                    result.AddRange(Encoding.ASCII.GetBytes($"{key.Length}:{key}"));
-                    result.AddRange(encode(((BNodeDictionary)bNode).dict[key]));
+                    result.Add((byte)'d');
+                    foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
+                    {
+                        result.AddRange(Encoding.ASCII.GetBytes($"{key.Length}:{key}"));
+                        result.AddRange(encode(((BNodeDictionary)bNode).dict[key]));
+                    }
+                    result.Add((byte)'e');
                 }
-                result.Add((byte)'e');
-            }
-            else if (bNode is BNodeList)
-            {
-                result.Add((byte)'l');
-                foreach (var node in ((BNodeList)bNode).list)
+                else if (bNode is BNodeList)
                 {
-                    result.AddRange(encode(node));
+                    result.Add((byte)'l');
+                    foreach (var node in ((BNodeList)bNode).list)
+                    {
+                        result.AddRange(encode(node));
+                    }
+                    result.Add((byte)'e');
                 }
-                result.Add((byte)'e');
+                else if (bNode is BNodeNumber)
+                {
+                    result.Add((byte)'i');
+                    result.AddRange(((BNodeNumber)bNode).number);
+                    result.Add((byte)'e');
+                }
+                else if (bNode is BNodeString)
+                {
+                    result.AddRange(Encoding.ASCII.GetBytes($"{((BNodeString)bNode).str.Length}:"));
+                    result.AddRange(((BNodeString)bNode).str);
+
+                }
             }
-            else if (bNode is BNodeNumber)
+            catch (Exception ex)
             {
-                result.Add((byte)'i');
-                result.AddRange(((BNodeNumber)bNode).number);
-                result.Add((byte)'e');
-            }
-            else if (bNode is BNodeString)
-            {
-                result.AddRange(Encoding.ASCII.GetBytes($"{((BNodeString)bNode).str.Length}:")); 
-                result.AddRange(((BNodeString)bNode).str);
-                    
+                Program.Logger.Debug(ex);
             }
 
             return (result.ToArray());
@@ -271,29 +278,36 @@ namespace BitTorrent
         {
             BNodeBase bNodeEntry=null;
 
-            if (bNode is BNodeDictionary)
+            try
             {
-                if (((BNodeDictionary)bNode).dict.ContainsKey(entryKey))
+                if (bNode is BNodeDictionary)
                 {
-                    return (((BNodeDictionary)bNode).dict[entryKey]);
-                } 
-                else 
-                {
-                    foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
+                    if (((BNodeDictionary)bNode).dict.ContainsKey(entryKey))
                     {
-                        bNodeEntry = getDictionaryEntry(((BNodeDictionary)bNode).dict[key],entryKey);
+                        return (((BNodeDictionary)bNode).dict[entryKey]);
+                    }
+                    else
+                    {
+                        foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
+                        {
+                            bNodeEntry = getDictionaryEntry(((BNodeDictionary)bNode).dict[key], entryKey);
+                            if (bNodeEntry != null) break;
+                        }
+                    }
+
+                }
+                else if (bNode is BNodeList)
+                {
+                    foreach (var node in ((BNodeList)bNode).list)
+                    {
+                        bNodeEntry = getDictionaryEntry(node, entryKey);
                         if (bNodeEntry != null) break;
                     }
                 }
-
             }
-            else if (bNode is BNodeList)
+            catch (Exception ex)
             {
-                foreach (var node in ((BNodeList)bNode).list)
-                {
-                    bNodeEntry = getDictionaryEntry(node, entryKey);
-                    if (bNodeEntry != null) break;
-                }
+                Program.Logger.Debug(ex);
             }
 
             return (bNodeEntry);
@@ -304,17 +318,26 @@ namespace BitTorrent
         {
             BNodeBase entryNode = null;
 
-            entryNode = getDictionaryEntry(bNode, entryKey);
-            if (entryNode != null)
+            try
             {
-                if (entryNode is BNodeString) 
+                entryNode = getDictionaryEntry(bNode, entryKey);
+                if (entryNode != null)
                 {
-                    return (Encoding.ASCII.GetString(((BNodeString)entryNode).str));
-                } else if (entryNode is BNodeNumber)
-                {
-                    return (Encoding.ASCII.GetString(((BNodeNumber)entryNode).number));
+                    if (entryNode is BNodeString)
+                    {
+                        return (Encoding.ASCII.GetString(((BNodeString)entryNode).str));
+                    }
+                    else if (entryNode is BNodeNumber)
+                    {
+                        return (Encoding.ASCII.GetString(((BNodeNumber)entryNode).number));
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+
             return ("");
         }
 

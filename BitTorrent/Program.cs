@@ -65,13 +65,16 @@ namespace BitTorrent
         
             try
             {
-                FileAgent fileAgent01 = new FileAgent("./suf.torrent", "/home/robt/utorrent");
+                FileAgent fileAgent01 = new FileAgent("./maj.torrent", "/home/robt/utorrent");
  
                 fileAgent01.load();
 
                 fileAgent01.download();
 
+                Console.ReadKey();
+
                 fileAgent01.close();
+              
 
             }
             catch (Exception ex)
