@@ -56,7 +56,7 @@ namespace BitTorrent
                 catch (Exception ex)
                 {
                     Program.Logger.Info($"Failed to connect to {peer.ip}");
-                    Program.Logger.Debug(ex);
+                    throw new Error("Failure trying to connect to peer.", ex);
                 }
             }
 
@@ -77,89 +77,105 @@ namespace BitTorrent
         public void load()
         {
 
-            Program.Logger.Info("Loading MetaInfo for torrent file ....");
-
-            _torrentMetaInfo = new MetaInfoFile(_torrentFileName);
-            _torrentMetaInfo.load();
-            _torrentMetaInfo.parse();
-
-            Program.Logger.Info("Loading main tracker ....");
-
-            _mainTracker = new Tracker(_torrentMetaInfo, PeerID.get());
-
-            _filesToDownload = new List<FileDetails>();
-
-            UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
-
-            Program.Logger.Info("Create files to download details structure ...");
-
-            if (!_torrentMetaInfo.MetaInfoDict.ContainsKey("0"))
+            try
             {
-                FileDetails fileDetail = new FileDetails();
-                fileDetail.name = _downloadPath + "/" + Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
-                fileDetail.length = UInt64.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["length"]));
-                fileDetail.offset = 0;
-                _filesToDownload.Add(fileDetail);
-            }
-            else
-            {
-                UInt32 fileNo = 0;
-                UInt64 totalBytes = 0;
-                string name = Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
-                while (_torrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
+                Program.Logger.Info("Loading MetaInfo for torrent file ....");
+
+                _torrentMetaInfo = new MetaInfoFile(_torrentFileName);
+                _torrentMetaInfo.load();
+                _torrentMetaInfo.parse();
+
+                Program.Logger.Info("Loading main tracker ....");
+
+                _mainTracker = new Tracker(_torrentMetaInfo, PeerID.get());
+
+                _filesToDownload = new List<FileDetails>();
+
+                UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["piece length"]));
+
+                Program.Logger.Info("Create files to download details structure ...");
+
+                if (!_torrentMetaInfo.MetaInfoDict.ContainsKey("0"))
                 {
-                    string[] details = Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict[fileNo.ToString()]).Split(',');
                     FileDetails fileDetail = new FileDetails();
-                    fileDetail.name = _downloadPath + "/" + name+ details[0];
-                    fileDetail.length = UInt64.Parse(details[1]);
-                    fileDetail.md5sum = details[2];
-                    fileDetail.offset = totalBytes;
+                    fileDetail.name = _downloadPath + "/" + Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
+                    fileDetail.length = UInt64.Parse(Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["length"]));
+                    fileDetail.offset = 0;
                     _filesToDownload.Add(fileDetail);
-                    fileNo++;
-                    totalBytes += fileDetail.length;
+                }
+                else
+                {
+                    UInt32 fileNo = 0;
+                    UInt64 totalBytes = 0;
+                    string name = Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict["name"]);
+                    while (_torrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
+                    {
+                        string[] details = Encoding.ASCII.GetString(_torrentMetaInfo.MetaInfoDict[fileNo.ToString()]).Split(',');
+                        FileDetails fileDetail = new FileDetails();
+                        fileDetail.name = _downloadPath + "/" + name + details[0];
+                        fileDetail.length = UInt64.Parse(details[1]);
+                        fileDetail.md5sum = details[2];
+                        fileDetail.offset = totalBytes;
+                        _filesToDownload.Add(fileDetail);
+                        fileNo++;
+                        totalBytes += fileDetail.length;
+                    }
+
                 }
 
+                Program.Logger.Info("Setup file downloader ...");
+
+                _fileToDownloader = new FileDownloader(_filesToDownload, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
+
+                _fileToDownloader.buildDownloadedPiecesMap();
+
+                Program.Logger.Info("Initial main tracker announce ...");
+
+                _currentAnnouneResponse = _mainTracker.announce();
+
+                connectToFirstWorkingPeer();
             }
-
-            Program.Logger.Info("Setup file downloader ...");
-
-            _fileToDownloader = new FileDownloader(_filesToDownload, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
-
-            _fileToDownloader.buildDownloadedPiecesMap();
-
-            Program.Logger.Info("Initial main tracker announce ...");
-
-            _currentAnnouneResponse =  _mainTracker.announce();
-
-            connectToFirstWorkingPeer();
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+                throw new Error("Failure in to load torrent File Agent.", ex);
+            }
 
 
         }
 
-        public void download(ProgessCallBack progressFunction=null, Object progressData=null)
+        public void download(ProgessCallBack progressFunction = null, Object progressData = null)
         {
 
-            Program.Logger.Info("Starting torrent download for MetaInfo data ...");
-
-            PWP.unchoke(_remotePeer);
-
-            for(UInt32 nextPiece = 0; _fileToDownloader.selectNextPiece(ref nextPiece);)
+            try
             {
-                for (; _remotePeer.PeerChoking;) { }
+                Program.Logger.Info("Starting torrent download for MetaInfo data ...");
 
-                assemblePiece((UInt32)nextPiece);
+                PWP.unchoke(_remotePeer);
 
-                if (progressFunction != null)
+                for (UInt32 nextPiece = 0; _fileToDownloader.selectNextPiece(ref nextPiece);)
                 {
-                    progressFunction(progressData);
+                    for (; _remotePeer.PeerChoking;) { }
+
+                    assemblePiece((UInt32)nextPiece);
+
+                    if (progressFunction != null)
+                    {
+                        progressFunction(progressData);
+                    }
+
+                    Program.Logger.Info((_fileToDownloader.Dc.totalBytesDownloaded / (double)_fileToDownloader.Dc.totalLength).ToString("0.00%"));
+
                 }
 
-                Program.Logger.Info((_fileToDownloader.Dc.totalBytesDownloaded / (double) _fileToDownloader.Dc.totalLength).ToString("0.00%"));
-              
-             }
+                Program.Logger.Info("Whole Torrent finished downloading.");
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+                throw new Error("Failure in File Agent torrent file download.", ex);
+            }
 
-            Program.Logger.Info("Whole Torrent finished downloading.");
-        
         }
 
         public void close()

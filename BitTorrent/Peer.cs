@@ -52,21 +52,28 @@ namespace BitTorrent
 
         public void connect()
         {
-        
-            IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
-            IPEndPoint remotePeerIP = new IPEndPoint(localPeerIP, 0);
 
-            _peerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            try
+            {
+                IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
+                IPAddress remotePeerIP = System.Net.IPAddress.Parse(_ip);
 
-            _peerSocket.Connect(_ip, (Int32) _port);
+                _peerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(this, _infoHash);
+                _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)_port));
 
-            RemotePeerID = peerResponse.Item2;
+                ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(this, _infoHash);
 
-            Connected = true;
+                RemotePeerID = peerResponse.Item2;
 
-            _peerSocket.BeginReceive(_readBuffer, 0, ReadBuffer.Length, 0, readPacketCallBack, this);
+                _connected = true;
+
+                _peerSocket.BeginReceive(_readBuffer, 0, ReadBuffer.Length, 0, readPacketCallBack, this);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
 
@@ -111,7 +118,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug("ReadPacketCallBack ERROR : " + ex.Message);
+                Program.Logger.Debug("Internal ReadPacketCallBack() error : " + ex.Message);
                 Program.Logger.Debug(ex);
             }
         }

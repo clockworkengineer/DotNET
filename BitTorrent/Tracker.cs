@@ -35,9 +35,8 @@ namespace BitTorrent
         private UInt32 _numWanted = 1;
         private UInt32 _interval = 0;
 
-        private AnnounceResponse constructResponse(byte[] announceResponse)
+        private AnnounceResponse constructResponse(byte[] announceResponse, ref AnnounceResponse response)
         {
-            AnnounceResponse response = new AnnounceResponse();
 
             response.statusCode = (int)HttpStatusCode.OK;
 
@@ -146,67 +145,101 @@ namespace BitTorrent
         }
 
         public AnnounceResponse announce() 
-        { 
-       
-            HttpWebRequest httpGetRequest = WebRequest.Create(encodeTrackerURL()) as HttpWebRequest;
-            HttpWebResponse httpGetResponse;
-            byte[] announceResponse;
+        {
 
-            httpGetRequest.Method = "GET";
-            httpGetRequest.ContentType = "text/xml";
+            AnnounceResponse response = new AnnounceResponse();
 
-            using (httpGetResponse =  httpGetRequest.GetResponse() as HttpWebResponse)
+            try
             {
-                StreamReader reader = new StreamReader(httpGetResponse.GetResponseStream());
-                using (var memstream = new MemoryStream())
+                HttpWebRequest httpGetRequest = WebRequest.Create(encodeTrackerURL()) as HttpWebRequest;
+                HttpWebResponse httpGetResponse;
+                byte[] announceResponse;
+
+                httpGetRequest.Method = "GET";
+                httpGetRequest.ContentType = "text/xml";
+
+                using (httpGetResponse = httpGetRequest.GetResponse() as HttpWebResponse)
                 {
-                    reader.BaseStream.CopyTo(memstream);
-                    announceResponse = memstream.ToArray();
+                    StreamReader reader = new StreamReader(httpGetResponse.GetResponseStream());
+                    using (var memstream = new MemoryStream())
+                    {
+                        reader.BaseStream.CopyTo(memstream);
+                        announceResponse = memstream.ToArray();
+                    }
+                }
+                if (httpGetResponse.StatusCode == HttpStatusCode.OK)
+                {
+                    constructResponse(announceResponse, ref response);
+                }
+                else
+                {
+                    response = new AnnounceResponse();
+                    response.statusCode = (UInt32)httpGetResponse.StatusCode;
+                    response.statusMessage = httpGetResponse.StatusDescription;
+
                 }
             }
-            if (httpGetResponse.StatusCode== HttpStatusCode.OK)
+            catch (Exception ex)
             {
-                return (constructResponse(announceResponse));
+                Program.Logger.Debug(ex);
+                response.statusMessage = ex.Message;
             }
-            else
-            {
-                AnnounceResponse error = new AnnounceResponse();
-                error.statusCode = (UInt32) httpGetResponse.StatusCode;
-                error.statusMessage = httpGetResponse.StatusDescription;
-                return (error);
-            }
+
+            return (response);
+
         }
 
         public void startAnnouncing()
         {
-            _announceTimer = new System.Timers.Timer(_interval);
-            _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(sender, e, this);
-            _announceTimer.AutoReset = true;
-            _announceTimer.Enabled = true;
+            try
+            {
+                _announceTimer = new System.Timers.Timer(_interval);
+                _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(sender, e, this);
+                _announceTimer.AutoReset = true;
+                _announceTimer.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
 
         public void stopAnnonncing()
         {
-            _announceTimer.Stop();
-            _announceTimer.Dispose();
+            try
+            {
+                _announceTimer.Stop();
+                _announceTimer.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
 
         public void update(AnnounceResponse response)
         {
-            UInt32 oldInterval = _interval;
-            if (response.minInterval != 0)
+            try
             {
-                _interval = response.minInterval;
+                UInt32 oldInterval = _interval;
+                if (response.minInterval != 0)
+                {
+                    _interval = response.minInterval;
+                }
+                else
+                {
+                    _interval = response.interval;
+                }
+                _trackerID = response.trackerID;
+                if (oldInterval != _interval)
+                {
+                    stopAnnonncing();
+                    startAnnouncing();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _interval = response.interval;
-            }
-            _trackerID = response.trackerID;
-            if (oldInterval!=_interval)
-            {
-                stopAnnonncing();
-                startAnnouncing();
+                Program.Logger.Debug(ex);
             }
         }
     }

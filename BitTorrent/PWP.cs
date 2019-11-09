@@ -43,6 +43,7 @@ namespace BitTorrent
             return (packedInt32);
 
         }
+
         private static bool validatePeerConnect(byte[] handshakePacket, byte[] handshakeResponse, out byte[] remotePeerID)
         {
 
@@ -68,29 +69,6 @@ namespace BitTorrent
             Buffer.BlockCopy(handshakeResponse, _protocolName.Length + 29, remotePeerID, 0, remotePeerID.Length);
 
             return (true);
-
-        }
-
-        public static ValueTuple<bool, byte[]> intialHandshake(Peer remotePeer, byte[] infoHash)
-        {
-            List<byte> handshakePacket = new List<byte>();
-            byte[] remotePeerID;
-
-            handshakePacket.Add((byte) _protocolName.Length);
-            handshakePacket.AddRange(_protocolName);
-            handshakePacket.AddRange(new byte[8]);
-            handshakePacket.AddRange(infoHash);
-            handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.get()));
-
-            peerWrite(remotePeer.PeerSocket, handshakePacket.ToArray(), handshakePacket.Count);
-
-            byte[] handshakeResponse = new byte[handshakePacket.Count];
-
-            peerRead(remotePeer.PeerSocket, handshakeResponse, handshakeResponse.Length);
-
-            bool connected = validatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
-
-            return (connected, remotePeerID);
 
         }
 
@@ -122,9 +100,10 @@ namespace BitTorrent
 
             pieceNumber = unpackUInt32(remotePeer.ReadBuffer, 1);
 
-            if (!remotePeer.TorrentDownloader.havePiece(pieceNumber)) { 
+            if (!remotePeer.TorrentDownloader.havePiece(pieceNumber))
+            {
                 PWP.interested(remotePeer);
-                for (UInt32 blockNumber=0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
+                for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                 {
                     remotePeer.TorrentDownloader.Dc.blockPieceOnPeer(pieceNumber, blockNumber, true);
                 }
@@ -132,13 +111,13 @@ namespace BitTorrent
 
             Program.Logger.Debug($"Have piece= {pieceNumber}");
         }
-       
+
         private static void handleBITFIELD(Peer remotePeer)
         {
 
-            remotePeer.RemotePieceBitfield = new byte [remotePeer.ReadBuffer.Length-1];
+            remotePeer.RemotePieceBitfield = new byte[remotePeer.ReadBuffer.Length - 1];
 
-            Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, remotePeer.ReadBuffer.Length-1);
+            Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, remotePeer.ReadBuffer.Length - 1);
 
             Program.Logger.Debug("\nUsage Map\n---------\n");
             StringBuilder hex = new StringBuilder(remotePeer.RemotePieceBitfield.Length);
@@ -151,9 +130,9 @@ namespace BitTorrent
                     hex.Append("\n");
                 }
             }
-            Program.Logger.Debug(hex+"\n");
+            Program.Logger.Debug(hex + "\n");
 
-            remotePeer.TorrentDownloader.Dc.mergePieceBitfield (remotePeer);
+            remotePeer.TorrentDownloader.Dc.mergePieceBitfield(remotePeer);
 
         }
 
@@ -164,13 +143,13 @@ namespace BitTorrent
 
         private static void handlePIECE(Peer remotePeer)
         {
-            
+
             UInt32 pieceNumber = unpackUInt32(remotePeer.ReadBuffer, 1);
             UInt32 blockOffset = unpackUInt32(remotePeer.ReadBuffer, 5);
 
             Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {remotePeer.ReadBuffer.Length - 9}\n");
 
-            remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, pieceNumber, blockOffset, (UInt32) remotePeer.ReadBuffer.Length-9);
+            remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, pieceNumber, blockOffset, (UInt32)remotePeer.ReadBuffer.Length - 9);
 
         }
 
@@ -179,159 +158,262 @@ namespace BitTorrent
             Program.Logger.Debug("CANCEL");
         }
 
+        public static ValueTuple<bool, byte[]> intialHandshake(Peer remotePeer, byte[] infoHash)
+        {
+
+            byte[] remotePeerID = null;
+            bool connected = false;
+
+            try
+            {
+                List<byte> handshakePacket = new List<byte>();
+
+                handshakePacket.Add((byte)_protocolName.Length);
+                handshakePacket.AddRange(_protocolName);
+                handshakePacket.AddRange(new byte[8]);
+                handshakePacket.AddRange(infoHash);
+                handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.get()));
+
+                peerWrite(remotePeer.PeerSocket, handshakePacket.ToArray(), handshakePacket.Count);
+
+                byte[] handshakeResponse = new byte[handshakePacket.Count];
+
+                peerRead(remotePeer.PeerSocket, handshakeResponse, handshakeResponse.Length);
+
+                connected = validatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+
+            return (connected, remotePeerID);
+
+        }
+
+  
         public static void remotePeerMessageProcess(Peer remotePeer)
         {
-          
-            switch (remotePeer.ReadBuffer[0])
+
+            try
             {
-                case Constants.kMessageCHOKE:
-                    handleCHOKE(remotePeer);
-                    break;
-                case Constants.kMessageUNCHOKE:
-                    handleUNCHOKE(remotePeer);
-                    break;
-                case Constants.kMessageINTERESTED:
-                    handleINTERESTED(remotePeer);
-                    break;
-                case Constants.kMessageUNINTERESTED:
-                    handleUNINTERESTED(remotePeer);
-                    break;
-                case Constants.kMessageHAVE:
-                    handleHAVE(remotePeer);
-                    break;
-                case Constants.kMessageBITFIELD:
-                    handleBITFIELD(remotePeer);
-                    break;
-                case Constants.kMessageREQUEST:
-                    handleREQUEST(remotePeer);
-                    break;
-                case Constants.kMessagePIECE:
-                    handlePIECE(remotePeer);
-                    break;
-                case Constants.kMessageCANCEL:
-                    handleCANCEL(remotePeer);
-                    break;
-                default:
-                    Program.Logger.Debug($"UNKOWN REQUEST{remotePeer.ReadBuffer[0]}");
-                    break;
-               
+                switch (remotePeer.ReadBuffer[0])
+                {
+                    case Constants.kMessageCHOKE:
+                        handleCHOKE(remotePeer);
+                        break;
+                    case Constants.kMessageUNCHOKE:
+                        handleUNCHOKE(remotePeer);
+                        break;
+                    case Constants.kMessageINTERESTED:
+                        handleINTERESTED(remotePeer);
+                        break;
+                    case Constants.kMessageUNINTERESTED:
+                        handleUNINTERESTED(remotePeer);
+                        break;
+                    case Constants.kMessageHAVE:
+                        handleHAVE(remotePeer);
+                        break;
+                    case Constants.kMessageBITFIELD:
+                        handleBITFIELD(remotePeer);
+                        break;
+                    case Constants.kMessageREQUEST:
+                        handleREQUEST(remotePeer);
+                        break;
+                    case Constants.kMessagePIECE:
+                        handlePIECE(remotePeer);
+                        break;
+                    case Constants.kMessageCANCEL:
+                        handleCANCEL(remotePeer);
+                        break;
+                    default:
+                        Program.Logger.Debug($"UNKOWN REQUEST{remotePeer.ReadBuffer[0]}");
+                        break;
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
             }
 
         }
 
         public static void choke(Peer remotePeer)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32(1));
-            requestPacket.Add(Constants.kMessageCHOKE);
-    
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
-               
+                requestPacket.AddRange(packUInt32(1));
+                requestPacket.Add(Constants.kMessageCHOKE);
+
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+
         }
 
         public static void unchoke(Peer remotePeer)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32(1));
-            requestPacket.Add(Constants.kMessageUNCHOKE);
-    
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
+                requestPacket.AddRange(packUInt32(1));
+                requestPacket.Add(Constants.kMessageUNCHOKE);
+
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
 
         public static void interested(Peer remotePeer)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32(1));
-            requestPacket.Add(Constants.kMessageINTERESTED);
+                requestPacket.AddRange(packUInt32(1));
+                requestPacket.Add(Constants.kMessageINTERESTED);
 
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
 
-            remotePeer.Interested = true;
+                remotePeer.Interested = true;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
 
         public static void uninterested(Peer remotePeer)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32(1));
-            requestPacket.Add(Constants.kMessageUNINTERESTED);
+                requestPacket.AddRange(packUInt32(1));
+                requestPacket.Add(Constants.kMessageUNINTERESTED);
 
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
 
-            remotePeer.Interested = false;
+                remotePeer.Interested = false;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
 
         public static void have(Peer remotePeer, UInt32 pieceNumber)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32(5));
-            requestPacket.Add(Constants.kMessageHAVE);
-            requestPacket.AddRange(packUInt32(pieceNumber));
+                requestPacket.AddRange(packUInt32(5));
+                requestPacket.Add(Constants.kMessageHAVE);
+                requestPacket.AddRange(packUInt32(pieceNumber));
 
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
 
         public static void bitfield(Peer remotePeer, byte[] bitField)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32((UInt32) bitField.Length+1));
-            requestPacket.Add(Constants.kMessageBITFIELD);
+                requestPacket.AddRange(packUInt32((UInt32)bitField.Length + 1));
+                requestPacket.Add(Constants.kMessageBITFIELD);
 
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
 
         public static void request(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32(13));
-            requestPacket.Add(Constants.kMessageREQUEST);
-            requestPacket.AddRange(packUInt32(pieceNumber));
-            requestPacket.AddRange(packUInt32(blockOffset));
-            requestPacket.AddRange(packUInt32(blockSize));
+                requestPacket.AddRange(packUInt32(13));
+                requestPacket.Add(Constants.kMessageREQUEST);
+                requestPacket.AddRange(packUInt32(pieceNumber));
+                requestPacket.AddRange(packUInt32(blockOffset));
+                requestPacket.AddRange(packUInt32(blockSize));
 
-            Program.Logger.Debug($"Request Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
+                Program.Logger.Debug($"Request Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
 
-         public static void piece(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
+        public static void piece(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32((UInt32) blockData.Length+9));
-            requestPacket.Add(Constants.kMessagePIECE);
-            requestPacket.AddRange(packUInt32(pieceNumber));
-            requestPacket.AddRange(packUInt32(blockOffset));
-            requestPacket.AddRange(blockData);
+                requestPacket.AddRange(packUInt32((UInt32)blockData.Length + 9));
+                requestPacket.Add(Constants.kMessagePIECE);
+                requestPacket.AddRange(packUInt32(pieceNumber));
+                requestPacket.AddRange(packUInt32(blockOffset));
+                requestPacket.AddRange(blockData);
 
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
 
         public static void cancel(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
         {
-            List<byte> requestPacket = new List<byte>();
+            try
+            {
+                List<byte> requestPacket = new List<byte>();
 
-            requestPacket.AddRange(packUInt32((UInt32)blockData.Length+9));
-            requestPacket.Add(Constants.kMessageCANCEL);
-            requestPacket.AddRange(packUInt32(pieceNumber));
-            requestPacket.AddRange(packUInt32(blockOffset));
-            requestPacket.AddRange(blockData);
+                requestPacket.AddRange(packUInt32((UInt32)blockData.Length + 9));
+                requestPacket.Add(Constants.kMessageCANCEL);
+                requestPacket.AddRange(packUInt32(pieceNumber));
+                requestPacket.AddRange(packUInt32(blockOffset));
+                requestPacket.AddRange(blockData);
 
-            peerWrite(remotePeer.PeerSocket,requestPacket.ToArray(), requestPacket.Count);
-
+                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
 
         }
     }

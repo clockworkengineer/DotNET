@@ -142,7 +142,17 @@ namespace BitTorrent
 
         public string getTrackerURL()
         {
-            return(Encoding.ASCII.GetString(_metaInfoDict["announce"]));
+            try
+            {
+                return (Encoding.ASCII.GetString(_metaInfoDict["announce"]));
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+
+            return ("");
+
         }
 
         public MetaInfoFile(string fileName)
@@ -153,12 +163,26 @@ namespace BitTorrent
 
         public void load()
         {
-            _metaInfoData = System.IO.File.ReadAllBytes(_torrentFileName);
+            try
+            {
+                _metaInfoData = System.IO.File.ReadAllBytes(_torrentFileName);
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
 
         public void parse()
         {
-            loadTorrentDictionary();
+            try
+            {
+                loadTorrentDictionary();
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
 
     }

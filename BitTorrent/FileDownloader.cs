@@ -35,7 +35,7 @@ namespace BitTorrent
 
         }
 
-        public bool checkPieceHash(byte[] hash, UInt32 pieceNumber)
+        private bool checkPieceHash(byte[] hash, UInt32 pieceNumber)
         {
             UInt32 pieceOffset = pieceNumber * Constants.kHashLength;
             for (var byteNumber = 0; byteNumber < Constants.kHashLength; byteNumber++)
@@ -121,12 +121,19 @@ namespace BitTorrent
         public void writePieceToFile(FileDetails file, UInt64 startOffset, UInt64 length)
         {
 
-            Program.Logger.Trace($"writePieceToFile({file.name},{startOffset},{length})");
-
-            using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
+            try
             {
-                stream.Seek((Int64)(startOffset - file.offset), SeekOrigin.Begin);
-                stream.Write(_dc.pieceInProgress, (int)(file.offset - ((file.offset / (UInt64)_dc.pieceLength) * (UInt64)_dc.pieceLength)), (int)length);;
+                Program.Logger.Trace($"writePieceToFile({file.name},{startOffset},{length})");
+
+                using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
+                {
+                    stream.Seek((Int64)(startOffset - file.offset), SeekOrigin.Begin);
+                    stream.Write(_dc.pieceInProgress, (int)(file.offset - ((file.offset / (UInt64)_dc.pieceLength) * (UInt64)_dc.pieceLength)), (int)length); ;
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
             }
 
         }
@@ -143,83 +150,121 @@ namespace BitTorrent
         public void buildDownloadedPiecesMap()
         {
 
-            createEmptyFilesOnDisk();
-            createPieceMap();
+            try
+            {
+                createEmptyFilesOnDisk();
+                createPieceMap();
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex); 
+            }
 
         }
 
         public bool havePiece(UInt32 pieceNumber)
         {
-            Program.Logger.Trace($"havePiece({pieceNumber})");
-
-            for (UInt32 blockNumber=0; blockNumber < _dc.blocksPerPiece; blockNumber++)
+            try
             {
-                if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                Program.Logger.Trace($"havePiece({pieceNumber})");
+
+                for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                 {
-                    return (false);
+                    if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                    {
+                        return (false);
+                    }
                 }
+
             }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+
             return (true);
         }
 
         public bool selectNextPiece(ref UInt32 nextPiece)
         {
-            Program.Logger.Trace($"selectNextPiece()");
-
-            for (UInt32 pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
+            try
             {
-                UInt32 blockNumber = 0;
-                for (; !_dc.isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                Program.Logger.Trace($"selectNextPiece()");
+
+                for (UInt32 pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
                 {
+                    UInt32 blockNumber = 0;
+                    for (; !_dc.isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                    {
+                        if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                        {
+                            nextPiece = pieceNumber;
+                            return (true);
+                        }
+                    }
                     if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         nextPiece = pieceNumber;
                         return (true);
                     }
                 }
-                if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
-                {
-                    nextPiece = pieceNumber;
-                    return (true);
-                }
+;
             }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+
             return (false);
 
         }
 
         public void placeBlockIntoPiece(byte[] buffer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 length)
         {
-            Program.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{length})");
-
-            Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32)blockOffset, (Int32)length);
-
-            _dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
-
-            if (!_dc.isBlockPieceLast(pieceNumber, blockOffset / Constants.kBlockSize))
+            try
             {
-                _dc.totalBytesDownloaded += (UInt64)Constants.kBlockSize;
+                Program.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{length})");
+
+                Buffer.BlockCopy(buffer, 9, _dc.pieceInProgress, (Int32)blockOffset, (Int32)length);
+
+                _dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
+
+                if (!_dc.isBlockPieceLast(pieceNumber, blockOffset / Constants.kBlockSize))
+                {
+                    _dc.totalBytesDownloaded += (UInt64)Constants.kBlockSize;
+                }
+                else
+                {
+                    _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].lastBlockLength;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].lastBlockLength;
+                Program.Logger.Debug(ex);
             }
         }
 
         public void writePieceToFiles(UInt32 pieceNumber)
         {
-            Program.Logger.Trace($"writePieceToFiles({pieceNumber})");
-
-            UInt64 startOffset = (UInt64) (pieceNumber * _dc.pieceLength);
-            UInt64 endOffset = startOffset+ (UInt64) _dc.pieceLength;
-
-            foreach (var file in _filesToDownload)
+            try
             {
-                if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                Program.Logger.Trace($"writePieceToFiles({pieceNumber})");
+
+                UInt64 startOffset = (UInt64)(pieceNumber * _dc.pieceLength);
+                UInt64 endOffset = startOffset + (UInt64)_dc.pieceLength;
+
+                foreach (var file in _filesToDownload)
                 {
-                    UInt64 startWrite = Math.Max(startOffset, file.offset);
-                    UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
-                    writePieceToFile(file, startWrite, endWrite - startWrite);
+                    if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                    {
+                        UInt64 startWrite = Math.Max(startOffset, file.offset);
+                        UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
+                        writePieceToFile(file, startWrite, endWrite - startWrite);
+                    }
                 }
+            } catch (Exception ex) 
+            {
+                Program.Logger.Debug(ex);
             }
         }
     }
