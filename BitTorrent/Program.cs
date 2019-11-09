@@ -1,4 +1,14 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Programs: Simple console application to use BitTorrent class library.
+//
+// Description: 
+//
+// Copyright 2019.
+//
+
+using System;
 using System.Text;
 using NLog;
 

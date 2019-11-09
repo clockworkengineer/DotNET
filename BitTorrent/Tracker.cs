@@ -1,4 +1,14 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Library: C# class library to implement the BitTorrent protocol.
+//
+// Description: 
+//
+// Copyright 2019.
+//
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -136,8 +146,6 @@ namespace BitTorrent
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
             tracker._currentTrackerResponse = tracker.announce();
-            Program.annouceResponse(tracker._currentTrackerResponse);
-
         }
 
         public Tracker(MetaInfoFile torrentFile, string peerID)

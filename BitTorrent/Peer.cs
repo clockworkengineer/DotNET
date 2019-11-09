@@ -1,4 +1,13 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Library: C# class library to implement the BitTorrent protocol.
+//
+// Description: 
+//
+// Copyright 2019.
+//
+using System;
 using System.Net;
 using System.Net.Sockets;
 
@@ -45,6 +54,7 @@ namespace BitTorrent
             {
                 _ip = ip;
             }
+
             _port = port;
             _infoHash = infoHash;
             _torrentDownloader = fileDownloader;

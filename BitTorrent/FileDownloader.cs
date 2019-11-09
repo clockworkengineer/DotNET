@@ -1,4 +1,14 @@
-﻿using System;
+﻿//
+// Author: Robert Tizzard
+//
+// Library: C# class library to implement the BitTorrent protocol.
+//
+// Description: 
+//
+// Copyright 2019.
+//
+
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Collections.Generic;
@@ -114,6 +124,7 @@ namespace BitTorrent
             {
                 generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
             }
+
         }
 
         public void writePieceToFile(FileDetails file, UInt64 startOffset, UInt64 length)
