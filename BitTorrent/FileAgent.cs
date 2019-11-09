@@ -133,7 +133,10 @@ namespace BitTorrent
 
                 _currentAnnouneResponse = _mainTracker.announce();
 
+                _mainTracker.startAnnouncing();
+
                 connectToFirstWorkingPeer();
+
             }
             catch (Exception ex)
             {
@@ -151,6 +154,8 @@ namespace BitTorrent
             {
                 Program.Logger.Info("Starting torrent download for MetaInfo data ...");
 
+                _mainTracker.Event = Tracker.TrackerEvent.started;
+
                 PWP.unchoke(_remotePeer);
 
                 for (UInt32 nextPiece = 0; _fileToDownloader.selectNextPiece(ref nextPiece);)
@@ -164,9 +169,14 @@ namespace BitTorrent
                         progressFunction(progressData);
                     }
 
+                    _mainTracker.Left = (UInt64)_fileToDownloader.Dc.totalLength - _fileToDownloader.Dc.totalBytesDownloaded;
+                    _mainTracker.Downloaded = _fileToDownloader.Dc.totalBytesDownloaded;
+
                     Program.Logger.Info((_fileToDownloader.Dc.totalBytesDownloaded / (double)_fileToDownloader.Dc.totalLength).ToString("0.00%"));
 
                 }
+
+                _mainTracker.Event = Tracker.TrackerEvent.completed;
 
                 Program.Logger.Info("Whole Torrent finished downloading.");
             }
@@ -180,6 +190,7 @@ namespace BitTorrent
 
         public void close()
         {
+            _mainTracker.stopAnnonncing();
             Program.Logger.Info("Closing peer socket.");
             _remotePeer.ReadFromRemotePeer = false;
             _remotePeer.PeerSocket.Close();

@@ -26,14 +26,19 @@ namespace BitTorrent
         private string _ip = String.Empty;
         private UInt32 _compact = 1;
         private UInt32 _noPeerID = 0;
-        private UInt32 _uploaded = 0;
-        private UInt32 _downloaded = 0;
-        private UInt32 _left = 0;
-        private TrackerEvent _event = TrackerEvent.started;
+        private UInt64 _uploaded = 0;
+        private UInt64 _downloaded = 0;
+        private UInt64 _left = 0;
+        private TrackerEvent _event;
         private string _key = String.Empty;
         private string _trackerID = String.Empty;
         private UInt32 _numWanted = 1;
-        private UInt32 _interval = 0;
+        private UInt32 _interval = 2000;
+
+        public UInt64 Uploaded { get => _uploaded; set => _uploaded = value; }
+        public UInt64 Downloaded { get => _downloaded; set => _downloaded = value; }
+        public UInt64 Left { get => _left; set => _left = value; }
+        public TrackerEvent Event { get => _event; set => _event = value; }
 
         private AnnounceResponse constructResponse(byte[] announceResponse, ref AnnounceResponse response)
         {
@@ -115,10 +120,10 @@ namespace BitTorrent
             "&port=" + _port +
             "&compact=" + _compact +
             "&no_peer_id=" + _noPeerID +
-            "&uploaded=" + _uploaded +
-            "&downloaded=" + _downloaded +
-            "&left=" + _left +
-            "&event=" + _event +
+            "&uploaded=" + Uploaded +
+            "&downloaded=" + Downloaded +
+            "&left=" + Left +
+            "&event=" + Event +
             "&ip=" + _ip +
             "&key=" + _key +
             "&trackerid=" + _trackerID +
@@ -146,6 +151,10 @@ namespace BitTorrent
 
         public AnnounceResponse announce() 
         {
+
+            Program.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(encodeBytesToURL(_torrentFile.MetaInfoDict["info hash"]))} " +
+                  $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
+                  $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 
             AnnounceResponse response = new AnnounceResponse();
 
