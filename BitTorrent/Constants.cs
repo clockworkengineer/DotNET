@@ -6,7 +6,7 @@ namespace BitTorrent
     {
         public const int kBlockSize = 1024*16;
         public const int kHashLength = 20;
-        public const byte kMessageLength = 4;
+        public const byte kSizeOfUInt32 = 4;
         public const byte kMessageCHOKE = 0;
         public const byte kMessageUNCHOKE = 1;
         public const byte kMessageINTERESTED = 2;

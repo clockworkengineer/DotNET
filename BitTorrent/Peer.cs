@@ -19,6 +19,7 @@ namespace BitTorrent
         private bool _readFromRemotePeer = true;
         private byte[] _readBuffer;
         private UInt32 _bytesRead = 0;
+        private UInt32 _packetLength = 0;
         private bool _lengthRead = false;
         private byte[] remotePieceBitfield;
 
@@ -31,6 +32,7 @@ namespace BitTorrent
         public FileDownloader TorrentDownloader { get => _torrentDownloader; set => _torrentDownloader = value; }
         public bool Interested { get => _interested; set => _interested = value; }
         public byte[] RemotePieceBitfield { get => remotePieceBitfield; set => remotePieceBitfield = value; }
+        public uint PacketLength { get => _packetLength; set => _packetLength = value; }
 
         public Peer(FileDownloader fileDownloader, string ip ,UInt32 port, byte[] infoHash)
         {
@@ -46,7 +48,7 @@ namespace BitTorrent
             _port = port;
             _infoHash = infoHash;
             _torrentDownloader = fileDownloader;
-            _readBuffer = new byte[Constants.kMessageLength];
+            _readBuffer = new byte[Constants.kBlockSize + (2*Constants.kSizeOfUInt32) + 1]; // Maximum possible packet size
 
         }
 
@@ -68,7 +70,7 @@ namespace BitTorrent
 
                 _connected = true;
 
-                _peerSocket.BeginReceive(_readBuffer, 0, ReadBuffer.Length, 0, readPacketCallBack, this);
+                _peerSocket.BeginReceive(_readBuffer, 0, Constants.kSizeOfUInt32, 0, readPacketCallBack, this);
             }
             catch (Exception ex)
             {
@@ -83,37 +85,31 @@ namespace BitTorrent
             {
                 Peer remotePeer = (Peer)readAsyncState.AsyncState;
                 UInt32 bytesRead = (UInt32) remotePeer._peerSocket.EndReceive(readAsyncState);
-     
+
                 remotePeer._bytesRead += bytesRead;
 
-                if (!_lengthRead)
+                if (!remotePeer._lengthRead)
                 {
-
-                    if (remotePeer._bytesRead == Constants.kMessageLength)
+                    if (remotePeer._bytesRead == Constants.kSizeOfUInt32)
                     {
-                        UInt32 packetLength = 0;
-                        packetLength = ((UInt32)remotePeer._readBuffer[0]) << 24;
-                        packetLength |= ((UInt32)remotePeer._readBuffer[1]) << 16;
-                        packetLength |= ((UInt32)remotePeer._readBuffer[2]) << 8;
-                        packetLength |= ((UInt32)remotePeer._readBuffer[3]);
-                        remotePeer._readBuffer = new byte[packetLength];
-                        _lengthRead = true;
+                        remotePeer.PacketLength = ((UInt32)remotePeer._readBuffer[0]) << 24;
+                        remotePeer.PacketLength |= ((UInt32)remotePeer._readBuffer[1]) << 16;
+                        remotePeer.PacketLength |= ((UInt32)remotePeer._readBuffer[2]) << 8;
+                        remotePeer.PacketLength |= ((UInt32)remotePeer._readBuffer[3]);
+                        remotePeer._lengthRead = true;
                         remotePeer._bytesRead = 0;
-                        bytesRead = 0;
                     }
                 }
-                else if (remotePeer._bytesRead == remotePeer._readBuffer.Length)
+                else if (remotePeer._bytesRead == remotePeer.PacketLength)
                 {
                     PWP.remotePeerMessageProcess(remotePeer);
-                    remotePeer._readBuffer = new byte[Constants.kMessageLength];
-                    _lengthRead = false;
+                    remotePeer._lengthRead = false;
                     remotePeer._bytesRead = 0;
-                    bytesRead = 0;
-
+                    remotePeer.PacketLength = Constants.kSizeOfUInt32;
                 }
 
                 remotePeer._peerSocket.BeginReceive(remotePeer._readBuffer, (Int32) remotePeer._bytesRead, 
-                           remotePeer._readBuffer.Length - (Int32)remotePeer._bytesRead, 0, readPacketCallBack, remotePeer);
+                           (Int32) (remotePeer.PacketLength - remotePeer._bytesRead), 0, readPacketCallBack, remotePeer);
             
             }
             catch (Exception ex)

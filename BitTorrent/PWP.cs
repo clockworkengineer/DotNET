@@ -34,7 +34,7 @@ namespace BitTorrent
 
         private static byte[] packUInt32(UInt32 int32value)
         {
-            byte[] packedInt32 = new byte[Constants.kMessageLength];
+            byte[] packedInt32 = new byte[Constants.kSizeOfUInt32];
             packedInt32[0] = (byte)(int32value >> 24);
             packedInt32[1] = (byte)(int32value >> 16);
             packedInt32[2] = (byte)(int32value >> 8);
@@ -115,9 +115,9 @@ namespace BitTorrent
         private static void handleBITFIELD(Peer remotePeer)
         {
 
-            remotePeer.RemotePieceBitfield = new byte[remotePeer.ReadBuffer.Length - 1];
+            remotePeer.RemotePieceBitfield = new byte[(Int32)remotePeer.PacketLength - 1];
 
-            Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, remotePeer.ReadBuffer.Length - 1);
+            Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, (Int32) remotePeer.PacketLength - 1);
 
             Program.Logger.Debug("\nUsage Map\n---------\n");
             StringBuilder hex = new StringBuilder(remotePeer.RemotePieceBitfield.Length);
@@ -147,9 +147,9 @@ namespace BitTorrent
             UInt32 pieceNumber = unpackUInt32(remotePeer.ReadBuffer, 1);
             UInt32 blockOffset = unpackUInt32(remotePeer.ReadBuffer, 5);
 
-            Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {remotePeer.ReadBuffer.Length - 9}\n");
+            Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
 
-            remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, pieceNumber, blockOffset, (UInt32)remotePeer.ReadBuffer.Length - 9);
+            remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, pieceNumber, blockOffset, (UInt32)remotePeer.PacketLength - 9);
 
         }
 
