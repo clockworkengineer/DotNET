@@ -177,6 +177,11 @@ namespace BitTorrent
             {
                 _metaInfoData = System.IO.File.ReadAllBytes(_torrentFileName);
             }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Program.Logger.Debug(ex);
+                throw new BitTorrent.Error ($"Error: Could not find torrent file {_torrentFileName}");
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);

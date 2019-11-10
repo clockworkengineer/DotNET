@@ -3,7 +3,8 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Structure containing details returned from a announce request 
+// to a tracker server.
 //
 // Copyright 2019.
 //
@@ -13,23 +14,29 @@ using System.Collections.Generic;
 
 namespace BitTorrent
 {
+    /// <summary>
+    /// Peer details.
+    /// </summary>
     public struct PeerDetails
     {
-        public string _peerID;
-        public string ip;
-        public UInt32 port;
+        public string _peerID;  // Peer ID (OPTIONAL)
+        public string ip;       // Peer IP Address
+        public UInt32 port;     // Peer Port
     }
 
+    /// <summary>
+    /// Announce response.
+    /// </summary>
     public struct AnnounceResponse
     {
-        public UInt32 announceCount;
-        public UInt32 statusCode;
-        public string statusMessage;
-        public UInt32 interval;
-        public UInt32 minInterval;
-        public string trackerID;
-        public UInt32 complete;
-        public UInt32 incomplete;
-        public List<PeerDetails> peers;
+        public UInt32 announceCount;    // Announce counter
+        public UInt32 statusCode;       // Returned status get
+        public string statusMessage;    // Returned status/error message
+        public UInt32 interval;         // Poll time between annouces in milliseconds
+        public UInt32 minInterval;      // Minimum poll time
+        public string trackerID;        // Track ID (OPTIONAL)
+        public UInt32 complete;         // Number of seeders for torrent (OPTIONAL)
+        public UInt32 incomplete;       // Number of peers transferring torrent (OPTIONAL)
+        public List<PeerDetails> peers; // Number of peers in swarm
     };
 }

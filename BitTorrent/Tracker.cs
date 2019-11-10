@@ -73,7 +73,12 @@ namespace BitTorrent
                         PeerDetails peer = new PeerDetails();
                         peer._peerID = String.Empty;
                         peer.ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}";
+                        if (peer.ip.Contains(":"))
+                        {
+                            peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":") + 1);
+                        }
                         peer.port = (UInt32) peers[num + 4] * 256 + peers[num + 5];
+                        Program.Logger.Debug($"Peer {peer.ip} Port {peer.port} found.");
                         response.peers.Add(peer);
                     }
                 }
@@ -91,12 +96,17 @@ namespace BitTorrent
                                 string path = string.Empty;
                                 peer.ip = Encoding.ASCII.GetString(((BitTorrent.BNodeString)peerField).str);
                             }
+                            if (peer.ip.Contains(":"))
+                            {
+                                peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":") + 1);
+                            }
                             peerField = Bencoding.getDictionaryEntry(peerDictionaryItem, "port");
                             if (peerField != null)
                             {
                                 string path = string.Empty;
                                 peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrent.BNodeNumber)peerField).number));
                             }
+                            Program.Logger.Debug($"Peer {peer.ip} Port {peer.port} found.");
                             response.peers.Add(peer);
                         }
                     }

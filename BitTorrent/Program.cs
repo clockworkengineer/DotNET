@@ -75,7 +75,7 @@ namespace BitTorrent
         
             try
             {
-                FileAgent fileAgent01 = new FileAgent("./maj.torrent", "/home/robt/utorrent");
+                FileAgent fileAgent01 = new FileAgent("./sufy.torrent", "/home/robt/utorrent");
  
                 fileAgent01.load();
 
@@ -86,6 +86,10 @@ namespace BitTorrent
                 fileAgent01.close();
               
 
+            }
+            catch (BitTorrent.Error ex)
+            {
+                Program.Logger.Error(ex.Message);
             }
             catch (Exception ex)
             {

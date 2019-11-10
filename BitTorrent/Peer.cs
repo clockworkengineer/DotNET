@@ -45,16 +45,7 @@ namespace BitTorrent
 
         public Peer(FileDownloader fileDownloader, string ip ,UInt32 port, byte[] infoHash)
         {
-
-            if (ip.Contains(":"))
-            {
-                _ip = ip.Substring(ip.LastIndexOf(":") + 1);
-            }
-            else
-            {
-                _ip = ip;
-            }
-
+            _ip = ip;
             _port = port;
             _infoHash = infoHash;
             _torrentDownloader = fileDownloader;
