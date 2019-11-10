@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Bencodeing encoding/decoder support code for BitTorrent.
 //
 // Copyright 2019.
 //
@@ -14,11 +14,17 @@ using System.Text;
 
 namespace BitTorrent
 {
+    /// <summary>
+    /// Base for BNode Tree.
+    /// </summary>
     public class BNodeBase
     {
 
     }
 
+    /// <summary>
+    /// Dictionary BNode.
+    /// </summary>
     public class BNodeDictionary : BNodeBase
     {
         public Dictionary<string, BNodeBase> dict;
@@ -29,6 +35,9 @@ namespace BitTorrent
         }
     }
 
+    /// <summary>
+    /// List BNode.
+    /// </summary>
     public class BNodeList : BNodeBase
     {
 
@@ -40,17 +49,33 @@ namespace BitTorrent
         }
     }
 
+    /// <summary>
+    /// Number BNode.
+    /// </summary>
     public class BNodeNumber : BNodeBase
     {
         public byte[] number;
     }
 
+    /// <summary>
+    /// String BNode.
+    /// </summary>
     public class BNodeString : BNodeBase
     {
         public byte[] str;
     }
-    public class Bencoding
+
+    /// <summary>
+    /// Support methods for Bencoding.
+    /// </summary>
+    public static class Bencoding
     {
+        /// <summary>
+        /// Extracts a Bencoded string and returns its bytes.
+        /// </summary>
+        /// <returns>The bytes for the string.</returns>
+        /// <param name="buffer">buffer - Bencoded string input buffer.</param>
+        /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
         static private byte[] extractString(byte[] buffer, ref int position)
         {
 
@@ -80,6 +105,12 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Extracts a Bencoded number and returns its bytes.
+        /// </summary>
+        /// <returns>The bytes(characters) for the number.</returns>
+        /// <param name="buffer">buffer - Bencoded number input buffer.</param>
+        /// <param name="position">position - Position in buffer. Updated to character after number on exit.</param>
         static private BNodeBase decodeNumber(byte[] buffer, ref int position)
         {
             BNodeNumber bNode = new BNodeNumber();
@@ -100,6 +131,12 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Creates a BNode string node.
+        /// </summary>
+        /// <returns>A string BNode.</returns>
+        /// <param name="buffer">buffer - Bencoded string input buffer.</param>
+        /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
         static private BNodeBase decodeString(byte[] buffer, ref int position)
         {
             BNodeString bNode = new BNodeString();
@@ -110,6 +147,12 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Decodes a dictionary string key.
+        /// </summary>
+        /// <returns>String value of the key.</returns>
+        /// <param name="buffer">buffer - Bencoded string input buffer.</param>
+        /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
         static private string decodeKey(byte[] buffer, ref int position)
         {
             string key = Encoding.ASCII.GetString(extractString(buffer, ref position));
@@ -118,6 +161,12 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Create a list BNode.
+        /// </summary>
+        /// <returns>A list BNode.</returns>
+        /// <param name="buffer">buffer - Bencoded list input buffer.</param>
+        /// <param name="position">position - Position in buffer. Updated to character after list on exit.</param>
         static private BNodeBase decodeList(byte[] buffer, ref int position)
         {
 
@@ -157,6 +206,12 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Create a dictionary BNode.
+        /// </summary>
+        /// <returns>A dictionary BNode.</returns>
+        /// <param name="buffer">buffer - Bencoded dictionary input buffer.</param>
+        /// <param name="position">position - Position in buffer. Updated to character after dictionary on exit.</param>
         static private BNodeBase decodeDictionary(byte[] buffer, ref int position)
         {
 
@@ -195,7 +250,13 @@ namespace BitTorrent
             return (bNode);
 
         }
-        
+
+        /// <summary>
+        /// Recursively parse a Bencoded string and return its BNode tree.
+        /// </summary>
+        /// <returns>Root of Bnode tree.</returns>
+        /// <param name="buffer">buffer - Bencoded input buffer.</param>
+        /// <param name="position">position - Position in buffer. SHould be at end of buffer on exit.</param>
         static private BNodeBase decodeBNodes(byte[] buffer, ref int position)
         {
             BNodeBase bNode=null;
@@ -228,6 +289,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Decode the specified Bendcoded buffer.
+        /// </summary>
+        /// <returns>The root BNode.</returns>
+        /// <param name="buffer">buffer - Bencoded input buffer.</param>
         static public BNodeBase decode(byte[] buffer)
         {
             int position = 0;
@@ -238,6 +304,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Produce Bencoded output given a root BNode.
+        /// </summary>
+        /// <returns>Bencoded representation of BNode tree.</returns>
+        /// <param name="bNode">Root <paramref name="bNode"/>.</param>
         static public byte[] encode(BNodeBase bNode)
         {
             List<byte> result = new List<byte>();
@@ -284,6 +355,13 @@ namespace BitTorrent
             return (result.ToArray());
         }
 
+        /// <summary>
+        /// Get a BNode entry for a given dictionary key. Note that it recursively searches
+        /// until the key is found in the BNode tree structure.
+        /// </summary>
+        /// <returns>BNode entry for dictionary key.</returns>
+        /// <param name="bNode">bNode - Bnode root of dictionary.</param>
+        /// <param name="entryKey">entryKey - Dictionary key of Bnode entry to return.</param>
         static public BNodeBase getDictionaryEntry(BNodeBase bNode, string entryKey)
         {
             BNodeBase bNodeEntry=null;
@@ -324,6 +402,12 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Return string representation of a given BNode dictionary entry.
+        /// </summary>
+        /// <returns>String value of a given byte encoded number or string.</returns>
+        /// <param name="bNode">bNode - Entry to extract.</param>
+        /// <param name="entryKey">entryKey - Key of dictionary entry to extract.</param>
         static public string getDictionaryEntryString(BNodeBase bNode, string entryKey)
         {
             BNodeBase entryNode = null;
