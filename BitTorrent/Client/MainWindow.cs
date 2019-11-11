@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Text;
+using System.Threading.Tasks;
+
 using Gtk;
 using BitTorrent;
 
 public partial class MainWindow : Gtk.Window
 {
     private MetaInfoFile _torrentFile;
+    private FileAgent _torrentFileAgent;
     private ListStore _filesListViewStore;
+    private ListStore _peersListViewStore;
 
-    private void AddListViewColumn(string title, int cellNo)
+    private void AddListViewColumn(TreeView listView, string title, int cellNo)
     {
         TreeViewColumn column = new TreeViewColumn();
         column.Title = title;
         CellRendererText cell = new CellRendererText();
         column.PackStart(cell, true);
-        filesListView.AppendColumn(column);
+        listView.AppendColumn(column);
         column.AddAttribute(cell, "text", cellNo);
     }
 
@@ -26,17 +30,61 @@ public partial class MainWindow : Gtk.Window
             entry.Text = Encoding.ASCII.GetString(_torrentFile.MetaInfoDict[field]);
         }
     }
+    
+    static private void updateDownloadDetails(MainWindow window)
+    {
+        double percent = 0;
+
+        if (window._torrentFileAgent != null)
+        {
+            percent = window._torrentFileAgent.FileToDownloader.Dc.totalBytesDownloaded / (double)window._torrentFileAgent.FileToDownloader.Dc.totalLength;
+        }
+        window.progressbarDownload.Fraction = percent;
+        window.progressbarDownload.Text = (percent).ToString("0.00%");
+
+        window._peersListViewStore.Clear();
+
+        int peerNo = 0;
+        foreach (var peer in window._torrentFileAgent.CurrentAnnouneResponse.peers)
+        {
+            window._peersListViewStore.AppendValues((peerNo + 1).ToString(), peer.ip, peer.port.ToString());
+            peerNo++;
+        }
+
+        window.seedPeersEntry.Text = window._torrentFileAgent.CurrentAnnouneResponse.complete.ToString();
+        window.downloadingPeersEntry.Text = window._torrentFileAgent.CurrentAnnouneResponse.incomplete.ToString();
+        window.downloadedEntry.Text = window._torrentFileAgent.FileToDownloader.Dc.totalBytesDownloaded.ToString();
+        window.uploadedEntry.Text = "0";
+
+
+    }
+
+    static void updateDownloadStatus(System.Object source)
+    {
+        MainWindow window = (MainWindow)source;
+        Gtk.Application.Invoke(delegate { updateDownloadDetails(window); });
+    }
 
     public MainWindow() : base(Gtk.WindowType.Toplevel)
     {
         Build();
 
-        AddListViewColumn("No", 0);
-        AddListViewColumn("File Name", 1);
-        AddListViewColumn("Length", 2);
+        AddListViewColumn(filesListView, "No", 0);
+        AddListViewColumn(filesListView, "File Name", 1);
+        AddListViewColumn(filesListView, "Length", 2);
 
         _filesListViewStore = new ListStore(typeof(string), typeof(string), typeof(string));
         filesListView.Model = _filesListViewStore;
+
+        _peersListViewStore = new ListStore(typeof(string), typeof(string), typeof(string));
+        peersListView.Model = _peersListViewStore;
+
+        AddListViewColumn(peersListView, "No", 0);
+        AddListViewColumn(peersListView, "Peer", 1);
+        AddListViewColumn(peersListView, "Port", 2);
+
+        downloadButton.Sensitive = false;
+        pauseContinueButton.Sensitive = false;
 
     }
 
@@ -89,7 +137,57 @@ public partial class MainWindow : Gtk.Window
                 }
             }
 
+            byte[] infoHash = _torrentFile.MetaInfoDict["info hash"];
+
+            StringBuilder hex = new StringBuilder(infoHash.Length);
+            foreach (byte b in infoHash)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+
+            infoHashEntry.Text = hex.ToString();
+
+            _torrentFileAgent = new FileAgent(fileChooser.Filename, "/home/robt/utorrent/");
+            downloadButton.Sensitive = true;
+       
+
         }
 
+    }
+
+    static void updateProgressBarCallBack(System.Object arg)
+    {
+        MainWindow window = (MainWindow) arg;
+
+        updateDownloadDetails(window);
+
+    }
+ 
+    async protected void OnDownloadButtonClicked(object sender, EventArgs e)
+    {
+
+        downloadButton.Sensitive = false;
+        pauseContinueButton.Sensitive = true;
+
+        await _torrentFileAgent.loadAsync();
+
+        await _torrentFileAgent.downloadAsync(updateDownloadStatus, this);
+
+        downloadButton.Sensitive = true;
+
+    }
+
+    protected void OnPauseContinueButtonClicked(object sender, EventArgs e)
+    {
+        if (_torrentFileAgent.Downloading)
+        {
+            pauseContinueButton.Label = "Continue";
+            _torrentFileAgent.stop();
+        }
+        else
+        {
+            pauseContinueButton.Label = "Pause";
+            _torrentFileAgent.start();
+        }
     }
 }
