@@ -128,6 +128,15 @@ namespace BitTorrent
 
         }
 
+        public FileDownloader(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
+        {
+
+            _filesToDownload = filesToDownload;
+            _sha = new SHA1CryptoServiceProvider();
+            _dc = new DownloadContext(filesToDownload, pieceLength, pieces);
+
+        }
+
         public void writePieceToFile(FileDetails file, UInt64 startOffset, UInt64 length)
         {
 
@@ -141,19 +150,14 @@ namespace BitTorrent
                     stream.Write(_dc.pieceBuffer, (int)(file.offset - ((file.offset / (UInt64)_dc.pieceLength) * (UInt64)_dc.pieceLength)), (int)length); ;
                 }
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
             }
-
-        }
-
-        public FileDownloader(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
-        {
-
-            _filesToDownload = filesToDownload;
-            _sha = new SHA1CryptoServiceProvider();
-            _dc = new DownloadContext(filesToDownload, pieceLength, pieces);
 
         }
 
@@ -164,6 +168,10 @@ namespace BitTorrent
             {
                 createEmptyFilesOnDisk();
                 createPieceMap();
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -186,6 +194,10 @@ namespace BitTorrent
                     }
                 }
 
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -220,6 +232,10 @@ namespace BitTorrent
                 }
 ;
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -248,6 +264,10 @@ namespace BitTorrent
                     _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].lastBlockLength;
                 }
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -258,8 +278,8 @@ namespace BitTorrent
         {
             try
             {
-
-                if (!checkPieceHash(pieceNumber, _dc.pieceBuffer, _dc.pieceLength)){
+    
+                if (!checkPieceHash(pieceNumber, _dc.pieceBuffer, _dc.getPieceLength(pieceNumber))){
                     throw new Error($"Error: Hash for piece {pieceNumber} is invalid.");
                 }
 
@@ -278,9 +298,14 @@ namespace BitTorrent
                     }
                 }
             }
+            catch(Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
+                throw;
             }
         }
     }

@@ -10,8 +10,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Net.Sockets;
+using System.Text;
 
 namespace BitTorrent
 {
@@ -192,6 +192,10 @@ namespace BitTorrent
 
                 connected = validatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -242,6 +246,10 @@ namespace BitTorrent
 
                 }
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -260,6 +268,10 @@ namespace BitTorrent
 
                 peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -277,6 +289,10 @@ namespace BitTorrent
                 requestPacket.Add(Constants.kMessageUNCHOKE);
 
                 peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -298,6 +314,10 @@ namespace BitTorrent
 
                 remotePeer.Interested = true;
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -318,6 +338,10 @@ namespace BitTorrent
 
                 remotePeer.Interested = false;
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -337,6 +361,10 @@ namespace BitTorrent
 
                 peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -354,6 +382,10 @@ namespace BitTorrent
                 requestPacket.Add(Constants.kMessageBITFIELD);
 
                 peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -378,6 +410,10 @@ namespace BitTorrent
 
                 peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -399,6 +435,10 @@ namespace BitTorrent
 
                 peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -419,6 +459,10 @@ namespace BitTorrent
                 requestPacket.AddRange(blockData);
 
                 peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {

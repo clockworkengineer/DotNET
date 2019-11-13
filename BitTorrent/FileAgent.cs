@@ -153,6 +153,10 @@ namespace BitTorrent
                 connectToFirstWorkingPeer();
 
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -197,6 +201,10 @@ namespace BitTorrent
 
                 Program.Logger.Info("Whole Torrent finished downloading.");
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -208,30 +216,85 @@ namespace BitTorrent
 
         public async Task loadAsync()
         {
-            await Task.Run(() => load());
+            try
+            {
+                await Task.Run(() => load());
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
 
         public async Task downloadAsync(ProgessCallBack progressFunction = null, Object progressData = null)
         {
-            await Task.Run(() => download(progressFunction, progressData));
+            try
+            {
+                await Task.Run(() => download(progressFunction, progressData));
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
 
         public void close()
         {
-            _mainTracker.stopAnnonncing();
-            Program.Logger.Info("Closing peer socket.");
-            _remotePeer.ReadFromRemotePeer = false;
-            _remotePeer.PeerSocket.Close();
+            try
+            {
+                _mainTracker.stopAnnonncing();
+                Program.Logger.Info("Closing peer socket.");
+                _remotePeer.ReadFromRemotePeer = false;
+                _remotePeer.PeerSocket.Close();
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
 
         public void start()
         {
-            _downloading = true;
+            try
+            {
+                _downloading = true;
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
 
         public void stop()
         {
-            _downloading = false;
+            try
+            {
+                _downloading = false;
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
         }
     }
 }

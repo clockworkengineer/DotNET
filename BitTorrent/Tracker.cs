@@ -206,6 +206,10 @@ namespace BitTorrent
 
                 }
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -225,6 +229,10 @@ namespace BitTorrent
                 _announceTimer.AutoReset = true;
                 _announceTimer.Enabled = true;
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -237,6 +245,10 @@ namespace BitTorrent
             {
                 _announceTimer.Stop();
                 _announceTimer.Dispose();
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -263,6 +275,10 @@ namespace BitTorrent
                     stopAnnonncing();
                     startAnnouncing();
                 }
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {

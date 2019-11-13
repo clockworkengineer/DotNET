@@ -296,10 +296,22 @@ namespace BitTorrent
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
         static public BNodeBase decode(byte[] buffer)
         {
-            int position = 0;
+           
+            BNodeBase bNodeRoot = null;
 
-            BNodeBase bNodeRoot = decodeBNodes(buffer, ref position);
-
+            try
+            {
+                int position = 0;
+                bNodeRoot = decodeBNodes(buffer, ref position);
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
             return (bNodeRoot);
 
         }
@@ -347,6 +359,10 @@ namespace BitTorrent
 
                 }
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -393,6 +409,10 @@ namespace BitTorrent
                     }
                 }
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -426,6 +446,10 @@ namespace BitTorrent
                         return (Encoding.ASCII.GetString(((BNodeNumber)entryNode).number));
                     }
                 }
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {

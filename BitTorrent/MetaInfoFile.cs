@@ -150,11 +150,23 @@ namespace BitTorrent
 
         }
 
+    
+
+        public MetaInfoFile(string fileName)
+        {
+            _torrentFileName = fileName;
+            _metaInfoDict = new Dictionary<string, byte[]>();
+        }
+
         public string getTrackerURL()
         {
             try
             {
                 return (Encoding.ASCII.GetString(_metaInfoDict["announce"]));
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -163,12 +175,6 @@ namespace BitTorrent
 
             return ("");
 
-        }
-
-        public MetaInfoFile(string fileName)
-        {
-            _torrentFileName = fileName;
-            _metaInfoDict = new Dictionary<string, byte[]>();
         }
 
         public void load()
@@ -182,6 +188,10 @@ namespace BitTorrent
                 Program.Logger.Debug(ex);
                 throw new BitTorrent.Error ($"Error: Could not find torrent file {_torrentFileName}");
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -193,6 +203,10 @@ namespace BitTorrent
             try
             {
                 loadTorrentDictionary();
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {

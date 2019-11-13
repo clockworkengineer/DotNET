@@ -73,6 +73,10 @@ namespace BitTorrent
 
                 _peerSocket.BeginReceive(_readBuffer, 0, Constants.kSizeOfUInt32, 0, readPacketCallBack, this);
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
@@ -111,7 +115,11 @@ namespace BitTorrent
 
                 remotePeer._peerSocket.BeginReceive(remotePeer._readBuffer, (Int32) remotePeer._bytesRead, 
                            (Int32) (remotePeer.PacketLength - remotePeer._bytesRead), 0, readPacketCallBack, remotePeer);
-            
+
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
