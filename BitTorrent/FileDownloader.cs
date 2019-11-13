@@ -21,6 +21,7 @@ namespace BitTorrent
 
         private List<FileDetails> _filesToDownload;
         private DownloadContext _dc;
+        private SHA1 _sha;
 
         public DownloadContext Dc { get => _dc; set => _dc = value; }
 
@@ -45,8 +46,9 @@ namespace BitTorrent
 
         }
 
-        private bool checkPieceHash(byte[] hash, UInt32 pieceNumber)
+        private bool checkPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
+            byte[] hash = _sha.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
             UInt32 pieceOffset = pieceNumber * Constants.kHashLength;
             for (var byteNumber = 0; byteNumber < Constants.kHashLength; byteNumber++)
             {
@@ -59,11 +61,10 @@ namespace BitTorrent
 
         }
 
-        private void generatePieceMapFromBuffer(SHA1 sha, UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
+        private void generatePieceMapFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
 
-            byte[] hash = sha.ComputeHash(pieceBuffer,0, (Int32) numberOfBytes);
-            bool pieceThere = checkPieceHash(hash, pieceNumber);
+            bool pieceThere = checkPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
             if (pieceThere)
             {
                 _dc.totalBytesDownloaded += (UInt64)numberOfBytes;
@@ -83,13 +84,13 @@ namespace BitTorrent
             else
             {
                 _dc.pieceMap[pieceNumber].lastBlockLength = Constants.kBlockSize;
-                _dc.blockPieceLast(pieceNumber, blockNumber-1, true);
+                _dc.blockPieceLast(pieceNumber, blockNumber - 1, true);
             }
         }
 
         private void createPieceMap()
         {
-            SHA1 sha = new SHA1CryptoServiceProvider();
+
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
             int bytesRead = 0;
@@ -102,14 +103,14 @@ namespace BitTorrent
 
                 using (var inFileSteam = new FileStream(file.name, FileMode.Open))
                 {
-                
+
                     while ((bytesRead = inFileSteam.Read(_dc.pieceBuffer, (Int32)bytesInBuffer, _dc.pieceBuffer.Length - (Int32)bytesInBuffer)) > 0)
                     {
                         bytesInBuffer += (UInt32)bytesRead;
 
                         if (bytesInBuffer == _dc.pieceLength)
                         {
-                            generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
+                            generatePieceMapFromBuffer(pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
                             bytesInBuffer = 0;
                             pieceNumber++;
                         }
@@ -122,7 +123,7 @@ namespace BitTorrent
 
             if (bytesInBuffer > 0)
             {
-                generatePieceMapFromBuffer(sha, pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
+                generatePieceMapFromBuffer(pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
             }
 
         }
@@ -151,7 +152,7 @@ namespace BitTorrent
         {
 
             _filesToDownload = filesToDownload;
-           
+            _sha = new SHA1CryptoServiceProvider();
             _dc = new DownloadContext(filesToDownload, pieceLength, pieces);
 
         }
@@ -166,7 +167,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex); 
+                Program.Logger.Debug(ex);
             }
 
         }
@@ -257,6 +258,11 @@ namespace BitTorrent
         {
             try
             {
+
+                if (!checkPieceHash(pieceNumber, _dc.pieceBuffer, _dc.pieceLength)){
+                    throw new Error($"Error: Hash for piece {pieceNumber} is invalid.");
+                }
+
                 Program.Logger.Trace($"writePieceToFiles({pieceNumber})");
 
                 UInt64 startOffset = (UInt64)(pieceNumber * _dc.pieceLength);
@@ -271,7 +277,8 @@ namespace BitTorrent
                         writePieceToFile(file, startWrite, endWrite - startWrite);
                     }
                 }
-            } catch (Exception ex) 
+            }
+            catch (Exception ex)
             {
                 Program.Logger.Debug(ex);
             }
