@@ -25,7 +25,7 @@ namespace BitTorrent
         private Tracker _mainTracker;
         private AnnounceResponse _currentAnnouneResponse;
         private FileDownloader _fileToDownloader;
-        private Peer _remotePeer;
+        private List<Peer> _remotePeers;
         private List<FileDetails> _filesToDownload;
         private bool _downloading = true;
 
@@ -33,17 +33,19 @@ namespace BitTorrent
         public bool Downloading { get => _downloading;  }
         public AnnounceResponse CurrentAnnouneResponse { get => _currentAnnouneResponse; set => _currentAnnouneResponse = value; }
 
-        private void assemblePiece(UInt32 pieceNumber)
+        private void assemblePiece(Peer remotePeer, UInt32 pieceNumber)
         {
             Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
 
+            for (; remotePeer.PeerChoking;) { }
+
             UInt32 blockNumber = 0;
-            for (; !_remotePeer.TorrentDownloader.Dc.isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+            for (; !remotePeer.TorrentDownloader.Dc.isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
             {    
-                PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
+                PWP.request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
             }
 
-            PWP.request(_remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
+            PWP.request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
                          (UInt32)FileToDownloader.Dc.pieceMap[pieceNumber].lastBlockLength);
 
             for (; !FileToDownloader.Dc.hasPieceBeenAssembled(pieceNumber);) { }
@@ -54,31 +56,29 @@ namespace BitTorrent
 
         }
 
-        private void connectToFirstWorkingPeer()
+        private void createAndConnectPeers()
         {
 
             Program.Logger.Info("Connecting to first available peer....");
 
+            _remotePeers = new List<Peer>();
             foreach (var peer in CurrentAnnouneResponse.peers) {
                 try
                 {
-                    _remotePeer = new Peer(FileToDownloader, peer.ip, peer.port, _torrentMetaInfo.MetaInfoDict["info hash"]);
-                    _remotePeer.connect();
-                    if (_remotePeer.Connected) {
-                        break;
+                    Peer remotePeer = new Peer(FileToDownloader, peer.ip, peer.port, _torrentMetaInfo.MetaInfoDict["info hash"]);
+                    remotePeer.connect();
+                    if (remotePeer.Connected) {
+                        _remotePeers.Add(remotePeer);
+                        Program.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+
                     }
                 }
                 catch (Exception ex)
                 {
                     Program.Logger.Info($"Failed to connect to {peer.ip}");
-                    throw new Error("Failure trying to connect to peer.", ex);
                 }
             }
-
-            if (_remotePeer.Connected)
-            {
-                Program.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(_remotePeer.RemotePeerID)}].");
-            }
+         
 
         }
 
@@ -150,7 +150,7 @@ namespace BitTorrent
 
                 _mainTracker.startAnnouncing();
 
-                connectToFirstWorkingPeer();
+                createAndConnectPeers();
 
             }
             catch (Error)
@@ -175,21 +175,23 @@ namespace BitTorrent
 
                 _mainTracker.Event = Tracker.TrackerEvent.started;
 
-                PWP.unchoke(_remotePeer);
+                foreach (var peer in _remotePeers)
+                {
+                    PWP.unchoke(peer);
+                }
 
                 for (UInt32 nextPiece = 0; FileToDownloader.selectNextPiece(ref nextPiece);)
                 {
-                    for (; _remotePeer.PeerChoking;) { }
 
-                    assemblePiece((UInt32)nextPiece);
+                    assemblePiece(_remotePeers[0], (UInt32)nextPiece);
+
+                    _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
+                    _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
 
                     if (progressFunction != null)
                     {
                         progressFunction(progressData);
                     }
-
-                    _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
-                    _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
 
                     Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
 
@@ -252,8 +254,11 @@ namespace BitTorrent
             {
                 _mainTracker.stopAnnonncing();
                 Program.Logger.Info("Closing peer socket.");
-                _remotePeer.ReadFromRemotePeer = false;
-                _remotePeer.PeerSocket.Close();
+                foreach (var peer in _remotePeers)
+                {
+                    peer.ReadFromRemotePeer = false;
+                    peer.PeerSocket.Close();
+                }
             }
             catch (Error)
             {
