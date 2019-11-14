@@ -55,12 +55,12 @@ namespace BitTorrent
 
             response.statusCode = (int)HttpStatusCode.OK;
 
-            BNodeBase decodedAnnounce= Bencoding.decode(announceResponse);
+            BNodeBase decodedAnnounce= Bencoding.Decode(announceResponse);
 
-            UInt32.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "complete"), out response.complete);
-            UInt32.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "incomplete"), out response.incomplete);
+            UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "complete"), out response.complete);
+            UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "incomplete"), out response.incomplete);
 
-            BNodeBase field = Bencoding.getDictionaryEntry(decodedAnnounce, "peers");
+            BNodeBase field = Bencoding.GetDictionaryEntry(decodedAnnounce, "peers");
             if (field != null)
             {
                 response.peers = new List<PeerDetails>();
@@ -90,7 +90,7 @@ namespace BitTorrent
                         {
                             PeerDetails peer = new PeerDetails();
                             BNodeBase peerDictionaryItem = ((BitTorrent.BNodeDictionary)listItem);
-                            BNodeBase peerField = Bencoding.getDictionaryEntry(peerDictionaryItem, "ip");
+                            BNodeBase peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "ip");
                             if (peerField != null)
                             {
                                 string path = string.Empty;
@@ -100,7 +100,7 @@ namespace BitTorrent
                             {
                                 peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":") + 1);
                             }
-                            peerField = Bencoding.getDictionaryEntry(peerDictionaryItem, "port");
+                            peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "port");
                             if (peerField != null)
                             {
                                 string path = string.Empty;
@@ -114,11 +114,11 @@ namespace BitTorrent
 
             }
 
-            UInt32.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "interval"), out response.interval);
-            UInt32.TryParse(Bencoding.getDictionaryEntryString(decodedAnnounce, "min interval"), out response.minInterval);
-            response.trackerID = Bencoding.getDictionaryEntryString(decodedAnnounce, "tracker id");
-            response.statusMessage = Bencoding.getDictionaryEntryString(decodedAnnounce, "failure reason");
-            response.statusMessage = Bencoding.getDictionaryEntryString(decodedAnnounce, "warning message");
+            UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "interval"), out response.interval);
+            UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "min interval"), out response.minInterval);
+            response.trackerID = Bencoding.GetDictionaryEntryString(decodedAnnounce, "tracker id");
+            response.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "failure reason");
+            response.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "warning message");
 
             response.announceCount++;
 
@@ -161,7 +161,7 @@ namespace BitTorrent
         public Tracker(MetaInfoFile torrentFile, string peerID)
         {
 
-            _trackerURL = torrentFile.getTrackerURL();
+            _trackerURL = torrentFile.GetTrackerURL();
             _torrentFile = torrentFile;
             _peerID = peerID;
 
