@@ -25,7 +25,7 @@ namespace BitTorrent
 
         public DownloadContext Dc { get => _dc; set => _dc = value; }
 
-        private void createEmptyFilesOnDisk()
+        private void CreateEmptyFilesOnDisk()
         {
             Program.Logger.Debug("Creating empty files as placeholders for downloading ...");
 
@@ -46,7 +46,7 @@ namespace BitTorrent
 
         }
 
-        private bool checkPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
+        private bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
             byte[] hash = _sha.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
             UInt32 pieceOffset = pieceNumber * Constants.kHashLength;
@@ -61,10 +61,10 @@ namespace BitTorrent
 
         }
 
-        private void generatePieceMapFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
+        private void GeneratePieceMapFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
 
-            bool pieceThere = checkPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
+            bool pieceThere = CheckPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
             if (pieceThere)
             {
                 _dc.totalBytesDownloaded += (UInt64)numberOfBytes;
@@ -72,23 +72,23 @@ namespace BitTorrent
             UInt32 blockNumber = 0;
             for (; blockNumber < numberOfBytes / Constants.kBlockSize; blockNumber++)
             {
-                _dc.blockPieceLocal(pieceNumber, blockNumber, pieceThere);
+                _dc.BlockPieceLocal(pieceNumber, blockNumber, pieceThere);
 
             }
             if (numberOfBytes % Constants.kBlockSize != 0)
             {
-                _dc.blockPieceLocal(pieceNumber, (UInt32)numberOfBytes / Constants.kBlockSize, pieceThere);
+                _dc.BlockPieceLocal(pieceNumber, (UInt32)numberOfBytes / Constants.kBlockSize, pieceThere);
                 _dc.pieceMap[pieceNumber].lastBlockLength = (UInt32)numberOfBytes % Constants.kBlockSize;
-                _dc.blockPieceLast(pieceNumber, (numberOfBytes / Constants.kBlockSize), true);
+                _dc.BlockPieceLast(pieceNumber, (numberOfBytes / Constants.kBlockSize), true);
             }
             else
             {
                 _dc.pieceMap[pieceNumber].lastBlockLength = Constants.kBlockSize;
-                _dc.blockPieceLast(pieceNumber, blockNumber - 1, true);
+                _dc.BlockPieceLast(pieceNumber, blockNumber - 1, true);
             }
         }
 
-        private void createPieceMap()
+        private void CreatePieceMap()
         {
 
             UInt32 pieceNumber = 0;
@@ -110,7 +110,7 @@ namespace BitTorrent
 
                         if (bytesInBuffer == _dc.pieceLength)
                         {
-                            generatePieceMapFromBuffer(pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
+                            GeneratePieceMapFromBuffer(pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
                             bytesInBuffer = 0;
                             pieceNumber++;
                         }
@@ -123,7 +123,7 @@ namespace BitTorrent
 
             if (bytesInBuffer > 0)
             {
-                generatePieceMapFromBuffer(pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
+                GeneratePieceMapFromBuffer(pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
             }
 
         }
@@ -137,7 +137,7 @@ namespace BitTorrent
 
         }
 
-        public void writePieceToFile(FileDetails file, UInt64 startOffset, UInt64 length)
+        public void WritePieceToFile(FileDetails file, UInt64 startOffset, UInt64 length)
         {
 
             try
@@ -161,13 +161,13 @@ namespace BitTorrent
 
         }
 
-        public void buildDownloadedPiecesMap()
+        public void BuildDownloadedPiecesMap()
         {
 
             try
             {
-                createEmptyFilesOnDisk();
-                createPieceMap();
+                CreateEmptyFilesOnDisk();
+                CreatePieceMap();
             }
             catch (Error)
             {
@@ -180,7 +180,7 @@ namespace BitTorrent
 
         }
 
-        public bool havePiece(UInt32 pieceNumber)
+        public bool HavePiece(UInt32 pieceNumber)
         {
             try
             {
@@ -188,7 +188,7 @@ namespace BitTorrent
 
                 for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                 {
-                    if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                    if (!_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         return (false);
                     }
@@ -207,7 +207,7 @@ namespace BitTorrent
             return (true);
         }
 
-        public bool selectNextPiece(ref UInt32 nextPiece)
+        public bool SelectNextPiece(ref UInt32 nextPiece)
         {
             try
             {
@@ -216,15 +216,15 @@ namespace BitTorrent
                 for (UInt32 pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
                 {
                     UInt32 blockNumber = 0;
-                    for (; !_dc.isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                    for (; !_dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                     {
-                        if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                        if (!_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
                         {
                             nextPiece = pieceNumber;
                             return (true);
                         }
                     }
-                    if (!_dc.isBlockPieceLocal(pieceNumber, blockNumber))
+                    if (!_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         nextPiece = pieceNumber;
                         return (true);
@@ -245,7 +245,7 @@ namespace BitTorrent
 
         }
 
-        public void placeBlockIntoPiece(byte[] buffer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 length)
+        public void PlaceBlockIntoPiece(byte[] buffer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 length)
         {
             try
             {
@@ -253,9 +253,9 @@ namespace BitTorrent
 
                 Buffer.BlockCopy(buffer, 9, _dc.pieceBuffer, (Int32)blockOffset, (Int32)length);
 
-                _dc.blockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
+                _dc.BlockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
 
-                if (!_dc.isBlockPieceLast(pieceNumber, blockOffset / Constants.kBlockSize))
+                if (!_dc.IsBlockPieceLast(pieceNumber, blockOffset / Constants.kBlockSize))
                 {
                     _dc.totalBytesDownloaded += (UInt64)Constants.kBlockSize;
                 }
@@ -274,12 +274,13 @@ namespace BitTorrent
             }
         }
 
-        public void writePieceToFiles(UInt32 pieceNumber)
+        public void WritePieceToFiles(UInt32 pieceNumber)
         {
             try
             {
-    
-                if (!checkPieceHash(pieceNumber, _dc.pieceBuffer, _dc.getPieceLength(pieceNumber))){
+
+                if (!CheckPieceHash(pieceNumber, _dc.pieceBuffer, _dc.GetPieceLength(pieceNumber)))
+                {
                     throw new Error($"Error: Hash for piece {pieceNumber} is invalid.");
                 }
 
@@ -294,11 +295,11 @@ namespace BitTorrent
                     {
                         UInt64 startWrite = Math.Max(startOffset, file.offset);
                         UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
-                        writePieceToFile(file, startWrite, endWrite - startWrite);
+                        WritePieceToFile(file, startWrite, endWrite - startWrite);
                     }
                 }
             }
-            catch(Error)
+            catch (Error)
             {
                 throw;
             }

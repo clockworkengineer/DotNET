@@ -110,12 +110,12 @@ namespace BitTorrent
 
             pieceNumber = unpackUInt32(remotePeer.ReadBuffer, 1);
 
-            if (!remotePeer.TorrentDownloader.havePiece(pieceNumber))
+            if (!remotePeer.TorrentDownloader.HavePiece(pieceNumber))
             {
                 PWP.interested(remotePeer);
                 for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                 {
-                    remotePeer.TorrentDownloader.Dc.blockPieceOnPeer(pieceNumber, blockNumber, true);
+                    remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                 }
             }
 
@@ -142,7 +142,7 @@ namespace BitTorrent
             }
             Program.Logger.Debug(hex + "\n");
 
-            remotePeer.TorrentDownloader.Dc.mergePieceBitfield(remotePeer);
+            remotePeer.TorrentDownloader.Dc.MergePieceBitfield(remotePeer);
 
         }
 
@@ -159,7 +159,7 @@ namespace BitTorrent
 
             Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
 
-            remotePeer.TorrentDownloader.placeBlockIntoPiece(remotePeer.ReadBuffer, pieceNumber, blockOffset, (UInt32)remotePeer.PacketLength - 9);
+            remotePeer.TorrentDownloader.PlaceBlockIntoPiece(remotePeer.ReadBuffer, pieceNumber, blockOffset, (UInt32)remotePeer.PacketLength - 9);
 
         }
 

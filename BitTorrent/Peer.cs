@@ -53,7 +53,7 @@ namespace BitTorrent
 
         }
 
-        public void connect()
+        public void Connect()
         {
 
             try
@@ -71,7 +71,7 @@ namespace BitTorrent
 
                 _connected = true;
 
-                _peerSocket.BeginReceive(_readBuffer, 0, Constants.kSizeOfUInt32, 0, readPacketCallBack, this);
+                _peerSocket.BeginReceive(_readBuffer, 0, Constants.kSizeOfUInt32, 0, ReadPacketCallBack, this);
             }
             catch (Error)
             {
@@ -84,7 +84,7 @@ namespace BitTorrent
 
         }
 
-        public void readPacketCallBack(IAsyncResult readAsyncState)
+        public void ReadPacketCallBack(IAsyncResult readAsyncState)
         {
             try
             {
@@ -114,7 +114,7 @@ namespace BitTorrent
                 }
 
                 remotePeer._peerSocket.BeginReceive(remotePeer._readBuffer, (Int32) remotePeer._bytesRead, 
-                           (Int32) (remotePeer.PacketLength - remotePeer._bytesRead), 0, readPacketCallBack, remotePeer);
+                           (Int32) (remotePeer.PacketLength - remotePeer._bytesRead), 0, ReadPacketCallBack, remotePeer);
 
             }
             catch (Error)

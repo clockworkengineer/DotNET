@@ -77,13 +77,13 @@ namespace BitTorrent
             {
                 FileAgent fileAgent01 = new FileAgent("./maj.torrent", "/home/robt/utorrent");
  
-                fileAgent01.load();
+                fileAgent01.Load();
 
-                fileAgent01.download();
+                fileAgent01.Download();
 
                 Console.ReadKey();
 
-                fileAgent01.close();
+                fileAgent01.Close();
               
             }
             catch (Error ex)

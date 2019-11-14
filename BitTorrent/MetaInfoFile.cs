@@ -28,7 +28,7 @@ namespace BitTorrent
       
         private void getListOfDictionarys(BNodeBase bNodeRoot, string field)
         {
-            BNodeBase fieldBytes = Bencoding.getDictionaryEntry(bNodeRoot, field);
+            BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
 
             if (fieldBytes is BNodeList)
             {
@@ -41,7 +41,7 @@ namespace BitTorrent
                         BNodeBase fileDictionaryItem = ((BitTorrent.BNodeDictionary)listItem);
                         BNodeBase fileField = null;
                         string fileEntry = String.Empty;
-                        fileField = Bencoding.getDictionaryEntry(fileDictionaryItem, "path");
+                        fileField = Bencoding.GetDictionaryEntry(fileDictionaryItem, "path");
                         if (fileField != null)
                         {
                             string path = string.Empty;
@@ -53,9 +53,9 @@ namespace BitTorrent
                         
                         }
                         fileEntry += ",";
-                        fileEntry += Bencoding.getDictionaryEntryString(fileDictionaryItem, "length");
+                        fileEntry += Bencoding.GetDictionaryEntryString(fileDictionaryItem, "length");
                         fileEntry += ",";
-                        fileEntry += Bencoding.getDictionaryEntryString(fileDictionaryItem, "md5string");
+                        fileEntry += Bencoding.GetDictionaryEntryString(fileDictionaryItem, "md5string");
                         _metaInfoDict[fileNo.ToString()] = Encoding.ASCII.GetBytes(fileEntry);
                         fileNo++;
                     }
@@ -66,7 +66,7 @@ namespace BitTorrent
 
         private void getStringOrNumeric(BNodeBase bNodeRoot, string field)
         {
-            BNodeBase fieldBytes = Bencoding.getDictionaryEntry(bNodeRoot, field);
+            BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
             if (fieldBytes is BNodeNumber)
             {
                 _metaInfoDict[field] = ((BNodeNumber)fieldBytes).number;
@@ -80,7 +80,7 @@ namespace BitTorrent
 
         private void getListOfStrings(BNodeBase bNodeRoot, string field)
         {
-            BNodeBase fieldBytes = Bencoding.getDictionaryEntry(bNodeRoot, field);
+            BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
             if (fieldBytes is BNodeList)
             {
                 List<string> listString = new List<string>();
@@ -99,10 +99,10 @@ namespace BitTorrent
 
         private void calculateInfoHash(BNodeBase bNodeRoot)
         {
-            BNodeBase infoEncodedBytes = Bencoding.getDictionaryEntry(bNodeRoot, "info");
+            BNodeBase infoEncodedBytes = Bencoding.GetDictionaryEntry(bNodeRoot, "info");
             if (infoEncodedBytes != null)
             {
-                byte[] infoHash = Bencoding.encode(infoEncodedBytes);
+                byte[] infoHash = Bencoding.Encode(infoEncodedBytes);
                 SHA1 sha = new SHA1CryptoServiceProvider();
                 _metaInfoDict["info hash"] = sha.ComputeHash(infoHash);
             
@@ -111,10 +111,10 @@ namespace BitTorrent
         }
 
  
-        private void loadTorrentDictionary()
+        private void LoadTorrentDictionary()
         {
 
-            BNodeBase bNodeRoot = Bencoding.decode(_metaInfoData);
+            BNodeBase bNodeRoot = Bencoding.Decode(_metaInfoData);
 
             getStringOrNumeric(bNodeRoot, "announce");
             getListOfStrings(bNodeRoot, "announce-list");
@@ -127,7 +127,7 @@ namespace BitTorrent
             getStringOrNumeric(bNodeRoot, "private");
             getStringOrNumeric(bNodeRoot, "url-list");
 
-            if (Bencoding.getDictionaryEntry(bNodeRoot, "files") == null)
+            if (Bencoding.GetDictionaryEntry(bNodeRoot, "files") == null)
             {
                 getStringOrNumeric(bNodeRoot, "length");
                 getStringOrNumeric(bNodeRoot, "md5sum");
@@ -149,16 +149,14 @@ namespace BitTorrent
 
 
         }
-
     
-
         public MetaInfoFile(string fileName)
         {
             _torrentFileName = fileName;
             _metaInfoDict = new Dictionary<string, byte[]>();
         }
 
-        public string getTrackerURL()
+        public string GetTrackerURL()
         {
             try
             {
@@ -177,7 +175,7 @@ namespace BitTorrent
 
         }
 
-        public void load()
+        public void Load()
         {
             try
             {
@@ -198,11 +196,11 @@ namespace BitTorrent
             }
         }
 
-        public void parse()
+        public void Parse()
         {
             try
             {
-                loadTorrentDictionary();
+                LoadTorrentDictionary();
             }
             catch (Error)
             {

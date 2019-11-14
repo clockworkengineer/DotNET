@@ -104,8 +104,8 @@ public partial class MainWindow : Gtk.Window
 
             _torrentFile = new MetaInfoFile(fileChooser.Filename);
 
-            _torrentFile.load();
-            _torrentFile.parse();
+            _torrentFile.Load();
+            _torrentFile.Parse();
 
             SetText(trackerEntry, "announce");
             SetText(trackersEntry, "announce-list");
@@ -169,9 +169,9 @@ public partial class MainWindow : Gtk.Window
         downloadButton.Sensitive = false;
         pauseContinueButton.Sensitive = true;
 
-        await _torrentFileAgent.loadAsync();
+        await _torrentFileAgent.LoadAsync();
 
-        await _torrentFileAgent.downloadAsync(updateDownloadStatus, this);
+        await _torrentFileAgent.DownloadAsync(updateDownloadStatus, this);
 
         downloadButton.Sensitive = true;
 
@@ -182,12 +182,12 @@ public partial class MainWindow : Gtk.Window
         if (_torrentFileAgent.Downloading)
         {
             pauseContinueButton.Label = "Continue";
-            _torrentFileAgent.stop();
+            _torrentFileAgent.Stop();
         }
         else
         {
             pauseContinueButton.Label = "Pause";
-            _torrentFileAgent.start();
+            _torrentFileAgent.Start();
         }
     }
 }

@@ -33,14 +33,14 @@ namespace BitTorrent
         public bool Downloading { get => _downloading;  }
         public AnnounceResponse CurrentAnnouneResponse { get => _currentAnnouneResponse; set => _currentAnnouneResponse = value; }
 
-        private void assemblePiece(Peer remotePeer, UInt32 pieceNumber)
+        private void AssemblePiece(Peer remotePeer, UInt32 pieceNumber)
         {
             Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
 
             for (; remotePeer.PeerChoking;) { }
 
             UInt32 blockNumber = 0;
-            for (; !remotePeer.TorrentDownloader.Dc.isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+            for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
             {    
                 PWP.request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
             }
@@ -48,15 +48,21 @@ namespace BitTorrent
             PWP.request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
                          (UInt32)FileToDownloader.Dc.pieceMap[pieceNumber].lastBlockLength);
 
-            for (; !FileToDownloader.Dc.hasPieceBeenAssembled(pieceNumber);) { }
+            for (; !FileToDownloader.Dc.HasPieceBeenAssembled(pieceNumber);) { }
 
             Program.Logger.Debug($"All blocks for piece {pieceNumber} received");
 
-            FileToDownloader.writePieceToFiles(pieceNumber);
+            FileToDownloader.WritePieceToFiles(pieceNumber);
+
+            _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
+            _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
+
+            Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
+
 
         }
 
-        private void createAndConnectPeers()
+        private void CreateAndConnectPeers()
         {
 
             Program.Logger.Info("Connecting to first available peer....");
@@ -66,14 +72,14 @@ namespace BitTorrent
                 try
                 {
                     Peer remotePeer = new Peer(FileToDownloader, peer.ip, peer.port, _torrentMetaInfo.MetaInfoDict["info hash"]);
-                    remotePeer.connect();
+                    remotePeer.Connect();
                     if (remotePeer.Connected) {
                         _remotePeers.Add(remotePeer);
                         Program.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
 
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Program.Logger.Info($"Failed to connect to {peer.ip}");
                 }
@@ -89,7 +95,7 @@ namespace BitTorrent
        
         }
 
-        public void load()
+        public void Load()
         {
 
             try
@@ -97,8 +103,8 @@ namespace BitTorrent
                 Program.Logger.Info("Loading MetaInfo for torrent file ....");
 
                 _torrentMetaInfo = new MetaInfoFile(_torrentFileName);
-                _torrentMetaInfo.load();
-                _torrentMetaInfo.parse();
+                _torrentMetaInfo.Load();
+                _torrentMetaInfo.Parse();
 
                 Program.Logger.Info("Loading main tracker ....");
 
@@ -142,7 +148,7 @@ namespace BitTorrent
 
                 FileToDownloader = new FileDownloader(_filesToDownload, pieceLength, _torrentMetaInfo.MetaInfoDict["pieces"]);
 
-                FileToDownloader.buildDownloadedPiecesMap();
+                FileToDownloader.BuildDownloadedPiecesMap();
 
                 Program.Logger.Info("Initial main tracker announce ...");
 
@@ -150,7 +156,7 @@ namespace BitTorrent
 
                 _mainTracker.startAnnouncing();
 
-                createAndConnectPeers();
+                CreateAndConnectPeers();
 
             }
             catch (Error)
@@ -166,7 +172,7 @@ namespace BitTorrent
 
         }
 
-        public void download(ProgessCallBack progressFunction = null, Object progressData = null)
+        async public Task DownloadAsync(ProgessCallBack progressFunction = null, Object progressData = null)
         {
 
             try
@@ -180,28 +186,17 @@ namespace BitTorrent
                     PWP.unchoke(peer);
                 }
 
-                for (UInt32 nextPiece = 0; FileToDownloader.selectNextPiece(ref nextPiece);)
+                for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(ref nextPiece);)
                 {
-
-                    assemblePiece(_remotePeers[0], (UInt32)nextPiece);
-
-                    _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
-                    _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
-
-                    if (progressFunction != null)
-                    {
-                        progressFunction(progressData);
-                    }
-
-                    Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
-
+                    await Task.Run(() => AssemblePiece(_remotePeers[0], (UInt32)nextPiece));
+                    if (progressFunction != null) progressFunction(progressData);
                     for (; !Downloading;) { }
-
                 }
 
                 _mainTracker.Event = Tracker.TrackerEvent.completed;
 
                 Program.Logger.Info("Whole Torrent finished downloading.");
+
             }
             catch (Error)
             {
@@ -216,11 +211,11 @@ namespace BitTorrent
 
         }
 
-        public async Task loadAsync()
+        public async Task LoadAsync()
         {
             try
             {
-                await Task.Run(() => load());
+                await Task.Run(() => Load());
             }
             catch (Error)
             {
@@ -232,11 +227,11 @@ namespace BitTorrent
             }
         }
 
-        public async Task downloadAsync(ProgessCallBack progressFunction = null, Object progressData = null)
+        public void Download(ProgessCallBack progressFunction = null, Object progressData = null)
         {
             try
             {
-                await Task.Run(() => download(progressFunction, progressData));
+                Download(progressFunction, progressData);
             }
             catch (Error)
             {
@@ -248,7 +243,7 @@ namespace BitTorrent
             }
         }
 
-        public void close()
+        public void Close()
         {
             try
             {
@@ -270,7 +265,7 @@ namespace BitTorrent
             }
         }
 
-        public void start()
+        public void Start()
         {
             try
             {
@@ -286,7 +281,7 @@ namespace BitTorrent
             }
         }
 
-        public void stop()
+        public void Stop()
         {
             try
             {

@@ -69,7 +69,7 @@ namespace BitTorrent
             }
         }
 
-        public void blockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber, bool local)
+        public void BlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber, bool local)
         {
             try
             {
@@ -92,7 +92,7 @@ namespace BitTorrent
             }
         }
 
-        public void blockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber, bool noPeer)
+        public void BlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber, bool noPeer)
         {
             try
             {
@@ -115,7 +115,7 @@ namespace BitTorrent
             }
         }
 
-        public void blockPieceDownloaded(UInt32 pieceNumber, UInt32 blockNumber, bool downloaded)
+        public void BlockPieceDownloaded(UInt32 pieceNumber, UInt32 blockNumber, bool downloaded)
         {
             try
             {
@@ -139,7 +139,7 @@ namespace BitTorrent
             }
         }
 
-        public void blockPieceLast(UInt32 pieceNumber, UInt32 blockNumber, bool last)
+        public void BlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber, bool last)
         {
             try
             {
@@ -162,7 +162,7 @@ namespace BitTorrent
             }
         }
 
-        public bool isBlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber)
+        public bool IsBlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber)
         {
             try
             {
@@ -179,7 +179,7 @@ namespace BitTorrent
             return (false);
         }
 
-        public bool isBlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber)
+        public bool IsBlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber)
         {
             try
             {
@@ -196,7 +196,7 @@ namespace BitTorrent
             return (false);
         }
 
-        public bool isBlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber)
+        public bool IsBlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber)
         {
             try
             {
@@ -213,7 +213,7 @@ namespace BitTorrent
             return (false);
         }
 
-        public UInt32 getPieceLength(UInt32 pieceNumber)
+        public UInt32 GetPieceLength(UInt32 pieceNumber)
         {
 
             UInt32 length = 0;
@@ -221,7 +221,7 @@ namespace BitTorrent
             try
             {
   
-                for (UInt32 blockNumber = 0; !isBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                for (UInt32 blockNumber = 0; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                 {
                     length += Constants.kBlockSize;
                 }
@@ -241,18 +241,18 @@ namespace BitTorrent
 
         }
 
-        public bool hasPieceBeenAssembled(UInt32 pieceNumber)
+        public bool HasPieceBeenAssembled(UInt32 pieceNumber)
         {
 
             try
             {
                 for (UInt32 blockNumber = 0; blockNumber < pieceMap[pieceNumber].blocks.Length; blockNumber++)
                 {
-                    if (!isBlockPieceLocal(pieceNumber, blockNumber))
+                    if (!IsBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         return (false);
                     }
-                    if (isBlockPieceLast(pieceNumber, blockNumber))
+                    if (IsBlockPieceLast(pieceNumber, blockNumber))
                     {
                         break;
                     }
@@ -270,7 +270,7 @@ namespace BitTorrent
             return (true);
         }
 
-        public void mergePieceBitfield(Peer remotePeer)
+        public void MergePieceBitfield(Peer remotePeer)
         {
 
             try
@@ -286,7 +286,7 @@ namespace BitTorrent
                             pieceMap[pieceNumber].peerCount++;
                             for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                             {
-                                remotePeer.TorrentDownloader.Dc.blockPieceOnPeer(pieceNumber, blockNumber, true);
+                                remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                             }
 
                         }
