@@ -42,10 +42,10 @@ namespace BitTorrent
             UInt32 blockNumber = 0;
             for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
             {    
-                PWP.request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
+                PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
             }
 
-            PWP.request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
+            PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
                          (UInt32)FileToDownloader.Dc.pieceMap[pieceNumber].lastBlockLength);
 
             for (; !FileToDownloader.Dc.HasPieceBeenAssembled(pieceNumber);) { }
@@ -152,9 +152,9 @@ namespace BitTorrent
 
                 Program.Logger.Info("Initial main tracker announce ...");
 
-                CurrentAnnouneResponse = _mainTracker.announce();
+                CurrentAnnouneResponse = _mainTracker.Announce();
 
-                _mainTracker.startAnnouncing();
+                _mainTracker.StartAnnouncing();
 
                 CreateAndConnectPeers();
 
@@ -183,7 +183,7 @@ namespace BitTorrent
 
                 foreach (var peer in _remotePeers)
                 {
-                    PWP.unchoke(peer);
+                    PWP.Unchoke(peer);
                 }
 
                 for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(ref nextPiece);)
@@ -231,7 +231,7 @@ namespace BitTorrent
         {
             try
             {
-                Download(progressFunction, progressData);
+                DownloadAsync(progressFunction, progressData);
             }
             catch (Error)
             {
@@ -247,7 +247,7 @@ namespace BitTorrent
         {
             try
             {
-                _mainTracker.stopAnnonncing();
+                _mainTracker.StopAnnonncing();
                 Program.Logger.Info("Closing peer socket.");
                 foreach (var peer in _remotePeers)
                 {

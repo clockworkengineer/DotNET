@@ -79,7 +79,7 @@ namespace BitTorrent
  
                 fileAgent01.Load();
 
-                fileAgent01.Download();
+                fileAgent01.DownloadAsync();
 
                 Console.ReadKey();
 

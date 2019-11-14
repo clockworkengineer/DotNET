@@ -107,7 +107,7 @@ namespace BitTorrent
                 }
                 else if (remotePeer._bytesRead == remotePeer.PacketLength)
                 {
-                    PWP.remotePeerMessageProcess(remotePeer);
+                    PWP.RemotePeerMessageProcess(remotePeer);
                     remotePeer._lengthRead = false;
                     remotePeer._bytesRead = 0;
                     remotePeer.PacketLength = Constants.kSizeOfUInt32;

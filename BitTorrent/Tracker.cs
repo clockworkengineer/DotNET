@@ -50,7 +50,7 @@ namespace BitTorrent
         public UInt64 Left { get => _left; set => _left = value; }
         public TrackerEvent Event { get => _event; set => _event = value; }
 
-        private AnnounceResponse constructResponse(byte[] announceResponse, ref AnnounceResponse response)
+        private AnnounceResponse ConstructResponse(byte[] announceResponse, ref AnnounceResponse response)
         {
 
             response.statusCode = (int)HttpStatusCode.OK;
@@ -126,16 +126,16 @@ namespace BitTorrent
 
         }
 
-        private byte[] encodeBytesToURL(byte[] toEncode)
+        private byte[] EncodeBytesToURL(byte[] toEncode)
         {
             return(WebUtility.UrlEncodeToBytes(toEncode, 0, toEncode.Length));
 
         }
 
-        private string encodeTrackerURL ()
+        private string EncodeTrackerURL()
         {
             string  url = _trackerURL +
-            "?info_hash=" + Encoding.ASCII.GetString(encodeBytesToURL(_torrentFile.MetaInfoDict["info hash"])) +
+            "?info_hash=" + Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFile.MetaInfoDict["info hash"])) +
             "&peer_id=" + _peerID +
             "&port=" + _port +
             "&compact=" + _compact +
@@ -155,7 +155,7 @@ namespace BitTorrent
 
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
-            tracker._currentTrackerResponse = tracker.announce();
+            tracker._currentTrackerResponse = tracker.Announce();
         }
 
         public Tracker(MetaInfoFile torrentFile, string peerID)
@@ -167,10 +167,10 @@ namespace BitTorrent
 
         }
 
-        public AnnounceResponse announce() 
+        public AnnounceResponse Announce() 
         {
 
-            Program.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(encodeBytesToURL(_torrentFile.MetaInfoDict["info hash"]))} " +
+            Program.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFile.MetaInfoDict["info hash"]))} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
                   $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 
@@ -178,7 +178,7 @@ namespace BitTorrent
 
             try
             {
-                HttpWebRequest httpGetRequest = WebRequest.Create(encodeTrackerURL()) as HttpWebRequest;
+                HttpWebRequest httpGetRequest = WebRequest.Create(EncodeTrackerURL()) as HttpWebRequest;
                 HttpWebResponse httpGetResponse;
                 byte[] announceResponse;
 
@@ -196,7 +196,7 @@ namespace BitTorrent
                 }
                 if (httpGetResponse.StatusCode == HttpStatusCode.OK)
                 {
-                    constructResponse(announceResponse, ref response);
+                    ConstructResponse(announceResponse, ref response);
                 }
                 else
                 {
@@ -220,7 +220,7 @@ namespace BitTorrent
 
         }
 
-        public void startAnnouncing()
+        public void StartAnnouncing()
         {
             try
             {
@@ -239,7 +239,7 @@ namespace BitTorrent
             }
         }
 
-        public void stopAnnonncing()
+        public void StopAnnonncing()
         {
             try
             {
@@ -256,7 +256,7 @@ namespace BitTorrent
             }
         }
 
-        public void update(AnnounceResponse response)
+        public void Update(AnnounceResponse response)
         {
             try
             {
@@ -272,8 +272,8 @@ namespace BitTorrent
                 _trackerID = response.trackerID;
                 if (oldInterval != _interval)
                 {
-                    stopAnnonncing();
-                    startAnnouncing();
+                    StopAnnonncing();
+                    StartAnnouncing();
                 }
             }
             catch (Error)

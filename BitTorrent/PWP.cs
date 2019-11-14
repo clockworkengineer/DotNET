@@ -19,17 +19,17 @@ namespace BitTorrent
     {
         private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
 
-        private static void peerWrite(Socket peerSocket, byte[] buffer, int length)
+        private static void PeerWrite(Socket peerSocket, byte[] buffer, int length)
         {
             peerSocket.Send(buffer);
         }
 
-        private static int peerRead(Socket peerSocket, byte[] buffer, int length)
+        private static int PeerRead(Socket peerSocket, byte[] buffer, int length)
         {
             return (peerSocket.Receive(buffer, length, SocketFlags.None));
         }
 
-        private static UInt32 unpackUInt32(byte[] buffer, int offset)
+        private static UInt32 UnpackUInt32(byte[] buffer, int offset)
         {
             UInt32 unpackedUInt32 = 0;
 
@@ -42,7 +42,7 @@ namespace BitTorrent
 
         }
 
-        private static byte[] packUInt32(UInt32 int32value)
+        private static byte[] PackUInt32(UInt32 int32value)
         {
             byte[] packedInt32 = new byte[Constants.kSizeOfUInt32];
             packedInt32[0] = (byte)(int32value >> 24);
@@ -54,7 +54,7 @@ namespace BitTorrent
 
         }
 
-        private static bool validatePeerConnect(byte[] handshakePacket, byte[] handshakeResponse, out byte[] remotePeerID)
+        private static bool ValidatePeerConnect(byte[] handshakePacket, byte[] handshakeResponse, out byte[] remotePeerID)
         {
 
             remotePeerID = null;
@@ -82,37 +82,37 @@ namespace BitTorrent
 
         }
 
-        private static void handleCHOKE(Peer remotePeer)
+        private static void HandleCHOKE(Peer remotePeer)
         {
             remotePeer.PeerChoking = true;
             Program.Logger.Debug("CHOKE");
         }
 
-        private static void handleUNCHOKE(Peer remotePeer)
+        private static void HandleUNCHOKE(Peer remotePeer)
         {
             remotePeer.PeerChoking = false;
             Program.Logger.Debug("UNCHOKED");
         }
 
-        private static void handleINTERESTED(Peer remotePeer)
+        private static void HandleINTERESTED(Peer remotePeer)
         {
             Program.Logger.Debug("INTERESTED");
         }
 
-        private static void handleUNINTERESTED(Peer remotePeer)
+        private static void HandleUNINTERESTED(Peer remotePeer)
         {
             Program.Logger.Debug("UNINTERESTED");
         }
 
-        private static void handleHAVE(Peer remotePeer)
+        private static void HandleHAVE(Peer remotePeer)
         {
             UInt32 pieceNumber = 0;
 
-            pieceNumber = unpackUInt32(remotePeer.ReadBuffer, 1);
+            pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
 
             if (!remotePeer.TorrentDownloader.HavePiece(pieceNumber))
             {
-                PWP.interested(remotePeer);
+                PWP.Interested(remotePeer);
                 for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                 {
                     remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
@@ -122,7 +122,7 @@ namespace BitTorrent
             Program.Logger.Debug($"Have piece= {pieceNumber}");
         }
 
-        private static void handleBITFIELD(Peer remotePeer)
+        private static void HandleBITFIELD(Peer remotePeer)
         {
 
             remotePeer.RemotePieceBitfield = new byte[(Int32)remotePeer.PacketLength - 1];
@@ -146,16 +146,16 @@ namespace BitTorrent
 
         }
 
-        private static void handleREQUEST(Peer remotePeer)
+        private static void HandleREQUEST(Peer remotePeer)
         {
             Program.Logger.Debug("REQUEST");
         }
 
-        private static void handlePIECE(Peer remotePeer)
+        private static void HandlePIECE(Peer remotePeer)
         {
 
-            UInt32 pieceNumber = unpackUInt32(remotePeer.ReadBuffer, 1);
-            UInt32 blockOffset = unpackUInt32(remotePeer.ReadBuffer, 5);
+            UInt32 pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
+            UInt32 blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
 
             Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
 
@@ -163,7 +163,7 @@ namespace BitTorrent
 
         }
 
-        private static void handleCANCEL(Peer remotePeer)
+        private static void HandleCANCEL(Peer remotePeer)
         {
             Program.Logger.Debug("CANCEL");
         }
@@ -184,13 +184,13 @@ namespace BitTorrent
                 handshakePacket.AddRange(infoHash);
                 handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.get()));
 
-                peerWrite(remotePeer.PeerSocket, handshakePacket.ToArray(), handshakePacket.Count);
+                PeerWrite(remotePeer.PeerSocket, handshakePacket.ToArray(), handshakePacket.Count);
 
                 byte[] handshakeResponse = new byte[handshakePacket.Count];
 
-                peerRead(remotePeer.PeerSocket, handshakeResponse, handshakeResponse.Length);
+                PeerRead(remotePeer.PeerSocket, handshakeResponse, handshakeResponse.Length);
 
-                connected = validatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
+                connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
             }
             catch (Error)
             {
@@ -206,7 +206,7 @@ namespace BitTorrent
         }
 
   
-        public static void remotePeerMessageProcess(Peer remotePeer)
+        public static void RemotePeerMessageProcess(Peer remotePeer)
         {
 
             try
@@ -214,31 +214,31 @@ namespace BitTorrent
                 switch (remotePeer.ReadBuffer[0])
                 {
                     case Constants.kMessageCHOKE:
-                        handleCHOKE(remotePeer);
+                        HandleCHOKE(remotePeer);
                         break;
                     case Constants.kMessageUNCHOKE:
-                        handleUNCHOKE(remotePeer);
+                        HandleUNCHOKE(remotePeer);
                         break;
                     case Constants.kMessageINTERESTED:
-                        handleINTERESTED(remotePeer);
+                        HandleINTERESTED(remotePeer);
                         break;
                     case Constants.kMessageUNINTERESTED:
-                        handleUNINTERESTED(remotePeer);
+                        HandleUNINTERESTED(remotePeer);
                         break;
                     case Constants.kMessageHAVE:
-                        handleHAVE(remotePeer);
+                        HandleHAVE(remotePeer);
                         break;
                     case Constants.kMessageBITFIELD:
-                        handleBITFIELD(remotePeer);
+                        HandleBITFIELD(remotePeer);
                         break;
                     case Constants.kMessageREQUEST:
-                        handleREQUEST(remotePeer);
+                        HandleREQUEST(remotePeer);
                         break;
                     case Constants.kMessagePIECE:
-                        handlePIECE(remotePeer);
+                        HandlePIECE(remotePeer);
                         break;
                     case Constants.kMessageCANCEL:
-                        handleCANCEL(remotePeer);
+                        HandleCANCEL(remotePeer);
                         break;
                     default:
                         Program.Logger.Debug($"UNKOWN REQUEST{remotePeer.ReadBuffer[0]}");
@@ -257,16 +257,16 @@ namespace BitTorrent
 
         }
 
-        public static void choke(Peer remotePeer)
+        public static void Choke(Peer remotePeer)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32(1));
+                requestPacket.AddRange(PackUInt32(1));
                 requestPacket.Add(Constants.kMessageCHOKE);
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
             catch (Error)
             {
@@ -279,16 +279,16 @@ namespace BitTorrent
 
         }
 
-        public static void unchoke(Peer remotePeer)
+        public static void Unchoke(Peer remotePeer)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32(1));
+                requestPacket.AddRange(PackUInt32(1));
                 requestPacket.Add(Constants.kMessageUNCHOKE);
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
             catch (Error)
             {
@@ -301,16 +301,16 @@ namespace BitTorrent
 
         }
 
-        public static void interested(Peer remotePeer)
+        public static void Interested(Peer remotePeer)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32(1));
+                requestPacket.AddRange(PackUInt32(1));
                 requestPacket.Add(Constants.kMessageINTERESTED);
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
 
                 remotePeer.Interested = true;
             }
@@ -325,16 +325,16 @@ namespace BitTorrent
 
         }
 
-        public static void uninterested(Peer remotePeer)
+        public static void Uninterested(Peer remotePeer)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32(1));
+                requestPacket.AddRange(PackUInt32(1));
                 requestPacket.Add(Constants.kMessageUNINTERESTED);
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
 
                 remotePeer.Interested = false;
             }
@@ -349,17 +349,17 @@ namespace BitTorrent
 
         }
 
-        public static void have(Peer remotePeer, UInt32 pieceNumber)
+        public static void Have(Peer remotePeer, UInt32 pieceNumber)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32(5));
+                requestPacket.AddRange(PackUInt32(5));
                 requestPacket.Add(Constants.kMessageHAVE);
-                requestPacket.AddRange(packUInt32(pieceNumber));
+                requestPacket.AddRange(PackUInt32(pieceNumber));
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
             catch (Error)
             {
@@ -372,16 +372,16 @@ namespace BitTorrent
 
         }
 
-        public static void bitfield(Peer remotePeer, byte[] bitField)
+        public static void Bitfield(Peer remotePeer, byte[] bitField)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32((UInt32)bitField.Length + 1));
+                requestPacket.AddRange(PackUInt32((UInt32)bitField.Length + 1));
                 requestPacket.Add(Constants.kMessageBITFIELD);
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
             catch (Error)
             {
@@ -394,21 +394,21 @@ namespace BitTorrent
 
         }
 
-        public static void request(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
+        public static void Request(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32(13));
+                requestPacket.AddRange(PackUInt32(13));
                 requestPacket.Add(Constants.kMessageREQUEST);
-                requestPacket.AddRange(packUInt32(pieceNumber));
-                requestPacket.AddRange(packUInt32(blockOffset));
-                requestPacket.AddRange(packUInt32(blockSize));
+                requestPacket.AddRange(PackUInt32(pieceNumber));
+                requestPacket.AddRange(PackUInt32(blockOffset));
+                requestPacket.AddRange(PackUInt32(blockSize));
 
                 Program.Logger.Debug($"Request Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
             catch (Error)
             {
@@ -421,19 +421,19 @@ namespace BitTorrent
 
         }
 
-        public static void piece(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
+        public static void Piece(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32((UInt32)blockData.Length + 9));
+                requestPacket.AddRange(PackUInt32((UInt32)blockData.Length + 9));
                 requestPacket.Add(Constants.kMessagePIECE);
-                requestPacket.AddRange(packUInt32(pieceNumber));
-                requestPacket.AddRange(packUInt32(blockOffset));
+                requestPacket.AddRange(PackUInt32(pieceNumber));
+                requestPacket.AddRange(PackUInt32(blockOffset));
                 requestPacket.AddRange(blockData);
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
             catch (Error)
             {
@@ -446,19 +446,19 @@ namespace BitTorrent
 
         }
 
-        public static void cancel(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
+        public static void Cancel(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
         {
             try
             {
                 List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(packUInt32((UInt32)blockData.Length + 9));
+                requestPacket.AddRange(PackUInt32((UInt32)blockData.Length + 9));
                 requestPacket.Add(Constants.kMessageCANCEL);
-                requestPacket.AddRange(packUInt32(pieceNumber));
-                requestPacket.AddRange(packUInt32(blockOffset));
+                requestPacket.AddRange(PackUInt32(pieceNumber));
+                requestPacket.AddRange(PackUInt32(blockOffset));
                 requestPacket.AddRange(blockData);
 
-                peerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+                PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
             }
             catch (Error)
             {
