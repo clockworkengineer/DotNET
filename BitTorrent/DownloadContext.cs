@@ -16,8 +16,9 @@ namespace BitTorrent
     public static class Mapping
     {
         public const byte HaveLocal = 0x01;
-        public const byte OnPeer = 0x02;
-        public const byte LastBlock = 0x04;
+        public const byte Requested = 0x2;
+        public const byte OnPeer = 0x04;
+        public const byte LastBlock = 0x08;
     }
 
     public struct PieceBlockMap
@@ -80,6 +81,25 @@ namespace BitTorrent
                 else
                 {
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+                }
+            }
+            catch (Error)
+            {
+                throw;
+            }
+        }
+
+        public void BlockPieceRequested(UInt32 pieceNumber, UInt32 blockNumber, bool requested)
+        {
+            try
+            {
+                if (requested)
+                {
+                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.Requested;
+                }
+                else
+                {
+                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
                 }
             }
             catch (Error)
@@ -184,6 +204,23 @@ namespace BitTorrent
             try
             {
                 return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal);
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+            return (false);
+        }
+
+        public bool IsBlockPieceRequested(UInt32 pieceNumber, UInt32 blockNumber)
+        {
+            try
+            {
+                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested);
             }
             catch (Error)
             {

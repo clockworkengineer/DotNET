@@ -84,7 +84,9 @@ namespace BitTorrent
                     Program.Logger.Info($"Failed to connect to {peer.ip}");
                 }
             }
-         
+
+            Program.Logger.Info($"Number of connected piers {_remotePeers.Count}");
+
 
         }
 
