@@ -65,7 +65,7 @@ namespace BitTorrent
         private void CreateAndConnectPeers()
         {
 
-            Program.Logger.Info("Connecting to first available peer....");
+            Program.Logger.Info("Connecting to available peers....");
 
             _remotePeers = new List<Peer>();
             foreach (var peer in CurrentAnnouneResponse.peers) {
@@ -76,7 +76,6 @@ namespace BitTorrent
                     if (remotePeer.Connected) {
                         _remotePeers.Add(remotePeer);
                         Program.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-
                     }
                 }
                 catch (Exception)
@@ -159,6 +158,11 @@ namespace BitTorrent
                 _mainTracker.StartAnnouncing();
 
                 CreateAndConnectPeers();
+
+                if (_remotePeers.Count==0)
+                {
+                    throw new Error("Error: No peers would connect.");
+                }
 
             }
             catch (Error)

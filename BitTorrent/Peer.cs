@@ -67,11 +67,12 @@ namespace BitTorrent
 
                 ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(this, _infoHash);
 
-                RemotePeerID = peerResponse.Item2;
-
-                _connected = true;
-
-                _peerSocket.BeginReceive(_readBuffer, 0, Constants.kSizeOfUInt32, 0, ReadPacketCallBack, this);
+                if (peerResponse.Item1)
+                {
+                    RemotePeerID = peerResponse.Item2;
+                    _connected = true;
+                    _peerSocket.BeginReceive(_readBuffer, 0, Constants.kSizeOfUInt32, 0, ReadPacketCallBack, this);
+                }
             }
             catch (Error)
             {

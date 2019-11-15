@@ -147,8 +147,9 @@ namespace BitTorrent
                 using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
                 {
                     stream.Seek((Int64)(startOffset - file.offset), SeekOrigin.Begin);
-                    stream.Write(_dc.pieceBuffer, (int)(file.offset - ((file.offset / (UInt64)_dc.pieceLength) * (UInt64)_dc.pieceLength)), (int)length); ;
+                    stream.Write(_dc.pieceBuffer, (Int32) (startOffset % _dc.pieceLength), (Int32)length);
                 }
+
             }
             catch (Error)
             {
