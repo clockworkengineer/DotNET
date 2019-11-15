@@ -410,6 +410,9 @@ namespace BitTorrent
                 Program.Logger.Debug($"Request Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
                 PeerWrite(remotePeer.PeerSocket, requestPacket.ToArray(), requestPacket.Count);
+
+                remotePeer.TorrentDownloader.Dc.BlockPieceRequested(pieceNumber, blockOffset / Constants.kBlockSize, true);
+
             }
             catch (Error)
             {

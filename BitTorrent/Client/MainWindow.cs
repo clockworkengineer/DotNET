@@ -171,7 +171,7 @@ public partial class MainWindow : Gtk.Window
 
         await _torrentFileAgent.LoadAsync();
 
-        await _torrentFileAgent.DownloadAsync(updateDownloadStatus, this);
+         _torrentFileAgent.DownloadAsync(updateDownloadStatus, this);
 
         downloadButton.Sensitive = true;
 

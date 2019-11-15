@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Bencodeing encoding/decoder support code for BitTorrent.
+// Description: Bencoding encoder/decoder support code for BitTorrent.
 //
 // Copyright 2019.
 //

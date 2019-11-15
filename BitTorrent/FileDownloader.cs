@@ -148,6 +148,7 @@ namespace BitTorrent
                 {
                     stream.Seek((Int64)(startOffset - file.offset), SeekOrigin.Begin);
                     stream.Write(_dc.pieceBuffer, (Int32) (startOffset % _dc.pieceLength), (Int32)length);
+                    stream.Flush();
                 }
 
             }
@@ -221,13 +222,15 @@ namespace BitTorrent
                         UInt32 blockNumber = 0;
                         for (; !_dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                         {
-                            if (!_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
+                            if (!_dc.IsBlockPieceRequested(pieceNumber, blockNumber) &&
+                                !_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
                             {
                                 nextPiece = pieceNumber;
                                 return (true);
                             }
                         }
-                        if (!_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
+                        if (!_dc.IsBlockPieceRequested(pieceNumber, blockNumber) &&
+                            !_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
                         {
                             nextPiece = pieceNumber;
                             return (true);
@@ -258,6 +261,7 @@ namespace BitTorrent
                 Buffer.BlockCopy(buffer, 9, _dc.pieceBuffer, (Int32)blockOffset, (Int32)length);
 
                 _dc.BlockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
+                _dc.BlockPieceRequested(pieceNumber, blockOffset / Constants.kBlockSize, false);
 
                 if (!_dc.IsBlockPieceLast(pieceNumber, blockOffset / Constants.kBlockSize))
                 {

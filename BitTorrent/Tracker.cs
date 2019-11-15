@@ -170,7 +170,7 @@ namespace BitTorrent
         public AnnounceResponse Announce() 
         {
 
-            Program.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFile.MetaInfoDict["info hash"]))} " +
+            Program.Logger.Debug($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFile.MetaInfoDict["info hash"]))} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
                   $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 
