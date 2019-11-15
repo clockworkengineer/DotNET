@@ -113,6 +113,7 @@ namespace BitTorrent
             if (!remotePeer.TorrentDownloader.HavePiece(pieceNumber))
             {
                 PWP.Interested(remotePeer);
+                remotePeer.SetPieceOnRemotePeer(pieceNumber);
                 for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
                 {
                     remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);

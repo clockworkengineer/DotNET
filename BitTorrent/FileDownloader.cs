@@ -208,7 +208,7 @@ namespace BitTorrent
             return (true);
         }
 
-        public bool SelectNextPiece(ref UInt32 nextPiece)
+        public bool SelectNextPiece(Peer remotePeer, ref UInt32 nextPiece)
         {
             try
             {
@@ -216,19 +216,22 @@ namespace BitTorrent
 
                 for (UInt32 pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
                 {
-                    UInt32 blockNumber = 0;
-                    for (; !_dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                    if (remotePeer.IsPieceOnRemotePeer(pieceNumber))
                     {
+                        UInt32 blockNumber = 0;
+                        for (; !_dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                        {
+                            if (!_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
+                            {
+                                nextPiece = pieceNumber;
+                                return (true);
+                            }
+                        }
                         if (!_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
                         {
                             nextPiece = pieceNumber;
                             return (true);
                         }
-                    }
-                    if (!_dc.IsBlockPieceLocal(pieceNumber, blockNumber))
-                    {
-                        nextPiece = pieceNumber;
-                        return (true);
                     }
                 }
 ;

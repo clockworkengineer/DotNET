@@ -129,5 +129,18 @@ namespace BitTorrent
             }
         }
 
+        public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
+        {
+            UInt32 byteNumber = pieceNumber / 8;
+            UInt32 bitNumber = pieceNumber % 8;
+            return ((remotePieceBitfield[byteNumber] & (byte)(Int32) 0x80 >> (Int32)bitNumber)!=0);
+        }
+
+        public void SetPieceOnRemotePeer(UInt32 pieceNumber)
+        {
+            UInt32 byteNumber = pieceNumber / 8;
+            UInt32 bitNumber = pieceNumber % 8;
+            remotePieceBitfield[byteNumber] |= (byte) ((Int32) 0x80 >> (Int32) bitNumber);
+        }
     }
 }

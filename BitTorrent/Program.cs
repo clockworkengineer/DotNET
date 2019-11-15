@@ -22,7 +22,7 @@ namespace BitTorrent
         public static void annouceResponse(AnnounceResponse response)
         {
             Logger.Debug("\nAnnouce Response\n-------------");
-            Logger.Debug("\nStatus: "+response.statusCode);
+            Logger.Debug("\nStatus: " + response.statusCode);
             Logger.Debug("Status Message: " + response.statusMessage);
             Logger.Debug("Interval: " + response.interval);
             Logger.Debug("Min Interval: " + response.minInterval);
@@ -42,7 +42,7 @@ namespace BitTorrent
             }
 
         }
-    
+
 
         public static void torrentHasInfo(MetaInfoFile metaFile)
         {
@@ -59,7 +59,7 @@ namespace BitTorrent
         public static void torrentTrackers(MetaInfoFile metaFile)
         {
             byte[] tracker = metaFile.MetaInfoDict["announce"];
- 
+
             Logger.Debug("\nTrackers\n--------\n");
             Logger.Debug(Encoding.ASCII.GetString(tracker));
 
@@ -72,19 +72,19 @@ namespace BitTorrent
 
         public static void Main(string[] args)
         {
-        
+
             try
             {
-                FileAgent fileAgent01 = new FileAgent("./mint.iso.torrent", "/home/robt/utorrent");
- 
+                FileAgent fileAgent01 = new FileAgent("./Tester2.torrent", "/home/robt/utorrent");
+
                 fileAgent01.Load();
 
-                fileAgent01.DownloadAsync();
+                fileAgent01.Download();
 
                 Console.ReadKey();
 
                 fileAgent01.Close();
-              
+
             }
             catch (Error ex)
             {

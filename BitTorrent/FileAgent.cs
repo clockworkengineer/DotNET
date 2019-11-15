@@ -33,31 +33,45 @@ namespace BitTorrent
         public bool Downloading { get => _downloading;  }
         public AnnounceResponse CurrentAnnouneResponse { get => _currentAnnouneResponse; set => _currentAnnouneResponse = value; }
 
-        private void AssemblePiece(Peer remotePeer, UInt32 pieceNumber)
+        private async Task AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData)
         {
-            Program.Logger.Debug($"Get blocks for piece {pieceNumber}.");
+         
+            PWP.Unchoke(remotePeer);
 
-            for (; remotePeer.PeerChoking;) { }
+            for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
+            {
 
-            UInt32 blockNumber = 0;
-            for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
-            {    
-                PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
+                for (; remotePeer.PeerChoking;) { }
+
+                Program.Logger.Debug($"Get blocks for piece {nextPiece}.");
+
+                UInt32 blockNumber = 0;
+                for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
+                {
+                    PWP.Request(remotePeer, nextPiece, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
+                }
+
+                PWP.Request(remotePeer, nextPiece, blockNumber * Constants.kBlockSize,
+                             (UInt32)FileToDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
+
+                await Task.Run(() => { for (; !FileToDownloader.Dc.HasPieceBeenAssembled(nextPiece);) { } });
+
+                Program.Logger.Debug($"All blocks for piece {nextPiece} received");
+
+                FileToDownloader.WritePieceToFiles(nextPiece);
+
+                _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
+                _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
+
+                if (progressFunction != null)
+                {
+                    progressFunction(progressData);
+                }
+
+                for (; !Downloading;) { }
+
+                Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
             }
-
-            PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.kBlockSize, 
-                         (UInt32)FileToDownloader.Dc.pieceMap[pieceNumber].lastBlockLength);
-
-            for (; !FileToDownloader.Dc.HasPieceBeenAssembled(pieceNumber);) { }
-
-            Program.Logger.Debug($"All blocks for piece {pieceNumber} received");
-
-            FileToDownloader.WritePieceToFiles(pieceNumber);
-
-            _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
-            _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
-
-            Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
 
 
         }
@@ -178,26 +192,23 @@ namespace BitTorrent
 
         }
 
-        async public Task DownloadAsync(ProgessCallBack progressFunction = null, Object progressData = null)
+        public void Download(ProgessCallBack progressFunction = null, Object progressData = null)
         {
 
             try
             {
+                List<Task> assembleTasks = new List<Task>();
+
                 Program.Logger.Info("Starting torrent download for MetaInfo data ...");
 
                 _mainTracker.Event = Tracker.TrackerEvent.started;
 
                 foreach (var peer in _remotePeers)
                 {
-                    PWP.Unchoke(peer);
+                    assembleTasks.Add(AssemblePieces(peer, progressFunction, progressData));
                 }
 
-                for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(ref nextPiece);)
-                {
-                    await Task.Run(() => AssemblePiece(_remotePeers[0], (UInt32)nextPiece));
-                    if (progressFunction != null) progressFunction(progressData);
-                    for (; !Downloading;) { }
-                }
+                Task.WaitAll(assembleTasks.ToArray());
 
                 _mainTracker.Event = Tracker.TrackerEvent.completed;
 
@@ -233,11 +244,11 @@ namespace BitTorrent
             }
         }
 
-        public void Download(ProgessCallBack progressFunction = null, Object progressData = null)
+        public async void DownloadAsync(ProgessCallBack progressFunction = null, Object progressData = null)
         {
             try
             {
-                DownloadAsync(progressFunction, progressData);
+                await Task.Run(() => Download(progressFunction, progressData));
             }
             catch (Error)
             {
