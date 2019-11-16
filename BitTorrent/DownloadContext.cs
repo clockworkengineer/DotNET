@@ -3,7 +3,8 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Download context for a torrent file being downloaded. This includes
+// download progress and a local piece download map.
 //
 // Copyright 2019.
 //
@@ -13,21 +14,30 @@ using System.Collections.Generic;
 
 namespace BitTorrent
 {
+    /// <summary>
+    /// Possible piece mapping values.
+    /// </summary>
     public static class Mapping
     {
-        public const byte HaveLocal = 0x01;
-        public const byte Requested = 0x2;
-        public const byte OnPeer = 0x04;
-        public const byte LastBlock = 0x08;
+        public const byte HaveLocal = 0x01; // Downloaded
+        public const byte Requested = 0x2;  // Has been requested
+        public const byte OnPeer = 0x04;    // Is present ona remote peer
+        public const byte LastBlock = 0x08; // Last block in a piece
     }
 
+    /// <summary>
+    /// Piece block map.
+    /// </summary>
     public struct PieceBlockMap
     {
-        public byte[] blocks;
-        public UInt16 peerCount;
-        public UInt32 lastBlockLength;
+        public byte[] blocks;           // Block mappings for piece
+        public UInt16 peerCount;        // Peers with the piece
+        public UInt32 lastBlockLength;  // Length of last block in piece
     }
 
+    /// <summary>
+    /// Download context for a torrent file.
+    /// </summary>
     public class DownloadContext
     {
         public PieceBlockMap[] pieceMap;
@@ -39,6 +49,12 @@ namespace BitTorrent
         public byte[] pieces;
         public UInt32 numberOfPieces = 0;
 
+        /// <summary>
+        /// Initializes a new instance of the DownloadContext class.
+        /// </summary>
+        /// <param name="filesToDownload">Files to download.</param>
+        /// <param name="pieceLength">Piece length.</param>
+        /// <param name="pieces">Pieces.</param>
         public DownloadContext(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
         {
             try
@@ -70,6 +86,12 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Sets a block piece as downloaded.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
+        /// <param name="local">If set to <c>true</c> block has been downloaded.</param>
         public void BlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber, bool local)
         {
             try
@@ -89,6 +111,12 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Sets a block piece as requested.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
+        /// <param name="requested">If set to <c>true</c> block has been requested.</param>
         public void BlockPieceRequested(UInt32 pieceNumber, UInt32 blockNumber, bool requested)
         {
             try
@@ -112,6 +140,12 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Sets a block piece as present on remote peer.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
+        /// <param name="noPeer">If set to <c>true</c> block is present on remote peer.</param>
         public void BlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber, bool noPeer)
         {
             try
@@ -135,6 +169,12 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Sets a block as having been downloaed from a peer.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
+        /// <param name="downloaded">If set to <c>true</c> black has been downloaded.</param>
         public void BlockPieceDownloaded(UInt32 pieceNumber, UInt32 blockNumber, bool downloaded)
         {
             try
@@ -159,6 +199,12 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Sets a block as last withina piece.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
+        /// <param name="last">If set to <c>true</c> block is the last in a piece.</param>
         public void BlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber, bool last)
         {
             try
@@ -182,6 +228,12 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Is a block of  piece present on a remote peer.
+        /// </summary>
+        /// <returns><c>true</c>, if block piece on peer. <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
         public bool IsBlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber)
         {
             try
@@ -199,6 +251,12 @@ namespace BitTorrent
             return (false);
         }
 
+        /// <summary>
+        /// Is a block piece local (ie has been downloaded).
+        /// </summary>
+        /// <returns><c>true</c>, if block piece is local <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
         public bool IsBlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber)
         {
             try
@@ -216,6 +274,12 @@ namespace BitTorrent
             return (false);
         }
 
+        /// <summary>
+        /// Has a block piece been requested from a peer.
+        /// </summary>
+        /// <returns><c>true</c>, if block piece has been requested, <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
         public bool IsBlockPieceRequested(UInt32 pieceNumber, UInt32 blockNumber)
         {
             try
@@ -233,6 +297,12 @@ namespace BitTorrent
             return (false);
         }
 
+        /// <summary>
+        /// Is a block the last within piece.
+        /// </summary>
+        /// <returns><c>true</c>, if block piece last within a piece, <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
         public bool IsBlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber)
         {
             try
@@ -250,6 +320,11 @@ namespace BitTorrent
             return (false);
         }
 
+        /// <summary>
+        /// Gets the length of the piece in bytes.
+        /// </summary>
+        /// <returns>The piece length.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
         public UInt32 GetPieceLength(UInt32 pieceNumber)
         {
 
@@ -278,6 +353,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Has a piece been assembled.
+        /// </summary>
+        /// <returns><c>true</c>, if piece been assembled, <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
         public bool HasPieceBeenAssembled(UInt32 pieceNumber)
         {
 
@@ -307,6 +387,10 @@ namespace BitTorrent
             return (true);
         }
 
+        /// <summary>
+        /// Merges the piece bitfield of a remote peer with the torrents piece map.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         public void MergePieceBitfield(Peer remotePeer)
         {
 

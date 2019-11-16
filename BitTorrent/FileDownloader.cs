@@ -126,6 +126,8 @@ namespace BitTorrent
                 GeneratePieceMapFromBuffer(pieceNumber, _dc.pieceBuffer, (UInt32)bytesInBuffer);
             }
 
+            Program.Logger.Debug("Finished generating downloaded map.");
+
         }
 
         public FileDownloader(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
