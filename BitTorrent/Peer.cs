@@ -13,9 +13,32 @@ using System.Net.Sockets;
 
 namespace BitTorrent
 {
-    public class Peer
-    {   
+    public static class SocketExtensions
+    {
+        /// <summary>
+        /// Connects the specified socket.
+        /// </summary>
+        /// <param name="socket">The socket.</param>
+        /// <param name="endpoint">The IP endpoint.</param>
+        /// <param name="timeout">The timeout.</param>
+        public static void Connect(this Socket socket, EndPoint endpoint, TimeSpan timeout)
+        {
+            var result = socket.BeginConnect(endpoint, null, null);
 
+            bool success = result.AsyncWaitHandle.WaitOne(timeout, true);
+            if (success)
+            {
+                socket.EndConnect(result);
+            }
+            else
+            {
+                socket.Close();
+                throw new SocketException(10060); // Connection timed out.
+            }
+        }
+    }
+    public class Peer
+    {  
         private string _ip;
         private UInt32 _port;
         private bool _peerChoking=true;
@@ -43,6 +66,19 @@ namespace BitTorrent
         public byte[] RemotePieceBitfield { get => remotePieceBitfield; set => remotePieceBitfield = value; }
         public uint PacketLength { get => _packetLength; set => _packetLength = value; }
 
+        static public string GetLocalHostIP()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Error("No network adapters with an IPv4 address in the system!");
+        }
+
         public Peer(FileDownloader fileDownloader, string ip ,UInt32 port, byte[] infoHash)
         {
             _ip = ip;
@@ -63,7 +99,7 @@ namespace BitTorrent
 
                 _peerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-                _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)_port));
+                _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)_port), new TimeSpan(0, 0, 15));
 
                 ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(this, _infoHash);
 
@@ -142,5 +178,7 @@ namespace BitTorrent
             UInt32 bitNumber = pieceNumber % 8;
             remotePieceBitfield[byteNumber] |= (byte) ((Int32) 0x80 >> (Int32) bitNumber);
         }
+
+
     }
 }

@@ -3,7 +3,8 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: The File Agent class contains all the high level processing
+// like download and upload for torrent files.
 //
 // Copyright 2019.
 //
@@ -15,6 +16,10 @@ using System.Collections.Generic;
 
 namespace BitTorrent
 {
+
+    /// <summary>
+    /// File agent class defintion.
+    /// </summary>
     public class FileAgent
     {
         public delegate void ProgessCallBack(Object progressData);
@@ -33,6 +38,13 @@ namespace BitTorrent
         public bool Downloading { get => _downloading;  }
         public AnnounceResponse CurrentAnnouneResponse { get => _currentAnnouneResponse; set => _currentAnnouneResponse = value; }
 
+        /// <summary>
+        /// Assembles the pieces.
+        /// </summary>
+        /// <returns>The pieces.</returns>
+        /// <param name="remotePeer">Remote peer.</param>
+        /// <param name="progressFunction">Progress function.</param>
+        /// <param name="progressData">Progress data.</param>
         private async Task AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData)
         {
 
@@ -45,7 +57,7 @@ namespace BitTorrent
 
                 Program.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                for (; remotePeer.PeerChoking;) { }
+                await Task.Run(() => { for (; remotePeer.PeerChoking;) { } });
 
                 UInt32 blockNumber = 0;
                 for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
@@ -80,6 +92,9 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Creates the and connect peers.
+        /// </summary>
         private void CreateAndConnectPeers()
         {
 
@@ -107,6 +122,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:BitTorrent.FileAgent"/> class.
+        /// </summary>
+        /// <param name="torrentFileName">Torrent file name.</param>
+        /// <param name="downloadPath">Download path.</param>
         public FileAgent(string torrentFileName, String downloadPath)
         {
             _torrentFileName = torrentFileName;
@@ -114,6 +134,9 @@ namespace BitTorrent
        
         }
 
+        /// <summary>
+        /// Load this instance.
+        /// </summary>
         public void Load()
         {
 
@@ -171,6 +194,8 @@ namespace BitTorrent
 
                 Program.Logger.Info("Initial main tracker announce ...");
 
+                _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength;
+
                 CurrentAnnouneResponse = _mainTracker.Announce();
 
                 _mainTracker.StartAnnouncing();
@@ -196,6 +221,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Download the specified progressFunction and progressData.
+        /// </summary>
+        /// <param name="progressFunction">Progress function.</param>
+        /// <param name="progressData">Progress data.</param>
         public void Download(ProgessCallBack progressFunction = null, Object progressData = null)
         {
 
@@ -232,6 +262,10 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Loads the async.
+        /// </summary>
+        /// <returns>The async.</returns>
         public async Task LoadAsync()
         {
             try
@@ -248,6 +282,11 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Downloads the async.
+        /// </summary>
+        /// <param name="progressFunction">Progress function.</param>
+        /// <param name="progressData">Progress data.</param>
         public async void DownloadAsync(ProgessCallBack progressFunction = null, Object progressData = null)
         {
             try
@@ -264,6 +303,9 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Close this instance.
+        /// </summary>
         public void Close()
         {
             try
@@ -286,6 +328,9 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Start this instance.
+        /// </summary>
         public void Start()
         {
             try
@@ -302,6 +347,9 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Stop this instance.
+        /// </summary>
         public void Stop()
         {
             try
