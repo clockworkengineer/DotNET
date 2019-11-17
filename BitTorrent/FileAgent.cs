@@ -81,7 +81,8 @@ namespace BitTorrent
 
                     Program.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                    FileToDownloader.WritePieceToFiles(remotePeer, nextPiece);
+                    PieceBuffer pieceBuffer = new PieceBuffer(nextPiece, remotePeer.PieceBuffer);
+                    _fileToDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
 
                     _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
                     _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
@@ -222,16 +223,16 @@ namespace BitTorrent
 
                 _mainTracker.StartAnnouncing();
 
-               // PeerDetails peerId = new PeerDetails();
+                PeerDetails peerId = new PeerDetails();
 
-               // peerId.ip = CurrentAnnouneResponse.peers[0].ip;
-               // peerId.port = CurrentAnnouneResponse.peers[0].port;
+                peerId.ip = CurrentAnnouneResponse.peers[0].ip;
+                peerId.port = CurrentAnnouneResponse.peers[0].port;
 
-               //CurrentAnnouneResponse.peers.Add(peerId);
-               //CurrentAnnouneResponse.peers.Add(peerId);
-               //CurrentAnnouneResponse.peers.Add(peerId);
-                //CurrentAnnouneResponse.peers.Add(peerId);
-                //CurrentAnnouneResponse.peers.Add(peerId);
+               CurrentAnnouneResponse.peers.Add(peerId);
+               CurrentAnnouneResponse.peers.Add(peerId);
+               CurrentAnnouneResponse.peers.Add(peerId);
+                CurrentAnnouneResponse.peers.Add(peerId);
+                CurrentAnnouneResponse.peers.Add(peerId);
 
                 CreateAndConnectPeers();
 

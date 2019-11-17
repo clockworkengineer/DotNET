@@ -77,6 +77,7 @@
     <Compile Include="AnnounceResponse.cs" />
     <Compile Include="DownloadContext.cs" />
     <Compile Include="Error.cs" />
+    <Compile Include="PieceBuffer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

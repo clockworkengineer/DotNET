@@ -10,8 +10,10 @@
 
 using System;
 using System.IO;
+
 using System.Security.Cryptography;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BitTorrent
 {
@@ -22,6 +24,7 @@ namespace BitTorrent
         private List<FileDetails> _filesToDownload;
         private DownloadContext _dc;
         private SHA1 _sha;
+        private Task _pieceBufferWriterTask;
 
         public DownloadContext Dc { get => _dc; set => _dc = value; }
 
@@ -130,16 +133,51 @@ namespace BitTorrent
 
         }
 
-        public FileDownloader(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
+        private void PieceBufferWriter()
         {
+            while(!_dc.pieceBufferWriteQueue.IsCompleted)
+            {
+                PieceBuffer pieceBuffer = _dc.pieceBufferWriteQueue.Take();
 
-            _filesToDownload = filesToDownload;
-            _sha = new SHA1CryptoServiceProvider();
-            _dc = new DownloadContext(filesToDownload, pieceLength, pieces);
+                if (!CheckPieceHash(pieceBuffer.PieceNumber, pieceBuffer.Buffer, _dc.GetPieceLength(pieceBuffer.PieceNumber)))
+                {
+                    Program.Logger.Error($"Error: Hash for piece {pieceBuffer.PieceNumber} is invalid.");
+                    return;
+                }
+
+                Program.Logger.Trace($"writePieceToFiles({pieceBuffer.PieceNumber})");
+
+                UInt64 startOffset = (UInt64)(pieceBuffer.PieceNumber * _dc.pieceLength);
+                UInt64 endOffset = startOffset + (UInt64)_dc.pieceLength;
+
+                foreach (var file in _filesToDownload)
+                {
+                    if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                    {
+                        UInt64 startWrite = Math.Max(startOffset, file.offset);
+                        UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
+                        WritePieceToFile(pieceBuffer.Buffer, file, startWrite, endWrite - startWrite);
+                    }
+                }
+            }
 
         }
 
-        public void WritePieceToFile(Peer remotePeer, FileDetails file, UInt64 startOffset, UInt64 length)
+        public FileDownloader(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
+        {
+            _filesToDownload = filesToDownload;
+            _sha = new SHA1CryptoServiceProvider();
+            _dc = new DownloadContext(filesToDownload, pieceLength, pieces);
+            _pieceBufferWriterTask = new Task(PieceBufferWriter);
+            _pieceBufferWriterTask.Start();
+        }
+
+        ~FileDownloader()
+        {
+            _dc.pieceBufferWriteQueue.CompleteAdding();
+        }
+
+        public void WritePieceToFile(byte[] pieceBuffer, FileDetails file, UInt64 startOffset, UInt64 length)
         {
 
             try
@@ -149,7 +187,7 @@ namespace BitTorrent
                 using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
                 {
                     stream.Seek((Int64)(startOffset - file.offset), SeekOrigin.Begin);
-                    stream.Write(remotePeer.PieceBuffer, (Int32) (startOffset % _dc.pieceLength), (Int32)length);
+                    stream.Write(pieceBuffer, (Int32) (startOffset % _dc.pieceLength), (Int32)length);
                     stream.Flush();
                 }
 
@@ -261,45 +299,5 @@ namespace BitTorrent
 
         }
 
-        public void WritePieceToFiles(Peer remotePeer, UInt32 pieceNumber)
-        {
-            try
-            {
-                lock (this) // Hack neeeds better designs
-                {
-                    UInt32 tmp = _dc.GetPieceLength(pieceNumber);
-                    if (!CheckPieceHash(pieceNumber, remotePeer.PieceBuffer, tmp))
-                    {
-                        tmp = _dc.GetPieceLength(pieceNumber);
-                        CheckPieceHash(pieceNumber, remotePeer.PieceBuffer, tmp);
-                        throw new Error($"Error: Hash for piece {pieceNumber} is invalid.");
-                    }
-
-                    Program.Logger.Trace($"writePieceToFiles({pieceNumber})");
-
-                    UInt64 startOffset = (UInt64)(pieceNumber * _dc.pieceLength);
-                    UInt64 endOffset = startOffset + (UInt64)_dc.pieceLength;
-
-                    foreach (var file in _filesToDownload)
-                    {
-                        if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
-                        {
-                            UInt64 startWrite = Math.Max(startOffset, file.offset);
-                            UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
-                            WritePieceToFile(remotePeer, file, startWrite, endWrite - startWrite);
-                        }
-                    }
-                }
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Program.Logger.Debug(ex);
-                throw;
-            }
-        }
     }
 }

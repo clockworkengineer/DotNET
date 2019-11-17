@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace BitTorrent
 {
@@ -47,6 +48,7 @@ namespace BitTorrent
         public UInt32 blocksPerPiece = 0;
         public byte[] pieces;
         public UInt32 numberOfPieces = 0;
+        public BlockingCollection<PieceBuffer> pieceBufferWriteQueue;
 
         /// <summary>
         /// Initializes a new instance of the DownloadContext class.
@@ -73,6 +75,9 @@ namespace BitTorrent
                 {
                     pieceMap[pieceNuber].blocks = new byte[blocksPerPiece];
                 }
+
+                pieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(boundedCapacity: 10);
+
             }
             catch (Error)
             {
