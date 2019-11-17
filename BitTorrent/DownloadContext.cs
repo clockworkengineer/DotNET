@@ -42,7 +42,6 @@ namespace BitTorrent
     {
         public PieceBlockMap[] pieceMap;
         public UInt64 totalBytesDownloaded = 0;
-        public byte[] pieceBuffer;
         public UInt64 totalLength = 0;
         public UInt32 pieceLength = 0;
         public UInt32 blocksPerPiece = 0;
@@ -68,7 +67,6 @@ namespace BitTorrent
                 this.pieces = pieces;
                 numberOfPieces = ((UInt32)(pieces.Length / Constants.kHashLength));
                 blocksPerPiece = pieceLength / Constants.kBlockSize;
-                pieceBuffer = new byte[pieceLength];
 
                 pieceMap = new PieceBlockMap[numberOfPieces];
                 for (var pieceNuber = 0; pieceNuber < numberOfPieces; pieceNuber++)
@@ -423,6 +421,32 @@ namespace BitTorrent
             {
                 Program.Logger.Debug(ex);
             }
+        }
+
+        /// <summary>
+        /// Is a block of  piece present on a remote peer.
+        /// </summary>
+        /// <returns><c>true</c>, if block piece on peer. <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockNumber">Block number.</param>
+        public bool MarkPieceRequested(UInt32 pieceNumber)
+        {
+            try
+            {
+                for (UInt32 blockNumber = 0; blockNumber < pieceMap[pieceNumber].blocks.Length; blockNumber++)
+                {
+                    BlockPieceRequested(pieceNumber, blockNumber, true);
+                }
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+            return (false);
         }
     }
 }

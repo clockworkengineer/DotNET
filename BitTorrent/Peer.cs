@@ -33,7 +33,7 @@ namespace BitTorrent
             else
             {
                 socket.Close();
-                throw new SocketException(10060); // Connection timed out.
+                throw new Error("Error: Peer connect timed out.")
             }
         }
     }
@@ -49,11 +49,13 @@ namespace BitTorrent
         private byte[] _remotePeerID;
         private FileDownloader _torrentDownloader;
         private bool _readFromRemotePeer = true;
+        private byte[] _pieceBuffer;
         private byte[] _readBuffer;
         private UInt32 _bytesRead = 0;
         private UInt32 _packetLength = 0;
         private bool _lengthRead = false;
-        private byte[] remotePieceBitfield;
+        private byte[] _remotePieceBitfield;
+
 
         public bool PeerChoking { get => _peerChoking; set => _peerChoking = value; }
         public bool ReadFromRemotePeer { get => _readFromRemotePeer; set => _readFromRemotePeer = value; }
@@ -63,8 +65,9 @@ namespace BitTorrent
         public byte[] RemotePeerID { get => _remotePeerID; set => _remotePeerID = value; }
         public FileDownloader TorrentDownloader { get => _torrentDownloader; set => _torrentDownloader = value; }
         public bool Interested { get => _interested; set => _interested = value; }
-        public byte[] RemotePieceBitfield { get => remotePieceBitfield; set => remotePieceBitfield = value; }
+        public byte[] RemotePieceBitfield { get => _remotePieceBitfield; set => _remotePieceBitfield = value; }
         public uint PacketLength { get => _packetLength; set => _packetLength = value; }
+        public byte[] PieceBuffer { get => _pieceBuffer; set => _pieceBuffer = value; }
 
         static public string GetLocalHostIP()
         {
@@ -86,7 +89,7 @@ namespace BitTorrent
             _infoHash = infoHash;
             _torrentDownloader = fileDownloader;
             _readBuffer = new byte[Constants.kBlockSize + (2*Constants.kSizeOfUInt32) + 1]; // Maximum possible packet size
-
+            PieceBuffer = new byte[fileDownloader.Dc.pieceLength];
         }
 
         public void Connect()
@@ -169,16 +172,45 @@ namespace BitTorrent
         {
             UInt32 byteNumber = pieceNumber / 8;
             UInt32 bitNumber = pieceNumber % 8;
-            return ((remotePieceBitfield[byteNumber] & (byte)(Int32) 0x80 >> (Int32)bitNumber)!=0);
+            return ((_remotePieceBitfield[byteNumber] & (byte)(Int32) 0x80 >> (Int32)bitNumber)!=0);
         }
 
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
             UInt32 byteNumber = pieceNumber / 8;
             UInt32 bitNumber = pieceNumber % 8;
-            remotePieceBitfield[byteNumber] |= (byte) ((Int32) 0x80 >> (Int32) bitNumber);
+            _remotePieceBitfield[byteNumber] |= (byte) ((Int32) 0x80 >> (Int32) bitNumber);
         }
 
+        public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
+        {
+            try
+            {
+                Program.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{_packetLength - 9})");
+
+                Buffer.BlockCopy(_readBuffer, 9, _pieceBuffer, (Int32)blockOffset, (Int32)_packetLength - 9);
+
+                _torrentDownloader.Dc.BlockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
+                _torrentDownloader.Dc.BlockPieceRequested(pieceNumber, blockOffset / Constants.kBlockSize, false);
+
+                if (!_torrentDownloader.Dc.IsBlockPieceLast(pieceNumber, blockOffset / Constants.kBlockSize))
+                {
+                    _torrentDownloader.Dc.totalBytesDownloaded += (UInt64)Constants.kBlockSize;
+                }
+                else
+                {
+                    _torrentDownloader.Dc.totalBytesDownloaded += (UInt64)_torrentDownloader.Dc.pieceMap[pieceNumber].lastBlockLength;
+                }
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+        }
 
     }
 }

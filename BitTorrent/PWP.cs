@@ -160,7 +160,7 @@ namespace BitTorrent
 
             Program.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
 
-            remotePeer.TorrentDownloader.PlaceBlockIntoPiece(remotePeer.ReadBuffer, pieceNumber, blockOffset, (UInt32)remotePeer.PacketLength - 9);
+            remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
 
         }
 

@@ -72,7 +72,7 @@ namespace BitTorrent
 
                 Program.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                FileToDownloader.WritePieceToFiles(nextPiece);
+                FileToDownloader.WritePieceToFiles(remotePeer, nextPiece);
 
                 _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
                 _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;

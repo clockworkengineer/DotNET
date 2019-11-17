@@ -76,7 +76,7 @@ namespace BitTorrent
             try
             {
 
-                FileAgent fileAgent01 = new FileAgent("./kernel.torrent", "/home/robt/utorrent");
+                FileAgent fileAgent01 = new FileAgent("./ipfire.iso.torrent", "/home/robt/utorrent");
 
                 fileAgent01.Load();
 
