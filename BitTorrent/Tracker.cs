@@ -78,7 +78,7 @@ namespace BitTorrent
                             peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":") + 1);
                         }
                         peer.port = (UInt32) peers[num + 4] * 256 + peers[num + 5];
-                        Program.Logger.Debug($"Peer {peer.ip} Port {peer.port} found.");
+                        Program.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
                         response.peers.Add(peer);
                     }
                 }
@@ -106,7 +106,7 @@ namespace BitTorrent
                                 string path = string.Empty;
                                 peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrent.BNodeNumber)peerField).number));
                             }
-                            Program.Logger.Debug($"Peer {peer.ip} Port {peer.port} found.");
+                            Program.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
                             response.peers.Add(peer);
                         }
                     }
@@ -171,9 +171,9 @@ namespace BitTorrent
         public AnnounceResponse Announce() 
         {
 
-            //Program.Logger.Debug($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFile.MetaInfoDict["info hash"]))} " +
-                  //$"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
-                  //$"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
+            Program.Logger.Trace($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFile.MetaInfoDict["info hash"]))} " +
+                  $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
+                  $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 
             AnnounceResponse response = new AnnounceResponse();
 

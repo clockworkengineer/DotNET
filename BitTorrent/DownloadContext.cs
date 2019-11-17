@@ -412,6 +412,7 @@ namespace BitTorrent
 
                     }
                 }
+                remotePeer.BitfieldReceived = true;
             }
             catch (Error)
             {
@@ -424,12 +425,11 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Is a block of  piece present on a remote peer.
+        /// Mark all blocks of a piece as requested.
         /// </summary>
-        /// <returns><c>true</c>, if block piece on peer. <c>false</c> otherwise.</returns>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="blockNumber">Block number.</param>
-        public bool MarkPieceRequested(UInt32 pieceNumber)
+        public void MarkPieceRequested(UInt32 pieceNumber)
         {
             try
             {
@@ -446,7 +446,6 @@ namespace BitTorrent
             {
                 Program.Logger.Debug(ex);
             }
-            return (false);
         }
     }
 }

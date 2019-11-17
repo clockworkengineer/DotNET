@@ -8,6 +8,7 @@
 // Copyright 2019.
 //
 using System;
+using System.Text;
 using System.Net;
 using System.Net.Sockets;
 
@@ -33,7 +34,7 @@ namespace BitTorrent
             else
             {
                 socket.Close();
-                throw new Error("Error: Peer connect timed out.")
+                throw new Error("Error: Peer connect timed out.");
             }
         }
     }
@@ -54,6 +55,7 @@ namespace BitTorrent
         private UInt32 _bytesRead = 0;
         private UInt32 _packetLength = 0;
         private bool _lengthRead = false;
+        private bool _bitfieldReceived = false;
         private byte[] _remotePieceBitfield;
 
 
@@ -68,6 +70,7 @@ namespace BitTorrent
         public byte[] RemotePieceBitfield { get => _remotePieceBitfield; set => _remotePieceBitfield = value; }
         public uint PacketLength { get => _packetLength; set => _packetLength = value; }
         public byte[] PieceBuffer { get => _pieceBuffer; set => _pieceBuffer = value; }
+        public bool BitfieldReceived { get => _bitfieldReceived; set => _bitfieldReceived = value; }
 
         static public string GetLocalHostIP()
         {
@@ -102,7 +105,7 @@ namespace BitTorrent
 
                 _peerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-                _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)_port), new TimeSpan(0, 0, 15));
+                _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)_port), new TimeSpan(0, 0, 5));
 
                 ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(this, _infoHash);
 
@@ -126,9 +129,11 @@ namespace BitTorrent
 
         public void ReadPacketCallBack(IAsyncResult readAsyncState)
         {
+            Peer remotePeer = (Peer)readAsyncState.AsyncState;
+
             try
             {
-                Peer remotePeer = (Peer)readAsyncState.AsyncState;
+               
                 UInt32 bytesRead = (UInt32) remotePeer._peerSocket.EndReceive(readAsyncState);
 
                 remotePeer._bytesRead += bytesRead;
@@ -160,6 +165,10 @@ namespace BitTorrent
             catch (Error)
             {
                 throw;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                Program.Logger.Info($"Packet reader for Peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} closed.");
             }
             catch (Exception ex)
             {

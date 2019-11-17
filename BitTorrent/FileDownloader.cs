@@ -215,7 +215,9 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
+                // In onorder to stop same the piece requested with different peers a lock 
+                // is required when trying to get the next unrequested non-local piece.
+                lock (this) 
                 {
                     Program.Logger.Trace($"selectNextPiece()");
 

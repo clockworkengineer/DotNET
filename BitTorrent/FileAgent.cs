@@ -48,16 +48,18 @@ namespace BitTorrent
         private async Task AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData)
         {
 
-            Program.Logger.Debug($"Running block assembler for peer {remotePeer.RemotePeerID}.");
+            Program.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
             PWP.Unchoke(remotePeer);
+
+            for (; !remotePeer.BitfieldReceived;) { };
 
             for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
             {
 
                 Program.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                await Task.Run(() => { for (; remotePeer.PeerChoking;) { } });
+                await Task.Run(() => { for (; remotePeer.PeerChoking;) { } } );
 
                 UInt32 blockNumber = 0;
                 for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
@@ -82,13 +84,13 @@ namespace BitTorrent
                     progressFunction(progressData);
                 }
 
-                await Task.Run(() => { for (; !Downloading;) { } });
+                for (; !Downloading;) { };
 
                 Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
          
             }
 
-            Program.Logger.Debug($"Exiting block assembler for peer {remotePeer.RemotePeerID}.");
+            Program.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
         }
 
