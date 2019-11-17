@@ -94,13 +94,16 @@ namespace BitTorrent
         {
             try
             {
-                if (local)
+                lock (this)
                 {
-                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
-                }
-                else
-                {
-                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+                    if (local)
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
+                    }
+                    else
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+                    }
                 }
             }
             catch (Error)
@@ -119,13 +122,16 @@ namespace BitTorrent
         {
             try
             {
-                if (requested)
+                lock (this)
                 {
-                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.Requested;
-                }
-                else
-                {
-                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
+                    if (requested)
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.Requested;
+                    }
+                    else
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
+                    }
                 }
             }
             catch (Error)
@@ -148,13 +154,16 @@ namespace BitTorrent
         {
             try
             {
-                if (noPeer)
+                lock (this)
                 {
-                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
-                }
-                else
-                {
-                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.OnPeer ^ 0xff);
+                    if (noPeer)
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
+                    }
+                    else
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.OnPeer ^ 0xff);
+                    }
                 }
             }
             catch (Error)
@@ -177,14 +186,17 @@ namespace BitTorrent
         {
             try
             {
-                if (downloaded)
+                lock (this)
                 {
-                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
-                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
-                }
-                else
-                {
-                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+                    if (downloaded)
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
+                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
+                    }
+                    else
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+                    }
                 }
             }
             catch (Error)
@@ -207,13 +219,16 @@ namespace BitTorrent
         {
             try
             {
-                if (last)
+                lock (this)
                 {
-                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.LastBlock;
-                }
-                else
-                {
-                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.LastBlock ^ 0xff);
+                    if (last)
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.LastBlock;
+                    }
+                    else
+                    {
+                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.LastBlock ^ 0xff);
+                    }
                 }
             }
             catch (Error)
@@ -236,7 +251,10 @@ namespace BitTorrent
         {
             try
             {
-                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer);
+                lock (this)
+                {
+                    return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer);
+                }
             }
             catch (Error)
             {
@@ -259,7 +277,10 @@ namespace BitTorrent
         {
             try
             {
-                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal);
+                lock (this)
+                {
+                    return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal);
+                }
             }
             catch (Error)
             {
@@ -282,7 +303,10 @@ namespace BitTorrent
         {
             try
             {
-                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested);
+                lock (this)
+                {
+                    return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested);
+                }
             }
             catch (Error)
             {
@@ -305,7 +329,10 @@ namespace BitTorrent
         {
             try
             {
-                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock);
+                lock (this)
+                {
+                    return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock);
+                }
             }
             catch (Error)
             {
@@ -361,17 +388,17 @@ namespace BitTorrent
 
             try
             {
-                for (UInt32 blockNumber = 0; blockNumber < pieceMap[pieceNumber].blocks.Length; blockNumber++)
+                UInt32 blockNumber = 0;
+                for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                 {
                     if (!IsBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         return (false);
                     }
-                    if (IsBlockPieceLast(pieceNumber, blockNumber))
-                    {
-                        break;
-                    }
-
+                }
+                if (!IsBlockPieceLocal(pieceNumber, blockNumber))
+                {
+                    return (false);
                 }
             }
             catch (Error)

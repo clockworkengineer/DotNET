@@ -30,7 +30,7 @@ namespace BitTorrent
         private System.Timers.Timer _announceTimer;
         private string _trackerURL = String.Empty;
         private string _peerID = String.Empty;
-        private MetaInfoFile _torrentFile = null;
+        private FileAgent _torrentFileAgent = null;
         private AnnounceResponse _currentTrackerResponse;
         private UInt32 _port = 6681;
         private string _ip = String.Empty;
@@ -135,7 +135,7 @@ namespace BitTorrent
         private string EncodeTrackerURL()
         {
             string  url = _trackerURL +
-            "?info_hash=" + Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFile.MetaInfoDict["info hash"])) +
+            "?info_hash=" + Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"])) +
             "&peer_id=" + _peerID +
             "&port=" + _port +
             "&compact=" + _compact +
@@ -153,17 +153,34 @@ namespace BitTorrent
 
         }
 
+        private void UpdatePeersStatus()
+        {
+            int unChokedPeers = 0;
+
+            foreach (var peer in _torrentFileAgent.RemotePeers)
+            {
+                if (!peer.PeerChoking)
+                {
+                    unChokedPeers++;
+                }
+            }
+
+            Program.Logger.Info($"Unchoked Peers {unChokedPeers}/{ _torrentFileAgent.RemotePeers.Count}");
+
+        }
+
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
             tracker._currentTrackerResponse = tracker.Announce();
+            tracker.UpdatePeersStatus();
         }
 
-        public Tracker(MetaInfoFile torrentFile, string peerID)
+        public Tracker(FileAgent torrentFileAgent)
         {
 
-            _trackerURL = torrentFile.GetTrackerURL();
-            _torrentFile = torrentFile;
-            _peerID = peerID;
+            _trackerURL = torrentFileAgent.TorrentMetaInfo.GetTrackerURL();
+            _torrentFileAgent = torrentFileAgent;
+            _peerID = PeerID.get();
             _ip = Peer.GetLocalHostIP();
 
         }
@@ -171,7 +188,7 @@ namespace BitTorrent
         public AnnounceResponse Announce() 
         {
 
-            Program.Logger.Trace($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFile.MetaInfoDict["info hash"]))} " +
+            Program.Logger.Trace($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"]))} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
                   $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 

@@ -92,7 +92,7 @@ namespace BitTorrent
             _infoHash = infoHash;
             _torrentDownloader = fileDownloader;
             _readBuffer = new byte[Constants.kBlockSize + (2*Constants.kSizeOfUInt32) + 1]; // Maximum possible packet size
-            PieceBuffer = new byte[fileDownloader.Dc.pieceLength];
+            _pieceBuffer = new byte[fileDownloader.Dc.pieceLength];
         }
 
         public void Connect()
@@ -168,7 +168,7 @@ namespace BitTorrent
             }
             catch (System.ObjectDisposedException)
             {
-                Program.Logger.Info($"Packet reader for Peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} closed.");
+                Program.Logger.Info($"Packet read for Peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} closed.");
             }
             catch (Exception ex)
             {

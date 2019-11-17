@@ -216,7 +216,7 @@ namespace BitTorrent
             try
             {
                 // In onorder to stop same the piece requested with different peers a lock 
-                // is required when trying to get the next unrequested non-local piece.
+                // is required when trying to get the next unrequested non-local piece
                 lock (this) 
                 {
                     Program.Logger.Trace($"selectNextPiece()");
@@ -261,58 +261,33 @@ namespace BitTorrent
 
         }
 
-        //public void PlaceBlockIntoPiece(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 length)
-        //{
-        //    try
-        //    {
-        //        Program.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{length})");
-
-        //        Buffer.BlockCopy(remotePeer.ReadBuffer, 9, remotePeer.PieceBuffer, (Int32)blockOffset, (Int32)length);
-
-        //        _dc.BlockPieceDownloaded(pieceNumber, blockOffset / Constants.kBlockSize, true);
-        //        _dc.BlockPieceRequested(pieceNumber, blockOffset / Constants.kBlockSize, false);
-
-        //        if (!_dc.IsBlockPieceLast(pieceNumber, blockOffset / Constants.kBlockSize))
-        //        {
-        //            _dc.totalBytesDownloaded += (UInt64)Constants.kBlockSize;
-        //        }
-        //        else
-        //        {
-        //            _dc.totalBytesDownloaded += (UInt64)_dc.pieceMap[pieceNumber].lastBlockLength;
-        //        }
-        //    }
-        //    catch (Error)
-        //    {
-        //        throw;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Program.Logger.Debug(ex);
-        //    }
-        //}
-
         public void WritePieceToFiles(Peer remotePeer, UInt32 pieceNumber)
         {
             try
             {
-
-                if (!CheckPieceHash(pieceNumber, remotePeer.PieceBuffer, _dc.GetPieceLength(pieceNumber)))
+                lock (this) // Hack neeeds better designs
                 {
-                    throw new Error($"Error: Hash for piece {pieceNumber} is invalid.");
-                }
-
-                Program.Logger.Trace($"writePieceToFiles({pieceNumber})");
-
-                UInt64 startOffset = (UInt64)(pieceNumber * _dc.pieceLength);
-                UInt64 endOffset = startOffset + (UInt64)_dc.pieceLength;
-
-                foreach (var file in _filesToDownload)
-                {
-                    if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                    UInt32 tmp = _dc.GetPieceLength(pieceNumber);
+                    if (!CheckPieceHash(pieceNumber, remotePeer.PieceBuffer, tmp))
                     {
-                        UInt64 startWrite = Math.Max(startOffset, file.offset);
-                        UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
-                        WritePieceToFile(remotePeer, file, startWrite, endWrite - startWrite);
+                        tmp = _dc.GetPieceLength(pieceNumber);
+                        CheckPieceHash(pieceNumber, remotePeer.PieceBuffer, tmp);
+                        throw new Error($"Error: Hash for piece {pieceNumber} is invalid.");
+                    }
+
+                    Program.Logger.Trace($"writePieceToFiles({pieceNumber})");
+
+                    UInt64 startOffset = (UInt64)(pieceNumber * _dc.pieceLength);
+                    UInt64 endOffset = startOffset + (UInt64)_dc.pieceLength;
+
+                    foreach (var file in _filesToDownload)
+                    {
+                        if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                        {
+                            UInt64 startWrite = Math.Max(startOffset, file.offset);
+                            UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
+                            WritePieceToFile(remotePeer, file, startWrite, endWrite - startWrite);
+                        }
                     }
                 }
             }
