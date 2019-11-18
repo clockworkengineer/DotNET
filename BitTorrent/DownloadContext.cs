@@ -421,6 +421,7 @@ namespace BitTorrent
                     }
                 }
                 remotePeer.BitfieldReceived = true;
+                remotePeer.BitfieldReceivedEvent.Set();
             }
             catch (Error)
             {

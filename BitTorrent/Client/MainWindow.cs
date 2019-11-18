@@ -56,7 +56,6 @@ public partial class MainWindow : Gtk.Window
         window.downloadedEntry.Text = window._torrentFileAgent.FileToDownloader.Dc.totalBytesDownloaded.ToString();
         window.uploadedEntry.Text = "0";
 
-
     }
 
     static void updateDownloadStatus(System.Object source)

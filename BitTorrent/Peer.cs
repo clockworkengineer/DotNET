@@ -11,6 +11,7 @@ using System;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace BitTorrent
 {
@@ -43,6 +44,7 @@ namespace BitTorrent
         private string _ip;
         private UInt32 _port;
         private bool _peerChoking=true;
+        private ManualResetEvent _peerChokingEvent;
         private bool _interested = true;
         private Socket _peerSocket;
         private byte[] _infoHash;
@@ -55,7 +57,9 @@ namespace BitTorrent
         private UInt32 _packetLength = 0;
         private bool _lengthRead = false;
         private bool _bitfieldReceived = false;
+        private ManualResetEvent _bitfieldReceivedEvent;
         private byte[] _remotePieceBitfield;
+        private ManualResetEvent _waitForPieceAssemblyEvent;
 
         public bool PeerChoking { get => _peerChoking; set => _peerChoking = value; }
         public Socket PeerSocket { get => _peerSocket; set => _peerSocket = value; }
@@ -68,6 +72,9 @@ namespace BitTorrent
         public uint PacketLength { get => _packetLength; set => _packetLength = value; }
         public bool BitfieldReceived { get => _bitfieldReceived; set => _bitfieldReceived = value; }
         public PieceBuffer AssembledPiece { get => _assembledPiece; set => _assembledPiece = value; }
+        public ManualResetEvent WaitForPieceAssemblyEvent { get => _waitForPieceAssemblyEvent; set => _waitForPieceAssemblyEvent = value; }
+        public ManualResetEvent PeerChokingEvent { get => _peerChokingEvent; set => _peerChokingEvent = value; }
+        public ManualResetEvent BitfieldReceivedEvent { get => _bitfieldReceivedEvent; set => _bitfieldReceivedEvent = value; }
 
         private void ReadPacketCallBack(IAsyncResult readAsyncState)
         {
@@ -140,6 +147,9 @@ namespace BitTorrent
             _torrentDownloader = fileDownloader;
             _readBuffer = new byte[Constants.kBlockSize + (2*Constants.kSizeOfUInt32) + 1]; // Maximum possible packet size
             _assembledPiece = new PieceBuffer(fileDownloader.Dc.pieceLength);
+            _waitForPieceAssemblyEvent = new ManualResetEvent(false);
+            _peerChokingEvent = new ManualResetEvent(false);
+            _bitfieldReceivedEvent = new ManualResetEvent(false);
         }
 
         public void Connect()
@@ -205,6 +215,10 @@ namespace BitTorrent
                 {
                     _assembledPiece.Number = pieceNumber;
                     _torrentDownloader.Dc.totalBytesDownloaded += (UInt64)_torrentDownloader.Dc.pieceMap[pieceNumber].lastBlockLength;
+                }
+                if (TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
+                {
+                    _waitForPieceAssemblyEvent.Set();
                 }
             }
             catch (Error)

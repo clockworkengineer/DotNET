@@ -33,6 +33,7 @@ namespace BitTorrent
         private List<Peer> _remotePeers;                    // Connected remote peers
         private List<FileDetails> _filesToDownload;         // Files to download in torrent
         private bool _downloading = true;                   // == true then downloading torrent
+        private ManualResetEvent _downloadingEvent;         // Used to waitOn when downloads == false
 
         public FileDownloader FileToDownloader { get => _fileToDownloader; set => _fileToDownloader = value; }
         public bool Downloading { get => _downloading;  }
@@ -58,14 +59,14 @@ namespace BitTorrent
 
                 PWP.Unchoke(remotePeer);
 
-                for (; !remotePeer.BitfieldReceived;) { };
+                remotePeer.BitfieldReceivedEvent.WaitOne();
 
                 for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
                 {
 
                     Program.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                    for (; remotePeer.PeerChoking;) { if (cancelAssemblerTask.IsCancellationRequested) return; };
+                    remotePeer.PeerChokingEvent.WaitOne();
 
                     UInt32 blockNumber = 0;
                     for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
@@ -76,7 +77,8 @@ namespace BitTorrent
                     PWP.Request(remotePeer, nextPiece, blockNumber * Constants.kBlockSize,
                                  (UInt32)FileToDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
 
-                    await Task.Run(() => { for (; !FileToDownloader.Dc.HasPieceBeenAssembled(nextPiece);) {  } });
+                    remotePeer.WaitForPieceAssemblyEvent.WaitOne();
+                    remotePeer.WaitForPieceAssemblyEvent.Reset();
 
                     Program.Logger.Debug($"All blocks for piece {nextPiece} received");
 
@@ -91,9 +93,12 @@ namespace BitTorrent
                         progressFunction(progressData);
                     }
 
-                    for (; !Downloading;) { if (cancelAssemblerTask.IsCancellationRequested) return; };
+                    _downloadingEvent.WaitOne();
 
-                    if (cancelAssemblerTask.IsCancellationRequested) return;
+                    if (cancelAssemblerTask.IsCancellationRequested)
+                    {
+                        return;
+                    }
 
                     Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
 
@@ -153,11 +158,11 @@ namespace BitTorrent
         {
             TorrentMetaInfo = new MetaInfoFile(torrentFileName);
             _downloadPath = downloadPath;
-       
+            _downloadingEvent = new ManualResetEvent(true);
         }
 
         /// <summary>
-        /// Load this instance.
+        /// Load FileAgent instance.
         /// </summary>
         public void Load()
         {
@@ -221,13 +226,13 @@ namespace BitTorrent
 
                 _mainTracker.StartAnnouncing();
 
-                //PeerDetails peerId = new PeerDetails();
-                //peerId.ip = CurrentAnnouneResponse.peers[0].ip;
-                //peerId.port = CurrentAnnouneResponse.peers[0].port;
-                //for (var cnt01 = 0; cnt01 < 5; cnt01++)
-                //{
-                //    CurrentAnnouneResponse.peers.Add(peerId);
-                //}
+                PeerDetails peerId = new PeerDetails();
+                peerId.ip = CurrentAnnouneResponse.peers[0].ip;
+                peerId.port = CurrentAnnouneResponse.peers[0].port;
+                for (var cnt01 = 0; cnt01 < 5; cnt01++)
+                {
+                    CurrentAnnouneResponse.peers.Add(peerId);
+                }
 
                 CreateAndConnectPeers();
 
@@ -374,6 +379,7 @@ namespace BitTorrent
             try
             {
                 _downloading = true;
+                _downloadingEvent.Set();
             }
             catch (Error)
             {
@@ -393,6 +399,7 @@ namespace BitTorrent
             try
             {
                 _downloading = false;
+                _downloadingEvent.Reset();
             }
             catch (Error)
             {
