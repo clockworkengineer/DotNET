@@ -55,7 +55,7 @@ namespace BitTorrent
             UInt32 pieceOffset = pieceNumber * Constants.kHashLength;
             for (var byteNumber = 0; byteNumber < Constants.kHashLength; byteNumber++)
             {
-                if (hash[byteNumber] != _dc.pieces[pieceOffset + byteNumber])
+                if (hash[byteNumber] != _dc.piecesInfoHash[pieceOffset + byteNumber])
                 {
                     return (false);
                 }
@@ -139,26 +139,34 @@ namespace BitTorrent
             {
                 PieceBuffer pieceBuffer = _dc.pieceBufferWriteQueue.Take();
 
-                if (!CheckPieceHash(pieceBuffer.PieceNumber, pieceBuffer.Buffer, _dc.GetPieceLength(pieceBuffer.PieceNumber)))
+                if (CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, _dc.GetPieceLength(pieceBuffer.Number)))
                 {
-                    Program.Logger.Error($"Error: Hash for piece {pieceBuffer.PieceNumber} is invalid.");
-                    return;
-                }
+                    Program.Logger.Trace($"writePieceToFiles({pieceBuffer.Number})");
 
-                Program.Logger.Trace($"writePieceToFiles({pieceBuffer.PieceNumber})");
+                    UInt64 startOffset = (UInt64)(pieceBuffer.Number * _dc.pieceLength);
+                    UInt64 endOffset = startOffset + (UInt64)_dc.pieceLength;
 
-                UInt64 startOffset = (UInt64)(pieceBuffer.PieceNumber * _dc.pieceLength);
-                UInt64 endOffset = startOffset + (UInt64)_dc.pieceLength;
-
-                foreach (var file in _filesToDownload)
-                {
-                    if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                    foreach (var file in _filesToDownload)
                     {
-                        UInt64 startWrite = Math.Max(startOffset, file.offset);
-                        UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
-                        WritePieceToFile(pieceBuffer.Buffer, file, startWrite, endWrite - startWrite);
+                        if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                        {
+                            UInt64 startWrite = Math.Max(startOffset, file.offset);
+                            UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
+                            using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
+                            {
+                                stream.Seek((Int64)(startWrite - file.offset), SeekOrigin.Begin);
+                                stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % _dc.pieceLength), (Int32)(endWrite - startWrite));
+                                stream.Flush();
+                            }
+                        }
                     }
                 }
+                else
+                {
+                     Program.Logger.Error($"Error: Hash for piece {pieceBuffer.Number} is invalid.");
+                }
+
+              
             }
 
         }
@@ -175,32 +183,6 @@ namespace BitTorrent
         ~FileDownloader()
         {
             _dc.pieceBufferWriteQueue.CompleteAdding();
-        }
-
-        public void WritePieceToFile(byte[] pieceBuffer, FileDetails file, UInt64 startOffset, UInt64 length)
-        {
-
-            try
-            {
-                Program.Logger.Trace($"writePieceToFile({file.name},{startOffset},{length})");
-
-                using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
-                {
-                    stream.Seek((Int64)(startOffset - file.offset), SeekOrigin.Begin);
-                    stream.Write(pieceBuffer, (Int32) (startOffset % _dc.pieceLength), (Int32)length);
-                    stream.Flush();
-                }
-
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Program.Logger.Debug(ex);
-            }
-
         }
 
         public void BuildDownloadedPiecesMap()

@@ -182,7 +182,7 @@ public partial class MainWindow : Gtk.Window
         if (_torrentFileAgent.Downloading)
         {
             pauseContinueButton.Label = "Continue";
-            _torrentFileAgent.Stop();
+            _torrentFileAgent.Pause();
         }
         else
         {

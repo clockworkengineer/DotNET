@@ -25,7 +25,8 @@ namespace BitTorrent
         private  string _kPathSeparator = $"{Path.DirectorySeparatorChar}";
 
         public Dictionary<string, byte[]> MetaInfoDict { get => _metaInfoDict; set => _metaInfoDict = value; }
-      
+        public string TorrentFileName { get => _torrentFileName; set => _torrentFileName = value; }
+
         private void getListOfDictionarys(BNodeBase bNodeRoot, string field)
         {
             BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
@@ -152,7 +153,7 @@ namespace BitTorrent
     
         public MetaInfoFile(string fileName)
         {
-            _torrentFileName = fileName;
+            TorrentFileName = fileName;
             _metaInfoDict = new Dictionary<string, byte[]>();
         }
 
@@ -179,12 +180,12 @@ namespace BitTorrent
         {
             try
             {
-                _metaInfoData = System.IO.File.ReadAllBytes(_torrentFileName);
+                _metaInfoData = System.IO.File.ReadAllBytes(TorrentFileName);
             }
             catch (System.IO.FileNotFoundException ex)
             {
                 Program.Logger.Debug(ex);
-                throw new BitTorrent.Error ($"Error: Could not find torrent file {_torrentFileName}");
+                throw new BitTorrent.Error ($"Error: Could not find torrent file {TorrentFileName}");
             }
             catch (Error)
             {

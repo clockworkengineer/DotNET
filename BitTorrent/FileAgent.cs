@@ -19,21 +19,20 @@ namespace BitTorrent
 {
 
     /// <summary>
-    /// File agent class defintion.
+    /// File agent class definition.
     /// </summary>
     public class FileAgent
     {
         public delegate void ProgessCallBack(Object progressData);
 
-        private string _torrentFileName = String.Empty;
-        private MetaInfoFile _torrentMetaInfo;
-        private string _downloadPath;
-        private Tracker _mainTracker;
-        private AnnounceResponse _currentAnnouneResponse;
-        private FileDownloader _fileToDownloader;
-        private List<Peer> _remotePeers;
-        private List<FileDetails> _filesToDownload;
-        private bool _downloading = true;
+        private MetaInfoFile _torrentMetaInfo;              // Torrent Metafile information
+        private string _downloadPath;                       // Download root patch
+        private Tracker _mainTracker;                       // Main torrent tracker
+        private AnnounceResponse _currentAnnouneResponse;   // Current tracker annouce respose
+        private FileDownloader _fileToDownloader;           // FileDownloader for torrent
+        private List<Peer> _remotePeers;                    // Connected remote peers
+        private List<FileDetails> _filesToDownload;         // Files to download in torrent
+        private bool _downloading = true;                   // == true then downloading torrent
 
         public FileDownloader FileToDownloader { get => _fileToDownloader; set => _fileToDownloader = value; }
         public bool Downloading { get => _downloading;  }
@@ -42,20 +41,20 @@ namespace BitTorrent
         public List<Peer> RemotePeers { get => _remotePeers; set => _remotePeers = value; }
 
         /// <summary>
-        /// Assembles the pieces.
+        /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
         /// </summary>
-        /// <returns>The pieces.</returns>
+        /// <returns>Task reference on completion.</returns>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="progressFunction">Progress function.</param>
         /// <param name="progressData">Progress data.</param>
-        private async Task AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData, CancellationTokenSource cancelPeerSource)
+        private async Task AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData, CancellationTokenSource cancelAssemblerTaskSource)
         {
 
             try
             {
                 Program.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
-                CancellationToken cancelPeer = cancelPeerSource.Token;
+                CancellationToken cancelAssemblerTask = cancelAssemblerTaskSource.Token;
 
                 PWP.Unchoke(remotePeer);
 
@@ -66,7 +65,7 @@ namespace BitTorrent
 
                     Program.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                    await Task.Run(() => { for (; remotePeer.PeerChoking;) { } });
+                    for (; remotePeer.PeerChoking;) { if (cancelAssemblerTask.IsCancellationRequested) return; };
 
                     UInt32 blockNumber = 0;
                     for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
@@ -81,7 +80,7 @@ namespace BitTorrent
 
                     Program.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                    PieceBuffer pieceBuffer = new PieceBuffer(nextPiece, remotePeer.PieceBuffer);
+                    PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.AssembledPiece);
                     _fileToDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
 
                     _mainTracker.Left = (UInt64)FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
@@ -92,9 +91,9 @@ namespace BitTorrent
                         progressFunction(progressData);
                     }
 
-                    for (; !Downloading;) { if (cancelPeer.IsCancellationRequested) return; };
+                    for (; !Downloading;) { if (cancelAssemblerTask.IsCancellationRequested) return; };
 
-                    if (cancelPeer.IsCancellationRequested) return;
+                    if (cancelAssemblerTask.IsCancellationRequested) return;
 
                     Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
 
@@ -105,18 +104,18 @@ namespace BitTorrent
             catch (Error ex)
             {
                 Program.Logger.Error(ex.Message);
-                cancelPeerSource.Cancel();
+                cancelAssemblerTaskSource.Cancel();
             }
             catch (Exception ex)
             {
                 Program.Logger.Error(ex);
-                cancelPeerSource.Cancel();
+                cancelAssemblerTaskSource.Cancel();
             }
 
         }
 
         /// <summary>
-        /// Creates the and connect peers.
+        /// Creates the and connect remote torrent peers.
         /// </summary>
         private void CreateAndConnectPeers()
         {
@@ -146,13 +145,13 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:BitTorrent.FileAgent"/> class.
+        /// Initializes a new instance of the FileAgent class.
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
         public FileAgent(string torrentFileName, String downloadPath)
         {
-            _torrentFileName = torrentFileName;
+            TorrentMetaInfo = new MetaInfoFile(torrentFileName);
             _downloadPath = downloadPath;
        
         }
@@ -166,8 +165,7 @@ namespace BitTorrent
             try
             {
                 Program.Logger.Info("Loading MetaInfo for torrent file ....");
-
-                TorrentMetaInfo = new MetaInfoFile(_torrentFileName);
+             
                 TorrentMetaInfo.Load();
                 TorrentMetaInfo.Parse();
 
@@ -223,16 +221,13 @@ namespace BitTorrent
 
                 _mainTracker.StartAnnouncing();
 
-                PeerDetails peerId = new PeerDetails();
-
-                peerId.ip = CurrentAnnouneResponse.peers[0].ip;
-                peerId.port = CurrentAnnouneResponse.peers[0].port;
-
-               CurrentAnnouneResponse.peers.Add(peerId);
-               CurrentAnnouneResponse.peers.Add(peerId);
-               CurrentAnnouneResponse.peers.Add(peerId);
-                CurrentAnnouneResponse.peers.Add(peerId);
-                CurrentAnnouneResponse.peers.Add(peerId);
+                //PeerDetails peerId = new PeerDetails();
+                //peerId.ip = CurrentAnnouneResponse.peers[0].ip;
+                //peerId.port = CurrentAnnouneResponse.peers[0].port;
+                //for (var cnt01 = 0; cnt01 < 5; cnt01++)
+                //{
+                //    CurrentAnnouneResponse.peers.Add(peerId);
+                //}
 
                 CreateAndConnectPeers();
 
@@ -256,17 +251,17 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Download the specified progressFunction and progressData.
+        /// Download a torrent using an piece assembler per connected peer.
         /// </summary>
-        /// <param name="progressFunction">Progress function.</param>
-        /// <param name="progressData">Progress data.</param>
+        /// <param name="progressFunction">User defined grogress function.</param>
+        /// <param name="progressData">User defined grogress function data.</param>
         public void Download(ProgessCallBack progressFunction = null, Object progressData = null)
         {
 
             try
             {
                 List<Task> assembleTasks = new List<Task>();
-                CancellationTokenSource cancelPeerSource = new CancellationTokenSource();
+                CancellationTokenSource cancelAssemblerTaskSource = new CancellationTokenSource();
 
                 Program.Logger.Info("Starting torrent download for MetaInfo data ...");
 
@@ -274,12 +269,12 @@ namespace BitTorrent
 
                 foreach (var peer in RemotePeers)
                 {
-                    assembleTasks.Add(AssemblePieces(peer, progressFunction, progressData, cancelPeerSource));
+                    assembleTasks.Add(AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource));
                 }
 
                 Task.WaitAll(assembleTasks.ToArray());
 
-                if (!cancelPeerSource.IsCancellationRequested)
+                if (!cancelAssemblerTaskSource.IsCancellationRequested)
                 {
                     _mainTracker.Event = Tracker.TrackerEvent.completed;
                     Program.Logger.Info("Whole Torrent finished downloading.");
@@ -307,7 +302,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Loads the async.
+        /// Load FileAgent asynchronously.
         /// </summary>
         /// <returns>The async.</returns>
         public async Task LoadAsync()
@@ -327,10 +322,10 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Downloads the async.
+        /// Download torrent asynchronously.
         /// </summary>
-        /// <param name="progressFunction">Progress function.</param>
-        /// <param name="progressData">Progress data.</param>
+        /// <param name="progressFunction">User defined grogress function.</param>
+        /// <param name="progressData">User defined grogress function data.</param>
         public async void DownloadAsync(ProgessCallBack progressFunction = null, Object progressData = null)
         {
             try
@@ -348,7 +343,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Close this instance.
+        /// Closedown FileAgent
         /// </summary>
         public void Close()
         {
@@ -358,7 +353,6 @@ namespace BitTorrent
                 Program.Logger.Info("Closing peer socket.");
                 foreach (var peer in RemotePeers)
                 {
-                    peer.ReadFromRemotePeer = false;
                     peer.PeerSocket.Close();
                 }
             }
@@ -373,7 +367,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Start this instance.
+        /// Start downloading torrent.
         /// </summary>
         public void Start()
         {
@@ -392,9 +386,9 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Stop this instance.
+        /// Pause downloading torrent.
         /// </summary>
-        public void Stop()
+        public void Pause()
         {
             try
             {

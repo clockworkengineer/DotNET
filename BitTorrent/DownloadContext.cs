@@ -41,14 +41,14 @@ namespace BitTorrent
     /// </summary>
     public class DownloadContext
     {
-        public PieceBlockMap[] pieceMap;
-        public UInt64 totalBytesDownloaded = 0;
-        public UInt64 totalLength = 0;
-        public UInt32 pieceLength = 0;
-        public UInt32 blocksPerPiece = 0;
-        public byte[] pieces;
-        public UInt32 numberOfPieces = 0;
-        public BlockingCollection<PieceBuffer> pieceBufferWriteQueue;
+        public PieceBlockMap[] pieceMap;                                // Piece map for current download
+        public BlockingCollection<PieceBuffer> pieceBufferWriteQueue;   // Write buffer for pieces towrite to files
+        public UInt64 totalBytesDownloaded = 0;                         // Total downloaded bytes
+        public UInt64 totalLength = 0;                                  // Total length of torrent files
+        public UInt32 pieceLength = 0;                                  // Piece length in bytes
+        public UInt32 blocksPerPiece = 0;                               // Blocks per piece
+        public byte[] piecesInfoHash;                                   // Pieces info hash checksum
+        public UInt32 numberOfPieces = 0;                               // Number of pieces to transfer
 
         /// <summary>
         /// Initializes a new instance of the DownloadContext class.
@@ -66,7 +66,7 @@ namespace BitTorrent
                 }
 
                 this.pieceLength = pieceLength;
-                this.pieces = pieces;
+                piecesInfoHash = pieces;
                 numberOfPieces = ((UInt32)(pieces.Length / Constants.kHashLength));
                 blocksPerPiece = pieceLength / Constants.kBlockSize;
 
@@ -99,17 +99,15 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
+                if (local)
                 {
-                    if (local)
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
-                    }
-                    else
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
-                    }
+                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
                 }
+                else
+                {
+                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+                }
+                
             }
             catch (Error)
             {
@@ -127,17 +125,16 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
+              
+                if (requested)
                 {
-                    if (requested)
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.Requested;
-                    }
-                    else
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
-                    }
+                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.Requested;
                 }
+                else
+                {
+                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
+                }
+            
             }
             catch (Error)
             {
@@ -159,16 +156,13 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
+                if (noPeer)
                 {
-                    if (noPeer)
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
-                    }
-                    else
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.OnPeer ^ 0xff);
-                    }
+                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
+                }
+                else
+                {
+                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.OnPeer ^ 0xff);
                 }
             }
             catch (Error)
@@ -191,18 +185,15 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
+                if (downloaded)
                 {
-                    if (downloaded)
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
-                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
-                    }
-                    else
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
-                    }
+                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
+                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
                 }
+                else
+                {
+                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+                }              
             }
             catch (Error)
             {
@@ -224,16 +215,13 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
+                if (last)
                 {
-                    if (last)
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.LastBlock;
-                    }
-                    else
-                    {
-                        pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.LastBlock ^ 0xff);
-                    }
+                    pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.LastBlock;
+                }
+                else
+                {
+                    pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.LastBlock ^ 0xff);
                 }
             }
             catch (Error)
@@ -256,10 +244,7 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
-                {
-                    return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer);
-                }
+                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer);
             }
             catch (Error)
             {
@@ -282,10 +267,7 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
-                {
-                    return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal);
-                }
+                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal);
             }
             catch (Error)
             {
@@ -308,10 +290,7 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
-                {
-                    return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested);
-                }
+                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested);
             }
             catch (Error)
             {
@@ -334,10 +313,7 @@ namespace BitTorrent
         {
             try
             {
-                lock (this)
-                {
-                    return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock);
-                }
+                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock);
             }
             catch (Error)
             {

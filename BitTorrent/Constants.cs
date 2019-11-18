@@ -17,6 +17,7 @@ namespace BitTorrent
         public const int kBlockSize = 1024*16;      // Client Block size
         public const int kHashLength = 20;          // Length of SHA1 hash in bytes
         public const byte kSizeOfUInt32 = 4;        // Number of bytes in wire protocol message length
+        public const int kReadSocketTimeout = 5;    // Read socket timeout in seconds
 
         public const byte kMessageCHOKE = 0;        // Ids of wire protocol messages
         public const byte kMessageUNCHOKE = 1;

@@ -17,14 +17,14 @@ namespace BitTorrent
     public class Error : Exception
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:BitTorrent.Error"/> class.
+        /// Initializes a new instance of the BitTorrent Error class.
         /// </summary>
         public Error() 
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:BitTorrent.Error"/> class.
+        /// Initializes a new instance of the BitTorrent Error class
         /// </summary>
         /// <param name="message">Message.</param>
         public Error(string message) : base(message)
@@ -32,7 +32,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:BitTorrent.Error"/> class.
+        /// Initializes a new instance of the BitTorrent Error class
         /// </summary>
         /// <param name="message">Message.</param>
         /// <param name="innerException">Inner exception.</param>
@@ -41,7 +41,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:BitTorrent.Error"/> class.
+        /// Initializes a new instance of the BitTorrent Error class for serializtion purposes.
         /// </summary>
         /// <param name="info">Info.</param>
         /// <param name="context">Context.</param>

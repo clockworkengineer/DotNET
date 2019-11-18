@@ -165,7 +165,7 @@ namespace BitTorrent
                 }
             }
 
-            Program.Logger.Info($"Unchoked Peers {unChokedPeers}/{ _torrentFileAgent.RemotePeers.Count}");
+            Program.Logger.Debug($"Unchoked Peers {unChokedPeers}/{ _torrentFileAgent.RemotePeers.Count}");
 
         }
 
