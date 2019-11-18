@@ -84,15 +84,14 @@ namespace BitTorrent
 
         private static void HandleCHOKE(Peer remotePeer)
         {
-            remotePeer.PeerChoking = true;
-            remotePeer.PeerChokingEvent.Reset();
+            remotePeer.PeerChoking.Reset();
             Program.Logger.Debug("CHOKE");
         }
 
         private static void HandleUNCHOKE(Peer remotePeer)
         {
-            remotePeer.PeerChoking = false;
-            remotePeer.PeerChokingEvent.Set();
+ 
+            remotePeer.PeerChoking.Set();
             Program.Logger.Debug("UNCHOKED");
         }
 

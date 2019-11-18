@@ -43,8 +43,7 @@ namespace BitTorrent
     {  
         private string _ip;
         private UInt32 _port;
-        private bool _peerChoking=true;
-        private ManualResetEvent _peerChokingEvent;
+        private ManualResetEvent _peerChoking;
         private bool _interested = true;
         private Socket _peerSocket;
         private byte[] _infoHash;
@@ -56,12 +55,10 @@ namespace BitTorrent
         private UInt32 _bytesRead = 0;
         private UInt32 _packetLength = 0;
         private bool _lengthRead = false;
-        private bool _bitfieldReceived = false;
-        private ManualResetEvent _bitfieldReceivedEvent;
+        private ManualResetEvent _bitfieldReceived;
         private byte[] _remotePieceBitfield;
-        private ManualResetEvent _waitForPieceAssemblyEvent;
+        private ManualResetEvent _waitForPieceAssembly;
 
-        public bool PeerChoking { get => _peerChoking; set => _peerChoking = value; }
         public Socket PeerSocket { get => _peerSocket; set => _peerSocket = value; }
         public byte[] ReadBuffer { get => _readBuffer; set => _readBuffer = value; }
         public bool Connected { get => _connected; set => _connected = value; }
@@ -70,11 +67,10 @@ namespace BitTorrent
         public bool Interested { get => _interested; set => _interested = value; }
         public byte[] RemotePieceBitfield { get => _remotePieceBitfield; set => _remotePieceBitfield = value; }
         public uint PacketLength { get => _packetLength; set => _packetLength = value; }
-        public bool BitfieldReceived { get => _bitfieldReceived; set => _bitfieldReceived = value; }
         public PieceBuffer AssembledPiece { get => _assembledPiece; set => _assembledPiece = value; }
-        public ManualResetEvent WaitForPieceAssemblyEvent { get => _waitForPieceAssemblyEvent; set => _waitForPieceAssemblyEvent = value; }
-        public ManualResetEvent PeerChokingEvent { get => _peerChokingEvent; set => _peerChokingEvent = value; }
-        public ManualResetEvent BitfieldReceivedEvent { get => _bitfieldReceivedEvent; set => _bitfieldReceivedEvent = value; }
+        public ManualResetEvent WaitForPieceAssembly { get => _waitForPieceAssembly; set => _waitForPieceAssembly = value; }
+        public ManualResetEvent PeerChoking { get => _peerChoking; set => _peerChoking = value; }
+        public ManualResetEvent BitfieldReceived { get => _bitfieldReceived; set => _bitfieldReceived = value; }
 
         private void ReadPacketCallBack(IAsyncResult readAsyncState)
         {
@@ -147,9 +143,9 @@ namespace BitTorrent
             _torrentDownloader = fileDownloader;
             _readBuffer = new byte[Constants.kBlockSize + (2*Constants.kSizeOfUInt32) + 1]; // Maximum possible packet size
             _assembledPiece = new PieceBuffer(fileDownloader.Dc.pieceLength);
-            _waitForPieceAssemblyEvent = new ManualResetEvent(false);
-            _peerChokingEvent = new ManualResetEvent(false);
-            _bitfieldReceivedEvent = new ManualResetEvent(false);
+            _waitForPieceAssembly = new ManualResetEvent(false);
+            _peerChoking = new ManualResetEvent(false);
+            _bitfieldReceived = new ManualResetEvent(false);
         }
 
         public void Connect()
@@ -218,7 +214,7 @@ namespace BitTorrent
                 }
                 if (TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
                 {
-                    _waitForPieceAssemblyEvent.Set();
+                    _waitForPieceAssembly.Set();
                 }
             }
             catch (Error)

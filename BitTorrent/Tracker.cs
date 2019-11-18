@@ -159,7 +159,7 @@ namespace BitTorrent
 
             foreach (var peer in _torrentFileAgent.RemotePeers)
             {
-                if (!peer.PeerChoking)
+                if (!peer.PeerChoking.WaitOne(0))
                 {
                     unChokedPeers++;
                 }

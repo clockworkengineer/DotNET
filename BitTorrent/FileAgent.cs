@@ -32,11 +32,9 @@ namespace BitTorrent
         private FileDownloader _fileToDownloader;           // FileDownloader for torrent
         private List<Peer> _remotePeers;                    // Connected remote peers
         private List<FileDetails> _filesToDownload;         // Files to download in torrent
-        private bool _downloading = true;                   // == true then downloading torrent
-        private ManualResetEvent _downloadingEvent;         // Used to waitOn when downloads == false
+        private ManualResetEvent _downloading;              // WaitOn when downloads == false
 
         public FileDownloader FileToDownloader { get => _fileToDownloader; set => _fileToDownloader = value; }
-        public bool Downloading { get => _downloading;  }
         public AnnounceResponse CurrentAnnouneResponse { get => _currentAnnouneResponse; set => _currentAnnouneResponse = value; }
         public MetaInfoFile TorrentMetaInfo { get => _torrentMetaInfo; set => _torrentMetaInfo = value; }
         public List<Peer> RemotePeers { get => _remotePeers; set => _remotePeers = value; }
@@ -59,14 +57,14 @@ namespace BitTorrent
 
                 PWP.Unchoke(remotePeer);
 
-                remotePeer.BitfieldReceivedEvent.WaitOne();
+                remotePeer.BitfieldReceived.WaitOne();
 
                 for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
                 {
 
                     Program.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                    remotePeer.PeerChokingEvent.WaitOne();
+                    remotePeer.PeerChoking.WaitOne();
 
                     UInt32 blockNumber = 0;
                     for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
@@ -77,8 +75,8 @@ namespace BitTorrent
                     PWP.Request(remotePeer, nextPiece, blockNumber * Constants.kBlockSize,
                                  (UInt32)FileToDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
 
-                    remotePeer.WaitForPieceAssemblyEvent.WaitOne();
-                    remotePeer.WaitForPieceAssemblyEvent.Reset();
+                    remotePeer.WaitForPieceAssembly.WaitOne();
+                    remotePeer.WaitForPieceAssembly.Reset();
 
                     Program.Logger.Debug($"All blocks for piece {nextPiece} received");
 
@@ -93,7 +91,7 @@ namespace BitTorrent
                         progressFunction(progressData);
                     }
 
-                    _downloadingEvent.WaitOne();
+                    _downloading.WaitOne();
 
                     if (cancelAssemblerTask.IsCancellationRequested)
                     {
@@ -158,7 +156,7 @@ namespace BitTorrent
         {
             TorrentMetaInfo = new MetaInfoFile(torrentFileName);
             _downloadPath = downloadPath;
-            _downloadingEvent = new ManualResetEvent(true);
+            _downloading = new ManualResetEvent(true);
         }
 
         /// <summary>
@@ -378,8 +376,7 @@ namespace BitTorrent
         {
             try
             {
-                _downloading = true;
-                _downloadingEvent.Set();
+                 _downloading.Set();
             }
             catch (Error)
             {
@@ -398,8 +395,7 @@ namespace BitTorrent
         {
             try
             {
-                _downloading = false;
-                _downloadingEvent.Reset();
+                 _downloading.Reset();
             }
             catch (Error)
             {
