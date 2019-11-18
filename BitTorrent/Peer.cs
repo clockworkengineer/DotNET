@@ -47,14 +47,14 @@ namespace BitTorrent
         private bool _interested = true;
         private Socket _peerSocket;
         private byte[] _infoHash;
-        private bool _connected = false;
+        private bool _connected;
         private byte[] _remotePeerID;
         private FileDownloader _torrentDownloader;
         private PieceBuffer _assembledPiece;
         private byte[] _readBuffer;
-        private UInt32 _bytesRead = 0;
-        private UInt32 _packetLength = 0;
-        private bool _lengthRead = false;
+        private UInt32 _bytesRead;
+        private UInt32 _packetLength;
+        private bool _lengthRead;
         private ManualResetEvent _bitfieldReceived;
         private byte[] _remotePieceBitfield;
         private ManualResetEvent _waitForPieceAssembly;
@@ -90,7 +90,7 @@ namespace BitTorrent
                         remotePeer.PacketLength = ((UInt32)remotePeer._readBuffer[0]) << 24;
                         remotePeer.PacketLength |= ((UInt32)remotePeer._readBuffer[1]) << 16;
                         remotePeer.PacketLength |= ((UInt32)remotePeer._readBuffer[2]) << 8;
-                        remotePeer.PacketLength |= ((UInt32)remotePeer._readBuffer[3]);
+                        remotePeer.PacketLength |= remotePeer._readBuffer[3];
                         remotePeer._lengthRead = true;
                         remotePeer._bytesRead = 0;
                     }
@@ -182,12 +182,12 @@ namespace BitTorrent
 
         public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            return ((_remotePieceBitfield[pieceNumber>>3] & (byte)(Int32) 0x80 >> (Int32)(pieceNumber&0x7))!=0);
+            return ((_remotePieceBitfield[pieceNumber>>3] & 0x80 >> (Int32)(pieceNumber&0x7))!=0);
         }
 
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            _remotePieceBitfield[pieceNumber >> 3] |= (byte) ((Int32) 0x80 >> (Int32)(pieceNumber & 0x7));
+            _remotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
         }
 
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
@@ -205,12 +205,12 @@ namespace BitTorrent
 
                 if (!_torrentDownloader.Dc.IsBlockPieceLast(pieceNumber, blockNumber))
                 {
-                    _torrentDownloader.Dc.totalBytesDownloaded += (UInt64)Constants.kBlockSize;
+                    _torrentDownloader.Dc.totalBytesDownloaded += Constants.kBlockSize;
                 }
                 else
                 {
                     _assembledPiece.Number = pieceNumber;
-                    _torrentDownloader.Dc.totalBytesDownloaded += (UInt64)_torrentDownloader.Dc.pieceMap[pieceNumber].lastBlockLength;
+                    _torrentDownloader.Dc.totalBytesDownloaded += _torrentDownloader.Dc.pieceMap[pieceNumber].lastBlockLength;
                 }
                 if (TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
                 {

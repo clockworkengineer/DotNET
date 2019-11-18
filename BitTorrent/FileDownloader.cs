@@ -17,7 +17,9 @@ using System.Threading.Tasks;
 
 namespace BitTorrent
 {
-
+    /// <summary>
+    /// File downloader.
+    /// </summary>
     public class FileDownloader
     {
 
@@ -28,6 +30,9 @@ namespace BitTorrent
 
         public DownloadContext Dc { get => _dc; set => _dc = value; }
 
+        /// <summary>
+        /// Creates the empty files on disk.
+        /// </summary>
         private void CreateEmptyFilesOnDisk()
         {
             Program.Logger.Debug("Creating empty files as placeholders for downloading ...");
@@ -49,6 +54,13 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Checks the piece hash.
+        /// </summary>
+        /// <returns><c>true</c>, if piece hash was checked, <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="pieceBuffer">Piece buffer.</param>
+        /// <param name="numberOfBytes">Number of bytes.</param>
         private bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
             byte[] hash = _sha.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
@@ -64,13 +76,19 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Generates the piece map from buffer.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="pieceBuffer">Piece buffer.</param>
+        /// <param name="numberOfBytes">Number of bytes.</param>
         private void GeneratePieceMapFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
 
             bool pieceThere = CheckPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
             if (pieceThere)
             {
-                _dc.totalBytesDownloaded += (UInt64)numberOfBytes;
+                _dc.totalBytesDownloaded += numberOfBytes;
             }
             UInt32 blockNumber = 0;
             for (; blockNumber < numberOfBytes / Constants.kBlockSize; blockNumber++)
@@ -80,8 +98,8 @@ namespace BitTorrent
             }
             if (numberOfBytes % Constants.kBlockSize != 0)
             {
-                _dc.BlockPieceLocal(pieceNumber, (UInt32)numberOfBytes / Constants.kBlockSize, pieceThere);
-                _dc.pieceMap[pieceNumber].lastBlockLength = (UInt32)numberOfBytes % Constants.kBlockSize;
+                _dc.BlockPieceLocal(pieceNumber, numberOfBytes / Constants.kBlockSize, pieceThere);
+                _dc.pieceMap[pieceNumber].lastBlockLength = numberOfBytes % Constants.kBlockSize;
                 _dc.BlockPieceLast(pieceNumber, (numberOfBytes / Constants.kBlockSize), true);
             }
             else
@@ -91,6 +109,9 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Creates the piece map.
+        /// </summary>
         private void CreatePieceMap()
         {
             byte [] pieceBuffer = new byte[_dc.pieceLength];
@@ -113,7 +134,7 @@ namespace BitTorrent
 
                         if (bytesInBuffer == _dc.pieceLength)
                         {
-                            GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, (UInt32)bytesInBuffer);
+                            GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
                             bytesInBuffer = 0;
                             pieceNumber++;
                         }
@@ -126,13 +147,16 @@ namespace BitTorrent
 
             if (bytesInBuffer > 0)
             {
-                GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, (UInt32)bytesInBuffer);
+                GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
             }
 
             Program.Logger.Debug("Finished generating downloaded map.");
 
         }
 
+        /// <summary>
+        /// Pieces the buffer writer.
+        /// </summary>
         private void PieceBufferWriter()
         {
             while(!_dc.pieceBufferWriteQueue.IsCompleted)
@@ -143,8 +167,8 @@ namespace BitTorrent
                 {
                     Program.Logger.Trace($"writePieceToFiles({pieceBuffer.Number})");
 
-                    UInt64 startOffset = (UInt64)(pieceBuffer.Number * _dc.pieceLength);
-                    UInt64 endOffset = startOffset + (UInt64)_dc.pieceLength;
+                    UInt64 startOffset = pieceBuffer.Number * _dc.pieceLength;
+                    UInt64 endOffset = startOffset + _dc.pieceLength;
 
                     foreach (var file in _filesToDownload)
                     {
@@ -171,6 +195,12 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:BitTorrent.FileDownloader"/> class.
+        /// </summary>
+        /// <param name="filesToDownload">Files to download.</param>
+        /// <param name="pieceLength">Piece length.</param>
+        /// <param name="pieces">Pieces.</param>
         public FileDownloader(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
         {
             _filesToDownload = filesToDownload;
@@ -180,11 +210,18 @@ namespace BitTorrent
             _pieceBufferWriterTask.Start();
         }
 
+        /// <summary>
+        /// Releases unmanaged resources and performs other cleanup operations before the
+        /// <see cref="T:BitTorrent.FileDownloader"/> is reclaimed by garbage collection.
+        /// </summary>
         ~FileDownloader()
         {
             _dc.pieceBufferWriteQueue.CompleteAdding();
         }
 
+        /// <summary>
+        /// Builds the downloaded pieces map.
+        /// </summary>
         public void BuildDownloadedPiecesMap()
         {
 
@@ -204,6 +241,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Haves the piece.
+        /// </summary>
+        /// <returns><c>true</c>, if piece was had, <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
         public bool HavePiece(UInt32 pieceNumber)
         {
             try
@@ -231,6 +273,12 @@ namespace BitTorrent
             return (true);
         }
 
+        /// <summary>
+        /// Selects the next piece.
+        /// </summary>
+        /// <returns><c>true</c>, if next piece was selected, <c>false</c> otherwise.</returns>
+        /// <param name="remotePeer">Remote peer.</param>
+        /// <param name="nextPiece">Next piece.</param>
         public bool SelectNextPiece(Peer remotePeer, ref UInt32 nextPiece)
         {
             try
@@ -266,7 +314,7 @@ namespace BitTorrent
                         }
                     }
                 }
-;
+
             }
             catch (Error)
             {

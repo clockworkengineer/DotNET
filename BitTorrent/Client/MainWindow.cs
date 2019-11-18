@@ -170,15 +170,16 @@ public partial class MainWindow : Gtk.Window
 
         await _torrentFileAgent.LoadAsync();
 
-         _torrentFileAgent.DownloadAsync(updateDownloadStatus, this);
+        await _torrentFileAgent.DownloadAsync(updateDownloadStatus, this);
 
         downloadButton.Sensitive = true;
+        pauseContinueButton.Sensitive = false;
 
     }
 
     protected void OnPauseContinueButtonClicked(object sender, EventArgs e)
     {
-        if (_torrentFileAgent.Downloading)
+        if (_torrentFileAgent.Downloading.WaitOne(0))
         {
             pauseContinueButton.Label = "Continue";
             _torrentFileAgent.Pause();

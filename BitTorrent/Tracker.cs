@@ -30,15 +30,15 @@ namespace BitTorrent
         private System.Timers.Timer _announceTimer;
         private string _trackerURL = String.Empty;
         private string _peerID = String.Empty;
-        private FileAgent _torrentFileAgent = null;
+        private FileAgent _torrentFileAgent;
         private AnnounceResponse _currentTrackerResponse;
         private UInt32 _port = 6681;
         private string _ip = String.Empty;
         private UInt32 _compact = 1;
-        private UInt32 _noPeerID = 0;
-        private UInt64 _uploaded = 0;
-        private UInt64 _downloaded = 0;
-        private UInt64 _left = 0;
+        private UInt32 _noPeerID;
+        private UInt64 _uploaded;
+        private UInt64 _downloaded;
+        private UInt64 _left;
         private TrackerEvent _event;
         private string _key = String.Empty;
         private string _trackerID = String.Empty;
@@ -75,7 +75,7 @@ namespace BitTorrent
                         peer.ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}";
                         if (peer.ip.Contains(":"))
                         {
-                            peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":") + 1);
+                            peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
                         }
                         peer.port = (UInt32) peers[num + 4] * 256 + peers[num + 5];
                         Program.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
@@ -98,7 +98,7 @@ namespace BitTorrent
                             }
                             if (peer.ip.Contains(":"))
                             {
-                                peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":") + 1);
+                                peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
                             }
                             peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "port");
                             if (peerField != null)

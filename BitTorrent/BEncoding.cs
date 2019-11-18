@@ -390,13 +390,10 @@ namespace BitTorrent
                     {
                         return (((BNodeDictionary)bNode).dict[entryKey]);
                     }
-                    else
+                    foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
                     {
-                        foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
-                        {
-                            bNodeEntry = GetDictionaryEntry(((BNodeDictionary)bNode).dict[key], entryKey);
-                            if (bNodeEntry != null) break;
-                        }
+                        bNodeEntry = GetDictionaryEntry(((BNodeDictionary)bNode).dict[key], entryKey);
+                        if (bNodeEntry != null) break;
                     }
 
                 }
@@ -441,7 +438,7 @@ namespace BitTorrent
                     {
                         return (Encoding.ASCII.GetString(((BNodeString)entryNode).str));
                     }
-                    else if (entryNode is BNodeNumber)
+                    if (entryNode is BNodeNumber)
                     {
                         return (Encoding.ASCII.GetString(((BNodeNumber)entryNode).number));
                     }

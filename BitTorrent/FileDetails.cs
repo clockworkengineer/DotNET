@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Details associated with each file in a torrent to download
 //
 // Copyright 2019.
 //
@@ -14,9 +14,9 @@ namespace BitTorrent
 {
     public struct FileDetails
     {
-        public string name;
-        public UInt64 length;
-        public string md5sum;
-        public UInt64 offset;
+        public string name;     // File file name path
+        public UInt64 length;   // File length in bytes
+        public string md5sum;   // CHecksum for file (OPTIONAL)
+        public UInt64 offset;   // Offset within torrent stream of file start
     }
 }

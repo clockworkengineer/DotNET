@@ -43,12 +43,12 @@ namespace BitTorrent
     {
         public PieceBlockMap[] pieceMap;                                // Piece map for current download
         public BlockingCollection<PieceBuffer> pieceBufferWriteQueue;   // Write buffer for pieces towrite to files
-        public UInt64 totalBytesDownloaded = 0;                         // Total downloaded bytes
-        public UInt64 totalLength = 0;                                  // Total length of torrent files
-        public UInt32 pieceLength = 0;                                  // Piece length in bytes
-        public UInt32 blocksPerPiece = 0;                               // Blocks per piece
+        public UInt64 totalBytesDownloaded;                             // Total downloaded bytes
+        public UInt64 totalLength;                                      // Total length of torrent files
+        public UInt32 pieceLength;                                      // Piece length in bytes
+        public UInt32 blocksPerPiece;                                   // Blocks per piece
         public byte[] piecesInfoHash;                                   // Pieces info hash checksum
-        public UInt32 numberOfPieces = 0;                               // Number of pieces to transfer
+        public UInt32 numberOfPieces;                                   // Number of pieces to transfer
 
         /// <summary>
         /// Initializes a new instance of the DownloadContext class.
@@ -76,7 +76,7 @@ namespace BitTorrent
                     pieceMap[pieceNuber].blocks = new byte[blocksPerPiece];
                 }
 
-                pieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(boundedCapacity: 10);
+                pieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
 
             }
             catch (Error)
@@ -107,7 +107,7 @@ namespace BitTorrent
                 {
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
                 }
-                
+
             }
             catch (Error)
             {
@@ -125,7 +125,7 @@ namespace BitTorrent
         {
             try
             {
-              
+
                 if (requested)
                 {
                     pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.Requested;
@@ -134,7 +134,7 @@ namespace BitTorrent
                 {
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
                 }
-            
+
             }
             catch (Error)
             {
@@ -193,7 +193,7 @@ namespace BitTorrent
                 else
                 {
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
-                }              
+                }
             }
             catch (Error)
             {
@@ -338,7 +338,7 @@ namespace BitTorrent
 
             try
             {
-  
+
                 for (UInt32 blockNumber = 0; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                 {
                     length += Constants.kBlockSize;
@@ -436,7 +436,6 @@ namespace BitTorrent
         /// Mark all blocks of a piece as requested.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
         public void MarkPieceRequested(UInt32 pieceNumber)
         {
             try
