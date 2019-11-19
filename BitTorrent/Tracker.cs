@@ -156,16 +156,22 @@ namespace BitTorrent
         private void UpdatePeersStatus()
         {
             int unChokedPeers = 0;
+            int activePeers = 0;
 
             foreach (var peer in _torrentFileAgent.RemotePeers)
             {
-                if (!peer.PeerChoking.WaitOne(0))
+                if (peer.PeerChoking.WaitOne(0))
                 {
                     unChokedPeers++;
                 }
+                if (peer.Active)
+                {
+                    activePeers++;
+                }
             }
 
-            Program.Logger.Debug($"Unchoked Peers {unChokedPeers}/{ _torrentFileAgent.RemotePeers.Count}");
+            Program.Logger.Info($"Unchoked Peers {unChokedPeers}/{ _torrentFileAgent.RemotePeers.Count}");
+            Program.Logger.Info($"Active Peers {activePeers}/{ _torrentFileAgent.RemotePeers.Count}");
 
         }
 

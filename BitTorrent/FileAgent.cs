@@ -47,7 +47,7 @@ namespace BitTorrent
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="progressFunction">Progress function.</param>
         /// <param name="progressData">Progress data.</param>
-        private Task AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData, CancellationTokenSource cancelAssemblerTaskSource)
+        private void AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData, CancellationTokenSource cancelAssemblerTaskSource)
         {
 
             try
@@ -60,12 +60,14 @@ namespace BitTorrent
 
                 remotePeer.BitfieldReceived.WaitOne();
 
+                remotePeer.PeerChoking.WaitOne();
+
                 for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
                 {
 
                     Program.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
-
-                    remotePeer.PeerChoking.WaitOne();
+                 
+                    remotePeer.Active = true;
 
                     UInt32 blockNumber = 0;
                     for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
@@ -96,16 +98,16 @@ namespace BitTorrent
 
                     if (cancelAssemblerTask.IsCancellationRequested)
                     {
-                        return Task.FromResult<object>(null);
+                        return;
                     }
 
                     Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
 
+                    remotePeer.PeerChoking.WaitOne();
+
                 }
 
                 Program.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
-
-
 
             }
             catch (Error ex)
@@ -119,7 +121,7 @@ namespace BitTorrent
                 cancelAssemblerTaskSource.Cancel();
             }
 
-            return Task.FromResult<object>(null);
+       
 
         }
 
@@ -233,8 +235,8 @@ namespace BitTorrent
                 _mainTracker.StartAnnouncing();
 
                 //PeerDetails peerId = new PeerDetails();
-                //peerId.ip = CurrentAnnouneResponse.peers[0].ip;
-                //peerId.port = CurrentAnnouneResponse.peers[0].port;
+                //peerId.ip = CurrentAnnouneResponse.peers[1].ip;
+                //peerId.port = CurrentAnnouneResponse.peers[1].port;
                 //for (var cnt01 = 0; cnt01 < 5; cnt01++)
                 //{
                 //    CurrentAnnouneResponse.peers.Add(peerId);
@@ -280,8 +282,11 @@ namespace BitTorrent
 
                 foreach (var peer in RemotePeers)
                 {
-                    assembleTasks.Add(AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource));
+                   
+                    assembleTasks.Add(Task.Run(() => AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource)));
                 }
+
+                _fileToDownloader.Dc.CheckForMissingBlocksFromPeers();
 
                 Task.WaitAll(assembleTasks.ToArray());
 

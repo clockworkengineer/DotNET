@@ -58,6 +58,7 @@ namespace BitTorrent
         private ManualResetEvent _bitfieldReceived;
         private byte[] _remotePieceBitfield;
         private ManualResetEvent _waitForPieceAssembly;
+        private bool _active;
 
         public Socket PeerSocket { get => _peerSocket; set => _peerSocket = value; }
         public byte[] ReadBuffer { get => _readBuffer; set => _readBuffer = value; }
@@ -71,6 +72,7 @@ namespace BitTorrent
         public ManualResetEvent WaitForPieceAssembly { get => _waitForPieceAssembly; set => _waitForPieceAssembly = value; }
         public ManualResetEvent PeerChoking { get => _peerChoking; set => _peerChoking = value; }
         public ManualResetEvent BitfieldReceived { get => _bitfieldReceived; set => _bitfieldReceived = value; }
+        public bool Active { get => _active; set => _active = value; }
 
         private void ReadPacketCallBack(IAsyncResult readAsyncState)
         {

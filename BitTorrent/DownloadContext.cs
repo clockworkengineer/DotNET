@@ -411,11 +411,12 @@ namespace BitTorrent
                         if ((map & bit) != 0)
                         {
                             pieceMap[pieceNumber].peerCount++;
-                            for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
+                            UInt32 blockNumber = 0;
+                            for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                             {
                                 remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                             }
-
+                            remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                         }
 
                     }
@@ -440,9 +441,41 @@ namespace BitTorrent
         {
             try
             {
-                for (UInt32 blockNumber = 0; blockNumber < pieceMap[pieceNumber].blocks.Length; blockNumber++)
+                UInt32 blockNumber = 0;
+                for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                 {
                     BlockPieceRequested(pieceNumber, blockNumber, true);
+                }
+                BlockPieceRequested(pieceNumber, blockNumber, true);
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+        }
+
+        public void CheckForMissingBlocksFromPeers()
+        {
+            try
+            {
+                for (UInt32 pieceNumber = 0; pieceNumber < numberOfPieces; pieceNumber++)
+                {
+                    UInt32 blockNumber = 0;
+                    for (;  !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                    {
+                       if ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer)==0)
+                        {
+                            Console.WriteLine($"{pieceNumber} { blockNumber}");
+                        }
+                    }
+                    if ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == 0)
+                    {
+                        Program.Logger.Info($"Piece {pieceNumber} Block {blockNumber} missing from all peers.");
+                    }
                 }
             }
             catch (Error)
