@@ -3,7 +3,10 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: The File Downloader class encapsulates all code and
+// data relating to the readining/writing of the local torrent files
+// to determine which pieces are missing and need downloading and
+// written to the correct positions.
 //
 // Copyright 2019.
 //
@@ -23,15 +26,15 @@ namespace BitTorrent
     public class FileDownloader
     {
 
-        private List<FileDetails> _filesToDownload;
-        private DownloadContext _dc;
-        private SHA1 _sha;
-        private Task _pieceBufferWriterTask;
+        private List<FileDetails> _filesToDownload; // Files in torrent to be dowloaded
+        private DownloadContext _dc;                // Torrent download context
+        private SHA1 _sha;                          // Object to create SHA1 piece info hash
+        private Task _pieceBufferWriterTask;        // Task for piece buffer writer 
 
         public DownloadContext Dc { get => _dc; set => _dc = value; }
 
         /// <summary>
-        /// Creates the empty files on disk.
+        /// Creates the empty files on diskas place holders of files to be downloaded.
         /// </summary>
         private void CreateEmptyFilesOnDisk()
         {
@@ -55,9 +58,9 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Checks the piece hash.
+        /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.
         /// </summary>
-        /// <returns><c>true</c>, if piece hash was checked, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c>, if piece hash agrees (it has been downloaded), <c>false</c> otherwise.</returns>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="pieceBuffer">Piece buffer.</param>
         /// <param name="numberOfBytes">Number of bytes.</param>
@@ -81,7 +84,7 @@ namespace BitTorrent
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="pieceBuffer">Piece buffer.</param>
-        /// <param name="numberOfBytes">Number of bytes.</param>
+        /// <param name="numberOfBytes">Number of bytes in piece.</param>
         private void GeneratePieceMapFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
 
@@ -110,7 +113,9 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Creates the piece map.
+        /// Creates the piece map from the current disc which details the state of the pieces 
+        /// within a torrentdownload. This could be whether a piece  is present on a remote peer, 
+        /// has been requested or has already been downloaded/
         /// </summary>
         private void CreatePieceMap()
         {
@@ -155,7 +160,8 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Pieces the buffer writer.
+        /// Task to take a queued downloaed piece and write it away to the relevant file 
+        /// sections to which it belongs.
         /// </summary>
         private void PieceBufferWriter()
         {
@@ -196,7 +202,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:BitTorrent.FileDownloader"/> class.
+        /// Initializes a new instance of the FileDownloader class.
         /// </summary>
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
@@ -212,7 +218,7 @@ namespace BitTorrent
 
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the
-        /// <see cref="T:BitTorrent.FileDownloader"/> is reclaimed by garbage collection.
+        /// FileDownloader class is reclaimed by garbage collection.
         /// </summary>
         ~FileDownloader()
         {
@@ -220,7 +226,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Builds the downloaded pieces map.
+        /// Build already downloaded pieces map.
         /// </summary>
         public void BuildDownloadedPiecesMap()
         {
@@ -242,9 +248,9 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Haves the piece.
+        /// Determine whether a piece has already been downloaded.
         /// </summary>
-        /// <returns><c>true</c>, if piece was had, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c>, if piece has been downloaded, <c>false</c> otherwise.</returns>
         /// <param name="pieceNumber">Piece number.</param>
         public bool HavePiece(UInt32 pieceNumber)
         {
@@ -274,7 +280,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Selects the next piece.
+        /// Selects the next piece to be downloaded.
         /// </summary>
         /// <returns><c>true</c>, if next piece was selected, <c>false</c> otherwise.</returns>
         /// <param name="remotePeer">Remote peer.</param>

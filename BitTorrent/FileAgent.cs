@@ -89,12 +89,18 @@ namespace BitTorrent
                     _mainTracker.Left = FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
                     _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
 
+                    if (_mainTracker.Left==0)
+                    {
+                        foreach (var peer in RemotePeers)
+                        {
+                            peer.PeerChoking.Set();
+                        }
+                    }
+
                     if (progressFunction != null)
                     {
                         progressFunction(progressData);
                     }
-
-                    Downloading.WaitOne();
 
                     if (cancelAssemblerTask.IsCancellationRequested)
                     {
@@ -102,6 +108,8 @@ namespace BitTorrent
                     }
 
                     Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
+
+                    Downloading.WaitOne();
 
                     remotePeer.PeerChoking.WaitOne();
 
@@ -234,9 +242,10 @@ namespace BitTorrent
 
                 _mainTracker.StartAnnouncing();
 
+                ////Simulate multipeer downloads
                 //PeerDetails peerId = new PeerDetails();
-                //peerId.ip = CurrentAnnouneResponse.peers[1].ip;
-                //peerId.port = CurrentAnnouneResponse.peers[1].port;
+                //peerId.ip = CurrentAnnouneResponse.peers[0].ip;
+                //peerId.port = CurrentAnnouneResponse.peers[0].port;
                 //for (var cnt01 = 0; cnt01 < 5; cnt01++)
                 //{
                 //    CurrentAnnouneResponse.peers.Add(peerId);
@@ -281,8 +290,7 @@ namespace BitTorrent
                 _mainTracker.Event = Tracker.TrackerEvent.started;
 
                 foreach (var peer in RemotePeers)
-                {
-                   
+                {              
                     assembleTasks.Add(Task.Run(() => AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource)));
                 }
 

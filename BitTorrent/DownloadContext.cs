@@ -458,6 +458,10 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Checks to see if there are any missing blocks in the local piecemap and reports them.
+        /// Used to check whether we have the complete file avaialable on peers todownload.
+        /// </summary>
         public void CheckForMissingBlocksFromPeers()
         {
             try
