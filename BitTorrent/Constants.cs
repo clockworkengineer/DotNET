@@ -9,11 +9,14 @@
 //
 
 using System;
+using System.IO;
 
 namespace BitTorrent
 {
-    public static class Constants
+    public  static class Constants
     {
+        static public readonly string kPathSeparator = $"{Path.DirectorySeparatorChar}";    // Path separator for host
+
         public const int kBlockSize = 1024*16;      // Client Block size
         public const int kHashLength = 20;          // Length of SHA1 hash in bytes
         public const byte kSizeOfUInt32 = 4;        // Number of bytes in wire protocol message length
