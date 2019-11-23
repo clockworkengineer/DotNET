@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Generate peer ID for a client.
 //
 // Copyright 2019.
 //

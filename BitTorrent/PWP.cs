@@ -19,6 +19,12 @@ namespace BitTorrent
     {
         private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
 
+        /// <summary>
+        /// Unpacks the user interface nt32.
+        /// </summary>
+        /// <returns>The user interface nt32.</returns>
+        /// <param name="buffer">Buffer.</param>
+        /// <param name="offset">Offset.</param>
         private static UInt32 UnpackUInt32(byte[] buffer, int offset)
         {
             UInt32 unpackedUInt32 = 0;
@@ -32,6 +38,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Packs the user interface nt32.
+        /// </summary>
+        /// <returns>The user interface nt32.</returns>
+        /// <param name="int32value">Int32value.</param>
         private static byte[] PackUInt32(UInt32 int32value)
         {
             byte[] packedInt32 = new byte[Constants.kSizeOfUInt32];
@@ -44,6 +55,13 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Validates the peer connect.
+        /// </summary>
+        /// <returns><c>true</c>, if peer connect was validated, <c>false</c> otherwise.</returns>
+        /// <param name="handshakePacket">Handshake packet.</param>
+        /// <param name="handshakeResponse">Handshake response.</param>
+        /// <param name="remotePeerID">Remote peer identifier.</param>
         private static bool ValidatePeerConnect(byte[] handshakePacket, byte[] handshakeResponse, out byte[] remotePeerID)
         {
 
@@ -72,17 +90,25 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Handles the choke.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         private static void HandleCHOKE(Peer remotePeer)
         {
             remotePeer.PeerChoking.Reset();
             Program.Logger.Debug("CHOKE");
             if (remotePeer.TransferingPiece!=-1) {
-                Console.WriteLine("Stalling possible");
+                Program.Logger.Debug("STALLING POSSIBLE.....");
                 remotePeer.TorrentDownloader.Dc.MarkPieceNotRequested((UInt32)remotePeer.TransferingPiece);
                 remotePeer.TransferingPiece = -1;
             }
         }
 
+        /// <summary>
+        /// Handles the unchoke.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         private static void HandleUNCHOKE(Peer remotePeer)
         {
 
@@ -90,16 +116,28 @@ namespace BitTorrent
             Program.Logger.Debug("UNCHOKED");
         }
 
+        /// <summary>
+        /// Handles the interested.
+        /// </summary>
+        /// <param name="remoePeer">Remoe peer.</param>
         private static void HandleINTERESTED(Peer remoePeer)
         {
             Program.Logger.Debug("INTERESTED");
         }
 
+        /// <summary>
+        /// Handles the uninterested.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         private static void HandleUNINTERESTED(Peer remotePeer)
         {
             Program.Logger.Debug("UNINTERESTED");
         }
 
+        /// <summary>
+        /// Handles the have.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         private static void HandleHAVE(Peer remotePeer)
         {
             UInt32 pieceNumber = 0;
@@ -119,6 +157,10 @@ namespace BitTorrent
             Program.Logger.Debug($"Have piece= {pieceNumber}");
         }
 
+        /// <summary>
+        /// Handles the bitfield.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         private static void HandleBITFIELD(Peer remotePeer)
         {
 
@@ -143,11 +185,19 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Handles the request.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         private static void HandleREQUEST(Peer remotePeer)
         {
             Program.Logger.Debug("REQUEST");
         }
 
+        /// <summary>
+        /// Handles the piece.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         private static void HandlePIECE(Peer remotePeer)
         {
 
@@ -160,11 +210,21 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Handles the cancel.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         private static void HandleCANCEL(Peer remotePeer)
         {
             Program.Logger.Debug("CANCEL");
         }
 
+        /// <summary>
+        /// Intials the handshake.
+        /// </summary>
+        /// <returns>The handshake.</returns>
+        /// <param name="remotePeer">Remote peer.</param>
+        /// <param name="infoHash">Info hash.</param>
         public static ValueTuple<bool, byte[]> intialHandshake(Peer remotePeer, byte[] infoHash)
         {
 
@@ -202,7 +262,10 @@ namespace BitTorrent
 
         }
 
-
+        /// <summary>
+        /// Remotes the peer message process.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         public static void RemotePeerMessageProcess(Peer remotePeer)
         {
 
@@ -254,6 +317,10 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Choke the specified remotePeer.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         public static void Choke(Peer remotePeer)
         {
             try
@@ -276,6 +343,10 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Unchoke the specified remotePeer.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         public static void Unchoke(Peer remotePeer)
         {
             try
@@ -298,6 +369,10 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Interested the specified remotePeer.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         public static void Interested(Peer remotePeer)
         {
             try
@@ -322,6 +397,10 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Uninterested the specified remotePeer.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
         public static void Uninterested(Peer remotePeer)
         {
             try
@@ -346,6 +425,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Have the specified remotePeer and pieceNumber.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
+        /// <param name="pieceNumber">Piece number.</param>
         public static void Have(Peer remotePeer, UInt32 pieceNumber)
         {
             try
@@ -369,6 +453,11 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Bitfield the specified remotePeer and bitField.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
+        /// <param name="bitField">Bit field.</param>
         public static void Bitfield(Peer remotePeer, byte[] bitField)
         {
             try
@@ -391,6 +480,13 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Request the specified remotePeer, pieceNumber, blockOffset and blockSize.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockOffset">Block offset.</param>
+        /// <param name="blockSize">Block size.</param>
         public static void Request(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
         {
             try
@@ -421,6 +517,13 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Piece the specified remotePeer, pieceNumber, blockOffset and blockData.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockOffset">Block offset.</param>
+        /// <param name="blockData">Block data.</param>
         public static void Piece(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
         {
             try
@@ -446,6 +549,13 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Cancel the specified remotePeer, pieceNumber, blockOffset and blockData.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockOffset">Block offset.</param>
+        /// <param name="blockData">Block data.</param>
         public static void Cancel(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
         {
             try

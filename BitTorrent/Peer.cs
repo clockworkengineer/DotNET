@@ -270,19 +270,13 @@ namespace BitTorrent
                 _torrentDownloader.Dc.BlockPieceDownloaded(pieceNumber, blockNumber, true);
                 _torrentDownloader.Dc.BlockPieceRequested(pieceNumber, blockNumber, false);
 
-                if (!_torrentDownloader.Dc.IsBlockPieceLast(pieceNumber, blockNumber))
-                {
-                    _torrentDownloader.Dc.totalBytesDownloaded += Constants.kBlockSize;
-                }
-                else
-                {
-                    _assembledPiece.Number = pieceNumber;
-                    _torrentDownloader.Dc.totalBytesDownloaded += _torrentDownloader.Dc.pieceMap[pieceNumber].lastBlockLength;
-                }
                 if (TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
                 {
+                    _assembledPiece.Number = pieceNumber;
+                    _torrentDownloader.Dc.totalBytesDownloaded += _torrentDownloader.Dc.GetPieceLength(pieceNumber);
                     _waitForPieceAssembly.Set();
                 }
+
             }
             catch (Error)
             {
