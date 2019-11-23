@@ -103,7 +103,6 @@ public partial class MainWindow : Gtk.Window
 
             _torrentFile = new MetaInfoFile(fileChooser.Filename);
 
-            _torrentFile.Load();
             _torrentFile.Parse();
 
             SetText(trackerEntry, "announce");

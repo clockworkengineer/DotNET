@@ -70,6 +70,7 @@ namespace BitTorrent
                         Program.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
                         remotePeer.Active = true;
+                        remotePeer.TransferingPiece = nextPiece;
 
                         UInt32 blockNumber = 0;
                         for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
@@ -82,6 +83,8 @@ namespace BitTorrent
 
                         remotePeer.WaitForPieceAssembly.WaitOne();
                         remotePeer.WaitForPieceAssembly.Reset();
+
+                        remotePeer.TransferingPiece = -1;
 
                         Program.Logger.Debug($"All blocks for piece {nextPiece} received");
 
@@ -196,9 +199,8 @@ namespace BitTorrent
 
             try
             {
-                Program.Logger.Info("Loading MetaInfo for torrent file ....");
-
-                TorrentMetaInfo.Load();
+                Program.Logger.Info("Loading and parsing metainfo for torrent file ....");
+                
                 TorrentMetaInfo.Parse();
 
                 Program.Logger.Info("Loading main tracker ....");
@@ -396,7 +398,7 @@ namespace BitTorrent
                 Program.Logger.Info("Closing peer socket.");
                 foreach (var peer in RemotePeers)
                 {
-                    peer.PeerSocket.Close();
+                    peer.Close();
                 }
             }
             catch (Error)

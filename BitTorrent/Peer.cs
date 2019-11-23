@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Peer to peer network I/O functionality.
 //
 // Copyright 2019.
 //
@@ -39,6 +39,9 @@ namespace BitTorrent
             }
         }
     }
+    /// <summary>
+    /// Peer.
+    /// </summary>
     public class Peer
     {  
         private string _ip;
@@ -59,8 +62,8 @@ namespace BitTorrent
         private byte[] _remotePieceBitfield;
         private ManualResetEvent _waitForPieceAssembly;
         private bool _active;
+        private Int64 _transferingPiece = -1;
 
-        public Socket PeerSocket { get => _peerSocket; set => _peerSocket = value; }
         public byte[] ReadBuffer { get => _readBuffer; set => _readBuffer = value; }
         public bool Connected { get => _connected; set => _connected = value; }
         public byte[] RemotePeerID { get => _remotePeerID; set => _remotePeerID = value; }
@@ -73,8 +76,33 @@ namespace BitTorrent
         public ManualResetEvent PeerChoking { get => _peerChoking; set => _peerChoking = value; }
         public ManualResetEvent BitfieldReceived { get => _bitfieldReceived; set => _bitfieldReceived = value; }
         public bool Active { get => _active; set => _active = value; }
+        public Int64 TransferingPiece { get => _transferingPiece; set => _transferingPiece = value; }
 
-        private void ReadPacketCallBack(IAsyncResult readAsyncState)
+        /// <summary>
+        /// Send packet to remote peer.
+        /// </summary>
+        /// <param name="buffer">Buffer.</param>
+        public void PeerWrite(byte[] buffer)
+        {
+            _peerSocket.Send(buffer);
+        }
+
+        /// <summary>
+        /// Read packet from remote peer.
+        /// </summary>
+        /// <returns>The read.</returns>
+        /// <param name="buffer">Buffer.</param>
+        /// <param name="length">Length.</param>
+        public  int PeerRead(byte[] buffer, int length)
+        {
+            return (_peerSocket.Receive(buffer, length, SocketFlags.None));
+        }
+
+        /// <summary>
+        /// Peer read packet asynchronous callback.
+        /// </summary>
+        /// <param name="readAsyncState">Read async state.</param>
+        private void ReadPacketAsyncHandler(IAsyncResult readAsyncState)
         {
             Peer remotePeer = (Peer)readAsyncState.AsyncState;
 
@@ -106,7 +134,7 @@ namespace BitTorrent
                 }
 
                 remotePeer._peerSocket.BeginReceive(remotePeer._readBuffer, (Int32)remotePeer._bytesRead,
-                           (Int32)(remotePeer.PacketLength - remotePeer._bytesRead), 0, ReadPacketCallBack, remotePeer);
+                           (Int32)(remotePeer.PacketLength - remotePeer._bytesRead), 0, ReadPacketAsyncHandler, remotePeer);
 
             }
             catch (Error)
@@ -115,7 +143,7 @@ namespace BitTorrent
             }
             catch (System.ObjectDisposedException)
             {
-                Program.Logger.Info($"Packet read for Peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} closed.");
+                Program.Logger.Info($"ReadPacketCallBack()  {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
             }
             catch (Exception ex)
             {
@@ -124,6 +152,10 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Gets the local host ip.
+        /// </summary>
+        /// <returns>The local host ip.</returns>
         static public string GetLocalHostIP()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -137,6 +169,13 @@ namespace BitTorrent
             throw new Error("No network adapters with an IPv4 address in the system!");
         }
 
+        /// <summary>
+        /// Initializes a new instance of Peer class.
+        /// </summary>
+        /// <param name="fileDownloader">File downloader.</param>
+        /// <param name="ip">Ip.</param>
+        /// <param name="port">Port.</param>
+        /// <param name="infoHash">Info hash.</param>
         public Peer(FileDownloader fileDownloader, string ip ,UInt32 port, byte[] infoHash)
         {
             _ip = ip;
@@ -150,6 +189,9 @@ namespace BitTorrent
             _bitfieldReceived = new ManualResetEvent(false);
         }
 
+        /// <summary>
+        /// Connect to a remote peer and perform initial Peer to Peer handshake.
+        /// </summary>
         public void Connect()
         {
 
@@ -168,7 +210,7 @@ namespace BitTorrent
                 {
                     RemotePeerID = peerResponse.Item2;
                     _connected = true;
-                    _peerSocket.BeginReceive(_readBuffer, 0, Constants.kSizeOfUInt32, 0, ReadPacketCallBack, this);
+                    _peerSocket.BeginReceive(_readBuffer, 0, Constants.kSizeOfUInt32, 0, ReadPacketAsyncHandler, this);
                 }
             }
             catch (Error)
@@ -182,16 +224,39 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Release  any peer class resources.
+        /// </summary>
+        public void Close()
+        {
+            _peerSocket.Close();
+
+        }
+
+        /// <summary>
+        /// Check downloaded bitfield to see if a piece is present on a remote peer.
+        /// </summary>
+        /// <returns><c>true</c>, if piece on remote peer was ised, <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
         public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
         {
             return ((_remotePieceBitfield[pieceNumber>>3] & 0x80 >> (Int32)(pieceNumber&0x7))!=0);
         }
 
+        /// <summary>
+        /// Sets piece bit in local bitfield to signify its presence.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
             _remotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
         }
 
+        /// <summary>
+        /// Place a block into the current piece being assembled.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="blockOffset">Block offset.</param>
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
         {
             try

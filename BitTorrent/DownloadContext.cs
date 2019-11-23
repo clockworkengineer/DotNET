@@ -459,6 +459,31 @@ namespace BitTorrent
         }
 
         /// <summary>
+        /// Mark all blocks of a piece as unrequested.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        public void MarkPieceNotRequested(UInt32 pieceNumber)
+        {
+            try
+            {
+                UInt32 blockNumber = 0;
+                for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                {
+                    BlockPieceRequested(pieceNumber, blockNumber, false);
+                }
+                BlockPieceRequested(pieceNumber, blockNumber, false);
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Program.Logger.Debug(ex);
+            }
+        }
+
+        /// <summary>
         /// Checks to see if there are any missing blocks in the local piecemap and reports them.
         /// Used to check whether we have the complete file avaialable on peers todownload.
         /// </summary>

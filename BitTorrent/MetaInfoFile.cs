@@ -174,37 +174,15 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Read in torrent file to internal byte array for decoding.
-        /// </summary>
-        public void Load()
-        {
-            try
-            {
-                _metaInfoData = System.IO.File.ReadAllBytes(TorrentFileName);
-            }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Program.Logger.Debug(ex);
-                throw new Error ($"Error: Could not find torrent file {TorrentFileName}");
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Program.Logger.Debug(ex);
-            }
-        }
-
-        /// <summary>
-        /// Decode Beneoced torrent file and load internal dictionary from its contents
+        /// Decode Bencoded torrent file and load internal dictionary from its contents
         /// for later retrieval by other modules.
         /// </summary>
         public void Parse()
         {
             try
             {
+                _metaInfoData = System.IO.File.ReadAllBytes(TorrentFileName);
+
                 BNodeBase bNodeRoot = Bencoding.Decode(_metaInfoData);
 
                 getStringOrNumeric(bNodeRoot, "announce");
@@ -238,6 +216,11 @@ namespace BitTorrent
                     }
                 }
 
+            }
+            catch (System.IO.FileNotFoundException ex)
+            {
+                Program.Logger.Debug(ex);
+                throw new Error($"Error: Could not find torrent file {TorrentFileName}");
             }
             catch (Error)
             {
