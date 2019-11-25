@@ -84,15 +84,19 @@ namespace BitTorrent
                         remotePeer.WaitForPieceAssembly.WaitOne();
                         remotePeer.WaitForPieceAssembly.Reset();
 
-                        remotePeer.TransferingPiece = -1;
+                        if (remotePeer.TransferingPiece != -1)
+                        {
+                            remotePeer.TransferingPiece = -1;
 
-                        Program.Logger.Debug($"All blocks for piece {nextPiece} received");
+                            Program.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                        PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.AssembledPiece);
-                        _fileToDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
+                            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.AssembledPiece);
+                            _fileToDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
 
-                        _mainTracker.Left = FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
-                        _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
+                            _mainTracker.Left = FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
+                            _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
+
+                        }
 
                         if (progressFunction != null)
                         {
@@ -260,14 +264,14 @@ namespace BitTorrent
 
                 _mainTracker.StartAnnouncing();
 
-                ////Simulate multipeer downloads
-                //PeerDetails peerId = new PeerDetails();
-                //peerId.ip = CurrentAnnouneResponse.peers[0].ip;
-                //peerId.port = CurrentAnnouneResponse.peers[0].port;
-                //for (var cnt01 = 0; cnt01 < 5; cnt01++)
-                //{
-                //    CurrentAnnouneResponse.peers.Add(peerId);
-                //}
+                //Simulate multipeer downloads
+                PeerDetails peerId = new PeerDetails();
+                peerId.ip = CurrentAnnouneResponse.peers[0].ip;
+                peerId.port = CurrentAnnouneResponse.peers[0].port;
+                for (var cnt01 = 0; cnt01 < 5; cnt01++)
+                {
+                    CurrentAnnouneResponse.peers.Add(peerId);
+                }
 
                 CreateAndConnectPeers();
 

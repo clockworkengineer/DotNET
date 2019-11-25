@@ -17,9 +17,15 @@ using System.Timers;
 
 namespace BitTorrent
 {
+    /// <summary>
+    /// Tracker.
+    /// </summary>
     public class Tracker
     {
 
+        /// <summary>
+        /// Tracker event.
+        /// </summary>
         public enum TrackerEvent
         {
             started = 0,
@@ -50,6 +56,12 @@ namespace BitTorrent
         public UInt64 Left { get => _left; set => _left = value; }
         public TrackerEvent Event { get => _event; set => _event = value; }
 
+        /// <summary>
+        /// Constructs the response.
+        /// </summary>
+        /// <returns>The response.</returns>
+        /// <param name="announceResponse">Announce response.</param>
+        /// <param name="response">Response.</param>
         private AnnounceResponse ConstructResponse(byte[] announceResponse, ref AnnounceResponse response)
         {
 
@@ -126,12 +138,21 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Encodes the bytes to URL.
+        /// </summary>
+        /// <returns>The bytes to URL.</returns>
+        /// <param name="toEncode">To encode.</param>
         private byte[] EncodeBytesToURL(byte[] toEncode)
         {
             return(WebUtility.UrlEncodeToBytes(toEncode, 0, toEncode.Length));
 
         }
 
+        /// <summary>
+        /// Encodes the tracker URL.
+        /// </summary>
+        /// <returns>The tracker URL.</returns>
         private string EncodeTrackerURL()
         {
             string  url = _trackerURL +
@@ -153,6 +174,9 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Updates the peers status.
+        /// </summary>
         private void UpdatePeersStatus()
         {
             int unChokedPeers = 0;
@@ -175,12 +199,22 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Ons the announce event.
+        /// </summary>
+        /// <param name="source">Source.</param>
+        /// <param name="e">E.</param>
+        /// <param name="tracker">Tracker.</param>
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
             tracker._currentTrackerResponse = tracker.Announce();
             tracker.UpdatePeersStatus();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:BitTorrent.Tracker"/> class.
+        /// </summary>
+        /// <param name="torrentFileAgent">Torrent file agent.</param>
         public Tracker(FileAgent torrentFileAgent)
         {
 
@@ -191,6 +225,10 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Announce this instance.
+        /// </summary>
+        /// <returns>The announce.</returns>
         public AnnounceResponse Announce() 
         {
 
@@ -244,6 +282,9 @@ namespace BitTorrent
 
         }
 
+        /// <summary>
+        /// Starts the announcing.
+        /// </summary>
         public void StartAnnouncing()
         {
             try
@@ -263,6 +304,9 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Stops the annonncing.
+        /// </summary>
         public void StopAnnonncing()
         {
             try
@@ -280,6 +324,10 @@ namespace BitTorrent
             }
         }
 
+        /// <summary>
+        /// Update the specified response.
+        /// </summary>
+        /// <param name="response">Response.</param>
         public void Update(AnnounceResponse response)
         {
             try
