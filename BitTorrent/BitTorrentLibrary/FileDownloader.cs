@@ -38,13 +38,13 @@ namespace BitTorrent
         /// </summary>
         private void CreateEmptyFilesOnDisk()
         {
-            Program.Logger.Debug("Creating empty files as placeholders for downloading ...");
+            Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
 
             foreach (var file in _filesToDownload)
             {
                 if (!System.IO.File.Exists(file.name))
                 {
-                    Program.Logger.Debug($"File: {file.name}");
+                    Log.Logger.Debug($"File: {file.name}");
                     Directory.CreateDirectory(Path.GetDirectoryName(file.name));
                     using (var fs = new FileStream(file.name, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
                     {
@@ -124,11 +124,11 @@ namespace BitTorrent
             UInt32 bytesInBuffer = 0;
             int bytesRead = 0;
 
-            Program.Logger.Debug("Generate pieces downloaded map from local files ...");
+            Log.Logger.Debug("Generate pieces downloaded map from local files ...");
 
             foreach (var file in _filesToDownload)
             {
-                Program.Logger.Debug($"File: {file.name}");
+                Log.Logger.Debug($"File: {file.name}");
 
                 using (var inFileSteam = new FileStream(file.name, FileMode.Open))
                 {
@@ -155,7 +155,7 @@ namespace BitTorrent
                 GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
             }
 
-            Program.Logger.Debug("Finished generating downloaded map.");
+            Log.Logger.Debug("Finished generating downloaded map.");
 
         }
 
@@ -171,7 +171,7 @@ namespace BitTorrent
 
                 if (CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, _dc.GetPieceLength(pieceBuffer.Number)))
                 {
-                    Program.Logger.Trace($"writePieceToFiles({pieceBuffer.Number})");
+                    Log.Logger.Trace($"writePieceToFiles({pieceBuffer.Number})");
 
                     UInt64 startOffset = pieceBuffer.Number * _dc.pieceLength;
                     UInt64 endOffset = startOffset + _dc.pieceLength;
@@ -193,7 +193,7 @@ namespace BitTorrent
                 }
                 else
                 {
-                     Program.Logger.Error($"Error: Hash for piece {pieceBuffer.Number} is invalid.");
+                     Log.Logger.Error($"Error: Hash for piece {pieceBuffer.Number} is invalid.");
                 }
 
               
@@ -242,7 +242,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
 
         }
@@ -256,7 +256,7 @@ namespace BitTorrent
         {
             try
             {
-                Program.Logger.Trace($"havePiece({pieceNumber})");
+                Log.Logger.Trace($"havePiece({pieceNumber})");
 
                 for (UInt32 blockNumber = 0; blockNumber < _dc.blocksPerPiece; blockNumber++)
                 {
@@ -273,7 +273,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
 
             return (true);
@@ -293,7 +293,7 @@ namespace BitTorrent
                 // is required when trying to get the next unrequested non-local piece
                 lock (this) 
                 {
-                    Program.Logger.Trace($"selectNextPiece()");
+                    Log.Logger.Trace($"selectNextPiece()");
 
                     for (UInt32 pieceNumber = 0; pieceNumber < _dc.numberOfPieces; pieceNumber++)
                     {
@@ -328,7 +328,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
 
             return (false);

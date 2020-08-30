@@ -143,12 +143,12 @@ namespace BitTorrent
             }
             catch (System.ObjectDisposedException)
             {
-                Program.Logger.Info($"ReadPacketCallBack()  {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
+                Log.Logger.Info($"ReadPacketCallBack()  {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug("Internal ReadPacketCallBack() error : " + ex.Message);
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug("Internal ReadPacketCallBack() error : " + ex.Message);
+                Log.Logger.Debug(ex);
             }
         }
 
@@ -219,7 +219,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
 
         }
@@ -263,7 +263,7 @@ namespace BitTorrent
             {
                 UInt32 blockNumber = blockOffset / Constants.kBlockSize;
 
-                Program.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{_packetLength - 9})");
+                Log.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{_packetLength - 9})");
 
                 Buffer.BlockCopy(_readBuffer, 9, _assembledPiece.Buffer, (Int32)blockOffset, (Int32)_packetLength - 9);
 
@@ -284,7 +284,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
 

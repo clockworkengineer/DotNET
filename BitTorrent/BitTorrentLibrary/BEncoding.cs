@@ -310,7 +310,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
             return (bNodeRoot);
 
@@ -365,7 +365,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
 
             return (result.ToArray());
@@ -412,7 +412,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
 
             return (bNodeEntry);
@@ -450,7 +450,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
 
             return ("");

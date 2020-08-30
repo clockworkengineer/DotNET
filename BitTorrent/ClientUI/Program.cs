@@ -17,27 +17,26 @@ namespace BitTorrent
     class Program
     {
 
-        public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public static void annouceResponse(AnnounceResponse response)
         {
-            Logger.Debug("\nAnnouce Response\n-------------");
-            Logger.Debug("\nStatus: " + response.statusCode);
-            Logger.Debug("Status Message: " + response.statusMessage);
-            Logger.Debug("Interval: " + response.interval);
-            Logger.Debug("Min Interval: " + response.minInterval);
-            Logger.Debug("trackerID: " + response.trackerID);
-            Logger.Debug("Complete: " + response.complete);
-            Logger.Debug("Incomplete: " + response.incomplete);
-            Logger.Debug("\nPeers\n------");
+            BitTorrent.Log.Logger.Debug("\nAnnouce Response\n-------------");
+            BitTorrent.Log.Logger.Debug("\nStatus: " + response.statusCode);
+            BitTorrent.Log.Logger.Debug("Status Message: " + response.statusMessage);
+            BitTorrent.Log.Logger.Debug("Interval: " + response.interval);
+            BitTorrent.Log.Logger.Debug("Min Interval: " + response.minInterval);
+            BitTorrent.Log.Logger.Debug("trackerID: " + response.trackerID);
+            BitTorrent.Log.Logger.Debug("Complete: " + response.complete);
+            BitTorrent.Log.Logger.Debug("Incomplete: " + response.incomplete);
+            BitTorrent.Log.Logger.Debug("\nPeers\n------");
             foreach (var peer in response.peers)
             {
                 if (peer._peerID != string.Empty)
                 {
-                    Logger.Debug("Peer ID: " + peer._peerID);
+                    BitTorrent.Log.Logger.Debug("Peer ID: " + peer._peerID);
                 }
-                Logger.Debug("IP: " + peer.ip);
-                Logger.Debug("Port: " + peer.port);
+                BitTorrent.Log.Logger.Debug("IP: " + peer.ip);
+                BitTorrent.Log.Logger.Debug("Port: " + peer.port);
 
             }
 
@@ -52,21 +51,21 @@ namespace BitTorrent
             foreach (byte b in infoHash)
                 hex.AppendFormat("{0:x2}", b);
 
-            Logger.Debug("\nInfo Hash\n-----------\n");
-            Logger.Debug(hex);
+            BitTorrent.Log.Logger.Debug("\nInfo Hash\n-----------\n");
+            BitTorrent.Log.Logger.Debug(hex);
         }
 
         public static void torrentTrackers(MetaInfoFile metaFile)
         {
             byte[] tracker = metaFile.MetaInfoDict["announce"];
 
-            Logger.Debug("\nTrackers\n--------\n");
-            Logger.Debug(Encoding.ASCII.GetString(tracker));
+            BitTorrent.Log.Logger.Debug("\nTrackers\n--------\n");
+            BitTorrent.Log.Logger.Debug(Encoding.ASCII.GetString(tracker));
 
             if (metaFile.MetaInfoDict.ContainsKey("announce-list"))
             {
                 byte[] trackers = metaFile.MetaInfoDict["announce-list"];
-                Logger.Debug(Encoding.ASCII.GetString(trackers));
+                BitTorrent.Log.Logger.Debug(Encoding.ASCII.GetString(trackers));
             }
         }
 
@@ -89,11 +88,11 @@ namespace BitTorrent
             }
             catch (Error ex)
             {
-                Program.Logger.Error(ex.Message);
+                BitTorrent.Log.Logger.Error(ex.Message);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex);
+                BitTorrent.Log.Logger.Error(ex);
             }
 
         }

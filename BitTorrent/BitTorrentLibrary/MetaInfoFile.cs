@@ -166,7 +166,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
 
             return ("");
@@ -212,14 +212,14 @@ namespace BitTorrent
                 {
                     if ((key != "pieces") && (key != "info") && (key != "info hash"))
                     {
-                        Program.Logger.Debug($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
+                        Log.Logger.Debug($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
                     }
                 }
 
             }
             catch (System.IO.FileNotFoundException ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
                 throw new Error($"Error: Could not find torrent file {TorrentFileName}");
             }
             catch (Error)
@@ -228,7 +228,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
 

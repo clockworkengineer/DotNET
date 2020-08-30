@@ -90,7 +90,7 @@ namespace BitTorrent
                             peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
                         }
                         peer.port = (UInt32) peers[num + 4] * 256 + peers[num + 5];
-                        Program.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
+                        Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
                         response.peers.Add(peer);
                     }
                 }
@@ -118,7 +118,7 @@ namespace BitTorrent
                                 string path = string.Empty;
                                 peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrent.BNodeNumber)peerField).number));
                             }
-                            Program.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
+                            Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
                             response.peers.Add(peer);
                         }
                     }
@@ -194,8 +194,8 @@ namespace BitTorrent
                 }
             }
 
-            Program.Logger.Info($"Unchoked Peers {unChokedPeers}/{ _torrentFileAgent.RemotePeers.Count}");
-            Program.Logger.Info($"Active Peers {activePeers}/{ _torrentFileAgent.RemotePeers.Count}");
+            Log.Logger.Info($"Unchoked Peers {unChokedPeers}/{ _torrentFileAgent.RemotePeers.Count}");
+            Log.Logger.Info($"Active Peers {activePeers}/{ _torrentFileAgent.RemotePeers.Count}");
 
         }
 
@@ -232,7 +232,7 @@ namespace BitTorrent
         public AnnounceResponse Announce() 
         {
 
-            Program.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"]))} " +
+            Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"]))} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
                   $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 
@@ -274,7 +274,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
                 response.statusMessage = ex.Message;
             }
 
@@ -300,7 +300,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
 
@@ -320,7 +320,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
 
@@ -354,7 +354,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
     }

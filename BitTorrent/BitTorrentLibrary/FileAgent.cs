@@ -52,7 +52,7 @@ namespace BitTorrent
 
             try
             {
-                Program.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
+                Log.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
                 CancellationToken cancelAssemblerTask = cancelAssemblerTaskSource.Token;
 
@@ -67,7 +67,7 @@ namespace BitTorrent
                     for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
                     {
 
-                        Program.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
+                        Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
                         remotePeer.Active = true;
                         remotePeer.TransferingPiece = nextPiece;
@@ -88,7 +88,7 @@ namespace BitTorrent
                         {
                             remotePeer.TransferingPiece = -1;
 
-                            Program.Logger.Debug($"All blocks for piece {nextPiece} received");
+                            Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
                             PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.AssembledPiece);
                             _fileToDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
@@ -115,7 +115,7 @@ namespace BitTorrent
                             return;
                         }
 
-                        Program.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
+                        Log.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
 
                         Downloading.WaitOne();
 
@@ -133,17 +133,17 @@ namespace BitTorrent
                     
                 }
 
-                Program.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
+                Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
             }
             catch (Error ex)
             {
-                Program.Logger.Error(ex.Message);
+                Log.Logger.Error(ex.Message);
                 cancelAssemblerTaskSource.Cancel();
             }
             catch (Exception ex)
             {
-                Program.Logger.Error(ex);
+                Log.Logger.Error(ex);
                 cancelAssemblerTaskSource.Cancel();
             }
 
@@ -157,7 +157,7 @@ namespace BitTorrent
         private void CreateAndConnectPeers()
         {
 
-            Program.Logger.Info("Connecting to available peers....");
+            Log.Logger.Info("Connecting to available peers....");
 
             RemotePeers = new List<Peer>();
             foreach (var peer in CurrentAnnouneResponse.peers)
@@ -169,16 +169,16 @@ namespace BitTorrent
                     if (remotePeer.Connected)
                     {
                         RemotePeers.Add(remotePeer);
-                        Program.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                        Log.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
                     }
                 }
                 catch (Exception)
                 {
-                    Program.Logger.Info($"Failed to connect to {peer.ip}");
+                    Log.Logger.Info($"Failed to connect to {peer.ip}");
                 }
             }
 
-            Program.Logger.Info($"Number of connected piers {RemotePeers.Count}");
+            Log.Logger.Info($"Number of connected piers {RemotePeers.Count}");
 
 
         }
@@ -203,11 +203,11 @@ namespace BitTorrent
 
             try
             {
-                Program.Logger.Info("Loading and parsing metainfo for torrent file ....");
+                Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
                 
                 TorrentMetaInfo.Parse();
 
-                Program.Logger.Info("Loading main tracker ....");
+                Log.Logger.Info("Loading main tracker ....");
 
                 _mainTracker = new Tracker(this);
 
@@ -215,7 +215,7 @@ namespace BitTorrent
 
                 UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["piece length"]));
 
-                Program.Logger.Info("Create files to download details structure ...");
+                Log.Logger.Info("Create files to download details structure ...");
 
                 if (!TorrentMetaInfo.MetaInfoDict.ContainsKey("0"))
                 {
@@ -245,18 +245,18 @@ namespace BitTorrent
 
                 }
 
-                Program.Logger.Info("Setup file downloader ...");
+                Log.Logger.Info("Setup file downloader ...");
 
                 FileToDownloader = new FileDownloader(_filesToDownload, pieceLength, TorrentMetaInfo.MetaInfoDict["pieces"]);
 
                 FileToDownloader.BuildDownloadedPiecesMap();
 
-                Program.Logger.Info("Initial main tracker announce ...");
+                Log.Logger.Info("Initial main tracker announce ...");
 
                 _mainTracker.Left = FileToDownloader.Dc.totalLength-FileToDownloader.Dc.totalBytesDownloaded;
                 if (_mainTracker.Left==0)
                 {
-                    Program.Logger.Info("Torrent file fully downloaded already.");
+                    Log.Logger.Info("Torrent file fully downloaded already.");
                     return;
                 }
 
@@ -287,7 +287,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
                 throw new Error("Failure in to load torrent File Agent.", ex);
             }
 
@@ -311,7 +311,7 @@ namespace BitTorrent
                     List<Task> assembleTasks = new List<Task>();
                     CancellationTokenSource cancelAssemblerTaskSource = new CancellationTokenSource();
 
-                    Program.Logger.Info("Starting torrent download for MetaInfo data ...");
+                    Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
                     _mainTracker.Event = Tracker.TrackerEvent.started;
 
@@ -327,11 +327,11 @@ namespace BitTorrent
                     if (!cancelAssemblerTaskSource.IsCancellationRequested)
                     {
                         _mainTracker.Event = Tracker.TrackerEvent.completed;
-                        Program.Logger.Info("Whole Torrent finished downloading.");
+                        Log.Logger.Info("Whole Torrent finished downloading.");
                     }
                     else
                     {
-                        Program.Logger.Info("Download aborted.");
+                        Log.Logger.Info("Download aborted.");
                         Close();
                     }
                 }
@@ -343,7 +343,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
                 throw new Error("Failure in File Agent torrent file download.", ex);
             }
 
@@ -366,7 +366,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
 
@@ -387,7 +387,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
 
@@ -399,7 +399,7 @@ namespace BitTorrent
             try
             {
                 _mainTracker.StopAnnonncing();
-                Program.Logger.Info("Closing peer socket.");
+                Log.Logger.Info("Closing peer socket.");
                 foreach (var peer in RemotePeers)
                 {
                     peer.Close();
@@ -411,7 +411,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
 
@@ -430,7 +430,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
 
@@ -449,7 +449,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Program.Logger.Debug(ex);
+                Log.Logger.Debug(ex);
             }
         }
     }
