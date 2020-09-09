@@ -24,7 +24,7 @@ namespace BitTorrent
     /// </summary>
     public class MetaInfoFile
     {
-    
+
         private string _torrentFileName = string.Empty;
         private Dictionary<string, byte[]> _metaInfoDict;
         private byte[] _metaInfoData;
@@ -65,7 +65,7 @@ namespace BitTorrent
                                 path += Constants.kPathSeparator + Encoding.ASCII.GetString(((BitTorrent.BNodeString)file).str);
                             }
                             fileEntry = path;
-                        
+
                         }
                         fileEntry += ",";
                         fileEntry += Bencoding.GetDictionaryEntryString(fileDictionaryItem, "length");
@@ -110,7 +110,7 @@ namespace BitTorrent
             if (fieldBytes is BNodeList)
             {
                 List<string> listString = new List<string>();
-                foreach(var innerList in ((BNodeList)(fieldBytes)).list)
+                foreach (var innerList in ((BNodeList)(fieldBytes)).list)
                 {
                     if (innerList is BNodeList)
                     {
@@ -118,7 +118,7 @@ namespace BitTorrent
                         listString.Add(Encoding.ASCII.GetString(stringItem.str));
                     }
                 }
-                _metaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",",listString));
+                _metaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",", listString));
             }
 
         }
@@ -135,11 +135,11 @@ namespace BitTorrent
                 byte[] infoHash = Bencoding.Encode(infoEncodedBytes);
                 SHA1 sha = new SHA1CryptoServiceProvider();
                 _metaInfoDict["info hash"] = sha.ComputeHash(infoHash);
-            
+
             }
 
         }
-    
+
         /// <summary>
         /// Initializes a new instance of the MetInfoFile class.
         /// </summary>
@@ -172,6 +172,31 @@ namespace BitTorrent
             return ("");
 
         }
+        /// <summary>
+        /// Load torrent file contents into memory for parsing.
+        /// </summary>
+        public void Load()
+        {
+
+            try
+            {
+                _metaInfoData = System.IO.File.ReadAllBytes(TorrentFileName);
+            }
+            catch (System.IO.DirectoryNotFoundException)
+            {
+                throw new Error($"Error: Could not find torrent file {TorrentFileName}");
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                throw new Error($"Error: Could not find torrent file {TorrentFileName}");
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw;
+            }
+
+        }
 
         /// <summary>
         /// Decode Bencoded torrent file and load internal dictionary from its contents
@@ -181,7 +206,6 @@ namespace BitTorrent
         {
             try
             {
-                _metaInfoData = System.IO.File.ReadAllBytes(TorrentFileName);
 
                 BNodeBase bNodeRoot = Bencoding.Decode(_metaInfoData);
 
@@ -217,11 +241,6 @@ namespace BitTorrent
                 }
 
             }
-            catch (System.IO.FileNotFoundException ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error($"Error: Could not find torrent file {TorrentFileName}");
-            }
             catch (Error)
             {
                 throw;
@@ -229,6 +248,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw;
             }
         }
 

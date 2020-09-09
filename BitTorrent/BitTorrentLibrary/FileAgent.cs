@@ -188,9 +188,9 @@ namespace BitTorrent
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public FileAgent(string torrentFileName, String downloadPath)
+        public FileAgent(MetaInfoFile torrentFile, String downloadPath)
         {
-            TorrentMetaInfo = new MetaInfoFile(torrentFileName);
+            TorrentMetaInfo = torrentFile;
             _downloadPath = downloadPath;
             Downloading = new ManualResetEvent(true);
         }
@@ -203,9 +203,7 @@ namespace BitTorrent
 
             try
             {
-                Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                
-                TorrentMetaInfo.Parse();
+
 
                 Log.Logger.Info("Loading main tracker ....");
 

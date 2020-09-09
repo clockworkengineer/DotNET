@@ -75,15 +75,22 @@ namespace BitTorrent
             try
             {
 
-                FileAgent fileAgent01 = new FileAgent("/home/robt/torrent/large.jpeg.torrent", "/home/robt/utorrent");
+                Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
 
-                fileAgent01.Load();
+                MetaInfoFile torrentFile = new MetaInfoFile("/home./robt/torrent/large.jpeg.torrent");
 
-                fileAgent01.Download();
+                torrentFile.Load();
+                torrentFile.Parse();
+
+                FileAgent fileAgent = new FileAgent(torrentFile, "/home/robt/utorrent");
+
+                fileAgent.Load();
+
+                fileAgent.Download();
 
                 Console.ReadKey();
 
-                fileAgent01.Close();
+                fileAgent.Close();
 
             }
             catch (Error ex)
