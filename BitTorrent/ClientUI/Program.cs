@@ -75,7 +75,7 @@ namespace BitTorrent
             try
             {
 
-                FileAgent fileAgent01 = new FileAgent("./archman.torrent", "/home/robt/utorrent");
+                FileAgent fileAgent01 = new FileAgent("/home/robt/torrent/large.jpeg.torrent", "/home/robt/utorrent");
 
                 fileAgent01.Load();
 

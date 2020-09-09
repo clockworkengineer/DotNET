@@ -67,7 +67,7 @@ namespace BitTorrent
 
             response.statusCode = (int)HttpStatusCode.OK;
 
-            BNodeBase decodedAnnounce= Bencoding.Decode(announceResponse);
+            BNodeBase decodedAnnounce = Bencoding.Decode(announceResponse);
 
             UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "complete"), out response.complete);
             UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "incomplete"), out response.incomplete);
@@ -79,7 +79,7 @@ namespace BitTorrent
                 if (field is BNodeString)
                 {
                     byte[] peers = ((BNodeString)field).str;
-                    UInt32 numberPeers = (UInt32) peers.Length / 6;
+                    UInt32 numberPeers = (UInt32)peers.Length / 6;
                     for (var num = 0; num < peers.Length; num += 6)
                     {
                         PeerDetails peer = new PeerDetails();
@@ -89,7 +89,7 @@ namespace BitTorrent
                         {
                             peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
                         }
-                        peer.port = (UInt32) peers[num + 4] * 256 + peers[num + 5];
+                        peer.port = (UInt32)peers[num + 4] * 256 + peers[num + 5];
                         Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
                         response.peers.Add(peer);
                     }
@@ -145,7 +145,7 @@ namespace BitTorrent
         /// <param name="toEncode">To encode.</param>
         private byte[] EncodeBytesToURL(byte[] toEncode)
         {
-            return(WebUtility.UrlEncodeToBytes(toEncode, 0, toEncode.Length));
+            return (WebUtility.UrlEncodeToBytes(toEncode, 0, toEncode.Length));
 
         }
 
@@ -155,7 +155,7 @@ namespace BitTorrent
         /// <returns>The tracker URL.</returns>
         private string EncodeTrackerURL()
         {
-            string  url = _trackerURL +
+            string url = _trackerURL +
             "?info_hash=" + Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"])) +
             "&peer_id=" + _peerID +
             "&port=" + _port +
@@ -229,7 +229,7 @@ namespace BitTorrent
         /// Announce this instance.
         /// </summary>
         /// <returns>The announce.</returns>
-        public AnnounceResponse Announce() 
+        public AnnounceResponse Announce()
         {
 
             Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(EncodeBytesToURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"]))} " +
@@ -241,32 +241,30 @@ namespace BitTorrent
             try
             {
                 HttpWebRequest httpGetRequest = WebRequest.Create(EncodeTrackerURL()) as HttpWebRequest;
-                HttpWebResponse httpGetResponse;
-                byte[] announceResponse;
 
                 httpGetRequest.Method = "GET";
                 httpGetRequest.ContentType = "text/xml";
 
-                using (httpGetResponse = httpGetRequest.GetResponse() as HttpWebResponse)
+                using (HttpWebResponse httpGetResponse = httpGetRequest.GetResponse() as HttpWebResponse)
                 {
+                    byte[] announceResponse;
                     StreamReader reader = new StreamReader(httpGetResponse.GetResponseStream());
                     using (var memstream = new MemoryStream())
                     {
                         reader.BaseStream.CopyTo(memstream);
                         announceResponse = memstream.ToArray();
                     }
-                }
-                if (httpGetResponse.StatusCode == HttpStatusCode.OK)
-                {
-                    ConstructResponse(announceResponse, ref response);
-                }
-                else
-                {
-                    response = new AnnounceResponse();
                     response.statusCode = (UInt32)httpGetResponse.StatusCode;
-                    response.statusMessage = httpGetResponse.StatusDescription;
-
+                    if (httpGetResponse.StatusCode == HttpStatusCode.OK)
+                    {
+                        ConstructResponse(announceResponse, ref response);
+                    }
+                    else
+                    {
+                        response.statusMessage = httpGetResponse.StatusDescription;
+                    }
                 }
+
             }
             catch (Error)
             {
