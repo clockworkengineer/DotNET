@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitTorrentLibrary", "BitTor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientUI", "ClientUI\ClientUI.csproj", "{7028F076-CC29-4BEE-99A3-9B3BEDDB65D9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitTorrentLibraryTests", "BitTorrentLibraryTests\BitTorrentLibraryTests.csproj", "{966E6119-6E56-4F5F-AF2D-F95EC376E45E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,5 +46,17 @@ Global
 		{7028F076-CC29-4BEE-99A3-9B3BEDDB65D9}.Release|x64.Build.0 = Release|Any CPU
 		{7028F076-CC29-4BEE-99A3-9B3BEDDB65D9}.Release|x86.ActiveCfg = Release|Any CPU
 		{7028F076-CC29-4BEE-99A3-9B3BEDDB65D9}.Release|x86.Build.0 = Release|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Debug|x64.Build.0 = Debug|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Debug|x86.Build.0 = Debug|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Release|x64.ActiveCfg = Release|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Release|x64.Build.0 = Release|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Release|x86.ActiveCfg = Release|Any CPU
+		{966E6119-6E56-4F5F-AF2D-F95EC376E45E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
