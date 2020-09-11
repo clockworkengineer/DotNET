@@ -18,13 +18,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="test01.torrent">
+    <None Update="singlefile.torrent">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     </ItemGroup>
 
   <ItemGroup>
-    <None Update="test02.torrent">
+    <None Update="multifile.torrent">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     </ItemGroup>
