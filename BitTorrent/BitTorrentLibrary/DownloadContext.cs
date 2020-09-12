@@ -67,8 +67,8 @@ namespace BitTorrent
 
                 this.pieceLength = pieceLength;
                 piecesInfoHash = pieces;
-                numberOfPieces = ((UInt32)(pieces.Length / Constants.kHashLength));
-                blocksPerPiece = pieceLength / Constants.kBlockSize;
+                numberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
+                blocksPerPiece = pieceLength / Constants.BlockSize;
 
                 pieceMap = new PieceBlockMap[numberOfPieces];
                 for (var pieceNuber = 0; pieceNuber < numberOfPieces; pieceNuber++)
@@ -341,7 +341,7 @@ namespace BitTorrent
 
                 for (UInt32 blockNumber = 0; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                 {
-                    length += Constants.kBlockSize;
+                    length += Constants.BlockSize;
                 }
                 length += pieceMap[pieceNumber].lastBlockLength;
             }

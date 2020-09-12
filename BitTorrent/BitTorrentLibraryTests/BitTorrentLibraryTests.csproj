@@ -21,13 +21,15 @@
     <None Update="singlefile.torrent">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    </ItemGroup>
-
-  <ItemGroup>
-    <None Update="multifile.torrent">
+        <None Update="multifile.torrent">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="singlefileerror.torrent">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="multifileerror.torrent">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     </ItemGroup>
-
 
 </Project>

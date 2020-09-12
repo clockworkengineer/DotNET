@@ -62,7 +62,7 @@ namespace BitTorrent
                             string path = string.Empty;
                             foreach (var file in ((BNodeList)(fileField)).list)
                             {
-                                path += Constants.kPathSeparator + Encoding.ASCII.GetString(((BitTorrent.BNodeString)file).str);
+                                path += Constants.PathSeparator + Encoding.ASCII.GetString(((BitTorrent.BNodeString)file).str);
                             }
                             fileEntry = path;
 
@@ -150,28 +150,6 @@ namespace BitTorrent
             _metaInfoDict = new Dictionary<string, byte[]>();
         }
 
-        /// <summary>
-        /// Gets the main tracker URL.
-        /// </summary>
-        /// <returns>The tracker URL as a string .</returns>
-        public string GetTrackerURL()
-        {
-            try
-            {
-                return (Encoding.ASCII.GetString(_metaInfoDict["announce"]));
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-            }
-
-            return ("");
-
-        }
         /// <summary>
         /// Load torrent file contents into memory for parsing.
         /// </summary>

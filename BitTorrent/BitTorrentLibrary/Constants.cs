@@ -15,22 +15,22 @@ namespace BitTorrent
 {
     public  static class Constants
     {
-        static public readonly string kPathSeparator = $"{Path.DirectorySeparatorChar}";    // Path separator for host
+        static public readonly string PathSeparator = $"{Path.DirectorySeparatorChar}";    // Path separator for host
 
-        public const int kBlockSize = 1024*16;      // Client Block size
-        public const int kHashLength = 20;          // Length of SHA1 hash in bytes
-        public const byte kSizeOfUInt32 = 4;        // Number of bytes in wire protocol message length
-        public const int kReadSocketTimeout = 5;    // Read socket timeout in seconds
+        public const int BlockSize = 1024*16;      // Client Block size
+        public const int HashLength = 20;          // Length of SHA1 hash in bytes
+        public const byte SizeOfUInt32 = 4;        // Number of bytes in wire protocol message length
+        public const int ReadSocketTimeout = 5;    // Read socket timeout in seconds
 
-        public const byte kMessageCHOKE = 0;        // Ids of wire protocol messages
-        public const byte kMessageUNCHOKE = 1;
-        public const byte kMessageINTERESTED = 2;
-        public const byte kMessageUNINTERESTED = 3;
-        public const byte kMessageHAVE = 4;
-        public const byte kMessageBITFIELD = 5;
-        public const byte kMessageREQUEST = 6;
-        public const byte kMessagePIECE = 7;
-        public const byte kMessageCANCEL = 8;
+        public const byte MessageCHOKE = 0;        // Ids of wire protocol messages
+        public const byte MessageUNCHOKE = 1;
+        public const byte MessageINTERESTED = 2;
+        public const byte MessageUNINTERESTED = 3;
+        public const byte MessageHAVE = 4;
+        public const byte MessageBITFIELD = 5;
+        public const byte MessageREQUEST = 6;
+        public const byte MessagePIECE = 7;
+        public const byte MessageCANCEL = 8;
 
     }
 }

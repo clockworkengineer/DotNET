@@ -217,8 +217,7 @@ namespace BitTorrent
         /// <param name="torrentFileAgent">Torrent file agent.</param>
         public Tracker(FileAgent torrentFileAgent)
         {
-
-            _trackerURL = torrentFileAgent.TorrentMetaInfo.GetTrackerURL();
+            _trackerURL = Encoding.ASCII.GetString(torrentFileAgent.TorrentMetaInfo.MetaInfoDict["announce"]);
             _torrentFileAgent = torrentFileAgent;
             _peerID = PeerID.get();
             _ip = Peer.GetLocalHostIP();

@@ -303,14 +303,11 @@ namespace BitTorrent
             {
                 int position = 0;
                 bNodeRoot = DecodeBNodes(buffer, ref position);
-            }
-            catch (Error)
-            {
-                throw;
-            }
+            }   
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BEncoding Error: Failure on decoding torrent file into BNode tree.");
             }
             return (bNodeRoot);
 
@@ -359,13 +356,10 @@ namespace BitTorrent
 
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BEncoding Error: Failure to encode BNode Tree.");
             }
 
             return (result.ToArray());
@@ -406,13 +400,10 @@ namespace BitTorrent
                     }
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BEncoding Error: Could not get dictionary from BNode tree.");
             }
 
             return (bNodeEntry);
@@ -444,13 +435,10 @@ namespace BitTorrent
                     }
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BEncoding Error: Could not get string from BNode tree.");
             }
 
             return ("");

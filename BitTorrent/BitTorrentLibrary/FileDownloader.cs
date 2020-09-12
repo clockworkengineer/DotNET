@@ -67,8 +67,8 @@ namespace BitTorrent
         private bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
             byte[] hash = _sha.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
-            UInt32 pieceOffset = pieceNumber * Constants.kHashLength;
-            for (var byteNumber = 0; byteNumber < Constants.kHashLength; byteNumber++)
+            UInt32 pieceOffset = pieceNumber * Constants.HashLength;
+            for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
             {
                 if (hash[byteNumber] != _dc.piecesInfoHash[pieceOffset + byteNumber])
                 {
@@ -94,20 +94,20 @@ namespace BitTorrent
                 _dc.totalBytesDownloaded += numberOfBytes;
             }
             UInt32 blockNumber = 0;
-            for (; blockNumber < numberOfBytes / Constants.kBlockSize; blockNumber++)
+            for (; blockNumber < numberOfBytes / Constants.BlockSize; blockNumber++)
             {
                 _dc.BlockPieceLocal(pieceNumber, blockNumber, pieceThere);
 
             }
-            if (numberOfBytes % Constants.kBlockSize != 0)
+            if (numberOfBytes % Constants.BlockSize != 0)
             {
-                _dc.BlockPieceLocal(pieceNumber, numberOfBytes / Constants.kBlockSize, pieceThere);
-                _dc.pieceMap[pieceNumber].lastBlockLength = numberOfBytes % Constants.kBlockSize;
-                _dc.BlockPieceLast(pieceNumber, (numberOfBytes / Constants.kBlockSize), true);
+                _dc.BlockPieceLocal(pieceNumber, numberOfBytes / Constants.BlockSize, pieceThere);
+                _dc.pieceMap[pieceNumber].lastBlockLength = numberOfBytes % Constants.BlockSize;
+                _dc.BlockPieceLast(pieceNumber, (numberOfBytes / Constants.BlockSize), true);
             }
             else
             {
-                _dc.pieceMap[pieceNumber].lastBlockLength = Constants.kBlockSize;
+                _dc.pieceMap[pieceNumber].lastBlockLength = Constants.BlockSize;
                 _dc.BlockPieceLast(pieceNumber, blockNumber - 1, true);
             }
         }

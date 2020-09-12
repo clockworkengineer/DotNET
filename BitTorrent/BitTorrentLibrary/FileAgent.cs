@@ -75,10 +75,10 @@ namespace BitTorrent
                         UInt32 blockNumber = 0;
                         for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
                         {
-                            PWP.Request(remotePeer, nextPiece, blockNumber * Constants.kBlockSize, Constants.kBlockSize);
+                            PWP.Request(remotePeer, nextPiece, blockNumber * Constants.BlockSize, Constants.BlockSize);
                         }
 
-                        PWP.Request(remotePeer, nextPiece, blockNumber * Constants.kBlockSize,
+                        PWP.Request(remotePeer, nextPiece, blockNumber * Constants.BlockSize,
                                      FileToDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
 
                         remotePeer.WaitForPieceAssembly.WaitOne();
@@ -122,15 +122,15 @@ namespace BitTorrent
                         remotePeer.PeerChoking.WaitOne();
 
                     }
-              
+
                     foreach (var peer in RemotePeers)
-                    {  
+                    {
                         if (!peer.PeerChoking.WaitOne(0))
                         {
                             peer.PeerChoking.Set();
                         }
                     }
-                    
+
                 }
 
                 Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
@@ -147,7 +147,7 @@ namespace BitTorrent
                 cancelAssemblerTaskSource.Cancel();
             }
 
-       
+
 
         }
 
@@ -184,6 +184,51 @@ namespace BitTorrent
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        private void GenerateFilesToDownloadList()
+        {
+
+            try
+            {
+
+                if (!TorrentMetaInfo.MetaInfoDict.ContainsKey("0"))
+                {
+                    FileDetails fileDetail = new FileDetails();
+                    fileDetail.name = _downloadPath + Constants.PathSeparator + Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["name"]);
+                    fileDetail.length = UInt64.Parse(Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["length"]));
+                    fileDetail.offset = 0;
+                    _filesToDownload.Add(fileDetail);
+                }
+                else
+                {
+                    UInt32 fileNo = 0;
+                    UInt64 totalBytes = 0;
+                    string name = Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["name"]);
+                    while (TorrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
+                    {
+                        string[] details = Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict[fileNo.ToString()]).Split(',');
+                        FileDetails fileDetail = new FileDetails();
+                        fileDetail.name = _downloadPath + Constants.PathSeparator + name + details[0];
+                        fileDetail.length = UInt64.Parse(details[1]);
+                        fileDetail.md5sum = details[2];
+                        fileDetail.offset = totalBytes;
+                        _filesToDownload.Add(fileDetail);
+                        fileNo++;
+                        totalBytes += fileDetail.length;
+                    }
+
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("Error: Faliure to create files download list for File Agent.");
+            }
+        }
+
+        /// <summary>
         /// Initializes a new instance of the FileAgent class.
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
@@ -204,7 +249,6 @@ namespace BitTorrent
             try
             {
 
-
                 Log.Logger.Info("Loading main tracker ....");
 
                 _mainTracker = new Tracker(this);
@@ -215,33 +259,7 @@ namespace BitTorrent
 
                 Log.Logger.Info("Create files to download details structure ...");
 
-                if (!TorrentMetaInfo.MetaInfoDict.ContainsKey("0"))
-                {
-                    FileDetails fileDetail = new FileDetails();
-                    fileDetail.name = _downloadPath + Constants.kPathSeparator + Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["name"]);
-                    fileDetail.length = UInt64.Parse(Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["length"]));
-                    fileDetail.offset = 0;
-                    _filesToDownload.Add(fileDetail);
-                }
-                else
-                {
-                    UInt32 fileNo = 0;
-                    UInt64 totalBytes = 0;
-                    string name = Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["name"]);
-                    while (TorrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
-                    {
-                        string[] details = Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict[fileNo.ToString()]).Split(',');
-                        FileDetails fileDetail = new FileDetails();
-                        fileDetail.name = _downloadPath + Constants.kPathSeparator + name + details[0];
-                        fileDetail.length = UInt64.Parse(details[1]);
-                        fileDetail.md5sum = details[2];
-                        fileDetail.offset = totalBytes;
-                        _filesToDownload.Add(fileDetail);
-                        fileNo++;
-                        totalBytes += fileDetail.length;
-                    }
-
-                }
+                GenerateFilesToDownloadList();
 
                 Log.Logger.Info("Setup file downloader ...");
 
@@ -251,8 +269,8 @@ namespace BitTorrent
 
                 Log.Logger.Info("Initial main tracker announce ...");
 
-                _mainTracker.Left = FileToDownloader.Dc.totalLength-FileToDownloader.Dc.totalBytesDownloaded;
-                if (_mainTracker.Left==0)
+                _mainTracker.Left = FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
+                if (_mainTracker.Left == 0)
                 {
                     Log.Logger.Info("Torrent file fully downloaded already.");
                     return;
@@ -286,7 +304,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("Failure in to load torrent File Agent.", ex);
+                throw new Error("Error: Failure in creation of torrent File Agent.");
             }
 
 
@@ -342,7 +360,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("Failure in File Agent torrent file download.", ex);
+                throw new Error("Error: File Agent failed to download file.");
             }
 
 
