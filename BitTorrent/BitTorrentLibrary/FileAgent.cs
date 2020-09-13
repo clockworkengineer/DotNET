@@ -184,7 +184,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// 
+        /// Generate of files in torrent to download from peers,
         /// </summary>
         private void GenerateFilesToDownloadList()
         {
@@ -282,11 +282,14 @@ namespace BitTorrent
 
                 //Simulate multipeer downloads
                 PeerDetails peerId = new PeerDetails();
-                peerId.ip = CurrentAnnouneResponse.peers[0].ip;
-                peerId.port = CurrentAnnouneResponse.peers[0].port;
-                for (var cnt01 = 0; cnt01 < 5; cnt01++)
+                if (false)
                 {
-                    CurrentAnnouneResponse.peers.Add(peerId);
+                    peerId.ip = CurrentAnnouneResponse.peers[0].ip;
+                    peerId.port = CurrentAnnouneResponse.peers[0].port;
+                    for (var cnt01 = 1; cnt01 < 5; cnt01++)
+                    {
+                        CurrentAnnouneResponse.peers.Add(peerId);
+                    }
                 }
 
                 CreateAndConnectPeers();
@@ -415,10 +418,13 @@ namespace BitTorrent
             try
             {
                 _mainTracker.StopAnnonncing();
-                Log.Logger.Info("Closing peer socket.");
-                foreach (var peer in RemotePeers)
+                if (RemotePeers != null)
                 {
-                    peer.Close();
+                    Log.Logger.Info("Closing peer sockets.");
+                    foreach (var peer in RemotePeers)
+                    {
+                        peer.Close();
+                    }
                 }
             }
             catch (Error)

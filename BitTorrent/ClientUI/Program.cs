@@ -10,6 +10,7 @@
 
 using System;
 using System.Text;
+using System.Threading;
 using NLog;
 
 namespace BitTorrent
@@ -88,7 +89,9 @@ namespace BitTorrent
 
                 fileAgent.Download();
 
-                Console.ReadKey();
+                //Console.ReadKey();
+
+                //Thread.Sleep(10000);
 
                 fileAgent.Close();
 

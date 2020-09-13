@@ -118,7 +118,7 @@ namespace BitTorrent
             position++;
 
             int end = position;
-            while (buffer[end] != (byte) 'e')
+            while (buffer[end] != (byte)'e')
             {
                 end++;
             }
@@ -259,11 +259,11 @@ namespace BitTorrent
         /// <param name="position">position - Position in buffer. SHould be at end of buffer on exit.</param>
         static private BNodeBase DecodeBNodes(byte[] buffer, ref int position)
         {
-            BNodeBase bNode=null;
+            BNodeBase bNode = null;
 
-            while (buffer[position]!=(byte) 'e')
+            while (buffer[position] != (byte)'e')
             {
-                switch((char) buffer[position])
+                switch ((char)buffer[position])
                 {
                     case 'd':
                         bNode = DecodeDictionary(buffer, ref position);
@@ -296,14 +296,18 @@ namespace BitTorrent
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
         static public BNodeBase Decode(byte[] buffer)
         {
-           
+
             BNodeBase bNodeRoot = null;
 
             try
             {
                 int position = 0;
                 bNodeRoot = DecodeBNodes(buffer, ref position);
-            }   
+            }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -356,6 +360,10 @@ namespace BitTorrent
 
                 }
             }
+            catch (Error)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -374,7 +382,7 @@ namespace BitTorrent
         /// <param name="entryKey">entryKey - Dictionary key of Bnode entry to return.</param>
         static public BNodeBase GetDictionaryEntry(BNodeBase bNode, string entryKey)
         {
-            BNodeBase bNodeEntry=null;
+            BNodeBase bNodeEntry = null;
 
             try
             {
@@ -399,6 +407,10 @@ namespace BitTorrent
                         if (bNodeEntry != null) break;
                     }
                 }
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -434,6 +446,10 @@ namespace BitTorrent
                         return (Encoding.ASCII.GetString(((BNodeNumber)entryNode).number));
                     }
                 }
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {

@@ -19,9 +19,9 @@ namespace BitTorrent
     /// </summary>
     public struct PeerDetails
     {
-        public string _peerID;  // Peer ID (OPTIONAL)
-        public string ip;       // Peer IP Address
-        public UInt32 port;     // Peer Port
+        public string _peerID;  // ID (OPTIONAL)
+        public string ip;       // IP Address
+        public UInt32 port;     // Port
     }
 
     /// <summary>
@@ -36,7 +36,7 @@ namespace BitTorrent
         public UInt32 minInterval;      // Minimum poll time
         public string trackerID;        // Track ID (OPTIONAL)
         public UInt32 complete;         // Number of seeders for torrent (OPTIONAL)
-        public UInt32 incomplete;       // Number of peers transferring torrent (OPTIONAL)
+        public UInt32 incomplete;       // Number of non-seeder peers (leeches) (OPTIONAL)
         public List<PeerDetails> peers; // Number of peers in swarm
     };
 }

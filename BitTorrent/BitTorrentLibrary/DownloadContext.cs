@@ -22,7 +22,7 @@ namespace BitTorrent
     {
         public const byte HaveLocal = 0x01; // Downloaded
         public const byte Requested = 0x2;  // Has been requested
-        public const byte OnPeer = 0x04;    // Is present ona remote peer
+        public const byte OnPeer = 0x04;    // Is present on a remote peer
         public const byte LastBlock = 0x08; // Last block in a piece
     }
 

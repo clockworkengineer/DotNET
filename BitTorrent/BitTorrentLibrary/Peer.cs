@@ -43,7 +43,7 @@ namespace BitTorrent
     /// Peer.
     /// </summary>
     public class Peer
-    {  
+    {
         private string _ip;
         private UInt32 _port;
         private ManualResetEvent _peerChoking;
@@ -93,7 +93,7 @@ namespace BitTorrent
         /// <returns>The read.</returns>
         /// <param name="buffer">Buffer.</param>
         /// <param name="length">Length.</param>
-        public  int PeerRead(byte[] buffer, int length)
+        public int PeerRead(byte[] buffer, int length)
         {
             return (_peerSocket.Receive(buffer, length, SocketFlags.None));
         }
@@ -158,15 +158,15 @@ namespace BitTorrent
         /// <returns>The local host ip.</returns>
         static public string GetLocalHostIP()
         {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
+            string localHostIP="127.0.0.1";
+            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
             {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)
-                {
-                    return ip.ToString();
-                }
+                socket.Connect("8.8.8.8", 65530);
+                IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+                localHostIP = endPoint.Address.ToString();
             }
-            throw new Error("No network adapters with an IPv4 address in the system!");
+            return(localHostIP);
+
         }
 
         /// <summary>
@@ -176,13 +176,13 @@ namespace BitTorrent
         /// <param name="ip">Ip.</param>
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
-        public Peer(FileDownloader fileDownloader, string ip ,UInt32 port, byte[] infoHash)
+        public Peer(FileDownloader fileDownloader, string ip, UInt32 port, byte[] infoHash)
         {
             _ip = ip;
             _port = port;
             _infoHash = infoHash;
             _torrentDownloader = fileDownloader;
-            _readBuffer = new byte[Constants.BlockSize + (2*Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
+            _readBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
             _assembledPiece = new PieceBuffer(fileDownloader.Dc.pieceLength);
             _waitForPieceAssembly = new ManualResetEvent(false);
             _peerChoking = new ManualResetEvent(false);
@@ -240,7 +240,7 @@ namespace BitTorrent
         /// <param name="pieceNumber">Piece number.</param>
         public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            return ((_remotePieceBitfield[pieceNumber>>3] & 0x80 >> (Int32)(pieceNumber&0x7))!=0);
+            return ((_remotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0);
         }
 
         /// <summary>
