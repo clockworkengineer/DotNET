@@ -91,7 +91,7 @@ namespace BitTorrent
 
                 //Console.ReadKey();
 
-                //Thread.Sleep(10000);
+                Thread.Sleep(10000);
 
                 fileAgent.Close();
 

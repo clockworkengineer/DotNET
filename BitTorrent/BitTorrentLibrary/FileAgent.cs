@@ -3,8 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: The File Agent class contains all the high level processing
-// like download and upload for torrent files.
+// Description: All the high level torrent processing like download and upload.
 //
 // Copyright 2019.
 //
@@ -143,7 +142,7 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Log.Logger.Error(ex);
+                Log.Logger.Error(ex.Message);
                 cancelAssemblerTaskSource.Cancel();
             }
 
@@ -224,7 +223,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("Error: Faliure to create files download list for File Agent.");
+                throw new Error("BitTorrent Error (FileAgent): Failed to create download file list.");
             }
         }
 
@@ -296,7 +295,7 @@ namespace BitTorrent
 
                 if (RemotePeers.Count == 0)
                 {
-                    throw new Error("Error: No peers would connect.");
+                    throw new Error("BitTorrent Error (FileAgent): Failed to connect.");
                 }
 
             }
@@ -307,7 +306,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("Error: Failure in creation of torrent File Agent.");
+                throw new Error("BitTorrent Error (FileAgent): Failed to load File Agent.");
             }
 
 
@@ -363,7 +362,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("Error: File Agent failed to download file.");
+                throw new Error("BitTorrent Error (FileAgent): Failed to download torrent file.");
             }
 
 
@@ -386,6 +385,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
             }
         }
 
@@ -407,6 +407,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
             }
         }
 
@@ -434,6 +435,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
             }
         }
 
@@ -453,6 +455,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
             }
         }
 
@@ -472,6 +475,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
             }
         }
     }

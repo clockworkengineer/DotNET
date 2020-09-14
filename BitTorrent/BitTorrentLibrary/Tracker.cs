@@ -3,9 +3,9 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Class to provide all the code necessary for communication 
-// with remote trackers. This should support both UDP/HTTP requests but at
-// present only HTTP.
+// Description: Provide all the necessary functionality for communication 
+// with remote trackers. This should support both UDP/HTTP requests but 
+// at present only HTTP.
 //
 // Copyright 2019.
 //
@@ -26,7 +26,7 @@ namespace BitTorrent
     {
 
         /// <summary>
-        /// Tracker event.
+        /// Tracker Announce event types.
         /// </summary>
         public enum TrackerEvent
         {
@@ -178,7 +178,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Updates the peers status.
+        /// Updates all peers status.
         /// </summary>
         private void UpdatePeersStatus()
         {
@@ -203,7 +203,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// On the announce event send announce request to tracker and get response.
+        /// On  announce event send announce request to tracker and get response.
         /// </summary>
         /// <param name="source">Source.</param>
         /// <param name="e">E.</param>
@@ -242,6 +242,7 @@ namespace BitTorrent
 
             try
             {
+
                 HttpWebRequest httpGetRequest = WebRequest.Create(EncodeTrackerAnnounceURL()) as HttpWebRequest;
 
                 httpGetRequest.Method = "GET";
@@ -274,8 +275,9 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
-                throw new Error("Tracker Error: " + ex.Message);
+                Log.Logger.Debug(ex); 
+                // Display first error as message concatination can be unreadable if too deep
+                throw new Error("BitTorrent Error (Tracker): " + ex.GetBaseException().Message);
             }
 
             return (response);
@@ -301,7 +303,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("Tracker Error: " + ex.Message);
+                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
             }
         }
 
@@ -325,7 +327,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("Tracker Error: " + ex.Message);
+                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
             }
         }
 
@@ -360,7 +362,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("Tracker Error: " + ex.Message);
+                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
             }
         }
     }
