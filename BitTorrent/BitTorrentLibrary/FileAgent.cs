@@ -245,6 +245,8 @@ namespace BitTorrent
         /// <summary>
         /// Load FileAgent instance.
         /// </summary>
+        /// 
+        /// 
         public void Load()
         {
 
@@ -282,24 +284,7 @@ namespace BitTorrent
 
                 _mainTracker.StartAnnouncing();
 
-                //Simulate multipeer downloads
-                PeerDetails peerId = new PeerDetails();
-                if (false)
-                {
-                    peerId.ip = CurrentAnnouneResponse.peers[0].ip;
-                    peerId.port = CurrentAnnouneResponse.peers[0].port;
-                    for (var cnt01 = 1; cnt01 < 5; cnt01++)
-                    {
-                        CurrentAnnouneResponse.peers.Add(peerId);
-                    }
-                }
-
                 ConnectPeersAndAddToSwarm();
-
-                if (RemotePeers.Count == 0)
-                {
-                    throw new Error("BitTorrent Error (FileAgent): Failed to connect.");
-                }
 
             }
             catch (Error)

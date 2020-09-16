@@ -35,7 +35,7 @@ namespace BitTorrent
             else
             {
                 socket.Close();
-                throw new Error("Error: Peer connect timed out.");
+                throw new Error("BitTorrent (Peer) Error: Peer connect timed out.");
             }
         }
     }
@@ -77,7 +77,6 @@ namespace BitTorrent
         public ManualResetEvent BitfieldReceived { get => _bitfieldReceived; set => _bitfieldReceived = value; }
         public bool Active { get => _active; set => _active = value; }
         public Int64 TransferingPiece { get => _transferingPiece; set => _transferingPiece = value; }
-
         public string Ip { get => _ip; set => _ip = value; }
 
         /// <summary>
@@ -125,6 +124,11 @@ namespace BitTorrent
                         remotePeer.PacketLength |= remotePeer._readBuffer[3];
                         remotePeer._lengthRead = true;
                         remotePeer._bytesRead = 0;
+                        if (remotePeer.PacketLength > remotePeer._readBuffer.Length)
+                        {
+                            Log.Logger.Debug("Resizing readBuffer ...");
+                            remotePeer.ReadBuffer = new byte[remotePeer.PacketLength];
+                        }
                     }
                 }
                 else if (remotePeer._bytesRead == remotePeer.PacketLength)
@@ -150,7 +154,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug("Internal ReadPacketCallBack() error : " + ex.Message);
-                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (Peer) Error: "+ex.Message);
             }
         }
 
@@ -160,14 +164,14 @@ namespace BitTorrent
         /// <returns>The local host ip.</returns>
         static public string GetLocalHostIP()
         {
-            string localHostIP="127.0.0.1";
+            string localHostIP = "127.0.0.1";
             using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
             {
                 socket.Connect("8.8.8.8", 65530);
                 IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
                 localHostIP = endPoint.Address.ToString();
             }
-            return(localHostIP);
+            return (localHostIP);
 
         }
 
@@ -222,6 +226,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (Peer) Error: "+ex.Message);
             }
 
         }
@@ -287,6 +292,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (Peer) Error: "+ex.Message);
             }
         }
 
