@@ -29,14 +29,14 @@ namespace BitTorrent
         private Tracker _mainTracker;                       // Main torrent tracker
         private AnnounceResponse _currentAnnouneResponse;   // Current tracker annouce respose
         private FileDownloader _fileToDownloader;           // FileDownloader for torrent
-        private List<Peer> _remotePeers;                    // Connected remote peers
+        private Dictionary<string, Peer> _remotePeers;      // Connected remote peers
         private List<FileDetails> _filesToDownload;         // Files to download in torrent
         private ManualResetEvent _downloading;              // WaitOn when downloads == false
 
         public FileDownloader FileToDownloader { get => _fileToDownloader; set => _fileToDownloader = value; }
         public AnnounceResponse CurrentAnnouneResponse { get => _currentAnnouneResponse; set => _currentAnnouneResponse = value; }
         public MetaInfoFile TorrentMetaInfo { get => _torrentMetaInfo; set => _torrentMetaInfo = value; }
-        public List<Peer> RemotePeers { get => _remotePeers; set => _remotePeers = value; }
+        public Dictionary<string, Peer> RemotePeers { get => _remotePeers; set => _remotePeers = value; }
         public ManualResetEvent Downloading { get => _downloading; set => _downloading = value; }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace BitTorrent
 
                         if (cancelAssemblerTask.IsCancellationRequested)
                         {
-                            foreach (var peer in RemotePeers)
+                            foreach (var peer in RemotePeers.Values)
                             {
                                 if (!peer.PeerChoking.WaitOne(0))
                                 {
@@ -122,7 +122,7 @@ namespace BitTorrent
 
                     }
 
-                    foreach (var peer in RemotePeers)
+                    foreach (var peer in RemotePeers.Values)
                     {
                         if (!peer.PeerChoking.WaitOne(0))
                         {
@@ -146,38 +146,6 @@ namespace BitTorrent
                 cancelAssemblerTaskSource.Cancel();
             }
 
-
-
-        }
-
-        /// <summary>
-        /// Creates the and connect remote torrent peers.
-        /// </summary>
-        private void CreateAndConnectPeers()
-        {
-
-            Log.Logger.Info("Connecting to available peers....");
-
-            RemotePeers = new List<Peer>();
-            foreach (var peer in CurrentAnnouneResponse.peers)
-            {
-                try
-                {
-                    Peer remotePeer = new Peer(FileToDownloader, peer.ip, peer.port, TorrentMetaInfo.MetaInfoDict["info hash"]);
-                    remotePeer.Connect();
-                    if (remotePeer.Connected)
-                    {
-                        RemotePeers.Add(remotePeer);
-                        Log.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                    }
-                }
-                catch (Exception)
-                {
-                    Log.Logger.Info($"Failed to connect to {peer.ip}");
-                }
-            }
-
-            Log.Logger.Info($"Number of connected piers {RemotePeers.Count}");
 
 
         }
@@ -237,6 +205,41 @@ namespace BitTorrent
             TorrentMetaInfo = torrentFile;
             _downloadPath = downloadPath;
             Downloading = new ManualResetEvent(true);
+            RemotePeers = new Dictionary<string, Peer>();
+        }
+
+/// <summary>
+        /// Connect peers and add to swarm on success.
+        /// </summary>
+        public void ConnectPeersAndAddToSwarm()
+        {
+
+            Log.Logger.Info("Connecting any new peers to swarm ....");
+
+            foreach (var peer in CurrentAnnouneResponse.peers)
+            {
+                try
+                {
+                    if (!RemotePeers.ContainsKey(peer.ip))
+                    {
+                        Peer remotePeer = new Peer(FileToDownloader, peer.ip, peer.port, TorrentMetaInfo.MetaInfoDict["info hash"]);
+                        remotePeer.Connect();
+                        if (remotePeer.Connected)
+                        {
+                            RemotePeers.Add(remotePeer.Ip, remotePeer);
+                            Log.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Log.Logger.Info($"Failed to connect to {peer.ip}");
+                }
+            }
+
+            Log.Logger.Info($"Number of peers in swarm  {RemotePeers.Count}");
+
+
         }
 
         /// <summary>
@@ -291,7 +294,7 @@ namespace BitTorrent
                     }
                 }
 
-                CreateAndConnectPeers();
+                ConnectPeersAndAddToSwarm();
 
                 if (RemotePeers.Count == 0)
                 {
@@ -333,7 +336,7 @@ namespace BitTorrent
 
                     _mainTracker.Event = Tracker.TrackerEvent.started;
 
-                    foreach (var peer in RemotePeers)
+                    foreach (var peer in RemotePeers.Values)
                     {
                         assembleTasks.Add(Task.Run(() => AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource)));
                     }
@@ -385,7 +388,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
+                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
             }
         }
 
@@ -407,7 +410,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
+                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
             }
         }
 
@@ -422,7 +425,7 @@ namespace BitTorrent
                 if (RemotePeers != null)
                 {
                     Log.Logger.Info("Closing peer sockets.");
-                    foreach (var peer in RemotePeers)
+                    foreach (var peer in RemotePeers.Values)
                     {
                         peer.Close();
                     }
@@ -435,7 +438,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
+                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
             }
         }
 
@@ -455,7 +458,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
+                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
             }
         }
 
@@ -475,7 +478,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): "+ ex.Message);
+                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
             }
         }
     }

@@ -78,6 +78,8 @@ namespace BitTorrent
         public bool Active { get => _active; set => _active = value; }
         public Int64 TransferingPiece { get => _transferingPiece; set => _transferingPiece = value; }
 
+        public string Ip { get => _ip; set => _ip = value; }
+
         /// <summary>
         /// Send packet to remote peer.
         /// </summary>

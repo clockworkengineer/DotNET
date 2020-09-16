@@ -178,14 +178,15 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Updates all peers status.
+        /// Updates peers.
         /// </summary>
-        private void UpdatePeersStatus()
+        private void UpdatePeers()
         {
+
             int unChokedPeers = 0;
             int activePeers = 0;
 
-            foreach (var peer in _torrentFileAgent.RemotePeers)
+            foreach (var peer in _torrentFileAgent.RemotePeers.Values)
             {
                 if (peer.PeerChoking.WaitOne(0))
                 {
@@ -211,7 +212,8 @@ namespace BitTorrent
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
             tracker._currentTrackerResponse = tracker.Announce();
-            tracker.UpdatePeersStatus();
+            tracker._torrentFileAgent.ConnectPeersAndAddToSwarm();
+            tracker.UpdatePeers();
         }
 
         /// <summary>
