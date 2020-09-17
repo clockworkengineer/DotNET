@@ -24,7 +24,6 @@ namespace BitTorrent
     /// </summary>
     public class Tracker
     {
-
         /// <summary>
         /// Tracker Announce event types.
         /// </summary>
@@ -36,27 +35,22 @@ namespace BitTorrent
         };
 
         private System.Timers.Timer _announceTimer;         // Timer for sending tracker announce events
-        private string _trackerURL = String.Empty;          // URL for tracker announce
-        private string _peerID = String.Empty;              // Peers unique ID
-        private FileAgent _torrentFileAgent;                // File Agent for downloads
+        private readonly string _trackerURL = String.Empty; // URL for tracker announce
+        private readonly string _peerID = String.Empty;     // Peers unique ID
+        private readonly FileAgent _torrentFileAgent;       // File Agent for downloads
         private AnnounceResponse _currentTrackerResponse;   // Last tracker announce response
-        private UInt32 _port = 6681;                        // Port that client s listening on 
-        private string _ip = String.Empty;                  // IP of host performing announce
-        private UInt32 _compact = 1;                        // Is the returned peer list compressed (1=yes,0=no)
-        private UInt32 _noPeerID;                           // Unique peer ID for downloader
-        private UInt64 _uploaded;                           // Total uploaded bytes of torrent to remote clients
-        private UInt64 _downloaded;                         // Total downloaed bytes of file to local client
-        private UInt64 _left;                               // Bytes left in file to be downloaded
-        private TrackerEvent _event;                        // Current state of torrent downloading
-        private string _key = String.Empty;                 // An additional identification that is not shared with any other peers (optional)
+        private readonly UInt32 _port = 6681;               // Port that client s listening on 
+        private readonly string _ip = String.Empty;         // IP of host performing announce
+        private readonly UInt32 _compact = 1;               // Is the returned peer list compressed (1=yes,0=no)
+        private readonly UInt32 _noPeerID;                  // Unique peer ID for downloader
+        private readonly string _key = String.Empty;        // An additional identification that is not shared with any other peers (optional)
         private string _trackerID = String.Empty;           // String that the client should send back on its next announcements. (optional).
-        private UInt32 _numWanted = 5;                      // Number of required download clients
+        private readonly UInt32 _numWanted = 5;             // Number of required download clients
         private UInt32 _interval = 2000;                    // Polling interval between each announce
-
-        public UInt64 Uploaded { get => _uploaded; set => _uploaded = value; }
-        public UInt64 Downloaded { get => _downloaded; set => _downloaded = value; }
-        public UInt64 Left { get => _left; set => _left = value; }
-        public TrackerEvent Event { get => _event; set => _event = value; }
+        public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
+        public UInt64 Downloaded { get; set; }              // Total downloaed bytes of file to local client
+        public UInt64 Left { get; set; }                    // Bytes left in file to be downloaded
+        public TrackerEvent Event { get; set; }             // Current state of torrent downloading
 
         /// <summary>
         /// Decodes the announce request response recieved from a tracker.
@@ -65,7 +59,6 @@ namespace BitTorrent
         /// <param name="decodedResponse">Response.</param>
         private void DecodeAnnounceResponse(byte[] announceResponse, ref AnnounceResponse decodedResponse)
         {
-
             BNodeBase decodedAnnounce = Bencoding.Decode(announceResponse);
 
             UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "complete"), out decodedResponse.complete);
@@ -75,20 +68,22 @@ namespace BitTorrent
             if (field != null)
             {
                 decodedResponse.peers = new List<PeerDetails>();
-                if (field is BNodeString)
+                if (field is BNodeString bNodeString)
                 {
-                    byte[] peers = ((BNodeString)field).str;
+                    byte[] peers = (bNodeString).str;
                     UInt32 numberPeers = (UInt32)peers.Length / 6;
                     for (var num = 0; num < peers.Length; num += 6)
                     {
-                        PeerDetails peer = new PeerDetails();
-                        peer._peerID = String.Empty;
-                        peer.ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}";
+                        PeerDetails peer = new PeerDetails
+                        {
+                            _peerID = String.Empty,
+                            ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}"
+                        };
                         if (peer.ip.Contains(":"))
                         {
                             peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
                         }
-                        peer.port = (UInt32)peers[num + 4] * 256 + peers[num + 5];
+                        peer.port = ((UInt32)peers[num + 4] * 256) + peers[num + 5];
                         if (peer.ip != _ip) // Ignore self in peers list
                         {
                             Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
@@ -96,18 +91,17 @@ namespace BitTorrent
                         }
                     }
                 }
-                else if (field is BNodeList)
+                else if (field is BNodeList bNodeList)
                 {
-                    foreach (var listItem in ((BNodeList)(field)).list)
+                    foreach (var listItem in (bNodeList).list)
                     {
-                        if (listItem is BNodeDictionary)
+                        if (listItem is BNodeDictionary bNodeDictionary)
                         {
                             PeerDetails peer = new PeerDetails();
-                            BNodeBase peerDictionaryItem = ((BitTorrent.BNodeDictionary)listItem);
+                            BNodeBase peerDictionaryItem = (bNodeDictionary);
                             BNodeBase peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "ip");
                             if (peerField != null)
                             {
-                                string path = string.Empty;
                                 peer.ip = Encoding.ASCII.GetString(((BitTorrent.BNodeString)peerField).str);
                             }
                             if (peer.ip.Contains(":"))
@@ -117,7 +111,6 @@ namespace BitTorrent
                             peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "port");
                             if (peerField != null)
                             {
-                                string path = string.Empty;
                                 peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrent.BNodeNumber)peerField).number));
                             }
                             if (peer.ip != _ip) // Ignore self in peers list
@@ -128,7 +121,6 @@ namespace BitTorrent
                         }
                     }
                 }
-
             }
 
             UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "interval"), out decodedResponse.interval);
@@ -138,7 +130,6 @@ namespace BitTorrent
             decodedResponse.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "warning message");
 
             decodedResponse.announceCount++;
-
         }
 
         /// <summary>
@@ -148,8 +139,7 @@ namespace BitTorrent
         /// <param name="infoHashBytes">To encode.</param>
         private string EncodeInfoHashForURL(byte[] infoHashBytes)
         {
-            return (Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(infoHashBytes, 0, infoHashBytes.Length)));
-
+            return Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(infoHashBytes, 0, infoHashBytes.Length));
         }
 
         /// <summary>
@@ -173,8 +163,7 @@ namespace BitTorrent
             "&trackerid=" + _trackerID +
             "&numwanted=" + _numWanted;
 
-            return (url);
-
+            return url;
         }
 
         /// <summary>
@@ -182,7 +171,6 @@ namespace BitTorrent
         /// </summary>
         private void UpdatePeers()
         {
-
             int unChokedPeers = 0;
             int activePeers = 0;
 
@@ -200,7 +188,6 @@ namespace BitTorrent
 
             Log.Logger.Info($"Unchoked Peers {unChokedPeers}/{ _torrentFileAgent.RemotePeers.Count}");
             Log.Logger.Info($"Active Peers {activePeers}/{ _torrentFileAgent.RemotePeers.Count}");
-
         }
 
         /// <summary>
@@ -226,7 +213,6 @@ namespace BitTorrent
             _torrentFileAgent = torrentFileAgent;
             _peerID = PeerID.get();
             _ip = Peer.GetLocalHostIP();
-
         }
 
         /// <summary>
@@ -235,7 +221,6 @@ namespace BitTorrent
         /// <returns>The response.</returns>
         public AnnounceResponse Announce()
         {
-
             Log.Logger.Info($"Announce: info_hash={EncodeInfoHashForURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"])} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
                   $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
@@ -244,7 +229,6 @@ namespace BitTorrent
 
             try
             {
-
                 HttpWebRequest httpGetRequest = WebRequest.Create(EncodeTrackerAnnounceURL()) as HttpWebRequest;
 
                 httpGetRequest.Method = "GET";
@@ -269,7 +253,6 @@ namespace BitTorrent
                         response.statusMessage = httpGetResponse.StatusDescription;
                     }
                 }
-
             }
             catch (Error)
             {
@@ -277,13 +260,12 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex); 
+                Log.Logger.Debug(ex);
                 // Display first error as message concatination can be unreadable if too deep
                 throw new Error("BitTorrent Error (Tracker): " + ex.GetBaseException().Message);
             }
 
-            return (response);
-
+            return response;
         }
 
         /// <summary>

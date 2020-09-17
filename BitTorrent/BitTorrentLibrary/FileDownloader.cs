@@ -273,9 +273,9 @@ namespace BitTorrent
             {
                 // In onorder to stop same the piece requested with different peers a lock 
                 // is required when trying to get the next unrequested non-local piece
-                lock (_pieceLock) 
+                lock (_pieceLock)
                 {
-                    Log.Logger.Trace($"selectNextPiece()");
+                    Log.Logger.Trace("selectNextPiece()");
 
                     for (UInt32 pieceNumber = 0; pieceNumber < Dc.numberOfPieces; pieceNumber++)
                     {

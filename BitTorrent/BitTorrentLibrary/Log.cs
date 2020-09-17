@@ -14,10 +14,8 @@ using NLog;
 
 namespace BitTorrent
 {
-    public class Log
+    public static class Log
     {
-    
        public static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
     }
 }
