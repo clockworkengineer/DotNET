@@ -1,4 +1,5 @@
-﻿//
+﻿
+//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -153,8 +154,8 @@ namespace BitTorrent
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("Internal ReadPacketCallBack() error : " + ex.Message);
-                throw new Error("BitTorrent (Peer) Error: "+ex.Message);
+                Log.Logger.Debug(ex.Message);
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
 
@@ -165,11 +166,19 @@ namespace BitTorrent
         static public string GetLocalHostIP()
         {
             string localHostIP = "127.0.0.1";
-            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+            try
             {
-                socket.Connect("8.8.8.8", 65530);
-                IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
-                localHostIP = endPoint.Address.ToString();
+                using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+                {
+                    socket.Connect("8.8.8.8", 65530);
+                    IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+                    localHostIP = endPoint.Address.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex.Message);
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
             return (localHostIP);
 
@@ -219,14 +228,9 @@ namespace BitTorrent
                     _peerSocket.BeginReceive(_readBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, this);
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Peer) Error: "+ex.Message);
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
 
         }
@@ -292,7 +296,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Peer) Error: "+ex.Message);
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
 

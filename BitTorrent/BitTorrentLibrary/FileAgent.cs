@@ -30,6 +30,7 @@ namespace BitTorrent
         private AnnounceResponse _currentAnnouneResponse;   // Current tracker annouce respose
         private FileDownloader _fileToDownloader;           // FileDownloader for torrent
         private Dictionary<string, Peer> _remotePeers;      // Connected remote peers
+        private HashSet<string> __failedToConnect;           // Peers that failed to connect 
         private List<FileDetails> _filesToDownload;         // Files to download in torrent
         private ManualResetEvent _downloading;              // WaitOn when downloads == false
 
@@ -206,9 +207,10 @@ namespace BitTorrent
             _downloadPath = downloadPath;
             Downloading = new ManualResetEvent(true);
             RemotePeers = new Dictionary<string, Peer>();
+            __failedToConnect = new HashSet<string>();
         }
 
-/// <summary>
+        /// <summary>
         /// Connect peers and add to swarm on success.
         /// </summary>
         public void ConnectPeersAndAddToSwarm()
@@ -220,7 +222,7 @@ namespace BitTorrent
             {
                 try
                 {
-                    if (!RemotePeers.ContainsKey(peer.ip))
+                    if (!RemotePeers.ContainsKey(peer.ip) && !__failedToConnect.Contains(peer.ip))
                     {
                         Peer remotePeer = new Peer(FileToDownloader, peer.ip, peer.port, TorrentMetaInfo.MetaInfoDict["info hash"]);
                         remotePeer.Connect();
@@ -234,6 +236,7 @@ namespace BitTorrent
                 catch (Exception)
                 {
                     Log.Logger.Info($"Failed to connect to {peer.ip}");
+                    __failedToConnect.Add(peer.ip);
                 }
             }
 
