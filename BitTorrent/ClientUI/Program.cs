@@ -79,7 +79,7 @@ namespace BitTorrent
 
                 FileAgent fileAgent = new FileAgent(torrentFile, "/home/robt/utorrent");
 
-                fileAgent.Load();
+                fileAgent.Startup();
 
                 fileAgent.Download();
 

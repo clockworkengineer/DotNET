@@ -20,7 +20,7 @@ namespace BitTorrent
         private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
 
         /// <summary>
-        /// Unpacks the user interface nt32.
+        /// Unpacks a uint32 from a byte buffer at a given offset.
         /// </summary>
         /// <returns>The user interface nt32.</returns>
         /// <param name="buffer">Buffer.</param>
@@ -36,19 +36,19 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Packs the user interface nt32.
+        /// Packs a UInt32 into a byte array.
         /// </summary>
-        /// <returns>The user interface nt32.</returns>
-        /// <param name="int32value">Int32value.</param>
-        private static byte[] PackUInt32(UInt32 int32value)
+        /// <returns>Packed byte array.</returns>
+        /// <param name="uInt32value">Int32value.</param>
+        private static byte[] PackUInt32(UInt32 uInt32value)
         {
-            byte[] packedInt32 = new byte[Constants.SizeOfUInt32];
-            packedInt32[0] = (byte)(int32value >> 24);
-            packedInt32[1] = (byte)(int32value >> 16);
-            packedInt32[2] = (byte)(int32value >> 8);
-            packedInt32[3] = (byte)(int32value);
+            byte[] packedUInt32 = new byte[Constants.SizeOfUInt32];
+            packedUInt32[0] = (byte)(uInt32value >> 24);
+            packedUInt32[1] = (byte)(uInt32value >> 16);
+            packedUInt32[2] = (byte)(uInt32value >> 8);
+            packedUInt32[3] = (byte)(uInt32value);
 
-            return packedInt32;
+            return packedUInt32;
         }
 
         /// <summary>

@@ -23,9 +23,9 @@ namespace BitTorrent
     {
         public delegate void ProgessCallBack(Object progressData);
         private readonly string _downloadPath;                       // Download root patch
-        private Tracker _mainTracker;                                // Main torrent tracker
-        private readonly HashSet<string> __failedToConnect;          // Peers that failed to connect 
-        private List<FileDetails> _filesToDownload;                  // Files to download in torrent
+        private readonly Tracker _mainTracker;                       // Main torrent tracker
+        private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect 
+        private readonly List<FileDetails> _filesToDownload;         // Files to download in torrent
         public FileDownloader FileToDownloader { get; set; }         // FileDownloader for torrent
         public AnnounceResponse CurrentAnnouneResponse { get; set; } // Current tracker annouce response
         public MetaInfoFile TorrentMetaInfo { get; set; }            // Torrent Metafile information
@@ -187,7 +187,9 @@ namespace BitTorrent
             _downloadPath = downloadPath;
             Downloading = new ManualResetEvent(true);
             RemotePeers = new Dictionary<string, Peer>();
-            __failedToConnect = new HashSet<string>();
+            _deadPeersList = new HashSet<string>();
+            _mainTracker = new Tracker(this);
+            _filesToDownload = new List<FileDetails>();
         }
 
         /// <summary>
@@ -201,7 +203,7 @@ namespace BitTorrent
             {
                 try
                 {
-                    if (!RemotePeers.ContainsKey(peer.ip) && !__failedToConnect.Contains(peer.ip))
+                    if (!RemotePeers.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
                     {
                         Peer remotePeer = new Peer(FileToDownloader, peer.ip, peer.port, TorrentMetaInfo.MetaInfoDict["info hash"]);
                         remotePeer.Connect();
@@ -215,7 +217,7 @@ namespace BitTorrent
                 catch (Exception)
                 {
                     Log.Logger.Info($"Failed to connect to {peer.ip}");
-                    __failedToConnect.Add(peer.ip);
+                    _deadPeersList.Add(peer.ip);
                 }
             }
 
@@ -223,20 +225,14 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Load FileAgent instance.
+        /// Startup file agent.This includes starting announces to main tracker, building pieces
+        /// to download map and getting and building the initial peer swarm/dead list.
         /// </summary>
         ///
-        ///
-        public void Load()
+        public void Startup()
         {
             try
             {
-                Log.Logger.Info("Loading main tracker ....");
-
-                _mainTracker = new Tracker(this);
-
-                _filesToDownload = new List<FileDetails>();
-
                 UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["piece length"]));
 
                 Log.Logger.Info("Create files to download details structure ...");
@@ -247,9 +243,9 @@ namespace BitTorrent
 
                 FileToDownloader = new FileDownloader(_filesToDownload, pieceLength, TorrentMetaInfo.MetaInfoDict["pieces"]);
 
-                FileToDownloader.BuildDownloadedPiecesMap();
+                Log.Logger.Info("Determine which pieces of file need to be downloaded still...");
 
-                Log.Logger.Info("Initial main tracker announce ...");
+                FileToDownloader.BuildDownloadedPiecesMap();
 
                 _mainTracker.Left = FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
                 if (_mainTracker.Left == 0)
@@ -258,11 +254,13 @@ namespace BitTorrent
                     return;
                 }
 
+                Log.Logger.Info("Initial main tracker announce ...");
+
                 CurrentAnnouneResponse = _mainTracker.Announce();
 
-                _mainTracker.StartAnnouncing();
-
                 ConnectPeersAndAddToSwarm();
+
+                _mainTracker.StartAnnouncing();
             }
             catch (Error)
             {
@@ -333,7 +331,7 @@ namespace BitTorrent
         {
             try
             {
-                await Task.Run(() => Load()).ConfigureAwait(false);
+                await Task.Run(() => Startup()).ConfigureAwait(false);
             }
             catch (Error)
             {
