@@ -77,7 +77,6 @@ namespace BitTorrent
                 }
 
                 pieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
-
             }
             catch (Error)
             {
@@ -107,7 +106,6 @@ namespace BitTorrent
                 {
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
                 }
-
             }
             catch (Error)
             {
@@ -125,7 +123,6 @@ namespace BitTorrent
         {
             try
             {
-
                 if (requested)
                 {
                     pieceMap[pieceNumber].blocks[blockNumber] |= Mapping.Requested;
@@ -134,7 +131,6 @@ namespace BitTorrent
                 {
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
                 }
-
             }
             catch (Error)
             {
@@ -244,7 +240,7 @@ namespace BitTorrent
         {
             try
             {
-                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer);
+                return (pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer;
             }
             catch (Error)
             {
@@ -254,7 +250,7 @@ namespace BitTorrent
             {
                 Log.Logger.Debug(ex);
             }
-            return (false);
+            return false;
         }
 
         /// <summary>
@@ -267,7 +263,7 @@ namespace BitTorrent
         {
             try
             {
-                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal);
+                return (pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal;
             }
             catch (Error)
             {
@@ -277,7 +273,7 @@ namespace BitTorrent
             {
                 Log.Logger.Debug(ex);
             }
-            return (false);
+            return false;
         }
 
         /// <summary>
@@ -290,7 +286,7 @@ namespace BitTorrent
         {
             try
             {
-                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested);
+                return (pieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested;
             }
             catch (Error)
             {
@@ -300,7 +296,7 @@ namespace BitTorrent
             {
                 Log.Logger.Debug(ex);
             }
-            return (false);
+            return false;
         }
 
         /// <summary>
@@ -313,7 +309,7 @@ namespace BitTorrent
         {
             try
             {
-                return ((pieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock);
+                return (pieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock;
             }
             catch (Error)
             {
@@ -323,7 +319,7 @@ namespace BitTorrent
             {
                 Log.Logger.Debug(ex);
             }
-            return (false);
+            return false;
         }
 
         /// <summary>
@@ -333,19 +329,16 @@ namespace BitTorrent
         /// <param name="pieceNumber">Piece number.</param>
         public UInt32 GetPieceLength(UInt32 pieceNumber)
         {
-
             UInt32 length = 0;
 
             try
             {
-
                 for (UInt32 blockNumber = 0; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                 {
                     length += Constants.BlockSize;
                 }
                 length += pieceMap[pieceNumber].lastBlockLength;
             }
-
             catch (Error)
             {
                 throw;
@@ -355,8 +348,7 @@ namespace BitTorrent
                 Log.Logger.Debug(ex);
             }
 
-            return (length);
-
+            return length;
         }
 
         /// <summary>
@@ -366,7 +358,6 @@ namespace BitTorrent
         /// <param name="pieceNumber">Piece number.</param>
         public bool HasPieceBeenAssembled(UInt32 pieceNumber)
         {
-
             try
             {
                 UInt32 blockNumber = 0;
@@ -374,12 +365,12 @@ namespace BitTorrent
                 {
                     if (!IsBlockPieceLocal(pieceNumber, blockNumber))
                     {
-                        return (false);
+                        return false;
                     }
                 }
                 if (!IsBlockPieceLocal(pieceNumber, blockNumber))
                 {
-                    return (false);
+                    return false;
                 }
             }
             catch (Error)
@@ -390,7 +381,7 @@ namespace BitTorrent
             {
                 Log.Logger.Debug(ex);
             }
-            return (true);
+            return true;
         }
 
         /// <summary>
@@ -399,7 +390,6 @@ namespace BitTorrent
         /// <param name="remotePeer">Remote peer.</param>
         public void MergePieceBitfield(Peer remotePeer)
         {
-
             try
             {
                 UInt32 pieceNumber = 0;
@@ -418,7 +408,6 @@ namespace BitTorrent
                             }
                             remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                         }
-
                     }
                 }
                 remotePeer.BitfieldReceived.Set();

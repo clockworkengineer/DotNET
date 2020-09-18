@@ -71,7 +71,6 @@ namespace BitTorrent
                 if (field is BNodeString bNodeString)
                 {
                     byte[] peers = (bNodeString).str;
-                    UInt32 numberPeers = (UInt32)peers.Length / 6;
                     for (var num = 0; num < peers.Length; num += 6)
                     {
                         PeerDetails peer = new PeerDetails

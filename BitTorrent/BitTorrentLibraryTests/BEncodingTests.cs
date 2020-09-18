@@ -8,7 +8,7 @@ namespace BitTorrentLibraryTests
     public class BEncodingTests
     {
         [Fact]
-        public void testSingleFileTorrentDecodeEncodeCheckTheSameAfter()
+        public void TestSingleFileTorrentDecodeEncodeCheckTheSameAfter()
         {
             byte[] expected = System.IO.File.ReadAllBytes(Constants.SingleFileTorrent);
 
@@ -20,7 +20,7 @@ namespace BitTorrentLibraryTests
         }
 
         [Fact]
-        public void testMultiFileTorrentDecodeEncodeCheckTheSameAfter()
+        public void TestMultiFileTorrentDecodeEncodeCheckTheSameAfter()
         {
             byte[] expected = System.IO.File.ReadAllBytes(Constants.MultiFileTorrent);
 
@@ -32,21 +32,19 @@ namespace BitTorrentLibraryTests
         }
 
         [Fact]
-        public void testSingleFileTorrentWithErrorDecode()
+        public void TestSingleFileTorrentWithErrorDecode()
         {
             byte[] expected = System.IO.File.ReadAllBytes(Constants.SingleFileWithErrorTorrent);
 
             Assert.Throws<Error>(() =>  { BNodeBase torrentBase = Bencoding.Decode(expected); });
-
         }
 
         [Fact]
-        public void testMultiFileTorrentWithErrorDecode()
+        public void TestMultiFileTorrentWithErrorDecode()
         {
             byte[] expected = System.IO.File.ReadAllBytes(Constants.MultiFileWithErrorTorrent);
 
             Assert.Throws<Error>(() =>  { BNodeBase torrentBase = Bencoding.Decode(expected); });
-
         }
     }
 }

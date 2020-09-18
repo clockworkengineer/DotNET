@@ -17,9 +17,7 @@ namespace BitTorrent
 {
     class Program
     {
-
-
-        public static void annouceResponse(AnnounceResponse response)
+        public static void AnnouceResponse(AnnounceResponse response)
         {
             BitTorrent.Log.Logger.Debug("\nAnnouce Response\n-------------");
             BitTorrent.Log.Logger.Debug("\nStatus: " + response.statusCode);
@@ -38,13 +36,10 @@ namespace BitTorrent
                 }
                 BitTorrent.Log.Logger.Debug("IP: " + peer.ip);
                 BitTorrent.Log.Logger.Debug("Port: " + peer.port);
-
             }
-
         }
 
-
-        public static void torrentHasInfo(MetaInfoFile metaFile)
+        public static void TorrentHasInfo(MetaInfoFile metaFile)
         {
             byte[] infoHash = metaFile.MetaInfoDict["info hash"];
 
@@ -56,7 +51,7 @@ namespace BitTorrent
             BitTorrent.Log.Logger.Debug(hex);
         }
 
-        public static void torrentTrackers(MetaInfoFile metaFile)
+        public static void TorrentTrackers(MetaInfoFile metaFile)
         {
             byte[] tracker = metaFile.MetaInfoDict["announce"];
 
@@ -72,7 +67,6 @@ namespace BitTorrent
 
         public static void Main(string[] args)
         {
-
             try
             {
 
@@ -94,7 +88,6 @@ namespace BitTorrent
                 Thread.Sleep(10000);
 
                 fileAgent.Close();
-
             }
             catch (Error ex)
             {
@@ -104,7 +97,6 @@ namespace BitTorrent
             {
                 BitTorrent.Log.Logger.Error(ex);
             }
-
         }
     }
 }

@@ -19,7 +19,7 @@ namespace BitTorrent
         /// <summary>
         /// Initializes a new instance of the BitTorrent Error class.
         /// </summary>
-        public Error() 
+        public Error()
         {
         }
 

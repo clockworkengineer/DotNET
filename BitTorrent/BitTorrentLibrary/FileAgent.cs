@@ -16,29 +16,21 @@ using System.Collections.Generic;
 
 namespace BitTorrent
 {
-
     /// <summary>
     /// File agent class definition.
     /// </summary>
     public class FileAgent
     {
         public delegate void ProgessCallBack(Object progressData);
-
-        private MetaInfoFile _torrentMetaInfo;              // Torrent Metafile information
-        private string _downloadPath;                       // Download root patch
-        private Tracker _mainTracker;                       // Main torrent tracker
-        private AnnounceResponse _currentAnnouneResponse;   // Current tracker annouce respose
-        private FileDownloader _fileToDownloader;           // FileDownloader for torrent
-        private Dictionary<string, Peer> _remotePeers;      // Connected remote peers
-        private HashSet<string> __failedToConnect;           // Peers that failed to connect 
-        private List<FileDetails> _filesToDownload;         // Files to download in torrent
-        private ManualResetEvent _downloading;              // WaitOn when downloads == false
-
-        public FileDownloader FileToDownloader { get => _fileToDownloader; set => _fileToDownloader = value; }
-        public AnnounceResponse CurrentAnnouneResponse { get => _currentAnnouneResponse; set => _currentAnnouneResponse = value; }
-        public MetaInfoFile TorrentMetaInfo { get => _torrentMetaInfo; set => _torrentMetaInfo = value; }
-        public Dictionary<string, Peer> RemotePeers { get => _remotePeers; set => _remotePeers = value; }
-        public ManualResetEvent Downloading { get => _downloading; set => _downloading = value; }
+        private readonly string _downloadPath;                       // Download root patch
+        private Tracker _mainTracker;                                // Main torrent tracker
+        private readonly HashSet<string> __failedToConnect;          // Peers that failed to connect 
+        private List<FileDetails> _filesToDownload;                  // Files to download in torrent
+        public FileDownloader FileToDownloader { get; set; }         // FileDownloader for torrent
+        public AnnounceResponse CurrentAnnouneResponse { get; set; } // Current tracker annouce response
+        public MetaInfoFile TorrentMetaInfo { get; set; }            // Torrent Metafile information
+        public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
+        public ManualResetEvent Downloading { get; set; }            // WaitOn when downloads == false
 
         /// <summary>
         /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
@@ -49,7 +41,6 @@ namespace BitTorrent
         /// <param name="progressData">Progress data.</param>
         private void AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData, CancellationTokenSource cancelAssemblerTaskSource)
         {
-
             try
             {
                 Log.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
@@ -66,7 +57,6 @@ namespace BitTorrent
                 {
                     for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
                     {
-
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
                         remotePeer.Active = true;
@@ -91,17 +81,13 @@ namespace BitTorrent
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
                             PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.AssembledPiece);
-                            _fileToDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
+                            FileToDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
 
                             _mainTracker.Left = FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
                             _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
-
                         }
 
-                        if (progressFunction != null)
-                        {
-                            progressFunction(progressData);
-                        }
+                        progressFunction?.Invoke(progressData);
 
                         if (cancelAssemblerTask.IsCancellationRequested)
                         {
@@ -120,7 +106,6 @@ namespace BitTorrent
                         Downloading.WaitOne();
 
                         remotePeer.PeerChoking.WaitOne();
-
                     }
 
                     foreach (var peer in RemotePeers.Values)
@@ -130,11 +115,9 @@ namespace BitTorrent
                             peer.PeerChoking.Set();
                         }
                     }
-
                 }
 
                 Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
-
             }
             catch (Error ex)
             {
@@ -146,9 +129,6 @@ namespace BitTorrent
                 Log.Logger.Error(ex.Message);
                 cancelAssemblerTaskSource.Cancel();
             }
-
-
-
         }
 
         /// <summary>
@@ -156,16 +136,16 @@ namespace BitTorrent
         /// </summary>
         private void GenerateFilesToDownloadList()
         {
-
             try
             {
-
                 if (!TorrentMetaInfo.MetaInfoDict.ContainsKey("0"))
                 {
-                    FileDetails fileDetail = new FileDetails();
-                    fileDetail.name = _downloadPath + Constants.PathSeparator + Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["name"]);
-                    fileDetail.length = UInt64.Parse(Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["length"]));
-                    fileDetail.offset = 0;
+                    FileDetails fileDetail = new FileDetails
+                    {
+                        name = _downloadPath + Constants.PathSeparator + Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["name"]),
+                        length = UInt64.Parse(Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["length"])),
+                        offset = 0
+                    };
                     _filesToDownload.Add(fileDetail);
                 }
                 else
@@ -176,17 +156,17 @@ namespace BitTorrent
                     while (TorrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
                     {
                         string[] details = Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict[fileNo.ToString()]).Split(',');
-                        FileDetails fileDetail = new FileDetails();
-                        fileDetail.name = _downloadPath + Constants.PathSeparator + name + details[0];
-                        fileDetail.length = UInt64.Parse(details[1]);
-                        fileDetail.md5sum = details[2];
-                        fileDetail.offset = totalBytes;
+                        FileDetails fileDetail = new FileDetails
+                        {
+                            name = _downloadPath + Constants.PathSeparator + name + details[0],
+                            length = UInt64.Parse(details[1]),
+                            md5sum = details[2],
+                            offset = totalBytes
+                        };
                         _filesToDownload.Add(fileDetail);
                         fileNo++;
                         totalBytes += fileDetail.length;
                     }
-
-
                 }
             }
             catch (Exception ex)
@@ -215,7 +195,6 @@ namespace BitTorrent
         /// </summary>
         public void ConnectPeersAndAddToSwarm()
         {
-
             Log.Logger.Info("Connecting any new peers to swarm ....");
 
             foreach (var peer in CurrentAnnouneResponse.peers)
@@ -241,21 +220,17 @@ namespace BitTorrent
             }
 
             Log.Logger.Info($"Number of peers in swarm  {RemotePeers.Count}");
-
-
         }
 
         /// <summary>
         /// Load FileAgent instance.
         /// </summary>
-        /// 
-        /// 
+        ///
+        ///
         public void Load()
         {
-
             try
             {
-
                 Log.Logger.Info("Loading main tracker ....");
 
                 _mainTracker = new Tracker(this);
@@ -288,7 +263,6 @@ namespace BitTorrent
                 _mainTracker.StartAnnouncing();
 
                 ConnectPeersAndAddToSwarm();
-
             }
             catch (Error)
             {
@@ -299,8 +273,6 @@ namespace BitTorrent
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent Error (FileAgent): Failed to load File Agent.");
             }
-
-
         }
 
         /// <summary>
@@ -310,13 +282,10 @@ namespace BitTorrent
         /// <param name="progressData">User defined grogress function data.</param>
         public void Download(ProgessCallBack progressFunction = null, Object progressData = null)
         {
-
             try
             {
-
                 if (_mainTracker.Left > 0)
                 {
-
                     List<Task> assembleTasks = new List<Task>();
                     CancellationTokenSource cancelAssemblerTaskSource = new CancellationTokenSource();
 
@@ -329,7 +298,7 @@ namespace BitTorrent
                         assembleTasks.Add(Task.Run(() => AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource)));
                     }
 
-                    _fileToDownloader.Dc.CheckForMissingBlocksFromPeers();
+                    FileToDownloader.Dc.CheckForMissingBlocksFromPeers();
 
                     Task.WaitAll(assembleTasks.ToArray());
 
@@ -344,7 +313,6 @@ namespace BitTorrent
                         Close();
                     }
                 }
-
             }
             catch (Error)
             {
@@ -355,8 +323,6 @@ namespace BitTorrent
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent Error (FileAgent): Failed to download torrent file.");
             }
-
-
         }
 
         /// <summary>
@@ -367,7 +333,7 @@ namespace BitTorrent
         {
             try
             {
-                await Task.Run(() => Load());
+                await Task.Run(() => Load()).ConfigureAwait(false);
             }
             catch (Error)
             {
@@ -389,7 +355,7 @@ namespace BitTorrent
         {
             try
             {
-                await Task.Run(() => Download(progressFunction, progressData));
+                await Task.Run(() => Download(progressFunction, progressData)).ConfigureAwait(false);
             }
             catch (Error)
             {

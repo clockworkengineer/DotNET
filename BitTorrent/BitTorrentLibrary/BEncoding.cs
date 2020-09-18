@@ -19,7 +19,6 @@ namespace BitTorrent
     /// </summary>
     public class BNodeBase
     {
-
     }
 
     /// <summary>
@@ -40,7 +39,6 @@ namespace BitTorrent
     /// </summary>
     public class BNodeList : BNodeBase
     {
-
         public List<BNodeBase> list;
 
         public BNodeList()
@@ -78,7 +76,6 @@ namespace BitTorrent
         /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
         static private byte[] ExtractString(byte[] buffer, ref int position)
         {
-
             int end = position;
 
             while (buffer[end] != ':')
@@ -101,8 +98,7 @@ namespace BitTorrent
             byte[] retBuffer = new byte[lengthOfString];
             Buffer.BlockCopy(buffer, end + 1, retBuffer, 0, lengthOfString);
 
-            return (retBuffer);
-
+            return retBuffer;
         }
 
         /// <summary>
@@ -127,8 +123,7 @@ namespace BitTorrent
 
             position = end + 1;
 
-            return (bNode);
-
+            return bNode;
         }
 
         /// <summary>
@@ -139,12 +134,12 @@ namespace BitTorrent
         /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
         static private BNodeBase DecodeString(byte[] buffer, ref int position)
         {
-            BNodeString bNode = new BNodeString();
+            BNodeString bNode = new BNodeString
+            {
+                str = ExtractString(buffer, ref position)
+            };
 
-            bNode.str = ExtractString(buffer, ref position);
-
-            return (bNode);
-
+            return bNode;
         }
 
         /// <summary>
@@ -157,8 +152,7 @@ namespace BitTorrent
         {
             string key = Encoding.ASCII.GetString(ExtractString(buffer, ref position));
 
-            return (key);
-
+            return key;
         }
 
         /// <summary>
@@ -169,14 +163,12 @@ namespace BitTorrent
         /// <param name="position">position - Position in buffer. Updated to character after list on exit.</param>
         static private BNodeBase DecodeList(byte[] buffer, ref int position)
         {
-
             BNodeList bNode = new BNodeList();
 
             position++;
 
             while (buffer[position] != (byte)'e')
             {
-
                 switch ((char)buffer[position])
                 {
                     case 'd':
@@ -194,16 +186,13 @@ namespace BitTorrent
                     default:
                         bNode.list.Add(DecodeString(buffer, ref position));
                         break;
-
                 }
                 if (position == buffer.Length) break;
-
             }
 
             position++;
 
-            return (bNode);
-
+            return bNode;
         }
 
         /// <summary>
@@ -214,7 +203,6 @@ namespace BitTorrent
         /// <param name="position">position - Position in buffer. Updated to character after dictionary on exit.</param>
         static private BNodeBase DecodeDictionary(byte[] buffer, ref int position)
         {
-
             BNodeDictionary bNode = new BNodeDictionary();
 
             position++;
@@ -242,13 +230,11 @@ namespace BitTorrent
                         break;
                 }
                 if (position == buffer.Length) break;
-
             }
 
             position++;
 
-            return (bNode);
-
+            return bNode;
         }
 
         /// <summary>
@@ -280,13 +266,11 @@ namespace BitTorrent
                     default:
                         bNode = DecodeString(buffer, ref position);
                         break;
-
                 }
                 if (position == buffer.Length) break;
             }
 
-            return (bNode);
-
+            return bNode;
         }
 
         /// <summary>
@@ -296,8 +280,7 @@ namespace BitTorrent
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
         static public BNodeBase Decode(byte[] buffer)
         {
-
-            BNodeBase bNodeRoot = null;
+            BNodeBase bNodeRoot;
 
             try
             {
@@ -313,8 +296,7 @@ namespace BitTorrent
                 Log.Logger.Debug(ex);
                 throw new Error("BEncoding Error: Failure on decoding torrent file into BNode tree.");
             }
-            return (bNodeRoot);
-
+            return bNodeRoot;
         }
 
         /// <summary>
@@ -328,36 +310,35 @@ namespace BitTorrent
 
             try
             {
-                if (bNode is BNodeDictionary)
+                if (bNode is BNodeDictionary bNodeDictionary)
                 {
                     result.Add((byte)'d');
-                    foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
+                    foreach (var key in (bNodeDictionary).dict.Keys)
                     {
                         result.AddRange(Encoding.ASCII.GetBytes($"{key.Length}:{key}"));
-                        result.AddRange(Encode(((BNodeDictionary)bNode).dict[key]));
+                        result.AddRange(Encode((bNodeDictionary).dict[key]));
                     }
                     result.Add((byte)'e');
                 }
-                else if (bNode is BNodeList)
+                else if (bNode is BNodeList bNodeList)
                 {
                     result.Add((byte)'l');
-                    foreach (var node in ((BNodeList)bNode).list)
+                    foreach (var node in (bNodeList).list)
                     {
                         result.AddRange(Encode(node));
                     }
                     result.Add((byte)'e');
                 }
-                else if (bNode is BNodeNumber)
+                else if (bNode is BNodeNumber bNodeNumber)
                 {
                     result.Add((byte)'i');
-                    result.AddRange(((BNodeNumber)bNode).number);
+                    result.AddRange((bNodeNumber).number);
                     result.Add((byte)'e');
                 }
-                else if (bNode is BNodeString)
+                else if (bNode is BNodeString bNodeString)
                 {
-                    result.AddRange(Encoding.ASCII.GetBytes($"{((BNodeString)bNode).str.Length}:"));
-                    result.AddRange(((BNodeString)bNode).str);
-
+                    result.AddRange(Encoding.ASCII.GetBytes($"{(bNodeString).str.Length}:"));
+                    result.AddRange((bNodeString).str);
                 }
             }
             catch (Error)
@@ -370,7 +351,7 @@ namespace BitTorrent
                 throw new Error("BEncoding Error: Failure to encode BNode Tree.");
             }
 
-            return (result.ToArray());
+            return result.ToArray();
         }
 
         /// <summary>
@@ -386,22 +367,21 @@ namespace BitTorrent
 
             try
             {
-                if (bNode is BNodeDictionary)
+                if (bNode is BNodeDictionary bNodeDictionary)
                 {
-                    if (((BNodeDictionary)bNode).dict.ContainsKey(entryKey))
+                    if ((bNodeDictionary).dict.ContainsKey(entryKey))
                     {
-                        return (((BNodeDictionary)bNode).dict[entryKey]);
+                        return (bNodeDictionary).dict[entryKey];
                     }
-                    foreach (var key in ((BNodeDictionary)bNode).dict.Keys)
+                    foreach (var key in (bNodeDictionary).dict.Keys)
                     {
-                        bNodeEntry = GetDictionaryEntry(((BNodeDictionary)bNode).dict[key], entryKey);
+                        bNodeEntry = GetDictionaryEntry((bNodeDictionary).dict[key], entryKey);
                         if (bNodeEntry != null) break;
                     }
-
                 }
-                else if (bNode is BNodeList)
+                else if (bNode is BNodeList bNodeList)
                 {
-                    foreach (var node in ((BNodeList)bNode).list)
+                    foreach (var node in (bNodeList).list)
                     {
                         bNodeEntry = GetDictionaryEntry(node, entryKey);
                         if (bNodeEntry != null) break;
@@ -418,8 +398,7 @@ namespace BitTorrent
                 throw new Error("BEncoding Error: Could not get dictionary from BNode tree.");
             }
 
-            return (bNodeEntry);
-
+            return bNodeEntry;
         }
 
         /// <summary>
@@ -430,20 +409,20 @@ namespace BitTorrent
         /// <param name="entryKey">entryKey - Key of dictionary entry to extract.</param>
         static public string GetDictionaryEntryString(BNodeBase bNode, string entryKey)
         {
-            BNodeBase entryNode = null;
+            BNodeBase entryNode;
 
             try
             {
                 entryNode = GetDictionaryEntry(bNode, entryKey);
                 if (entryNode != null)
                 {
-                    if (entryNode is BNodeString)
+                    if (entryNode is BNodeString bNodeString)
                     {
-                        return (Encoding.ASCII.GetString(((BNodeString)entryNode).str));
+                        return Encoding.ASCII.GetString((bNodeString).str);
                     }
-                    if (entryNode is BNodeNumber)
+                    if (entryNode is BNodeNumber bNodeNumber)
                     {
-                        return (Encoding.ASCII.GetString(((BNodeNumber)entryNode).number));
+                        return Encoding.ASCII.GetString((bNodeNumber).number);
                     }
                 }
             }
@@ -457,7 +436,7 @@ namespace BitTorrent
                 throw new Error("BEncoding Error: Could not get string from BNode tree.");
             }
 
-            return ("");
+            return "";
         }
 
     }

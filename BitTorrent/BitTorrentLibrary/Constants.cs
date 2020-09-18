@@ -31,6 +31,5 @@ namespace BitTorrent
         public const byte MessageREQUEST = 6;
         public const byte MessagePIECE = 7;
         public const byte MessageCANCEL = 8;
-
     }
 }

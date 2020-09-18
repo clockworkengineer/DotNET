@@ -8,11 +8,8 @@ namespace BitTorrentLibraryTests
     public class TrackerTests
     {
         [Fact]
-        public void testTrackerPlaceholder()
+        public void TestTrackerPlaceholder()
         {
-  
         }
-
-        
     }
 }

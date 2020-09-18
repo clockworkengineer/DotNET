@@ -24,36 +24,31 @@ namespace BitTorrent
     /// </summary>
     public class MetaInfoFile
     {
-
-        private string _torrentFileName = string.Empty;
-        private Dictionary<string, byte[]> _metaInfoDict;
         private byte[] _metaInfoData;
-
-        public Dictionary<string, byte[]> MetaInfoDict { get => _metaInfoDict; set => _metaInfoDict = value; }
-        public string TorrentFileName { get => _torrentFileName; set => _torrentFileName = value; }
+        public Dictionary<string, byte[]> MetaInfoDict { get; set; }
+        public string TorrentFileName { get; set; } = string.Empty;
 
         /// <summary>
-        /// Get a list of dictionaries from metainfo file that have been come under the main level dictionary 
-        /// key of "files". The output being a entry in the internal dictionary that contains a comma 
-        /// separated string of the fields (name, length, md5sum) for each list entry (file). Each file found is 
-        /// stored under the numeric key  value representing the number of the dictionary within the list 
-        /// (ie. "0", "1"..... "N"). 
+        /// Get a list of dictionaries from metainfo file that have been come under the main level dictionary
+        /// key of "files". The output being a entry in the internal dictionary that contains a comma
+        /// separated string of the fields (name, length, md5sum) for each list entry (file). Each file found is
+        /// stored under the numeric key  value representing the number of the dictionary within the list
+        /// (ie. "0", "1"..... "N").
         /// </summary>
         /// <param name="bNodeRoot">BNode root of list.</param>
         /// <param name="field">Field.</param>
-        private void getListOfDictionarys(BNodeBase bNodeRoot, string field)
+        private void GetListOfDictionarys(BNodeBase bNodeRoot, string field)
         {
             BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
 
-            if (fieldBytes is BNodeList)
+            if (fieldBytes is BNodeList bNodeList)
             {
                 UInt32 fileNo = 0;
-                List<string> listString = new List<string>();
-                foreach (var listItem in ((BNodeList)(fieldBytes)).list)
+                foreach (var listItem in (bNodeList).list)
                 {
-                    if (listItem is BNodeDictionary)
+                    if (listItem is BNodeDictionary bNodeDictionary)
                     {
-                        BNodeBase fileDictionaryItem = ((BitTorrent.BNodeDictionary)listItem);
+                        BNodeBase fileDictionaryItem = (bNodeDictionary);
                         BNodeBase fileField = null;
                         string fileEntry = String.Empty;
                         fileField = Bencoding.GetDictionaryEntry(fileDictionaryItem, "path");
@@ -65,37 +60,34 @@ namespace BitTorrent
                                 path += Constants.PathSeparator + Encoding.ASCII.GetString(((BitTorrent.BNodeString)file).str);
                             }
                             fileEntry = path;
-
                         }
                         fileEntry += ",";
                         fileEntry += Bencoding.GetDictionaryEntryString(fileDictionaryItem, "length");
                         fileEntry += ",";
                         fileEntry += Bencoding.GetDictionaryEntryString(fileDictionaryItem, "md5string");
-                        _metaInfoDict[fileNo.ToString()] = Encoding.ASCII.GetBytes(fileEntry);
+                        MetaInfoDict[fileNo.ToString()] = Encoding.ASCII.GetBytes(fileEntry);
                         fileNo++;
                     }
                 }
-
             }
         }
 
         /// <summary>
         /// Gets the bytes representing a string or number (characters of number).
         /// </summary>
-        /// <param name="bNodeRoot">BNode root of of string number.</param>
+        /// <param name="bNodeRoot">BNode root of string number.</param>
         /// <param name="field">Field.</param>
-        private void getStringOrNumeric(BNodeBase bNodeRoot, string field)
+        private void GetStringOrNumeric(BNodeBase bNodeRoot, string field)
         {
             BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
-            if (fieldBytes is BNodeNumber)
+            if (fieldBytes is BNodeNumber bNodeNumber)
             {
-                _metaInfoDict[field] = ((BNodeNumber)fieldBytes).number;
+                MetaInfoDict[field] = (bNodeNumber).number;
             }
-            else if (fieldBytes is BNodeString)
+            else if (fieldBytes is BNodeString bNodeString)
             {
-                _metaInfoDict[field] = ((BNodeString)fieldBytes).str;
+                MetaInfoDict[field] = (bNodeString).str;
             }
-
         }
 
         /// <summary>
@@ -104,40 +96,37 @@ namespace BitTorrent
         /// </summary>
         /// <param name="bNodeRoot">BNode root of list of strings.</param>
         /// <param name="field">Field.</param>
-        private void getListOfStrings(BNodeBase bNodeRoot, string field)
+        private void GetListOfStrings(BNodeBase bNodeRoot, string field)
         {
             BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
-            if (fieldBytes is BNodeList)
+            if (fieldBytes is BNodeList bNodeList)
             {
                 List<string> listString = new List<string>();
-                foreach (var innerList in ((BNodeList)(fieldBytes)).list)
+                foreach (var innerList in (bNodeList).list)
                 {
-                    if (innerList is BNodeList)
+                    if (innerList is BNodeList bNodeList2)
                     {
-                        BNodeString stringItem = (BNodeString)((BNodeList)(innerList)).list[0];
+                        BNodeString stringItem = (BNodeString)(bNodeList2).list[0];
                         listString.Add(Encoding.ASCII.GetString(stringItem.str));
                     }
                 }
-                _metaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",", listString));
+                MetaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",", listString));
             }
-
         }
 
         /// <summary>
         /// Calculates the info hash for metainfo and stores in internal dictionary.
         /// </summary>
         /// <param name="bNodeRoot">BNode root of meta info.</param>
-        private void calculateInfoHash(BNodeBase bNodeRoot)
+        private void CalculateInfoHash(BNodeBase bNodeRoot)
         {
             BNodeBase infoEncodedBytes = Bencoding.GetDictionaryEntry(bNodeRoot, "info");
             if (infoEncodedBytes != null)
             {
                 byte[] infoHash = Bencoding.Encode(infoEncodedBytes);
                 SHA1 sha = new SHA1CryptoServiceProvider();
-                _metaInfoDict["info hash"] = sha.ComputeHash(infoHash);
-
+                MetaInfoDict["info hash"] = sha.ComputeHash(infoHash);
             }
-
         }
 
         /// <summary>
@@ -147,7 +136,7 @@ namespace BitTorrent
         public MetaInfoFile(string fileName)
         {
             TorrentFileName = fileName;
-            _metaInfoDict = new Dictionary<string, byte[]>();
+            MetaInfoDict = new Dictionary<string, byte[]>();
         }
 
         /// <summary>
@@ -155,7 +144,6 @@ namespace BitTorrent
         /// </summary>
         public void Load()
         {
-
             try
             {
                 _metaInfoData = System.IO.File.ReadAllBytes(TorrentFileName);
@@ -173,7 +161,6 @@ namespace BitTorrent
                 Log.Logger.Debug(ex);
                 throw;
             }
-
         }
 
         /// <summary>
@@ -184,31 +171,30 @@ namespace BitTorrent
         {
             try
             {
-
                 BNodeBase bNodeRoot = Bencoding.Decode(_metaInfoData);
 
-                getStringOrNumeric(bNodeRoot, "announce");
-                getListOfStrings(bNodeRoot, "announce-list");
-                getStringOrNumeric(bNodeRoot, "comment");
-                getStringOrNumeric(bNodeRoot, "created by");
-                getStringOrNumeric(bNodeRoot, "creation date");
-                getStringOrNumeric(bNodeRoot, "name");
-                getStringOrNumeric(bNodeRoot, "piece length");
-                getStringOrNumeric(bNodeRoot, "pieces");
-                getStringOrNumeric(bNodeRoot, "private");
-                getStringOrNumeric(bNodeRoot, "url-list");
+                GetStringOrNumeric(bNodeRoot, "announce");
+                GetListOfStrings(bNodeRoot, "announce-list");
+                GetStringOrNumeric(bNodeRoot, "comment");
+                GetStringOrNumeric(bNodeRoot, "created by");
+                GetStringOrNumeric(bNodeRoot, "creation date");
+                GetStringOrNumeric(bNodeRoot, "name");
+                GetStringOrNumeric(bNodeRoot, "piece length");
+                GetStringOrNumeric(bNodeRoot, "pieces");
+                GetStringOrNumeric(bNodeRoot, "private");
+                GetStringOrNumeric(bNodeRoot, "url-list");
 
                 if (Bencoding.GetDictionaryEntry(bNodeRoot, "files") == null)
                 {
-                    getStringOrNumeric(bNodeRoot, "length");
-                    getStringOrNumeric(bNodeRoot, "md5sum");
+                    GetStringOrNumeric(bNodeRoot, "length");
+                    GetStringOrNumeric(bNodeRoot, "md5sum");
                 }
                 else
                 {
-                    getListOfDictionarys(bNodeRoot, "files");
+                    GetListOfDictionarys(bNodeRoot, "files");
                 }
 
-                calculateInfoHash(bNodeRoot);
+                CalculateInfoHash(bNodeRoot);
 
                 foreach (var key in MetaInfoDict.Keys)
                 {
@@ -217,7 +203,6 @@ namespace BitTorrent
                         Log.Logger.Debug($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
                     }
                 }
-
             }
             catch (Error)
             {
@@ -229,6 +214,5 @@ namespace BitTorrent
                 throw;
             }
         }
-
     }
 }
