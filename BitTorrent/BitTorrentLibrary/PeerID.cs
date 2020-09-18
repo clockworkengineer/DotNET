@@ -14,10 +14,9 @@ namespace BitTorrent
 {
     public static class PeerID
     {
-
-        static public string get()
+        static public string Get()
         {
-            return ("-AZ1000-" + Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 12));
+            return "-AZ1000-" + Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 12);
         }
     }
 }

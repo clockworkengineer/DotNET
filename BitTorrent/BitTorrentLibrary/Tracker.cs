@@ -210,7 +210,7 @@ namespace BitTorrent
         {
             _trackerURL = Encoding.ASCII.GetString(torrentFileAgent.TorrentMetaInfo.MetaInfoDict["announce"]);
             _torrentFileAgent = torrentFileAgent;
-            _peerID = PeerID.get();
+            _peerID = PeerID.Get();
             _ip = Peer.GetLocalHostIP();
         }
 

@@ -17,14 +17,9 @@ namespace BitTorrent
     /// </summary>
     public class PieceBuffer
     {
-
-        private UInt32 _number; // Piece number
-        private UInt32 _length; // Piece length
-        private byte[] _buffer; // buffer
-
-        public uint Length { get => _length; set => _length = value; }
-        public byte[] Buffer { get => _buffer; set => _buffer = value; }
-        public uint Number { get => _number; set => _number = value; }
+        public uint Length { get; set; }    // Piece Length
+        public byte[] Buffer { get; set; }  // Piece Buffer
+        public uint Number { get; set; }    // Piece Number
 
         /// <summary>
         /// Create an empty piece buffer.
@@ -48,6 +43,5 @@ namespace BitTorrent
             Buffer = new byte[Length];
             pieceBuffer.Buffer.CopyTo(Buffer, 0);
         }
-
     }
 }

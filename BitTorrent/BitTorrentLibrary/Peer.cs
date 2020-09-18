@@ -45,40 +45,25 @@ namespace BitTorrent
     /// </summary>
     public class Peer
     {
-        private string _ip;
-        private UInt32 _port;
-        private ManualResetEvent _peerChoking;
-        private bool _interested = true;
+        private readonly UInt32 _port;
         private Socket _peerSocket;
-        private byte[] _infoHash;
-        private bool _connected;
-        private byte[] _remotePeerID;
-        private FileDownloader _torrentDownloader;
-        private PieceBuffer _assembledPiece;
-        private byte[] _readBuffer;
+        private readonly byte[] _infoHash;
         private UInt32 _bytesRead;
-        private UInt32 _packetLength;
         private bool _lengthRead;
-        private ManualResetEvent _bitfieldReceived;
-        private byte[] _remotePieceBitfield;
-        private ManualResetEvent _waitForPieceAssembly;
-        private bool _active;
-        private Int64 _transferingPiece = -1;
-
-        public byte[] ReadBuffer { get => _readBuffer; set => _readBuffer = value; }
-        public bool Connected { get => _connected; set => _connected = value; }
-        public byte[] RemotePeerID { get => _remotePeerID; set => _remotePeerID = value; }
-        public FileDownloader TorrentDownloader { get => _torrentDownloader; set => _torrentDownloader = value; }
-        public bool Interested { get => _interested; set => _interested = value; }
-        public byte[] RemotePieceBitfield { get => _remotePieceBitfield; set => _remotePieceBitfield = value; }
-        public uint PacketLength { get => _packetLength; set => _packetLength = value; }
-        public PieceBuffer AssembledPiece { get => _assembledPiece; set => _assembledPiece = value; }
-        public ManualResetEvent WaitForPieceAssembly { get => _waitForPieceAssembly; set => _waitForPieceAssembly = value; }
-        public ManualResetEvent PeerChoking { get => _peerChoking; set => _peerChoking = value; }
-        public ManualResetEvent BitfieldReceived { get => _bitfieldReceived; set => _bitfieldReceived = value; }
-        public bool Active { get => _active; set => _active = value; }
-        public Int64 TransferingPiece { get => _transferingPiece; set => _transferingPiece = value; }
-        public string Ip { get => _ip; set => _ip = value; }
+        public byte[] ReadBuffer { get; set; }
+        public bool Connected { get; set; }
+        public byte[] RemotePeerID { get; set; }
+        public FileDownloader TorrentDownloader { get; set; }
+        public bool Interested { get; set; } = true;
+        public byte[] RemotePieceBitfield { get; set; }
+        public uint PacketLength { get; set; }
+        public PieceBuffer AssembledPiece { get; set; }
+        public ManualResetEvent WaitForPieceAssembly { get; set; }
+        public ManualResetEvent PeerChoking { get; set; }
+        public ManualResetEvent BitfieldReceived { get; set; }
+        public bool Active { get; set; }
+        public Int64 TransferingPiece { get; set; } = -1;
+        public string Ip { get; set; }
 
         /// <summary>
         /// Send packet to remote peer.
@@ -97,7 +82,7 @@ namespace BitTorrent
         /// <param name="length">Length.</param>
         public int PeerRead(byte[] buffer, int length)
         {
-            return (_peerSocket.Receive(buffer, length, SocketFlags.None));
+            return _peerSocket.Receive(buffer, length, SocketFlags.None);
         }
 
         /// <summary>
@@ -110,7 +95,6 @@ namespace BitTorrent
 
             try
             {
-
                 UInt32 bytesRead = (UInt32)remotePeer._peerSocket.EndReceive(readAsyncState);
 
                 remotePeer._bytesRead += bytesRead;
@@ -119,13 +103,13 @@ namespace BitTorrent
                 {
                     if (remotePeer._bytesRead == Constants.SizeOfUInt32)
                     {
-                        remotePeer.PacketLength = ((UInt32)remotePeer._readBuffer[0]) << 24;
-                        remotePeer.PacketLength |= ((UInt32)remotePeer._readBuffer[1]) << 16;
-                        remotePeer.PacketLength |= ((UInt32)remotePeer._readBuffer[2]) << 8;
-                        remotePeer.PacketLength |= remotePeer._readBuffer[3];
+                        remotePeer.PacketLength = ((UInt32)remotePeer.ReadBuffer[0]) << 24;
+                        remotePeer.PacketLength |= ((UInt32)remotePeer.ReadBuffer[1]) << 16;
+                        remotePeer.PacketLength |= ((UInt32)remotePeer.ReadBuffer[2]) << 8;
+                        remotePeer.PacketLength |= remotePeer.ReadBuffer[3];
                         remotePeer._lengthRead = true;
                         remotePeer._bytesRead = 0;
-                        if (remotePeer.PacketLength > remotePeer._readBuffer.Length)
+                        if (remotePeer.PacketLength > remotePeer.ReadBuffer.Length)
                         {
                             Log.Logger.Debug("Resizing readBuffer ...");
                             remotePeer.ReadBuffer = new byte[remotePeer.PacketLength];
@@ -140,9 +124,8 @@ namespace BitTorrent
                     remotePeer.PacketLength = Constants.SizeOfUInt32;
                 }
 
-                remotePeer._peerSocket.BeginReceive(remotePeer._readBuffer, (Int32)remotePeer._bytesRead,
+                remotePeer._peerSocket.BeginReceive(remotePeer.ReadBuffer, (Int32)remotePeer._bytesRead,
                            (Int32)(remotePeer.PacketLength - remotePeer._bytesRead), 0, ReadPacketAsyncHandler, remotePeer);
-
             }
             catch (Error)
             {
@@ -180,8 +163,7 @@ namespace BitTorrent
                 Log.Logger.Debug(ex.Message);
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
-            return (localHostIP);
-
+            return localHostIP;
         }
 
         /// <summary>
@@ -193,15 +175,15 @@ namespace BitTorrent
         /// <param name="infoHash">Info hash.</param>
         public Peer(FileDownloader fileDownloader, string ip, UInt32 port, byte[] infoHash)
         {
-            _ip = ip;
+            Ip = ip;
             _port = port;
             _infoHash = infoHash;
-            _torrentDownloader = fileDownloader;
-            _readBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
-            _assembledPiece = new PieceBuffer(fileDownloader.Dc.pieceLength);
-            _waitForPieceAssembly = new ManualResetEvent(false);
-            _peerChoking = new ManualResetEvent(false);
-            _bitfieldReceived = new ManualResetEvent(false);
+            TorrentDownloader = fileDownloader;
+            ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
+            AssembledPiece = new PieceBuffer(fileDownloader.Dc.pieceLength);
+            WaitForPieceAssembly = new ManualResetEvent(false);
+            PeerChoking = new ManualResetEvent(false);
+            BitfieldReceived = new ManualResetEvent(false);
         }
 
         /// <summary>
@@ -209,30 +191,28 @@ namespace BitTorrent
         /// </summary>
         public void Connect()
         {
-
             try
             {
                 IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
-                IPAddress remotePeerIP = System.Net.IPAddress.Parse(_ip);
+                IPAddress remotePeerIP = System.Net.IPAddress.Parse(Ip);
 
                 _peerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
                 _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)_port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
 
-                ValueTuple<bool, byte[]> peerResponse = PWP.intialHandshake(this, _infoHash);
+                ValueTuple<bool, byte[]> peerResponse = PWP.IntialHandshake(this, _infoHash);
 
                 if (peerResponse.Item1)
                 {
                     RemotePeerID = peerResponse.Item2;
-                    _connected = true;
-                    _peerSocket.BeginReceive(_readBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, this);
+                    Connected = true;
+                    _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, this);
                 }
             }
             catch (Exception ex)
             {
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
-
         }
 
         /// <summary>
@@ -241,7 +221,6 @@ namespace BitTorrent
         public void Close()
         {
             _peerSocket.Close();
-
         }
 
         /// <summary>
@@ -251,7 +230,7 @@ namespace BitTorrent
         /// <param name="pieceNumber">Piece number.</param>
         public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            return ((_remotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0);
+            return (RemotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
         }
 
         /// <summary>
@@ -260,7 +239,7 @@ namespace BitTorrent
         /// <param name="pieceNumber">Piece number.</param>
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            _remotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+            RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
         }
 
         /// <summary>
@@ -274,20 +253,19 @@ namespace BitTorrent
             {
                 UInt32 blockNumber = blockOffset / Constants.BlockSize;
 
-                Log.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{_packetLength - 9})");
+                Log.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{PacketLength - 9})");
 
-                Buffer.BlockCopy(_readBuffer, 9, _assembledPiece.Buffer, (Int32)blockOffset, (Int32)_packetLength - 9);
+                Buffer.BlockCopy(ReadBuffer, 9, AssembledPiece.Buffer, (Int32)blockOffset, (Int32)PacketLength - 9);
 
-                _torrentDownloader.Dc.BlockPieceDownloaded(pieceNumber, blockNumber, true);
-                _torrentDownloader.Dc.BlockPieceRequested(pieceNumber, blockNumber, false);
+                TorrentDownloader.Dc.BlockPieceDownloaded(pieceNumber, blockNumber, true);
+                TorrentDownloader.Dc.BlockPieceRequested(pieceNumber, blockNumber, false);
 
                 if (TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
                 {
-                    _assembledPiece.Number = pieceNumber;
-                    _torrentDownloader.Dc.totalBytesDownloaded += _torrentDownloader.Dc.GetPieceLength(pieceNumber);
-                    _waitForPieceAssembly.Set();
+                    AssembledPiece.Number = pieceNumber;
+                    TorrentDownloader.Dc.totalBytesDownloaded += TorrentDownloader.Dc.GetPieceLength(pieceNumber);
+                    WaitForPieceAssembly.Set();
                 }
-
             }
             catch (Error)
             {
@@ -299,6 +277,5 @@ namespace BitTorrent
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
-
     }
 }

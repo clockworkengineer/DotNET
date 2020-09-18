@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: All the high level torrent processing like download and upload.
+// Description: All the high level torrent processing including download and upload.
 //
 // Copyright 2019.
 //
@@ -208,7 +208,7 @@ namespace BitTorrent
                         if (remotePeer.Connected)
                         {
                             RemotePeers.Add(remotePeer.Ip, remotePeer);
-                            Log.Logger.Info($"BTP: Local Peer [{ PeerID.get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                            Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
                         }
                     }
                 }
