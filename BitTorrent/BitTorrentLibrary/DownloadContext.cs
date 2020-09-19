@@ -4,7 +4,8 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Download context for a torrent file being downloaded. This includes
-// download progress and a local piece download map.
+// download progress, a pieces download map and functions for accessing this map to
+// change a pieces status.
 //
 // Copyright 2019.
 //

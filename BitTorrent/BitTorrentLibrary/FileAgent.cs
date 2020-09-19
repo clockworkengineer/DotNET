@@ -25,7 +25,6 @@ namespace BitTorrent
         private readonly Tracker _mainTracker;                       // Main torrent tracker
         private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
         public Downloader TorrentDownloader { get; set; }            // Downloader for torrent
-        public AnnounceResponse CurrentAnnouneResponse { get; set; } // Current tracker announce response
         public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
         public ManualResetEvent Downloading { get; set; }            // WaitOn when downloads == false
         public byte[] InfoHash { get; }                              // Torrent info hash
@@ -58,7 +57,6 @@ namespace BitTorrent
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                    //    remotePeer.Active = true;
                         remotePeer.TransferingPiece = nextPiece;
 
                         UInt32 blockNumber = 0;
@@ -84,6 +82,8 @@ namespace BitTorrent
 
                             _mainTracker.Left = TorrentDownloader.Dc.totalBytesToDownload - TorrentDownloader.Dc.totalBytesDownloaded;
                             _mainTracker.Downloaded = TorrentDownloader.Dc.totalBytesDownloaded;
+                        } else {
+                            throw new Error("Data lost.");
                         }
 
                         progressFunction?.Invoke(progressData);
@@ -150,11 +150,11 @@ namespace BitTorrent
         /// <summary>
         /// Connect peers and add to swarm on success.
         /// </summary>
-        public void ConnectPeersAndAddToSwarm()
+        public void ConnectPeersAndAddToSwarm(AnnounceResponse response)
         {
             Log.Logger.Info("Connecting any new peers to swarm ....");
 
-            foreach (var peer in CurrentAnnouneResponse.peers)
+            foreach (var peer in response.peers)
             {
                 try
                 {
@@ -201,11 +201,10 @@ namespace BitTorrent
 
                 Log.Logger.Info("Initial main tracker announce ...");
 
-                CurrentAnnouneResponse = _mainTracker.Announce();
-
-                ConnectPeersAndAddToSwarm();
+                ConnectPeersAndAddToSwarm(_mainTracker.Announce());
 
                 _mainTracker.StartAnnouncing();
+
             }
             catch (Error)
             {

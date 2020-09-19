@@ -34,11 +34,9 @@ namespace BitTorrent
             completed       // Must be sent to the tracker when the download completes
         };
 
-        private System.Timers.Timer _announceTimer;         // Timer for sending tracker announce events
-        private readonly string _trackerURL = String.Empty; // URL for tracker announce
+        private Timer _announceTimer;                       // Timer for sending tracker announce events
         private readonly string _peerID = String.Empty;     // Peers unique ID
         private readonly FileAgent _torrentFileAgent;       // File Agent for downloads
-        private AnnounceResponse _currentTrackerResponse;   // Last tracker announce response
         private readonly UInt32 _port = 6681;               // Port that client s listening on 
         private readonly string _ip = String.Empty;         // IP of host performing announce
         private readonly UInt32 _compact = 1;               // Is the returned peer list compressed (1=yes,0=no)
@@ -46,6 +44,8 @@ namespace BitTorrent
         private readonly string _key = String.Empty;        // An additional identification that is not shared with any other peers (optional)
         private string _trackerID = String.Empty;           // String that the client should send back on its next announcements. (optional).
         private readonly UInt32 _numWanted = 5;             // Number of required download clients
+        private readonly string _infoHash = String.Empty;   // Encoded info hash for URI
+        private readonly string _trackURL = String.Empty;   // Tracker URL
         private UInt32 _interval = 2000;                    // Polling interval between each announce
         public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
         public UInt64 Downloaded { get; set; }              // Total downloaed bytes of file to local client
@@ -132,55 +132,38 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Encodes infohash bytes into URL string.
+        /// Restart announce on interval changing.
         /// </summary>
-        /// <returns>InfoHash encoded string.</returns>
-        /// <param name="infoHashBytes">To encode.</param>
-        private string EncodeInfoHashForURL(byte[] infoHashBytes)
+        /// <param name="response"></param>
+        private void UpdateRunningStatusFromAnnounce(AnnounceResponse response)
         {
-            return Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(infoHashBytes, 0, infoHashBytes.Length));
-        }
-
-        /// <summary>
-        /// Encodes the tracker announce URL.
-        /// </summary>
-        /// <returns>The tracker URL.</returns>
-        private string EncodeTrackerAnnounceURL()
-        {
-            string url = _trackerURL +
-            "?info_hash=" + EncodeInfoHashForURL(_torrentFileAgent.InfoHash) +
-            "&peer_id=" + _peerID +
-            "&port=" + _port +
-            "&compact=" + _compact +
-            "&no_peer_id=" + _noPeerID +
-            "&uploaded=" + Uploaded +
-            "&downloaded=" + Downloaded +
-            "&left=" + Left +
-            "&event=" + Event +
-            "&ip=" + _ip +
-            "&key=" + _key +
-            "&trackerid=" + _trackerID +
-            "&numwanted=" + _numWanted;
-
-            return url;
-        }
-
-        /// <summary>
-        /// Updates peers.
-        /// </summary>
-        private void UpdatePeers()
-        {
-            int unChokedPeers = 0;
-
-            foreach (var peer in _torrentFileAgent.RemotePeers.Values)
+            try
             {
-                if (peer.PeerChoking.WaitOne(0))
+                UInt32 oldInterval = _interval;
+                if (response.minInterval != 0)
                 {
-                    unChokedPeers++;
+                    _interval = response.minInterval;
+                }
+                else
+                {
+                    _interval = response.interval;
+                }
+                _trackerID = response.trackerID;
+                if (oldInterval != _interval)
+                {
+                    StopAnnonncing();
+                    StartAnnouncing();
                 }
             }
-
-            Log.Logger.Info($"Unchoked Peers {unChokedPeers}/{_torrentFileAgent.RemotePeers.Count}");
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
+            }
         }
 
         /// <summary>
@@ -191,9 +174,9 @@ namespace BitTorrent
         /// <param name="tracker">Tracker.</param>
         private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
         {
-            tracker._currentTrackerResponse = tracker.Announce();
-            tracker._torrentFileAgent.ConnectPeersAndAddToSwarm();
-            tracker.UpdatePeers();
+            AnnounceResponse response = tracker.Announce();
+            tracker._torrentFileAgent.ConnectPeersAndAddToSwarm(response);
+            tracker.UpdateRunningStatusFromAnnounce(response);
         }
 
         /// <summary>
@@ -202,10 +185,11 @@ namespace BitTorrent
         /// <param name="torrentFileAgent">Torrent file agent.</param>
         public Tracker(FileAgent torrentFileAgent)
         {
-            _trackerURL = torrentFileAgent.TrackerURL;
-            _torrentFileAgent = torrentFileAgent;
+            _torrentFileAgent = torrentFileAgent ?? throw new NullReferenceException();
             _peerID = PeerID.Get();
             _ip = Peer.GetLocalHostIP();
+            _infoHash = Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(_torrentFileAgent.InfoHash, 0, _torrentFileAgent.InfoHash.Length));
+            _trackURL = _torrentFileAgent.TrackerURL;
         }
 
         /// <summary>
@@ -214,7 +198,7 @@ namespace BitTorrent
         /// <returns>The response.</returns>
         public AnnounceResponse Announce()
         {
-            Log.Logger.Info($"Announce: info_hash={EncodeInfoHashForURL(_torrentFileAgent.InfoHash)} " +
+            Log.Logger.Info($"Announce: info_hash={_infoHash} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
                   $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 
@@ -222,7 +206,9 @@ namespace BitTorrent
 
             try
             {
-                HttpWebRequest httpGetRequest = WebRequest.Create(EncodeTrackerAnnounceURL()) as HttpWebRequest;
+                string announceURL = $"{_trackURL}?info_hash={_infoHash}&peer_id={_peerID}&port={_port}&compact={_compact}&no_peer_id={_noPeerID}&uploaded={Uploaded}&downloaded={Downloaded}&left={Left}&event={Event}&ip={_ip}&key={_key}&trackerid={_trackerID}&numwanted={_numWanted}";
+
+                HttpWebRequest httpGetRequest = WebRequest.Create(announceURL) as HttpWebRequest;
 
                 httpGetRequest.Method = "GET";
                 httpGetRequest.ContentType = "text/xml";
@@ -295,41 +281,6 @@ namespace BitTorrent
                 {
                     _announceTimer.Stop();
                     _announceTimer.Dispose();
-                }
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Update the specified response.
-        /// </summary>
-        /// <param name="response">Response.</param>
-        public void Update(AnnounceResponse response)
-        {
-            try
-            {
-                UInt32 oldInterval = _interval;
-                if (response.minInterval != 0)
-                {
-                    _interval = response.minInterval;
-                }
-                else
-                {
-                    _interval = response.interval;
-                }
-                _trackerID = response.trackerID;
-                if (oldInterval != _interval)
-                {
-                    StopAnnonncing();
-                    StartAnnouncing();
                 }
             }
             catch (Error)
