@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: The File Downloader class encapsulates all code and
+// Description: The Downloader class encapsulates all code and
 // data relating to the readining/writing of the local torrent files
 // to determine which pieces are missing and need downloading and
 // written to the correct positions.
@@ -12,8 +12,8 @@
 //
 
 using System;
+using System.Text;
 using System.IO;
-
 using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -23,10 +23,10 @@ namespace BitTorrent
     /// <summary>
     /// File downloader.
     /// </summary>
-    public class FileDownloader
+    public class Downloader
     {
         private readonly Object _pieceLock;                  // Piece Lock            
-        private readonly List<FileDetails> _filesToDownload; // Files in torrent to be dowloaded
+        private readonly List<FileDetails> _filesToDownload; // Files in torrent to be downloaded
         private readonly SHA1 _sha;                          // Object to create SHA1 piece info hash
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
         public DownloadContext Dc { get; set; }              // Torrent download context
@@ -111,7 +111,7 @@ namespace BitTorrent
         /// </summary>
         private void CreatePieceMap()
         {
-            byte [] pieceBuffer = new byte[Dc.pieceLength];
+            byte [] pieceBuffer = new byte[Dc.pieceLengthInBytes];
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
             int bytesRead = 0;
@@ -128,7 +128,7 @@ namespace BitTorrent
                     {
                         bytesInBuffer += (UInt32)bytesRead;
 
-                        if (bytesInBuffer == Dc.pieceLength)
+                        if (bytesInBuffer == Dc.pieceLengthInBytes)
                         {
                             GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
                             bytesInBuffer = 0;
@@ -160,8 +160,8 @@ namespace BitTorrent
                 {
                     Log.Logger.Trace($"writePieceToFiles({pieceBuffer.Number})");
 
-                    UInt64 startOffset = pieceBuffer.Number * Dc.pieceLength;
-                    UInt64 endOffset = startOffset + Dc.pieceLength;
+                    UInt64 startOffset = pieceBuffer.Number * Dc.pieceLengthInBytes;
+                    UInt64 endOffset = startOffset + Dc.pieceLengthInBytes;
 
                     foreach (var file in _filesToDownload)
                     {
@@ -172,7 +172,7 @@ namespace BitTorrent
                             using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
                             {
                                 stream.Seek((Int64)(startWrite - file.offset), SeekOrigin.Begin);
-                                stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % Dc.pieceLength), (Int32)(endWrite - startWrite));
+                                stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % Dc.pieceLengthInBytes), (Int32)(endWrite - startWrite));
                                 stream.Flush();
                             }
                         }
@@ -191,12 +191,17 @@ namespace BitTorrent
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
         /// <param name="pieces">Pieces.</param>
-        public FileDownloader(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
+        public Downloader(MetaInfoFile torrentMetaInfo, string downloadPath)
         {
+            UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
+            _filesToDownload = torrentMetaInfo.GenerateLocalFilesToDownloadList(downloadPath);
+            UInt64 totalDownloadLength=0;
+            foreach (var file in _filesToDownload) {
+                totalDownloadLength += file.length;
+            }
+            Dc = new DownloadContext(totalDownloadLength, pieceLength, torrentMetaInfo.MetaInfoDict["pieces"]);
             _pieceLock = new object();
-            _filesToDownload = filesToDownload;
             _sha = new SHA1CryptoServiceProvider();
-            Dc = new DownloadContext(filesToDownload, pieceLength, pieces);
             _pieceBufferWriterTask = new Task(PieceBufferWriter);
             _pieceBufferWriterTask.Start();
         }
@@ -205,7 +210,7 @@ namespace BitTorrent
         /// Releases unmanaged resources and performs other cleanup operations before the
         /// FileDownloader class is reclaimed by garbage collection.
         /// </summary>
-        ~FileDownloader()
+        ~Downloader()
         {
             Dc.pieceBufferWriteQueue.CompleteAdding();
         }

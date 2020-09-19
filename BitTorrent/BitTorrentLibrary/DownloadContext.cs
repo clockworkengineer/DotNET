@@ -41,11 +41,11 @@ namespace BitTorrent
     /// </summary>
     public class DownloadContext
     {
-        public PieceBlockMap[] pieceMap;                                // Piece map for current download
-        public BlockingCollection<PieceBuffer> pieceBufferWriteQueue;   // Write buffer for pieces towrite to files
+        public PieceBlockMap[] pieceMap;                                // Piece map for download
+        public BlockingCollection<PieceBuffer> pieceBufferWriteQueue;   // Write buffer for pieces to write to files
         public UInt64 totalBytesDownloaded;                             // Total downloaded bytes
-        public UInt64 totalLength;                                      // Total length of torrent files
-        public UInt32 pieceLength;                                      // Piece length in bytes
+        public UInt64 totalBytesToDownload;                             // Total bytes to download
+        public UInt32 pieceLengthInBytes;                               // Piece length in bytes
         public UInt32 blocksPerPiece;                                   // Blocks per piece
         public byte[] piecesInfoHash;                                   // Pieces info hash checksum
         public UInt32 numberOfPieces;                                   // Number of pieces to transfer
@@ -56,16 +56,12 @@ namespace BitTorrent
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
         /// <param name="pieces">Pieces.</param>
-        public DownloadContext(List<FileDetails> filesToDownload, UInt32 pieceLength, byte[] pieces)
+        public DownloadContext(UInt64 totalDownloadLength, UInt32 pieceLength, byte[] pieces)
         {
             try
             {
-                foreach (var file in filesToDownload)
-                {
-                    totalLength += file.length;
-                }
-
-                this.pieceLength = pieceLength;
+                totalBytesToDownload = totalDownloadLength;
+                pieceLengthInBytes = pieceLength;
                 piecesInfoHash = pieces;
                 numberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
                 blocksPerPiece = pieceLength / Constants.BlockSize;
@@ -78,13 +74,10 @@ namespace BitTorrent
 
                 pieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
 
@@ -107,9 +100,10 @@ namespace BitTorrent
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
                 }
             }
-            catch (Error)
+            catch (Exception ex)
             {
-                throw;
+                Log.Logger.Debug(ex);
+                throw new Error("BritTorent (DownloadConext) Error : "+ex.Message);
             }
         }
 
@@ -132,13 +126,10 @@ namespace BitTorrent
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
 
@@ -161,18 +152,15 @@ namespace BitTorrent
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.OnPeer ^ 0xff);
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
 
         /// <summary>
-        /// Sets a block as having been downloaed from a peer.
+        /// Sets a block as having been downloaded from a peer.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="blockNumber">Block number.</param>
@@ -191,18 +179,15 @@ namespace BitTorrent
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
 
         /// <summary>
-        /// Sets a block as last withina piece.
+        /// Sets a block as last within a piece.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="blockNumber">Block number.</param>
@@ -220,13 +205,10 @@ namespace BitTorrent
                     pieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.LastBlock ^ 0xff);
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
 
@@ -242,15 +224,11 @@ namespace BitTorrent
             {
                 return (pieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer;
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
-            return false;
         }
 
         /// <summary>
@@ -265,15 +243,11 @@ namespace BitTorrent
             {
                 return (pieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal;
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
-            return false;
         }
 
         /// <summary>
@@ -288,15 +262,11 @@ namespace BitTorrent
             {
                 return (pieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested;
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
-            return false;
         }
 
         /// <summary>
@@ -311,19 +281,15 @@ namespace BitTorrent
             {
                 return (pieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock;
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
-            return false;
         }
 
         /// <summary>
-        /// Gets the length of the piece in bytes.
+        /// Get the length of a piece in bytes.
         /// </summary>
         /// <returns>The piece length.</returns>
         /// <param name="pieceNumber">Piece number.</param>
@@ -339,15 +305,11 @@ namespace BitTorrent
                 }
                 length += pieceMap[pieceNumber].lastBlockLength;
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
-
             return length;
         }
 
@@ -373,13 +335,10 @@ namespace BitTorrent
                     return false;
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
             return true;
         }
@@ -412,13 +371,10 @@ namespace BitTorrent
                 }
                 remotePeer.BitfieldReceived.Set();
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
 
@@ -437,13 +393,10 @@ namespace BitTorrent
                 }
                 BlockPieceRequested(pieceNumber, blockNumber, true);
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
 
@@ -462,13 +415,10 @@ namespace BitTorrent
                 }
                 BlockPieceRequested(pieceNumber, blockNumber, false);
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
 
@@ -496,13 +446,10 @@ namespace BitTorrent
                     }
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
             }
         }
     }

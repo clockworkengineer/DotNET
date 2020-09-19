@@ -3,7 +3,8 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Buffer used to hold and assemble  pieces from
+// blocks downloaded.
 //
 // Copyright 2019.
 //

@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Class to used in reporting any BitTorrent internal
+// Description: Class used in reporting any BitTorrent internal
 // errors.
 //
 // Copyright 2019.

@@ -22,15 +22,14 @@ namespace BitTorrent
     public class FileAgent
     {
         public delegate void ProgessCallBack(Object progressData);
-        private readonly string _downloadPath;                       // Download root patch
         private readonly Tracker _mainTracker;                       // Main torrent tracker
-        private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect 
-        private readonly List<FileDetails> _filesToDownload;         // Files to download in torrent
-        public FileDownloader FileToDownloader { get; set; }         // FileDownloader for torrent
-        public AnnounceResponse CurrentAnnouneResponse { get; set; } // Current tracker annouce response
-        public MetaInfoFile TorrentMetaInfo { get; set; }            // Torrent Metafile information
+        private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
+        public Downloader TorrentDownloader { get; set; }            // Downloader for torrent
+        public AnnounceResponse CurrentAnnouneResponse { get; set; } // Current tracker announce response
         public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
         public ManualResetEvent Downloading { get; set; }            // WaitOn when downloads == false
+        public byte[] InfoHash { get; }                              // Torrent info hash
+        public string TrackerURL { get; }                            // Main Tracker URL
 
         /// <summary>
         /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
@@ -55,11 +54,11 @@ namespace BitTorrent
 
                 while (_mainTracker.Left != 0)
                 {
-                    for (UInt32 nextPiece = 0; FileToDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
+                    for (UInt32 nextPiece = 0; TorrentDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                        remotePeer.Active = true;
+                    //    remotePeer.Active = true;
                         remotePeer.TransferingPiece = nextPiece;
 
                         UInt32 blockNumber = 0;
@@ -69,7 +68,7 @@ namespace BitTorrent
                         }
 
                         PWP.Request(remotePeer, nextPiece, blockNumber * Constants.BlockSize,
-                                     FileToDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
+                                     TorrentDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
 
                         remotePeer.WaitForPieceAssembly.WaitOne();
                         remotePeer.WaitForPieceAssembly.Reset();
@@ -81,10 +80,10 @@ namespace BitTorrent
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
                             PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.AssembledPiece);
-                            FileToDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
+                            TorrentDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
 
-                            _mainTracker.Left = FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
-                            _mainTracker.Downloaded = FileToDownloader.Dc.totalBytesDownloaded;
+                            _mainTracker.Left = TorrentDownloader.Dc.totalBytesToDownload - TorrentDownloader.Dc.totalBytesDownloaded;
+                            _mainTracker.Downloaded = TorrentDownloader.Dc.totalBytesDownloaded;
                         }
 
                         progressFunction?.Invoke(progressData);
@@ -101,7 +100,7 @@ namespace BitTorrent
                             return;
                         }
 
-                        Log.Logger.Info((FileToDownloader.Dc.totalBytesDownloaded / (double)FileToDownloader.Dc.totalLength).ToString("0.00%"));
+                        Log.Logger.Info((TorrentDownloader.Dc.totalBytesDownloaded / (double)TorrentDownloader.Dc.totalBytesToDownload).ToString("0.00%"));
 
                         Downloading.WaitOne();
 
@@ -132,64 +131,20 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Generate of files in torrent to download from peers,
-        /// </summary>
-        private void GenerateFilesToDownloadList()
-        {
-            try
-            {
-                if (!TorrentMetaInfo.MetaInfoDict.ContainsKey("0"))
-                {
-                    FileDetails fileDetail = new FileDetails
-                    {
-                        name = _downloadPath + Constants.PathSeparator + Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["name"]),
-                        length = UInt64.Parse(Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["length"])),
-                        offset = 0
-                    };
-                    _filesToDownload.Add(fileDetail);
-                }
-                else
-                {
-                    UInt32 fileNo = 0;
-                    UInt64 totalBytes = 0;
-                    string name = Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["name"]);
-                    while (TorrentMetaInfo.MetaInfoDict.ContainsKey(fileNo.ToString()))
-                    {
-                        string[] details = Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict[fileNo.ToString()]).Split(',');
-                        FileDetails fileDetail = new FileDetails
-                        {
-                            name = _downloadPath + Constants.PathSeparator + name + details[0],
-                            length = UInt64.Parse(details[1]),
-                            md5sum = details[2],
-                            offset = totalBytes
-                        };
-                        _filesToDownload.Add(fileDetail);
-                        fileNo++;
-                        totalBytes += fileDetail.length;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): Failed to create download file list.");
-            }
-        }
-
-        /// <summary>
         /// Initializes a new instance of the FileAgent class.
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
         public FileAgent(MetaInfoFile torrentFile, String downloadPath)
         {
-            TorrentMetaInfo = torrentFile;
-            _downloadPath = downloadPath;
+            TorrentDownloader = new Downloader(torrentFile, downloadPath);
             Downloading = new ManualResetEvent(true);
             RemotePeers = new Dictionary<string, Peer>();
             _deadPeersList = new HashSet<string>();
+            InfoHash =  torrentFile.MetaInfoDict["info hash"];
+            TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _mainTracker = new Tracker(this);
-            _filesToDownload = new List<FileDetails>();
+
         }
 
         /// <summary>
@@ -205,7 +160,7 @@ namespace BitTorrent
                 {
                     if (!RemotePeers.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
                     {
-                        Peer remotePeer = new Peer(FileToDownloader, peer.ip, peer.port, TorrentMetaInfo.MetaInfoDict["info hash"]);
+                        Peer remotePeer = new Peer(TorrentDownloader, peer.ip, peer.port, InfoHash);
                         remotePeer.Connect();
                         if (remotePeer.Connected)
                         {
@@ -233,21 +188,11 @@ namespace BitTorrent
         {
             try
             {
-                UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(TorrentMetaInfo.MetaInfoDict["piece length"]));
-
-                Log.Logger.Info("Create files to download details structure ...");
-
-                GenerateFilesToDownloadList();
-
-                Log.Logger.Info("Setup file downloader ...");
-
-                FileToDownloader = new FileDownloader(_filesToDownload, pieceLength, TorrentMetaInfo.MetaInfoDict["pieces"]);
-
                 Log.Logger.Info("Determine which pieces of file need to be downloaded still...");
 
-                FileToDownloader.BuildDownloadedPiecesMap();
+                TorrentDownloader.BuildDownloadedPiecesMap();
 
-                _mainTracker.Left = FileToDownloader.Dc.totalLength - FileToDownloader.Dc.totalBytesDownloaded;
+                _mainTracker.Left = TorrentDownloader.Dc.totalBytesToDownload - TorrentDownloader.Dc.totalBytesDownloaded;
                 if (_mainTracker.Left == 0)
                 {
                     Log.Logger.Info("Torrent file fully downloaded already.");
@@ -296,7 +241,7 @@ namespace BitTorrent
                         assembleTasks.Add(Task.Run(() => AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource)));
                     }
 
-                    FileToDownloader.Dc.CheckForMissingBlocksFromPeers();
+                    TorrentDownloader.Dc.CheckForMissingBlocksFromPeers();
 
                     Task.WaitAll(assembleTasks.ToArray());
 

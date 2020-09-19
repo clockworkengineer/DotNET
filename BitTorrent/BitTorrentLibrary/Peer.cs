@@ -19,7 +19,7 @@ namespace BitTorrent
     public static class SocketExtensions
     {
         /// <summary>
-        /// Connects the specified socket.
+        /// Connects the specified socket with a timeout.
         /// </summary>
         /// <param name="socket">The socket.</param>
         /// <param name="endpoint">The IP endpoint.</param>
@@ -45,25 +45,24 @@ namespace BitTorrent
     /// </summary>
     public class Peer
     {
-        private readonly UInt32 _port;
-        private Socket _peerSocket;
-        private readonly byte[] _infoHash;
-        private UInt32 _bytesRead;
-        private bool _lengthRead;
-        public byte[] ReadBuffer { get; set; }
-        public bool Connected { get; set; }
-        public byte[] RemotePeerID { get; set; }
-        public FileDownloader TorrentDownloader { get; set; }
-        public bool Interested { get; set; } = true;
-        public byte[] RemotePieceBitfield { get; set; }
-        public uint PacketLength { get; set; }
-        public PieceBuffer AssembledPiece { get; set; }
+        private readonly UInt32 _port;                      // Port
+        private Socket _peerSocket;                         // Socket for I/O
+        private readonly byte[] _infoHash;                  // Info Hash of torrent
+        private UInt32 _bytesRead;                          // Bytes read in read request
+        private bool _lengthRead;                           // == true packet length has been read
+        public byte[] ReadBuffer { get; set; }              // Read buffer
+        public bool Connected { get; set; }                 // == true connected to remote peer
+        public byte[] RemotePeerID { get; set; }            // Id of remote peer
+        public Downloader TorrentDownloader { get; set; }   // Downloader for torrent
+        public bool Interested { get; set; } = true;        // == true then interested in remote peer pieces
+        public byte[] RemotePieceBitfield { get; set; }     // Remote peer piece map
+        public uint PacketLength { get; set; }              // Current packet length
+        public PieceBuffer AssembledPiece { get; set; }     // Assembled pieces buffer
+        public Int64 TransferingPiece { get; set; } = -1;   // Piece being currently transfer
+        public string Ip { get; set; }                      // Remote peer ip
         public ManualResetEvent WaitForPieceAssembly { get; set; }
         public ManualResetEvent PeerChoking { get; set; }
         public ManualResetEvent BitfieldReceived { get; set; }
-        public bool Active { get; set; }
-        public Int64 TransferingPiece { get; set; } = -1;
-        public string Ip { get; set; }
 
         /// <summary>
         /// Send packet to remote peer.
@@ -173,14 +172,14 @@ namespace BitTorrent
         /// <param name="ip">Ip.</param>
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
-        public Peer(FileDownloader fileDownloader, string ip, UInt32 port, byte[] infoHash)
+        public Peer(Downloader fileDownloader, string ip, UInt32 port, byte[] infoHash)
         {
             Ip = ip;
             _port = port;
             _infoHash = infoHash;
             TorrentDownloader = fileDownloader;
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
-            AssembledPiece = new PieceBuffer(fileDownloader.Dc.pieceLength);
+            AssembledPiece = new PieceBuffer(fileDownloader.Dc.pieceLengthInBytes);
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);

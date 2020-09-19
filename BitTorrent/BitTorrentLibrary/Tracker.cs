@@ -148,7 +148,7 @@ namespace BitTorrent
         private string EncodeTrackerAnnounceURL()
         {
             string url = _trackerURL +
-            "?info_hash=" + EncodeInfoHashForURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"]) +
+            "?info_hash=" + EncodeInfoHashForURL(_torrentFileAgent.InfoHash) +
             "&peer_id=" + _peerID +
             "&port=" + _port +
             "&compact=" + _compact +
@@ -171,7 +171,6 @@ namespace BitTorrent
         private void UpdatePeers()
         {
             int unChokedPeers = 0;
-            int activePeers = 0;
 
             foreach (var peer in _torrentFileAgent.RemotePeers.Values)
             {
@@ -179,14 +178,9 @@ namespace BitTorrent
                 {
                     unChokedPeers++;
                 }
-                if (peer.Active)
-                {
-                    activePeers++;
-                }
             }
 
             Log.Logger.Info($"Unchoked Peers {unChokedPeers}/{_torrentFileAgent.RemotePeers.Count}");
-            Log.Logger.Info($"Active Peers {activePeers}/{ _torrentFileAgent.RemotePeers.Count}");
         }
 
         /// <summary>
@@ -208,7 +202,7 @@ namespace BitTorrent
         /// <param name="torrentFileAgent">Torrent file agent.</param>
         public Tracker(FileAgent torrentFileAgent)
         {
-            _trackerURL = Encoding.ASCII.GetString(torrentFileAgent.TorrentMetaInfo.MetaInfoDict["announce"]);
+            _trackerURL = torrentFileAgent.TrackerURL;
             _torrentFileAgent = torrentFileAgent;
             _peerID = PeerID.Get();
             _ip = Peer.GetLocalHostIP();
@@ -220,7 +214,7 @@ namespace BitTorrent
         /// <returns>The response.</returns>
         public AnnounceResponse Announce()
         {
-            Log.Logger.Info($"Announce: info_hash={EncodeInfoHashForURL(_torrentFileAgent.TorrentMetaInfo.MetaInfoDict["info hash"])} " +
+            Log.Logger.Info($"Announce: info_hash={EncodeInfoHashForURL(_torrentFileAgent.InfoHash)} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
                   $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 

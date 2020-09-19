@@ -214,5 +214,53 @@ namespace BitTorrent
                 throw;
             }
         }
+
+        /// <summary>
+        /// Generate list of local files in torrent to download from peers.
+        /// </summary>
+        public List<FileDetails> GenerateLocalFilesToDownloadList(string downloadPath)
+        {
+            List<FileDetails> filesToDownload = new List<FileDetails>();
+
+            try
+            {
+                if (!MetaInfoDict.ContainsKey("0"))
+                {
+                    FileDetails fileDetail = new FileDetails
+                    {
+                        name = downloadPath + Constants.PathSeparator + Encoding.ASCII.GetString(MetaInfoDict["name"]),
+                        length = UInt64.Parse(Encoding.ASCII.GetString(MetaInfoDict["length"])),
+                        offset = 0
+                    };
+                    filesToDownload.Add(fileDetail);
+                }
+                else
+                {
+                    UInt32 fileNo = 0;
+                    UInt64 totalBytes = 0;
+                    string name = Encoding.ASCII.GetString(MetaInfoDict["name"]);
+                    while (MetaInfoDict.ContainsKey(fileNo.ToString()))
+                    {
+                        string[] details = Encoding.ASCII.GetString(MetaInfoDict[fileNo.ToString()]).Split(',');
+                        FileDetails fileDetail = new FileDetails
+                        {
+                            name = downloadPath + Constants.PathSeparator + name + details[0],
+                            length = UInt64.Parse(details[1]),
+                            md5sum = details[2],
+                            offset = totalBytes
+                        };
+                        filesToDownload.Add(fileDetail);
+                        fileNo++;
+                        totalBytes += fileDetail.length;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (MetaInfoFile): Failed to create download file list.");
+            }
+            return filesToDownload;
+        }
     }
 }
