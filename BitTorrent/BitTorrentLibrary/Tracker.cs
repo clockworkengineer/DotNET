@@ -157,7 +157,7 @@ namespace BitTorrent
                     _interval = response.interval;
                     if (oldInterval != _interval)
                     {
-                        StopAnnonncing();
+                        StopAnnoncing();
                         StartAnnouncing();
                     }
                 }
@@ -201,7 +201,7 @@ namespace BitTorrent
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm)
+        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm=null)
         {
             _peerID = PeerID.Get();
             _ip = Peer.GetLocalHostIP();
@@ -210,6 +210,11 @@ namespace BitTorrent
             _updatePeerSwarm = updatePeerSwarm;
         }
 
+        public void IntialAnnounce()
+        {
+            OnAnnounceEvent(this); 
+        }
+        
         /// <summary>
         /// Perform an announce request to tracker and return any response.
         /// </summary>
@@ -272,6 +277,9 @@ namespace BitTorrent
         {
             try
             {
+                if (_announceTimer!=null) {
+                    StopAnnoncing();
+                }
                 _announceTimer = new System.Timers.Timer(_interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = true;
@@ -291,7 +299,7 @@ namespace BitTorrent
         /// <summary>
         /// Stops the annonncing.
         /// </summary>
-        public void StopAnnonncing()
+        public void StopAnnoncing()
         {
             try
             {
@@ -299,6 +307,7 @@ namespace BitTorrent
                 {
                     _announceTimer.Stop();
                     _announceTimer.Dispose();
+                    _announceTimer=null;
                 }
             }
             catch (Error)

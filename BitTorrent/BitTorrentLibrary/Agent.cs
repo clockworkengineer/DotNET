@@ -155,10 +155,10 @@ namespace BitTorrent
             _downloading = new ManualResetEvent(true);
         }
         /// <summary>
-        /// /// Connect peers and add to swarm on success.
+        /// Connect peers and add to swarm on success.
         /// </summary>
         /// <param name="peers"></param>
-        public void ConnectPeersAndAddToSwarm(List<PeerDetails> peers)
+        public void UpdatePeerSwarm(List<PeerDetails> peers)
         {
             Log.Logger.Info("Connecting any new peers to swarm ....");
 
@@ -185,32 +185,6 @@ namespace BitTorrent
             }
 
             Log.Logger.Info($"Number of peers in swarm  {RemotePeers.Count}");
-        }
-
-        /// <summary>
-        /// Startup File Agent.This includes starting announces to main tracker, building pieces
-        /// to download map and getting and building the initial peer swarm/dead list.
-        /// </summary>
-        ///
-        public void Startup()
-        {
-            try
-            {
-                Log.Logger.Info("Initial main tracker announce ...");
-
-                ConnectPeersAndAddToSwarm(MainTracker.Announce().peers); ;
-
-                MainTracker.StartAnnouncing();
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): Failed to load File Agent.");
-            }
         }
 
         /// <summary>
@@ -264,27 +238,6 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Load Agent asynchronously.
-        /// </summary>
-        /// <returns>The async.</returns>
-        public async Task LoadAsync()
-        {
-            try
-            {
-                await Task.Run(() => Startup()).ConfigureAwait(false);
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): " + ex.Message);
-            }
-        }
-
-        /// <summary>
         /// Download torrent asynchronously.
         /// </summary>
         /// <param name="progressFunction">User defined grogress function.</param>
@@ -313,7 +266,7 @@ namespace BitTorrent
         {
             try
             {
-                MainTracker.StopAnnonncing();
+                MainTracker.StopAnnoncing();
                 if (RemotePeers != null)
                 {
                     Log.Logger.Info("Closing peer sockets.");

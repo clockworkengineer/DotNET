@@ -80,13 +80,14 @@ namespace BitTorrent
 
                 if (agent.BytesLeftToDownload() != 0) {
 
-                    Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.ConnectPeersAndAddToSwarm)
+                    Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm)
                     {
                         Left = agent.BytesLeftToDownload()
                     };
                     agent.MainTracker = tracker;
 
-                    agent.Startup();
+                    tracker.IntialAnnounce();
+                    tracker.StartAnnouncing();
 
                     agent.Download();
 
