@@ -24,11 +24,11 @@ namespace BitTorrent
     /// </summary>
     public class Tracker
     {
+        public delegate void UpdatePeers(List<PeerDetails> peers); // Update swarm of active peers
         /// <summary>
         /// Tracker Announce event types.
         /// </summary>
-        ///
-        public delegate void UpdatePeers(List<PeerDetails> peers); // Update swarm of active peers
+        //
         public enum TrackerEvent
         {
             started = 0,    // The first request to the tracker must include the event key with this value
@@ -47,6 +47,7 @@ namespace BitTorrent
         private readonly string _infoHash = String.Empty;   // Encoded info hash for URI
         private readonly string _trackURL = String.Empty;   // Tracker URL
         private UInt32 _interval = 2000;                    // Polling interval between each announce
+        private UInt32 _minInterval;                        // Minumum allowed polling interval 
         private readonly UpdatePeers _updatePeerSwarm;
         public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
         public UInt64 Downloaded { get; set; }              // Total downloaed bytes of file to local client
@@ -147,20 +148,18 @@ namespace BitTorrent
         {
             try
             {
-                UInt32 oldInterval = _interval;
-                if (response.minInterval != 0)
-                {
-                    _interval = response.minInterval;
-                }
-                else
-                {
-                    _interval = response.interval;
-                }
                 _trackerID = response.trackerID;
-                if (oldInterval != _interval)
+                _minInterval = response.minInterval;
+
+                if (response.interval > _minInterval)
                 {
-                    StopAnnonncing();
-                    StartAnnouncing();
+                    UInt32 oldInterval = _interval;
+                    _interval = response.interval;
+                    if (oldInterval != _interval)
+                    {
+                        StopAnnonncing();
+                        StartAnnouncing();
+                    }
                 }
             }
             catch (Error)
@@ -185,6 +184,15 @@ namespace BitTorrent
             AnnounceResponse response = tracker.Announce();
             tracker._updatePeerSwarm?.Invoke(response.peers);
             tracker.UpdateRunningStatusFromAnnounce(response);
+        }
+        /// <summary>
+        /// Is a specified tracker supported.
+        /// </summary>
+        /// <param name="trackerURL"></param>
+        /// <returns>==true tracker supported</returns>
+        public bool IsSupported(string trackerURL)
+        {
+            return trackerURL.StartsWith("http://") || trackerURL.StartsWith("https://");
         }
 
         /// <summary>

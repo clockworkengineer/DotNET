@@ -22,13 +22,13 @@ namespace BitTorrent
     public class Agent
     {
         public delegate void ProgessCallBack(Object progressData);
-        private readonly Tracker _mainTracker;                       // Main torrent tracker
         private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
         private readonly ManualResetEvent _downloading;              // WaitOn when downloads == false
         private readonly Downloader _torrentDownloader;              // Downloader for torrent
         public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
+        public Tracker MainTracker { get; set; }                     // Main torrent tracker
 
         /// <summary>
         /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
@@ -51,7 +51,7 @@ namespace BitTorrent
 
                 remotePeer.PeerChoking.WaitOne();
 
-                while (_mainTracker.Left != 0)
+                while (MainTracker.Left != 0)
                 {
                     for (UInt32 nextPiece = 0; _torrentDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
                     {
@@ -79,10 +79,12 @@ namespace BitTorrent
 
                             _torrentDownloader.Dc.pieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
 
-                            _mainTracker.Left = _torrentDownloader.Dc.totalBytesToDownload - _torrentDownloader.Dc.totalBytesDownloaded;
-                            _mainTracker.Downloaded = _torrentDownloader.Dc.totalBytesDownloaded;
-                        } else {
-                             Log.Logger.Error($"Error : Piece {nextPiece} lost.");
+                            MainTracker.Left = _torrentDownloader.Dc.totalBytesToDownload - _torrentDownloader.Dc.totalBytesDownloaded;
+                            MainTracker.Downloaded = _torrentDownloader.Dc.totalBytesDownloaded;
+                        }
+                        else
+                        {
+                            Log.Logger.Error($"Error : Piece {nextPiece} lost.");
                         }
 
                         progressFunction?.Invoke(progressData);
@@ -128,6 +130,14 @@ namespace BitTorrent
                 cancelAssemblerTaskSource.Cancel();
             }
         }
+        /// <summary>
+        /// Return the number of bytes left in a torrent to download.
+        /// </summary>
+        /// <returns></returns>
+        public UInt64 BytesLeftToDownload()
+        {
+            return _torrentDownloader.Dc.totalBytesToDownload - _torrentDownloader.Dc.totalBytesDownloaded;
+        }
 
         /// <summary>
         /// Initializes a new instance of the Agent class.
@@ -137,10 +147,10 @@ namespace BitTorrent
         public Agent(MetaInfoFile torrentFile, String downloadPath)
         {
             _torrentDownloader = new Downloader(torrentFile, downloadPath);
+            _torrentDownloader.BuildDownloadedPiecesMap();
             RemotePeers = new Dictionary<string, Peer>();
-            InfoHash =  torrentFile.MetaInfoDict["info hash"];
+            InfoHash = torrentFile.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
-            _mainTracker = new Tracker(TrackerURL,InfoHash, ConnectPeersAndAddToSwarm);
             _deadPeersList = new HashSet<string>();
             _downloading = new ManualResetEvent(true);
         }
@@ -186,22 +196,11 @@ namespace BitTorrent
         {
             try
             {
-                Log.Logger.Info("Determine which pieces of file need to be downloaded still...");
-
-                _torrentDownloader.BuildDownloadedPiecesMap();
-
-                _mainTracker.Left = _torrentDownloader.Dc.totalBytesToDownload - _torrentDownloader.Dc.totalBytesDownloaded;
-                if (_mainTracker.Left == 0)
-                {
-                    Log.Logger.Info("Torrent file fully downloaded already.");
-                    return;
-                }
-
                 Log.Logger.Info("Initial main tracker announce ...");
 
-                ConnectPeersAndAddToSwarm(_mainTracker.Announce().peers);;
+                ConnectPeersAndAddToSwarm(MainTracker.Announce().peers); ;
 
-                _mainTracker.StartAnnouncing();
+                MainTracker.StartAnnouncing();
             }
             catch (Error)
             {
@@ -223,14 +222,14 @@ namespace BitTorrent
         {
             try
             {
-                if (_mainTracker.Left > 0)
+                if (MainTracker.Left > 0)
                 {
                     List<Task> assembleTasks = new List<Task>();
                     CancellationTokenSource cancelAssemblerTaskSource = new CancellationTokenSource();
 
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
-                    _mainTracker.Event = Tracker.TrackerEvent.started;
+                    MainTracker.Event = Tracker.TrackerEvent.started;
 
                     foreach (var peer in RemotePeers.Values)
                     {
@@ -243,7 +242,7 @@ namespace BitTorrent
 
                     if (!cancelAssemblerTaskSource.IsCancellationRequested)
                     {
-                        _mainTracker.Event = Tracker.TrackerEvent.completed;
+                        MainTracker.Event = Tracker.TrackerEvent.completed;
                         Log.Logger.Info("Whole Torrent finished downloading.");
                     }
                     else
@@ -314,7 +313,7 @@ namespace BitTorrent
         {
             try
             {
-                _mainTracker.StopAnnonncing();
+                MainTracker.StopAnnonncing();
                 if (RemotePeers != null)
                 {
                     Log.Logger.Info("Closing peer sockets.");

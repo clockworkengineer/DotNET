@@ -71,22 +71,30 @@ namespace BitTorrent
 
                 Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
 
-                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/zorin.torrent");
+                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/mint.iso.torrent");
 
                 torrentFile.Load();
                 torrentFile.Parse();
 
-                Agent Agent = new Agent(torrentFile, "/home/robt/utorrent");
+                Agent agent = new Agent(torrentFile, "/home/robt/utorrent");
 
-                Agent.Startup();
+                if (agent.BytesLeftToDownload() != 0) {
 
-                Agent.Download();
+                    Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.ConnectPeersAndAddToSwarm)
+                    {
+                        Left = agent.BytesLeftToDownload()
+                    };
+                    agent.MainTracker = tracker;
 
-                //Console.ReadKey();
+                    agent.Startup();
 
-                Thread.Sleep(10000);
+                    agent.Download();
 
-                Agent.Close();
+                    agent.Close();
+
+                } else {
+                    Log.Logger.Info("Torrent has been fully downloaded.");
+                }
             }
             catch (Error ex)
             {
