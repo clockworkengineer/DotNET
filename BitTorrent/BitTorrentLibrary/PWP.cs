@@ -169,7 +169,7 @@ namespace BitTorrent
                     hex.Append("\n");
                 }
             }
-            Log.Logger.Debug(hex + "\n");
+            Log.Logger.Debug("\n"+ hex + "\n");
 
             remotePeer.TorrentDownloader.Dc.MergePieceBitfield(remotePeer);
         }

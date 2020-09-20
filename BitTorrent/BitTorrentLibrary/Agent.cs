@@ -17,16 +17,16 @@ using System.Collections.Generic;
 namespace BitTorrent
 {
     /// <summary>
-    /// File agent class definition.
+    /// File Agent class definition.
     /// </summary>
-    public class FileAgent
+    public class Agent
     {
         public delegate void ProgessCallBack(Object progressData);
         private readonly Tracker _mainTracker;                       // Main torrent tracker
         private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
-        public Downloader TorrentDownloader { get; set; }            // Downloader for torrent
+        private readonly ManualResetEvent _downloading;              // WaitOn when downloads == false
+        private readonly Downloader _torrentDownloader;              // Downloader for torrent
         public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
-        public ManualResetEvent Downloading { get; set; }            // WaitOn when downloads == false
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
 
@@ -53,7 +53,7 @@ namespace BitTorrent
 
                 while (_mainTracker.Left != 0)
                 {
-                    for (UInt32 nextPiece = 0; TorrentDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
+                    for (UInt32 nextPiece = 0; _torrentDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
@@ -66,7 +66,7 @@ namespace BitTorrent
                         }
 
                         PWP.Request(remotePeer, nextPiece, blockNumber * Constants.BlockSize,
-                                     TorrentDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
+                                     _torrentDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
 
                         remotePeer.WaitForPieceAssembly.WaitOne();
                         remotePeer.WaitForPieceAssembly.Reset();
@@ -77,13 +77,12 @@ namespace BitTorrent
 
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.AssembledPiece);
-                            TorrentDownloader.Dc.pieceBufferWriteQueue.Add(pieceBuffer);
+                            _torrentDownloader.Dc.pieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
 
-                            _mainTracker.Left = TorrentDownloader.Dc.totalBytesToDownload - TorrentDownloader.Dc.totalBytesDownloaded;
-                            _mainTracker.Downloaded = TorrentDownloader.Dc.totalBytesDownloaded;
+                            _mainTracker.Left = _torrentDownloader.Dc.totalBytesToDownload - _torrentDownloader.Dc.totalBytesDownloaded;
+                            _mainTracker.Downloaded = _torrentDownloader.Dc.totalBytesDownloaded;
                         } else {
-                            throw new Error("Data lost.");
+                             Log.Logger.Error($"Error : Piece {nextPiece} lost.");
                         }
 
                         progressFunction?.Invoke(progressData);
@@ -100,9 +99,9 @@ namespace BitTorrent
                             return;
                         }
 
-                        Log.Logger.Info((TorrentDownloader.Dc.totalBytesDownloaded / (double)TorrentDownloader.Dc.totalBytesToDownload).ToString("0.00%"));
+                        Log.Logger.Info((_torrentDownloader.Dc.totalBytesDownloaded / (double)_torrentDownloader.Dc.totalBytesToDownload).ToString("0.00%"));
 
-                        Downloading.WaitOne();
+                        _downloading.WaitOne();
 
                         remotePeer.PeerChoking.WaitOne();
                     }
@@ -131,36 +130,35 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Initializes a new instance of the FileAgent class.
+        /// Initializes a new instance of the Agent class.
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public FileAgent(MetaInfoFile torrentFile, String downloadPath)
+        public Agent(MetaInfoFile torrentFile, String downloadPath)
         {
-            TorrentDownloader = new Downloader(torrentFile, downloadPath);
-            Downloading = new ManualResetEvent(true);
+            _torrentDownloader = new Downloader(torrentFile, downloadPath);
             RemotePeers = new Dictionary<string, Peer>();
-            _deadPeersList = new HashSet<string>();
             InfoHash =  torrentFile.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
-            _mainTracker = new Tracker(this);
-
+            _mainTracker = new Tracker(TrackerURL,InfoHash, ConnectPeersAndAddToSwarm);
+            _deadPeersList = new HashSet<string>();
+            _downloading = new ManualResetEvent(true);
         }
-
         /// <summary>
-        /// Connect peers and add to swarm on success.
+        /// /// Connect peers and add to swarm on success.
         /// </summary>
-        public void ConnectPeersAndAddToSwarm(AnnounceResponse response)
+        /// <param name="peers"></param>
+        public void ConnectPeersAndAddToSwarm(List<PeerDetails> peers)
         {
             Log.Logger.Info("Connecting any new peers to swarm ....");
 
-            foreach (var peer in response.peers)
+            foreach (var peer in peers)
             {
                 try
                 {
                     if (!RemotePeers.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
                     {
-                        Peer remotePeer = new Peer(TorrentDownloader, peer.ip, peer.port, InfoHash);
+                        Peer remotePeer = new Peer(_torrentDownloader, peer.ip, peer.port, InfoHash);
                         remotePeer.Connect();
                         if (remotePeer.Connected)
                         {
@@ -180,7 +178,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Startup file agent.This includes starting announces to main tracker, building pieces
+        /// Startup File Agent.This includes starting announces to main tracker, building pieces
         /// to download map and getting and building the initial peer swarm/dead list.
         /// </summary>
         ///
@@ -190,9 +188,9 @@ namespace BitTorrent
             {
                 Log.Logger.Info("Determine which pieces of file need to be downloaded still...");
 
-                TorrentDownloader.BuildDownloadedPiecesMap();
+                _torrentDownloader.BuildDownloadedPiecesMap();
 
-                _mainTracker.Left = TorrentDownloader.Dc.totalBytesToDownload - TorrentDownloader.Dc.totalBytesDownloaded;
+                _mainTracker.Left = _torrentDownloader.Dc.totalBytesToDownload - _torrentDownloader.Dc.totalBytesDownloaded;
                 if (_mainTracker.Left == 0)
                 {
                     Log.Logger.Info("Torrent file fully downloaded already.");
@@ -201,10 +199,9 @@ namespace BitTorrent
 
                 Log.Logger.Info("Initial main tracker announce ...");
 
-                ConnectPeersAndAddToSwarm(_mainTracker.Announce());
+                ConnectPeersAndAddToSwarm(_mainTracker.Announce().peers);;
 
                 _mainTracker.StartAnnouncing();
-
             }
             catch (Error)
             {
@@ -213,7 +210,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): Failed to load File Agent.");
+                throw new Error("BitTorrent Error (Agent): Failed to load File Agent.");
             }
         }
 
@@ -240,7 +237,7 @@ namespace BitTorrent
                         assembleTasks.Add(Task.Run(() => AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource)));
                     }
 
-                    TorrentDownloader.Dc.CheckForMissingBlocksFromPeers();
+                    _torrentDownloader.Dc.CheckForMissingBlocksFromPeers();
 
                     Task.WaitAll(assembleTasks.ToArray());
 
@@ -263,12 +260,12 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): Failed to download torrent file.");
+                throw new Error("BitTorrent Error (Agent): Failed to download torrent file.");
             }
         }
 
         /// <summary>
-        /// Load FileAgent asynchronously.
+        /// Load Agent asynchronously.
         /// </summary>
         /// <returns>The async.</returns>
         public async Task LoadAsync()
@@ -284,7 +281,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
+                throw new Error("BitTorrent Error (Agent): " + ex.Message);
             }
         }
 
@@ -306,12 +303,12 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
+                throw new Error("BitTorrent Error (Agent): " + ex.Message);
             }
         }
 
         /// <summary>
-        /// Closedown FileAgent
+        /// Closedown Agent
         /// </summary>
         public void Close()
         {
@@ -334,7 +331,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
+                throw new Error("BitTorrent Error (Agent): " + ex.Message);
             }
         }
 
@@ -345,7 +342,7 @@ namespace BitTorrent
         {
             try
             {
-                Downloading.Set();
+                _downloading.Set();
             }
             catch (Error)
             {
@@ -354,7 +351,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
+                throw new Error("BitTorrent Error (Agent): " + ex.Message);
             }
         }
 
@@ -365,7 +362,7 @@ namespace BitTorrent
         {
             try
             {
-                Downloading.Reset();
+                _downloading.Reset();
             }
             catch (Error)
             {
@@ -374,7 +371,7 @@ namespace BitTorrent
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (FileAgent): " + ex.Message);
+                throw new Error("BitTorrent Error (Agent): " + ex.Message);
             }
         }
     }

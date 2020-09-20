@@ -20,7 +20,6 @@ namespace BitTorrent
         public static void AnnouceResponse(AnnounceResponse response)
         {
             BitTorrent.Log.Logger.Debug("\nAnnouce Response\n-------------");
-            BitTorrent.Log.Logger.Debug("\nStatus: " + response.statusCode);
             BitTorrent.Log.Logger.Debug("Status Message: " + response.statusMessage);
             BitTorrent.Log.Logger.Debug("Interval: " + response.interval);
             BitTorrent.Log.Logger.Debug("Min Interval: " + response.minInterval);
@@ -77,17 +76,17 @@ namespace BitTorrent
                 torrentFile.Load();
                 torrentFile.Parse();
 
-                FileAgent fileAgent = new FileAgent(torrentFile, "/home/robt/utorrent");
+                Agent Agent = new Agent(torrentFile, "/home/robt/utorrent");
 
-                fileAgent.Startup();
+                Agent.Startup();
 
-                fileAgent.Download();
+                Agent.Download();
 
                 //Console.ReadKey();
 
                 Thread.Sleep(10000);
 
-                fileAgent.Close();
+                Agent.Close();
             }
             catch (Error ex)
             {

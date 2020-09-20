@@ -27,16 +27,16 @@ namespace BitTorrent
         /// <summary>
         /// Tracker Announce event types.
         /// </summary>
+        ///
+        public delegate void UpdatePeers(List<PeerDetails> peers); // Update swarm of active peers
         public enum TrackerEvent
         {
             started = 0,    // The first request to the tracker must include the event key with this value
             stopped,        // Must be sent to the tracker if the client is shutting down gracefully.
             completed       // Must be sent to the tracker when the download completes
         };
-
         private Timer _announceTimer;                       // Timer for sending tracker announce events
         private readonly string _peerID = String.Empty;     // Peers unique ID
-        private readonly FileAgent _torrentFileAgent;       // File Agent for downloads
         private readonly UInt32 _port = 6681;               // Port that client s listening on 
         private readonly string _ip = String.Empty;         // IP of host performing announce
         private readonly UInt32 _compact = 1;               // Is the returned peer list compressed (1=yes,0=no)
@@ -47,6 +47,7 @@ namespace BitTorrent
         private readonly string _infoHash = String.Empty;   // Encoded info hash for URI
         private readonly string _trackURL = String.Empty;   // Tracker URL
         private UInt32 _interval = 2000;                    // Polling interval between each announce
+        private readonly UpdatePeers _updatePeerSwarm;
         public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
         public UInt64 Downloaded { get; set; }              // Total downloaed bytes of file to local client
         public UInt64 Left { get; set; }                    // Bytes left in file to be downloaded
@@ -60,6 +61,13 @@ namespace BitTorrent
         private void DecodeAnnounceResponse(byte[] announceResponse, ref AnnounceResponse decodedResponse)
         {
             BNodeBase decodedAnnounce = Bencoding.Decode(announceResponse);
+
+            decodedResponse.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "failure reason");
+            if (decodedResponse.statusMessage != "")
+            {
+                decodedResponse.failure = true;
+                return; // If failure present then ignore rest of reply.
+            }
 
             UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "complete"), out decodedResponse.complete);
             UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "incomplete"), out decodedResponse.incomplete);
@@ -125,7 +133,7 @@ namespace BitTorrent
             UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "interval"), out decodedResponse.interval);
             UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "min interval"), out decodedResponse.minInterval);
             decodedResponse.trackerID = Bencoding.GetDictionaryEntryString(decodedAnnounce, "tracker id");
-            decodedResponse.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "failure reason");
+
             decodedResponse.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "warning message");
 
             decodedResponse.announceCount++;
@@ -172,24 +180,26 @@ namespace BitTorrent
         /// <param name="source">Source.</param>
         /// <param name="e">E.</param>
         /// <param name="tracker">Tracker.</param>
-        private static void OnAnnounceEvent(Object source, ElapsedEventArgs e, Tracker tracker)
+        private static void OnAnnounceEvent(Tracker tracker)
         {
             AnnounceResponse response = tracker.Announce();
-            tracker._torrentFileAgent.ConnectPeersAndAddToSwarm(response);
+            tracker._updatePeerSwarm?.Invoke(response.peers);
             tracker.UpdateRunningStatusFromAnnounce(response);
         }
 
         /// <summary>
-        /// Initialize Tracker.
+        /// Initialise BitTorrent Tracker.
         /// </summary>
-        /// <param name="torrentFileAgent">Torrent file agent.</param>
-        public Tracker(FileAgent torrentFileAgent)
+        /// <param name="trackerURL"></param>
+        /// <param name="infoHash"></param>
+        /// <param name="updatePeerSwarm"></param>
+        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm)
         {
-            _torrentFileAgent = torrentFileAgent ?? throw new NullReferenceException();
             _peerID = PeerID.Get();
             _ip = Peer.GetLocalHostIP();
-            _infoHash = Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(_torrentFileAgent.InfoHash, 0, _torrentFileAgent.InfoHash.Length));
-            _trackURL = _torrentFileAgent.TrackerURL;
+            _infoHash = Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(infoHash, 0, infoHash.Length));
+            _trackURL = trackerURL;
+            _updatePeerSwarm = updatePeerSwarm;
         }
 
         /// <summary>
@@ -222,14 +232,14 @@ namespace BitTorrent
                         reader.BaseStream.CopyTo(memstream);
                         announceResponse = memstream.ToArray();
                     }
-                    response.statusCode = (UInt32)httpGetResponse.StatusCode;
                     if (httpGetResponse.StatusCode == HttpStatusCode.OK)
                     {
                         DecodeAnnounceResponse(announceResponse, ref response);
                     }
                     else
                     {
-                        response.statusMessage = httpGetResponse.StatusDescription;
+                        Log.Logger.Debug("Bittorrent (Tracker) Error: " + httpGetResponse.StatusDescription);
+                        throw new Error("Bittorrent (Tracker) Error: " + httpGetResponse.StatusDescription);
                     }
                 }
             }
@@ -255,7 +265,7 @@ namespace BitTorrent
             try
             {
                 _announceTimer = new System.Timers.Timer(_interval);
-                _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(sender, e, this);
+                _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = true;
                 _announceTimer.Enabled = true;
             }

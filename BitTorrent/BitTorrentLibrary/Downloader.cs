@@ -147,7 +147,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Task to take a queued downloaed piece and write it away to the relevant file
+        /// Task to take a queued download piece and write it away to the relevant file
         /// sections to which it belongs.
         /// </summary>
         private void PieceBufferWriter()
@@ -158,7 +158,7 @@ namespace BitTorrent
 
                 if (CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, Dc.GetPieceLength(pieceBuffer.Number)))
                 {
-                    Log.Logger.Trace($"writePieceToFiles({pieceBuffer.Number})");
+                    Log.Logger.Debug($"WritePieceToFiles({pieceBuffer.Number})");
 
                     UInt64 startOffset = pieceBuffer.Number * Dc.pieceLengthInBytes;
                     UInt64 endOffset = startOffset + Dc.pieceLengthInBytes;

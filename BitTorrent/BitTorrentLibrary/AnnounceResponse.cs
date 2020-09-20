@@ -30,8 +30,8 @@ namespace BitTorrent
     public struct AnnounceResponse
     {
         public UInt32 announceCount;    // Announce counter
-        public UInt32 statusCode;       // Returned status get
-        public string statusMessage;    // Returned status/error message
+        public bool failure;            // == true tracker failure message returned
+        public string statusMessage;    // Returned failure/warning message message
         public UInt32 interval;         // Poll time between annouces in milliseconds
         public UInt32 minInterval;      // Minimum poll time
         public string trackerID;        // Track ID (optional)
