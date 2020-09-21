@@ -218,10 +218,11 @@ namespace BitTorrent
         /// <summary>
         /// Generate list of local files in torrent to download from peers.
         /// </summary>
-        public List<FileDetails> LocalFilesToDownloadList(string downloadPath)
+        public ValueTuple<UInt64, List<FileDetails>>LocalFilesToDownloadList(string downloadPath)
         {
             List<FileDetails> filesToDownload = new List<FileDetails>();
-
+            UInt64 totalBytes = 0;
+            
             try
             {
                 if (!MetaInfoDict.ContainsKey("0"))
@@ -233,11 +234,12 @@ namespace BitTorrent
                         offset = 0
                     };
                     filesToDownload.Add(fileDetail);
+                    totalBytes = fileDetail.length;
                 }
                 else
                 {
                     UInt32 fileNo = 0;
-                    UInt64 totalBytes = 0;
+
                     string name = Encoding.ASCII.GetString(MetaInfoDict["name"]);
                     while (MetaInfoDict.ContainsKey(fileNo.ToString()))
                     {
@@ -260,7 +262,7 @@ namespace BitTorrent
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent Error (MetaInfoFile): Failed to create download file list.");
             }
-            return filesToDownload;
+            return (totalBytes, filesToDownload);
         }
     }
 }

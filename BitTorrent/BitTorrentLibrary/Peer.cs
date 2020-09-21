@@ -128,7 +128,7 @@ namespace BitTorrent
             }
             catch (Error)
             {
-                throw;
+            throw;
             }
             catch (System.ObjectDisposedException)
             {

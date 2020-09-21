@@ -193,13 +193,11 @@ namespace BitTorrent
         /// <param name="pieces">Pieces.</param>
         public Downloader(MetaInfoFile torrentMetaInfo, string downloadPath)
         {
-            UInt32 pieceLength = UInt32.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
-            _filesToDownload = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
-            UInt64 totalDownloadLength=0;
-            foreach (var file in _filesToDownload) {
-                totalDownloadLength += file.length;
-            }
-            Dc = new DownloadContext(totalDownloadLength, pieceLength, torrentMetaInfo.MetaInfoDict["pieces"]);
+            (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
+            _filesToDownload = filesToDownload;
+            Dc = new DownloadContext(totalDownloadLength,
+                uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"])),
+                torrentMetaInfo.MetaInfoDict["pieces"]);
             _pieceLock = new object();
             _sha = new SHA1CryptoServiceProvider();
             _pieceBufferWriterTask = new Task(PieceBufferWriter);

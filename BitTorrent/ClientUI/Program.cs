@@ -68,7 +68,6 @@ namespace BitTorrent
         {
             try
             {
-
                 Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
 
                 MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/zorin.torrent");
@@ -76,10 +75,10 @@ namespace BitTorrent
                 torrentFile.Load();
                 torrentFile.Parse();
 
-                Agent agent = new Agent(torrentFile, "/home/robt/utorrent");
+                Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
+                Agent agent = new Agent(torrentFile, downloader);
 
                 if (agent.BytesLeftToDownload() != 0) {
-
                     Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm)
                     {
                         Left = agent.BytesLeftToDownload()

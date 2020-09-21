@@ -146,9 +146,9 @@ namespace BitTorrent
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(MetaInfoFile torrentFile, String downloadPath)
+        public Agent(MetaInfoFile torrentFile, Downloader downloader)
         {
-            _torrentDownloader = new Downloader(torrentFile, downloadPath);
+            _torrentDownloader = downloader;
             _torrentDownloader.BuildDownloadedPiecesMap();
             RemotePeers = new Dictionary<string, Peer>();
             InfoHash = torrentFile.MetaInfoDict["info hash"];
