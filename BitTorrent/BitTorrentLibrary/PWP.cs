@@ -139,7 +139,7 @@ namespace BitTorrent
             {
                 PWP.Interested(remotePeer);
                 remotePeer.SetPieceOnRemotePeer(pieceNumber);
-                for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.blocksPerPiece; blockNumber++)
+                for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.BlocksPerPiece; blockNumber++)
                 {
                     remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                 }

@@ -48,7 +48,7 @@ namespace BitTorrent
         private readonly string _trackURL = String.Empty;   // Tracker URL
         private UInt32 _interval = 2000;                    // Polling interval between each announce
         private UInt32 _minInterval;                        // Minumum allowed polling interval 
-        private readonly UpdatePeers _updatePeerSwarm;
+        private readonly UpdatePeers _updatePeerSwarm;      // Update peer swarm with connected peers
         public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
         public UInt64 Downloaded { get; set; }              // Total downloaed bytes of file to local client
         public UInt64 Left { get; set; }                    // Bytes left in file to be downloaded
@@ -141,7 +141,7 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Restart announce on interval changing.
+        /// Restart announce on interval changing and save minimum interval and trackr ID.
         /// </summary>
         /// <param name="response"></param>
         private void UpdateRunningStatusFromAnnounce(AnnounceResponse response)
@@ -157,7 +157,7 @@ namespace BitTorrent
                     _interval = response.interval;
                     if (oldInterval != _interval)
                     {
-                        StopAnnoncing();
+                        StopAnnouncing();
                         StartAnnouncing();
                     }
                 }
@@ -172,54 +172,11 @@ namespace BitTorrent
                 throw new Error("BitTorrent Error (Tracker): " + ex.Message);
             }
         }
-
-        /// <summary>
-        /// On  announce event send announce request to tracker and get response.
-        /// </summary>
-        /// <param name="source">Source.</param>
-        /// <param name="e">E.</param>
-        /// <param name="tracker">Tracker.</param>
-        private static void OnAnnounceEvent(Tracker tracker)
-        {
-            AnnounceResponse response = tracker.Announce();
-            tracker._updatePeerSwarm?.Invoke(response.peers);
-            tracker.UpdateRunningStatusFromAnnounce(response);
-        }
-        /// <summary>
-        /// Is a specified tracker supported.
-        /// </summary>
-        /// <param name="trackerURL"></param>
-        /// <returns>==true tracker supported</returns>
-        public bool IsSupported(string trackerURL)
-        {
-            return trackerURL.StartsWith("http://") || trackerURL.StartsWith("https://");
-        }
-
-        /// <summary>
-        /// Initialise BitTorrent Tracker.
-        /// </summary>
-        /// <param name="trackerURL"></param>
-        /// <param name="infoHash"></param>
-        /// <param name="updatePeerSwarm"></param>
-        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm=null)
-        {
-            _peerID = PeerID.Get();
-            _ip = Peer.GetLocalHostIP();
-            _infoHash = Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(infoHash, 0, infoHash.Length));
-            _trackURL = trackerURL;
-            _updatePeerSwarm = updatePeerSwarm;
-        }
-
-        public void IntialAnnounce()
-        {
-            OnAnnounceEvent(this); 
-        }
-        
         /// <summary>
         /// Perform an announce request to tracker and return any response.
         /// </summary>
         /// <returns>The response.</returns>
-        public AnnounceResponse Announce()
+        private AnnounceResponse Announce()
         {
             Log.Logger.Info($"Announce: info_hash={_infoHash} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
@@ -269,16 +226,57 @@ namespace BitTorrent
 
             return response;
         }
-
         /// <summary>
-        /// Starts the announcing requests to tracker.
+        /// On  announce event send announce request to tracker and get response.
+        /// </summary>
+        /// <param name="source">Source.</param>
+        /// <param name="e">E.</param>
+        /// <param name="tracker">Tracker.</param>
+        private static void OnAnnounceEvent(Tracker tracker)
+        {
+            AnnounceResponse response = tracker.Announce();
+            tracker._updatePeerSwarm?.Invoke(response.peers);
+            tracker.UpdateRunningStatusFromAnnounce(response);
+        }
+        /// <summary>
+        /// Is a specified tracker supported.
+        /// </summary>
+        /// <param name="trackerURL"></param>
+        /// <returns>==true tracker supported</returns>
+        public bool IsSupported(string trackerURL)
+        {
+            return trackerURL.StartsWith("http://") || trackerURL.StartsWith("https://");
+        }
+        /// <summary>
+        /// Initialise BitTorrent Tracker.
+        /// </summary>
+        /// <param name="trackerURL"></param>
+        /// <param name="infoHash"></param>
+        /// <param name="updatePeerSwarm"></param>
+        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm=null)
+        {
+            _peerID = PeerID.Get();
+            _ip = Peer.GetLocalHostIP();
+            _infoHash = Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(infoHash, 0, infoHash.Length));
+            _trackURL = trackerURL;
+            _updatePeerSwarm = updatePeerSwarm;
+        }
+        /// <summary>
+        /// Perform initial tracker annouce request.
+        /// </summary>
+        public void IntialAnnounce()
+        {
+            OnAnnounceEvent(this);
+        }
+        /// <summary>
+        /// Starts the announce requests to tracker.
         /// </summary>
         public void StartAnnouncing()
         {
             try
             {
                 if (_announceTimer!=null) {
-                    StopAnnoncing();
+                    StopAnnouncing();
                 }
                 _announceTimer = new System.Timers.Timer(_interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
@@ -297,9 +295,9 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Stops the annonncing.
+        /// Stop announcing to tracker..
         /// </summary>
-        public void StopAnnoncing()
+        public void StopAnnouncing()
         {
             try
             {

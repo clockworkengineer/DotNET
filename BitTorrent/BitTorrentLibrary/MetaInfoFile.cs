@@ -218,7 +218,7 @@ namespace BitTorrent
         /// <summary>
         /// Generate list of local files in torrent to download from peers.
         /// </summary>
-        public List<FileDetails> GenerateLocalFilesToDownloadList(string downloadPath)
+        public List<FileDetails> LocalFilesToDownloadList(string downloadPath)
         {
             List<FileDetails> filesToDownload = new List<FileDetails>();
 

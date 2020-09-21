@@ -179,7 +179,7 @@ namespace BitTorrent
             _infoHash = infoHash;
             TorrentDownloader = fileDownloader;
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
-            AssembledPiece = new PieceBuffer(fileDownloader.Dc.pieceLengthInBytes);
+            AssembledPiece = new PieceBuffer(fileDownloader.Dc.PieceLengthInBytes);
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
@@ -262,7 +262,7 @@ namespace BitTorrent
                 if (TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
                 {
                     AssembledPiece.Number = pieceNumber;
-                    TorrentDownloader.Dc.totalBytesDownloaded += TorrentDownloader.Dc.GetPieceLength(pieceNumber);
+                    TorrentDownloader.Dc.TotalBytesDownloaded += TorrentDownloader.Dc.GetPieceLength(pieceNumber);
                     WaitForPieceAssembly.Set();
                 }
             }

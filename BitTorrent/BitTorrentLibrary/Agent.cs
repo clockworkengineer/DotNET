@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BitTorrent
 {
@@ -21,7 +22,7 @@ namespace BitTorrent
     /// </summary>
     public class Agent
     {
-        public delegate void ProgessCallBack(Object progressData);
+        public delegate void ProgessCallBack(Object progressData);   // Download progress function
         private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
         private readonly ManualResetEvent _downloading;              // WaitOn when downloads == false
         private readonly Downloader _torrentDownloader;              // Downloader for torrent
@@ -30,6 +31,34 @@ namespace BitTorrent
         public string TrackerURL { get; }                            // Main Tracker URL
         public Tracker MainTracker { get; set; }                     // Main torrent tracker
 
+        /// <summary>
+        /// Stopping all peers so unchoke them all.
+        /// </summary>
+        private void UnblockAllChokingPeers()
+        {
+            foreach (var peer in from peer in RemotePeers.Values
+                                 where !peer.PeerChoking.WaitOne(0)
+                                 select peer)
+            {
+                peer.PeerChoking.Set();
+            }
+        }
+        /// <summary>
+        /// Request piece number from remote peer.
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <param name="pieceNumber"></param>
+        private void RequestPieceFromPeer(Peer remotePeer, uint pieceNumber)
+        {
+            UInt32 blockNumber = 0;
+            for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+            {
+                PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
+            }
+
+            PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
+                         _torrentDownloader.Dc.PieceMap[pieceNumber].lastBlockLength);
+        }
         /// <summary>
         /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
         /// </summary>
@@ -48,7 +77,6 @@ namespace BitTorrent
                 PWP.Unchoke(remotePeer);
 
                 remotePeer.BitfieldReceived.WaitOne();
-
                 remotePeer.PeerChoking.WaitOne();
 
                 while (MainTracker.Left != 0)
@@ -59,62 +87,37 @@ namespace BitTorrent
 
                         remotePeer.TransferingPiece = nextPiece;
 
-                        UInt32 blockNumber = 0;
-                        for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(nextPiece, blockNumber); blockNumber++)
-                        {
-                            PWP.Request(remotePeer, nextPiece, blockNumber * Constants.BlockSize, Constants.BlockSize);
-                        }
-
-                        PWP.Request(remotePeer, nextPiece, blockNumber * Constants.BlockSize,
-                                     _torrentDownloader.Dc.pieceMap[nextPiece].lastBlockLength);
+                        RequestPieceFromPeer(remotePeer, nextPiece);
 
                         remotePeer.WaitForPieceAssembly.WaitOne();
                         remotePeer.WaitForPieceAssembly.Reset();
 
                         if (remotePeer.TransferingPiece != -1)
                         {
-                            remotePeer.TransferingPiece = -1;
-
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                            _torrentDownloader.Dc.pieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
-
-                            MainTracker.Left = _torrentDownloader.Dc.totalBytesToDownload - _torrentDownloader.Dc.totalBytesDownloaded;
-                            MainTracker.Downloaded = _torrentDownloader.Dc.totalBytesDownloaded;
-                        }
-                        else
-                        {
-                            Log.Logger.Error($"Error : Piece {nextPiece} lost.");
+                            remotePeer.TransferingPiece = -1;
+                            _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
+                            MainTracker.Left = BytesLeftToDownload();
+                            MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
                         }
 
                         progressFunction?.Invoke(progressData);
 
                         if (cancelAssemblerTask.IsCancellationRequested)
                         {
-                            foreach (var peer in RemotePeers.Values)
-                            {
-                                if (!peer.PeerChoking.WaitOne(0))
-                                {
-                                    peer.PeerChoking.Set();
-                                }
-                            }
+                            UnblockAllChokingPeers();
                             return;
                         }
 
-                        Log.Logger.Info((_torrentDownloader.Dc.totalBytesDownloaded / (double)_torrentDownloader.Dc.totalBytesToDownload).ToString("0.00%"));
+                        Log.Logger.Info((_torrentDownloader.Dc.TotalBytesDownloaded / (double)_torrentDownloader.Dc.TotalBytesToDownload).ToString("0.00%"));
 
                         _downloading.WaitOne();
-
                         remotePeer.PeerChoking.WaitOne();
                     }
 
-                    foreach (var peer in RemotePeers.Values)
-                    {
-                        if (!peer.PeerChoking.WaitOne(0))
-                        {
-                            peer.PeerChoking.Set();
-                        }
-                    }
+                    UnblockAllChokingPeers();
+
                 }
 
                 Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
@@ -136,9 +139,8 @@ namespace BitTorrent
         /// <returns></returns>
         public UInt64 BytesLeftToDownload()
         {
-            return _torrentDownloader.Dc.totalBytesToDownload - _torrentDownloader.Dc.totalBytesDownloaded;
+            return _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded;
         }
-
         /// <summary>
         /// Initializes a new instance of the Agent class.
         /// </summary>
@@ -266,7 +268,7 @@ namespace BitTorrent
         {
             try
             {
-                MainTracker.StopAnnoncing();
+                MainTracker.StopAnnouncing();
                 if (RemotePeers != null)
                 {
                     Log.Logger.Info("Closing peer sockets.");
