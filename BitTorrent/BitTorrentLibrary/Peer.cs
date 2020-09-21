@@ -58,7 +58,7 @@ namespace BitTorrent
         public byte[] RemotePieceBitfield { get; set; }     // Remote peer piece map
         public uint PacketLength { get; set; }              // Current packet length
         public PieceBuffer AssembledPiece { get; set; }     // Assembled pieces buffer
-        public Int64 TransferingPiece { get; set; } = -1;   // Piece being currently transfer
+      //  public Int64 TransferingPiece { get; set; } = -1;   // Piece being currently transfer
         public string Ip { get; set; }                      // Remote peer ip
         public ManualResetEvent WaitForPieceAssembly { get; set; }
         public ManualResetEvent PeerChoking { get; set; }

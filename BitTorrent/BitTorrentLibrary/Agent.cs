@@ -85,22 +85,22 @@ namespace BitTorrent
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                        remotePeer.TransferingPiece = nextPiece;
+           //             remotePeer.TransferingPiece = nextPiece;
 
                         RequestPieceFromPeer(remotePeer, nextPiece);
 
                         remotePeer.WaitForPieceAssembly.WaitOne();
                         remotePeer.WaitForPieceAssembly.Reset();
 
-                        if (remotePeer.TransferingPiece != -1)
-                        {
+                     ///   if (remotePeer.TransferingPiece != -1)
+                      //  {
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                            remotePeer.TransferingPiece = -1;
+                       //     remotePeer.TransferingPiece = -1;
                             _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
                             MainTracker.Left = BytesLeftToDownload();
                             MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
-                        }
+                       // }
 
                         progressFunction?.Invoke(progressData);
 

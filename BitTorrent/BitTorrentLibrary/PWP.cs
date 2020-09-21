@@ -92,12 +92,12 @@ namespace BitTorrent
         {
             remotePeer.PeerChoking.Reset();
             Log.Logger.Debug("CHOKE");
-            if (remotePeer.TransferingPiece!=-1) {
+          /*  if (remotePeer.TransferingPiece!=-1) {
                 Log.Logger.Debug("STALLING POSSIBLE.....");
                 remotePeer.TorrentDownloader.Dc.MarkPieceNotRequested((UInt32)remotePeer.TransferingPiece);
                 remotePeer.TransferingPiece = -1;
                 remotePeer.WaitForPieceAssembly.Set();
-            }
+            }*/
         }
 
         /// <summary>
@@ -189,15 +189,15 @@ namespace BitTorrent
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandlePIECE(Peer remotePeer)
         {
-            if (remotePeer.TransferingPiece != -1)
-            {
+           // if (remotePeer.TransferingPiece != -1)
+           // {
                 UInt32 pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
                 UInt32 blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
 
                 Log.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
 
                 remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
-            }
+           // }
         }
 
         /// <summary>

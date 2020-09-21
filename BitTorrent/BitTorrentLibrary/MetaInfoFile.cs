@@ -216,7 +216,8 @@ namespace BitTorrent
         }
 
         /// <summary>
-        /// Generate list of local files in torrent to download from peers.
+        /// Generate list of local files in torrent to download from peers and total torrent size in bytes
+        /// and return as a tuple.
         /// </summary>
         public ValueTuple<UInt64, List<FileDetails>>LocalFilesToDownloadList(string downloadPath)
         {

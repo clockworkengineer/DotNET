@@ -16,7 +16,7 @@ namespace BitTorrent
     {
         public string name;     // File file name path
         public UInt64 length;   // File length in bytes
-        public string md5sum;   // CHecksum for file (optional)
+        public string md5sum;   // Checksum for file (optional)
         public UInt64 offset;   // Offset within torrent stream of file start
     }
 }
