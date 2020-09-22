@@ -223,7 +223,6 @@ namespace BitTorrent
         {
             List<FileDetails> filesToDownload = new List<FileDetails>();
             UInt64 totalBytes = 0;
-            
             try
             {
                 if (!MetaInfoDict.ContainsKey("0"))

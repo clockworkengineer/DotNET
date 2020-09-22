@@ -85,22 +85,22 @@ namespace BitTorrent
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-           //             remotePeer.TransferingPiece = nextPiece;
+                        //             remotePeer.TransferingPiece = nextPiece;
 
                         RequestPieceFromPeer(remotePeer, nextPiece);
 
                         remotePeer.WaitForPieceAssembly.WaitOne();
                         remotePeer.WaitForPieceAssembly.Reset();
 
-                     ///   if (remotePeer.TransferingPiece != -1)
-                      //  {
-                            Log.Logger.Debug($"All blocks for piece {nextPiece} received");
+                        ///   if (remotePeer.TransferingPiece != -1)
+                        //  {
+                        Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                       //     remotePeer.TransferingPiece = -1;
-                            _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
-                            MainTracker.Left = BytesLeftToDownload();
-                            MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
-                       // }
+                        //     remotePeer.TransferingPiece = -1;
+                        _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
+                        MainTracker.Left = BytesLeftToDownload();
+                        MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
+                        // }
 
                         progressFunction?.Invoke(progressData);
 
@@ -205,7 +205,7 @@ namespace BitTorrent
 
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
-                    MainTracker.Event = Tracker.TrackerEvent.started;
+                    MainTracker.ChangeStatus(Tracker.TrackerEvent.started);
 
                     foreach (var peer in RemotePeers.Values)
                     {
@@ -218,7 +218,7 @@ namespace BitTorrent
 
                     if (!cancelAssemblerTaskSource.IsCancellationRequested)
                     {
-                        MainTracker.Event = Tracker.TrackerEvent.completed;
+                        MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
                         Log.Logger.Info("Whole Torrent finished downloading.");
                     }
                     else
@@ -277,6 +277,7 @@ namespace BitTorrent
                         peer.Close();
                     }
                 }
+                MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
             }
             catch (Error)
             {

@@ -29,12 +29,14 @@ namespace BitTorrent
         /// Tracker Announce event types.
         /// </summary>
         //
-        public enum TrackerEvent
+        public static class TrackerEvent
         {
-            started = 0,    // The first request to the tracker must include the event key with this value
-            stopped,        // Must be sent to the tracker if the client is shutting down gracefully.
-            completed       // Must be sent to the tracker when the download completes
-        };
+            public const string
+            None = "",               // Default announce has none for event
+            started = "started",     // The first request to the tracker must include the event key with this value
+            stopped = "stopped",     // Must be sent to the tracker if the client is shutting down gracefully.
+            completed = "completed"; // Must be sent to the tracker when the download completes
+        }
         private Timer _announceTimer;                       // Timer for sending tracker announce events
         private readonly string _peerID = String.Empty;     // Peers unique ID
         private readonly UInt32 _port = 6681;               // Port that client s listening on 
@@ -52,7 +54,7 @@ namespace BitTorrent
         public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
         public UInt64 Downloaded { get; set; }              // Total downloaed bytes of file to local client
         public UInt64 Left { get; set; }                    // Bytes left in file to be downloaded
-        public TrackerEvent Event { get; set; }             // Current state of torrent downloading
+        public string Event { get; set; }                   // Current state of torrent downloading
 
         /// <summary>
         /// Decodes the announce request response recieved from a tracker.
@@ -253,7 +255,7 @@ namespace BitTorrent
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm=null)
+        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm = null)
         {
             _peerID = PeerID.Get();
             _ip = Peer.GetLocalHostIP();
@@ -262,11 +264,15 @@ namespace BitTorrent
             _updatePeerSwarm = updatePeerSwarm;
         }
         /// <summary>
-        /// Perform initial tracker annouce request.
+        /// Change tracker status.
         /// </summary>
-        public void IntialAnnounce()
+        public void ChangeStatus(string status)
         {
+            _announceTimer?.Stop();
+            Event = status;
             OnAnnounceEvent(this);
+            Event = TrackerEvent.None;
+            _announceTimer?.Start();
         }
         /// <summary>
         /// Starts the announce requests to tracker.
@@ -275,13 +281,14 @@ namespace BitTorrent
         {
             try
             {
-                if (_announceTimer!=null) {
+                if (_announceTimer != null)
+                {
                     StopAnnouncing();
                 }
                 _announceTimer = new System.Timers.Timer(_interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = true;
-                _announceTimer.Enabled = true;
+                _announceTimer.Enabled = true; 
             }
             catch (Error)
             {
@@ -305,7 +312,7 @@ namespace BitTorrent
                 {
                     _announceTimer.Stop();
                     _announceTimer.Dispose();
-                    _announceTimer=null;
+                    _announceTimer = null;
                 }
             }
             catch (Error)

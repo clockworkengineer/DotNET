@@ -15,7 +15,7 @@ using NLog;
 
 namespace BitTorrent
 {
-    class Program
+    static class Program
     {
         public static void AnnouceResponse(AnnounceResponse response)
         {
@@ -85,13 +85,12 @@ namespace BitTorrent
                     };
                     agent.MainTracker = tracker;
 
-                    tracker.IntialAnnounce();
+                    tracker.ChangeStatus(Tracker.TrackerEvent.None);
                     tracker.StartAnnouncing();
 
                     agent.Download();
 
                     agent.Close();
-
                 } else {
                     Log.Logger.Info("Torrent has been fully downloaded.");
                 }
