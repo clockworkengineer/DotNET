@@ -69,8 +69,7 @@ namespace BitTorrent
             try
             {
                 Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-
-                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/zorin.torrent");
+                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/tails.torrent");
 
                 torrentFile.Load();
                 torrentFile.Parse();
@@ -78,22 +77,24 @@ namespace BitTorrent
                 Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
                 Agent agent = new Agent(torrentFile, downloader);
 
-                if (agent.BytesLeftToDownload() != 0) {
-                    Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm)
-                    {
-                        Left = agent.BytesLeftToDownload()
-                    };
-                    agent.MainTracker = tracker;
+                // if (agent.BytesLeftToDownload() != 0) {
+                     TrackerUDP tracker = new TrackerUDP(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm);
+                     tracker.Connect();
+                     tracker.Announce();
+                //     {
+                //         Left = agent.BytesLeftToDownload()
+                //     };
+                //     agent.MainTracker = tracker;
 
-                    tracker.ChangeStatus(Tracker.TrackerEvent.None);
-                    tracker.StartAnnouncing();
+                //     tracker.ChangeStatus(Tracker.TrackerEvent.None);
+                //     tracker.StartAnnouncing();
 
-                    agent.Download();
+                //     agent.Download();
 
-                    agent.Close();
-                } else {
-                    Log.Logger.Info("Torrent has been fully downloaded.");
-                }
+                //     agent.Close();
+                // } else {
+                //     Log.Logger.Info("Torrent has been fully downloaded.");
+                // }
             }
             catch (Error ex)
             {

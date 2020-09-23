@@ -47,7 +47,7 @@ namespace BitTorrent
         private string _trackerID = String.Empty;           // String that the client should send back on its next announcements. (optional).
         private readonly UInt32 _numWanted = 5;             // Number of required download clients
         private readonly string _infoHash = String.Empty;   // Encoded info hash for URI
-        private readonly string _trackURL = String.Empty;   // Tracker URL
+        private readonly string _trackerURL = String.Empty;   // Tracker URL
         private UInt32 _interval = 2000;                    // Polling interval between each announce
         private UInt32 _minInterval;                        // Minumum allowed polling interval 
         private readonly UpdatePeers _updatePeerSwarm;      // Update peer swarm with connected peers
@@ -89,10 +89,10 @@ namespace BitTorrent
                             _peerID = String.Empty,
                             ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}"
                         };
-                        if (peer.ip.Contains(":"))
-                        {
-                            peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
-                        }
+                        // if (peer.ip.Contains(":"))
+                        // {
+                        //     peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
+                        // }
                         peer.port = ((UInt32)peers[num + 4] * 256) + peers[num + 5];
                         if (peer.ip != _ip) // Ignore self in peers list
                         {
@@ -188,7 +188,7 @@ namespace BitTorrent
 
             try
             {
-                string announceURL = $"{_trackURL}?info_hash={_infoHash}&peer_id={_peerID}&port={_port}&compact={_compact}&no_peer_id={_noPeerID}&uploaded={Uploaded}&downloaded={Downloaded}&left={Left}&event={Event}&ip={_ip}&key={_key}&trackerid={_trackerID}&numwanted={_numWanted}";
+                string announceURL = $"{_trackerURL}?info_hash={_infoHash}&peer_id={_peerID}&port={_port}&compact={_compact}&no_peer_id={_noPeerID}&uploaded={Uploaded}&downloaded={Downloaded}&left={Left}&event={Event}&ip={_ip}&key={_key}&trackerid={_trackerID}&numwanted={_numWanted}";
 
                 HttpWebRequest httpGetRequest = WebRequest.Create(announceURL) as HttpWebRequest;
 
@@ -247,7 +247,7 @@ namespace BitTorrent
         /// <returns>==true tracker supported</returns>
         public bool IsSupported(string trackerURL)
         {
-            return trackerURL.StartsWith("http://") || trackerURL.StartsWith("https://");
+            return trackerURL.StartsWith("http://");
         }
         /// <summary>
         /// Initialise BitTorrent Tracker.
@@ -260,7 +260,7 @@ namespace BitTorrent
             _peerID = PeerID.Get();
             _ip = Peer.GetLocalHostIP();
             _infoHash = Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(infoHash, 0, infoHash.Length));
-            _trackURL = trackerURL;
+            _trackerURL = trackerURL;
             _updatePeerSwarm = updatePeerSwarm;
         }
         /// <summary>
@@ -271,7 +271,7 @@ namespace BitTorrent
             _announceTimer?.Stop();
             Event = status;
             OnAnnounceEvent(this);
-            Event = TrackerEvent.None;
+            Event = TrackerEvent.None;  // Reset it back to default on next tick
             _announceTimer?.Start();
         }
         /// <summary>
