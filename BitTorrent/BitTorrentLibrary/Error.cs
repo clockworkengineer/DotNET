@@ -12,7 +12,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     public class Error : Exception
     {

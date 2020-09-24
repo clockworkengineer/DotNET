@@ -13,7 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     /// <summary>
     /// Base for BNode Tree.

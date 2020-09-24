@@ -11,7 +11,7 @@
 
 using System;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     /// <summary>
     /// Assembled piece buffer.

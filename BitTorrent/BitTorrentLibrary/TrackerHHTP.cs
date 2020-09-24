@@ -17,24 +17,12 @@ using System.Net;
 using System.Text;
 using System.Timers;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
-    public interface ITracker
-    {
-        ulong Uploaded { get; set; }
-        ulong Downloaded { get; set; }
-        ulong Left { get; set; }
-        TrackerHTTP.TrackerEvent Event { get; set; }
-        void ChangeStatus(TrackerHTTP.TrackerEvent status);
-        bool IsSupported(string trackerURL);
-        void StartAnnouncing();
-        void StopAnnouncing();
-    }
-
     /// <summary>
     /// Tracker class.
     /// </summary>
-    public class TrackerHTTP : ITracker
+    public class TrackerHTTP
     {
         /// <summary>
         /// Update swarm of active peers delegate
@@ -126,7 +114,7 @@ namespace BitTorrent
                             BNodeBase peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "ip");
                             if (peerField != null)
                             {
-                                peer.ip = Encoding.ASCII.GetString(((BitTorrent.BNodeString)peerField).str);
+                                peer.ip = Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeString)peerField).str);
                             }
                             if (peer.ip.Contains(":"))
                             {
@@ -135,7 +123,7 @@ namespace BitTorrent
                             peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "port");
                             if (peerField != null)
                             {
-                                peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrent.BNodeNumber)peerField).number));
+                                peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeNumber)peerField).number));
                             }
                             if (peer.ip != _ip) // Ignore self in peers list
                             {

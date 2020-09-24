@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 using Xunit;
-using BitTorrent;
+using BitTorrentLibrary;
 
 namespace BitTorrentLibraryTests
 {

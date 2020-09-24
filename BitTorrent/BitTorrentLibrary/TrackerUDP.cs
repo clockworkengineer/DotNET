@@ -17,12 +17,12 @@ using System.Net.Sockets;
 using System.Text;
 using System.Timers;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     /// <summary>
     /// Tracker class.
     /// </summary>
-    public class TrackerUDP : ITracker
+    public class TrackerUDP
     {
         /// <summary>
         /// Update swarm of active peers delegate

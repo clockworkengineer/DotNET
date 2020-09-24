@@ -11,7 +11,7 @@
 using System;
 using System.IO;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     public  static class Constants
     {

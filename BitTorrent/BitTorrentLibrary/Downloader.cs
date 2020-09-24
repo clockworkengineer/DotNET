@@ -18,7 +18,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     /// <summary>
     /// File downloader.

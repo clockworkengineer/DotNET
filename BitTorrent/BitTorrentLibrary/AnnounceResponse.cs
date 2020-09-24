@@ -12,7 +12,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     /// <summary>
     /// Peer information.

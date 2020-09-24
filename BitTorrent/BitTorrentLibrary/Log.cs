@@ -12,7 +12,7 @@ using System;
 using System.Collections.Generic;
 using NLog;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     public static class Log
     {

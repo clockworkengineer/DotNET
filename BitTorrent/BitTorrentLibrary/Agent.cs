@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     /// <summary>
     /// File Agent class definition.
@@ -29,7 +29,7 @@ namespace BitTorrent
         public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
-        public ITracker MainTracker { get; set; }                     // Main torrent tracker
+        public TrackerHTTP MainTracker { get; set; }                 // Main torrent tracker
 
         /// <summary>
         /// Stopping all peers so unchoke them all.

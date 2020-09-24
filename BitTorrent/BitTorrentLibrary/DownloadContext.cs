@@ -14,7 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     /// <summary>
     /// Possible piece mapping values.

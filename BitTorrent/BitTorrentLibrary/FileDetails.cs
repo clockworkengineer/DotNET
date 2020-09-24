@@ -10,7 +10,7 @@
 
 using System;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     public struct FileDetails
     {

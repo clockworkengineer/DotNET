@@ -17,7 +17,7 @@ using System.IO;
 using System.Text;
 using System.Security.Cryptography;
 
-namespace BitTorrent
+namespace BitTorrentLibrary
 {
     /// <summary>
     /// Meta Info File class.
@@ -57,7 +57,7 @@ namespace BitTorrent
                             string path = string.Empty;
                             foreach (var file in ((BNodeList)(fileField)).list)
                             {
-                                path += Constants.PathSeparator + Encoding.ASCII.GetString(((BitTorrent.BNodeString)file).str);
+                                path += Constants.PathSeparator + Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeString)file).str);
                             }
                             fileEntry = path;
                         }
