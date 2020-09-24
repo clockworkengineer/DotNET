@@ -29,7 +29,7 @@ namespace BitTorrent
         public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
-        public Tracker MainTracker { get; set; }                     // Main torrent tracker
+        public ITracker MainTracker { get; set; }                     // Main torrent tracker
 
         /// <summary>
         /// Stopping all peers so unchoke them all.
@@ -205,7 +205,7 @@ namespace BitTorrent
 
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
-                    MainTracker.ChangeStatus(Tracker.TrackerEvent.started);
+                    MainTracker.ChangeStatus(TrackerHTTP.TrackerEvent.started);
 
                     foreach (var peer in RemotePeers.Values)
                     {
@@ -218,7 +218,7 @@ namespace BitTorrent
 
                     if (!cancelAssemblerTaskSource.IsCancellationRequested)
                     {
-                        MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
+                        MainTracker.ChangeStatus(TrackerHTTP.TrackerEvent.completed);
                         Log.Logger.Info("Whole Torrent finished downloading.");
                     }
                     else
@@ -277,7 +277,7 @@ namespace BitTorrent
                         peer.Close();
                     }
                 }
-                MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+                MainTracker.ChangeStatus(TrackerHTTP.TrackerEvent.stopped);
             }
             catch (Error)
             {

@@ -19,24 +19,38 @@ using System.Timers;
 
 namespace BitTorrent
 {
+    public interface ITracker
+    {
+        ulong Uploaded { get; set; }
+        ulong Downloaded { get; set; }
+        ulong Left { get; set; }
+        TrackerHTTP.TrackerEvent Event { get; set; }
+        void ChangeStatus(TrackerHTTP.TrackerEvent status);
+        bool IsSupported(string trackerURL);
+        void StartAnnouncing();
+        void StopAnnouncing();
+    }
+
     /// <summary>
     /// Tracker class.
     /// </summary>
-    public class Tracker
+    public class TrackerHTTP : ITracker
     {
-        public delegate void UpdatePeers(List<PeerDetails> peers); // Update swarm of active peers
+        /// <summary>
+        /// Update swarm of active peers delegate
+        /// </summary>
+        public delegate void UpdatePeers(List<PeerDetails> peers);
         /// <summary>
         /// Tracker Announce event types.
         /// </summary>
-        //
-        public static class TrackerEvent
+        private static readonly string[] EventString = { "", "started", "stopped", "completed" };
+        public enum TrackerEvent
         {
-            public const string
-            None = "",               // Default announce has none for event
-            started = "started",     // The first request to the tracker must include the event key with this value
-            stopped = "stopped",     // Must be sent to the tracker if the client is shutting down gracefully.
-            completed = "completed"; // Must be sent to the tracker when the download completes
-        }
+            None = 0,      // Default announce has none for event
+            started = 1,   // The first request to the tracker must include the event key with this value
+            stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
+            completed = 3   // Must be sent to the tracker when the download completes
+        };
         private Timer _announceTimer;                       // Timer for sending tracker announce events
         private readonly string _peerID = String.Empty;     // Peers unique ID
         private readonly UInt32 _port = 6681;               // Port that client s listening on 
@@ -47,14 +61,14 @@ namespace BitTorrent
         private string _trackerID = String.Empty;           // String that the client should send back on its next announcements. (optional).
         private readonly UInt32 _numWanted = 5;             // Number of required download clients
         private readonly string _infoHash = String.Empty;   // Encoded info hash for URI
-        private readonly string _trackerURL = String.Empty;   // Tracker URL
+        private readonly string _trackerURL = String.Empty; // Tracker URL
         private UInt32 _interval = 2000;                    // Polling interval between each announce
         private UInt32 _minInterval;                        // Minumum allowed polling interval 
         private readonly UpdatePeers _updatePeerSwarm;      // Update peer swarm with connected peers
         public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
         public UInt64 Downloaded { get; set; }              // Total downloaed bytes of file to local client
         public UInt64 Left { get; set; }                    // Bytes left in file to be downloaded
-        public string Event { get; set; }                   // Current state of torrent downloading
+        public TrackerEvent Event { get; set; }             // Current state of torrent downloading
 
         /// <summary>
         /// Decodes the announce request response recieved from a tracker.
@@ -182,13 +196,13 @@ namespace BitTorrent
         {
             Log.Logger.Info($"Announce: info_hash={_infoHash} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
-                  $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
+                  $"downloaded={Downloaded} left={Left} event={EventString[(int)Event]} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 
             AnnounceResponse response = new AnnounceResponse();
 
             try
             {
-                string announceURL = $"{_trackerURL}?info_hash={_infoHash}&peer_id={_peerID}&port={_port}&compact={_compact}&no_peer_id={_noPeerID}&uploaded={Uploaded}&downloaded={Downloaded}&left={Left}&event={Event}&ip={_ip}&key={_key}&trackerid={_trackerID}&numwanted={_numWanted}";
+                string announceURL = $"{_trackerURL}?info_hash={_infoHash}&peer_id={_peerID}&port={_port}&compact={_compact}&no_peer_id={_noPeerID}&uploaded={Uploaded}&downloaded={Downloaded}&left={Left}&event={EventString[(int)Event]}&ip={_ip}&key={_key}&trackerid={_trackerID}&numwanted={_numWanted}";
 
                 HttpWebRequest httpGetRequest = WebRequest.Create(announceURL) as HttpWebRequest;
 
@@ -234,7 +248,7 @@ namespace BitTorrent
         /// <param name="source">Source.</param>
         /// <param name="e">E.</param>
         /// <param name="tracker">Tracker.</param>
-        private static void OnAnnounceEvent(Tracker tracker)
+        private static void OnAnnounceEvent(TrackerHTTP tracker)
         {
             AnnounceResponse response = tracker.Announce();
             tracker._updatePeerSwarm?.Invoke(response.peers);
@@ -255,7 +269,7 @@ namespace BitTorrent
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm = null)
+        public TrackerHTTP(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm = null)
         {
             _peerID = PeerID.Get();
             _ip = Peer.GetLocalHostIP();
@@ -266,7 +280,7 @@ namespace BitTorrent
         /// <summary>
         /// Change tracker status.
         /// </summary>
-        public void ChangeStatus(string status)
+        public void ChangeStatus(TrackerEvent status)
         {
             _announceTimer?.Stop();
             Event = status;
@@ -288,7 +302,7 @@ namespace BitTorrent
                 _announceTimer = new System.Timers.Timer(_interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = true;
-                _announceTimer.Enabled = true; 
+                _announceTimer.Enabled = true;
             }
             catch (Error)
             {

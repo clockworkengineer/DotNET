@@ -22,21 +22,23 @@ namespace BitTorrent
     /// <summary>
     /// Tracker class.
     /// </summary>
-    public class TrackerUDP
+    public class TrackerUDP : ITracker
     {
-        public delegate void UpdatePeers(List<PeerDetails> peers); // Update swarm of active peers
+        /// <summary>
+        /// Update swarm of active peers delegate
+        /// </summary>
+        public delegate void UpdatePeers(List<PeerDetails> peers);
         /// <summary>
         /// Tracker Announce event types.
         /// </summary>
-        //
-        public static class TrackerEvent
+        public static readonly string[] EventString = { "", "started", "stopped", "completed" };
+        public enum TrackerEvent
         {
-            public const Int32
-            None = 0,        // Default announce has none for event
-            started = 1,     // The first request to the tracker must include the event key with this value
-            stopped = 2,     // Must be sent to the tracker if the client is shutting down gracefully.
-            completed = 3;   // Must be sent to the tracker when the download completes
-        }
+            None = 0,      // Default announce has none for event
+            started = 1,   // The first request to the tracker must include the event key with this value
+            stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
+            completed = 3   // Must be sent to the tracker when the download completes
+        };
         private Timer _announceTimer;                       // Timer for sending tracker announce events
         private readonly string _peerID = String.Empty;     // Peers unique ID
         private readonly UInt32 _port = 6681;               // Port that client s listening on 
@@ -50,6 +52,7 @@ namespace BitTorrent
         private readonly string _trackerURL = String.Empty; // Tracker URL
         private UInt32 _interval = 2000;                    // Polling interval between each announce
         private UInt32 _minInterval;                        // Minumum allowed polling interval
+        private Random _transIDGenerator = new Random();
         private bool _connected = false;
         private UInt64 _connectionID;
         private UdpClient udpConnection;
@@ -58,7 +61,7 @@ namespace BitTorrent
         public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
         public UInt64 Downloaded { get; set; }              // Total downloaded bytes of file to local client
         public UInt64 Left { get; set; }                    // Bytes left in file to be downloaded
-        public UInt32 Event { get; set; }                   // Current state of torrent downloading
+        public TrackerHTTP.TrackerEvent Event { get; set; }             // Current state of torrent downloading
 
         private void PackUInt64(List<byte> buffer, UInt64 value)
         {
@@ -98,11 +101,48 @@ namespace BitTorrent
             value |= ((UInt32)buffer[offset + 3]);
             return value;
         }
+        
+        private void Connect()
+        {
+            try
+            {
+                UInt32 transactionID = (UInt32)_transIDGenerator.Next();
+                List<byte> connectPacket = new List<byte>();
+
+                PackUInt64(connectPacket, 0x41727101980);
+                PackUInt32(connectPacket, 0);
+                PackUInt32(connectPacket, transactionID);
+
+                udpConnection.Connect(_connectionEndPoint);
+                udpConnection.Send(connectPacket.ToArray(), connectPacket.Count);
+                byte[] connectReply = udpConnection.Receive(ref _connectionEndPoint);
+                if (connectReply.Length == 16)
+                {
+                    if (UnPackUInt32(connectReply, 0) == 0)
+                    {
+                        if (transactionID == UnPackUInt32(connectReply, 4))
+                        {
+                            _connectionID = UnPackUInt64(connectReply, 8);
+                            _connected = true;
+                            Log.Logger.Info("Connected to UDP Tracker.");
+                        }
+                    }
+                }
+                if (!_connected) {
+                    throw new Error("BitTorrent (TrackerUDP) Error : Could not connect to UDP tracker server.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex.Message);
+                throw new Error("BitTorrent (TrackerUDP) Error : " + ex.Message);
+            }
+        }
         public AnnounceResponse Announce()
         {
             Log.Logger.Info($"Announce: info_hash={_infoHash} " +
                   $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
-                  $"downloaded={Downloaded} left={Left} event={Event} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
+                  $"downloaded={Downloaded} left={Left} event={EventString[(int)Event]} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
 
             AnnounceResponse response = new AnnounceResponse
             {
@@ -111,32 +151,34 @@ namespace BitTorrent
 
             try
             {
-                Random rand = new Random();
-                UInt32 transationID = (UInt32)rand.Next();
+                if (!_connected) {
+                    Connect();
+                }
+
                 List<byte> connectPacket = new List<byte>();
-                byte[] connectReply;
+                UInt32 transactionID = (UInt32)_transIDGenerator.Next();
 
                 PackUInt64(connectPacket, _connectionID);
                 PackUInt32(connectPacket, 1);
-                PackUInt32(connectPacket, transationID);
+                PackUInt32(connectPacket, transactionID);
                 connectPacket.AddRange(_infoHash);
                 connectPacket.AddRange(Encoding.ASCII.GetBytes(_peerID));
                 PackUInt64(connectPacket, Downloaded);
                 PackUInt64(connectPacket, Left);
                 PackUInt64(connectPacket, Uploaded);
-                PackUInt32(connectPacket, 0); // event
-                PackUInt32(connectPacket, 0); // ip
-                PackUInt32(connectPacket, 0); // key
-                PackUInt32(connectPacket, _numWanted); 
+                PackUInt32(connectPacket, (UInt32)Event); // event
+                PackUInt32(connectPacket, 0);             // ip
+                PackUInt32(connectPacket, 0);             // key
+                PackUInt32(connectPacket, _numWanted);
                 PackUInt32(connectPacket, _port);
-                PackUInt32(connectPacket, 0); // Extensions.
+                PackUInt32(connectPacket, 0);             // Extensions.
 
                 udpConnection.Send(connectPacket.ToArray(), connectPacket.Count);
-                connectReply = udpConnection.Receive(ref _connectionEndPoint);
+                byte[] connectReply = udpConnection.Receive(ref _connectionEndPoint);
 
                 if (UnPackUInt32(connectReply, 0) == 1)
                 {
-                    if (transationID == UnPackUInt32(connectReply, 4))
+                    if (transactionID == UnPackUInt32(connectReply, 4))
                     {
                         response.interval = UnPackUInt32(connectReply, 8);
                         response.incomplete = UnPackUInt32(connectReply, 12);
@@ -148,7 +190,7 @@ namespace BitTorrent
                         {
                             _peerID = String.Empty,
                             ip = $"{connectReply[num]}.{connectReply[num + 1]}.{connectReply[num + 2]}.{connectReply[num + 3]}"
-                        }; 
+                        };
                         peer.port = ((UInt32)connectReply[num + 4] * 256) + connectReply[num + 5];
                         if (peer.ip != _ip) // Ignore self in peers list
                         {
@@ -158,6 +200,21 @@ namespace BitTorrent
                     }
 
                 }
+                else if (UnPackUInt32(connectReply, 0) == 2)
+                {
+                    if (transactionID == UnPackUInt32(connectReply, 4))
+                    {
+                        String errorMessage = "Error";
+                    }
+                }
+                else
+                {
+
+                }
+            }
+            catch (Error)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -167,45 +224,7 @@ namespace BitTorrent
 
             return response;
         }
-        public void Connect()
-        {
-            try
-            {
-                Random rand = new Random();
-                UInt32 transationID = (UInt32)rand.Next();
-                Uri trackerURI = new Uri(_trackerURL);
-                IPAddress[] trackerAddress = Dns.GetHostAddresses(trackerURI.Host);
-                IPEndPoint _connectionEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
-                List<byte> connectPacket = new List<byte>();
-                byte[] connectReply;
-
-                PackUInt64(connectPacket, 0x41727101980);
-                PackUInt32(connectPacket, 0);
-                PackUInt32(connectPacket, transationID);
-
-                udpConnection.Connect(_connectionEndPoint);
-                udpConnection.Send(connectPacket.ToArray(), connectPacket.Count);
-                connectReply = udpConnection.Receive(ref _connectionEndPoint);
-                if (connectReply.Length == 16)
-                {
-                    if (UnPackUInt32(connectReply, 0) == 0)
-                    {
-                        if (transationID == UnPackUInt32(connectReply, 4))
-                        {
-                            _connectionID = UnPackUInt64(connectReply, 8);
-                            _connected = true;
-                            Log.Logger.Info("Connected to UDP Tracker.");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex.Message);
-                throw new Error("BitTorrent (TrackerUDP) Error : " + ex.Message);
-            }
-        }
-                /// <summary>
+        /// <summary>
         /// Restart announce on interval changing and save minimum interval and trackr ID.
         /// </summary>
         /// <param name="response"></param>
@@ -273,16 +292,19 @@ namespace BitTorrent
             _updatePeerSwarm = updatePeerSwarm;
             udpConnection = new UdpClient();
             udpConnection.Client.ReceiveTimeout = 15000;
+            Uri trackerURI = new Uri(_trackerURL);
+            IPAddress[] trackerAddress = Dns.GetHostAddresses(trackerURI.Host);
+            _connectionEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
         }
-       /// <summary>
+        /// <summary>
         /// Change tracker status.
         /// </summary>
-        public void ChangeStatus(UInt32 status)
+        public void ChangeStatus(TrackerHTTP.TrackerEvent status)
         {
             _announceTimer?.Stop();
             Event = status;
             OnAnnounceEvent(this);
-            Event = TrackerEvent.None;  // Reset it back to default on next tick
+            Event = TrackerHTTP.TrackerEvent.None;  // Reset it back to default on next tick
             _announceTimer?.Start();
         }
         /// <summary>
@@ -299,7 +321,7 @@ namespace BitTorrent
                 _announceTimer = new System.Timers.Timer(_interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = true;
-                _announceTimer.Enabled = true; 
+                _announceTimer.Enabled = true;
             }
             catch (Error)
             {
