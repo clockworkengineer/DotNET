@@ -4,7 +4,8 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Provide all the necessary functionality for communication 
-// with remote trackers using HTTP/UDP.
+// with remote trackers using HTTP/UDP. At present this just uses the main
+// announce tracker found and doesnt use the announce-list backups.
 //
 // Copyright 2019.
 //
@@ -50,12 +51,10 @@ namespace BitTorrentLibrary
         public uint NoPeerID { get; set; }                      // Unique peer ID for downloader
         public string Key { get; set; } = String.Empty;         // An additional identification that is not shared with any other peers (optional)
         public string TrackerID { get; set; } = String.Empty;   // String that the client should send back on its next announcements. (optional).
-
-        public uint NumWanted { get; set; } = 5;            // Number of required download clients
-        public byte[] InfoHash { get; set; }                 // Encoded info hash for URI
+        public uint NumWanted { get; set; } = 5;                // Number of required download clients
+        public byte[] InfoHash { get; set; }                    // Encoded info hash for URI
         public string TrackerURL { get; set; } = String.Empty;  // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
-
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval 
 
         /// <summary>
@@ -85,6 +84,7 @@ namespace BitTorrentLibrary
             {
                 if (TrackerURL.StartsWith("udp://"))
                 {
+                    Log.Logger.Info("Main tracker is UDP...");
                     _announcer = new AnnouncerUDP(TrackerURL);
                 }
                 else
@@ -94,6 +94,7 @@ namespace BitTorrentLibrary
             }
             else
             {
+                Log.Logger.Info("Main tracker is HTTP...")
                 _announcer = new AnnouncerHTTP(TrackerURL);
             }
         }
@@ -140,11 +141,23 @@ namespace BitTorrentLibrary
         /// </summary>
         public void ChangeStatus(TrackerEvent status)
         {
-            _announceTimer?.Stop();
-            Event = status;
-            OnAnnounceEvent(this);
-            Event = TrackerEvent.None;  // Reset it back to default on next tick
-            _announceTimer?.Start();
+            try
+            {
+                _announceTimer?.Stop();
+                Event = status;
+                OnAnnounceEvent(this);
+                Event = TrackerEvent.None;  // Reset it back to default on next tick
+                _announceTimer?.Start();
+            }
+           catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
+            }
         }
         /// <summary>
         /// Starts the announce requests to tracker.

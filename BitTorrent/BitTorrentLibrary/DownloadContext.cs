@@ -79,7 +79,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -105,7 +105,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BritTorent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BritTorent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -131,7 +131,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -157,7 +157,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -184,7 +184,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -210,7 +210,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -229,7 +229,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -248,7 +248,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -267,7 +267,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -286,7 +286,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -310,7 +310,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
             return length;
         }
@@ -340,7 +340,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
             return true;
         }
@@ -376,7 +376,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -398,7 +398,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -420,38 +420,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Checks to see if there are any missing blocks in the local piecemap and reports them.
-        /// Used to check whether we have the complete file avaialable on peers todownload.
-        /// </summary>
-        public void CheckForMissingBlocksFromPeers()
-        {
-            try
-            {
-                for (UInt32 pieceNumber = 0; pieceNumber < NumberOfPieces; pieceNumber++)
-                {
-                    UInt32 blockNumber = 0;
-                    for (;  !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
-                    {
-                       if ((PieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer)==0)
-                        {
-                            Console.WriteLine($"{pieceNumber} { blockNumber}");
-                        }
-                    }
-                    if ((PieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == 0)
-                    {
-                        Log.Logger.Info($"Piece {pieceNumber} Block {blockNumber} missing from all peers.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : "+ex.Message);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
     }

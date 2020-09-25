@@ -3,7 +3,8 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: All the high level torrent processing including download and upload.
+// Description: All the high level torrent processing including download and upload
+// of files.
 //
 // Copyright 2019.
 //
@@ -122,11 +123,6 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
             }
-            catch (Error ex)
-            {
-                Log.Logger.Error(ex.Message);
-                cancelAssemblerTaskSource.Cancel();
-            }
             catch (Exception ex)
             {
                 Log.Logger.Error(ex.Message);
@@ -142,7 +138,7 @@ namespace BitTorrentLibrary
             return _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded;
         }
         /// <summary>
-        /// Initializes a new instance of the Agent class.
+        /// Initializes a new instance of a torrent agent.
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
@@ -162,23 +158,23 @@ namespace BitTorrentLibrary
         /// <param name="peers"></param>
         public void UpdatePeerSwarm(List<PeerDetails> peers)
         {
-            Log.Logger.Info("Remove dead peers from swarm....");
-
-            List<string> deadPeers = (from peer in RemotePeers.Values
-                                      where !peer.Connected
-                                      select peer.Ip).ToList();
-
-            foreach (var ip in deadPeers)
+            if (peers != null)
             {
-                RemotePeers.Remove(ip);
-                _deadPeersList.Add(ip);
-                Log.Logger.Info($"Dead Peer {ip} removed from swarm.");
-            }
+                Log.Logger.Info("Remove dead peers from swarm....");
 
-            Log.Logger.Info("Connecting any new peers to swarm ....");
+                List<string> deadPeers = (from peer in RemotePeers.Values
+                                          where !peer.Connected
+                                          select peer.Ip).ToList();
 
-            if (RemotePeers.Count < 20)
-            {
+                foreach (var ip in deadPeers)
+                {
+                    RemotePeers.Remove(ip);
+                    _deadPeersList.Add(ip);
+                    Log.Logger.Info($"Dead Peer {ip} removed from swarm.");
+                }
+
+                Log.Logger.Info("Connecting any new peers to swarm ....");
+
                 foreach (var peer in peers)
                 {
                     try
@@ -199,9 +195,9 @@ namespace BitTorrentLibrary
                         Log.Logger.Info($"Failed to connect to {peer.ip}");
                         _deadPeersList.Add(peer.ip);
                     }
+
                 }
             }
-
 
             Log.Logger.Info($"Number of peers in swarm  {RemotePeers.Count}");
         }
@@ -228,8 +224,6 @@ namespace BitTorrentLibrary
                     {
                         assembleTasks.Add(Task.Run(() => AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource)));
                     }
-
-                    _torrentDownloader.Dc.CheckForMissingBlocksFromPeers();
 
                     Task.WaitAll(assembleTasks.ToArray());
 

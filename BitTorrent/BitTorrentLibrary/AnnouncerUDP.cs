@@ -1,12 +1,23 @@
+//
+// Author: Robert Tizzard
+//
+// Library: C# class library to implement the BitTorrent protocol.
+//
+// Description: Perform UDP annouce requests in remote tracker.
+//
+// Copyright 2019.
+//
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Timers;
 
 namespace BitTorrentLibrary
 {
+    /// <summary>
+    /// UDP Announcer
+    /// </summary>
     public class AnnouncerUDP : IAnnouncer
     {
         private readonly Random _transIDGenerator = new Random();
@@ -92,7 +103,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// 
+        /// Intialise instance of UDP tracker
         /// </summary>
         /// <param name="trackerURL"></param>
         public AnnouncerUDP(string trackerURL)
@@ -103,6 +114,11 @@ namespace BitTorrentLibrary
             IPAddress[] trackerAddress = Dns.GetHostAddresses(trackerURI.Host);
             _connectionEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
         }
+        /// <summary>
+        /// Perform an announce request to tracker and return any response.
+        /// </summary>
+        /// <param name="tracker"></param>
+        /// <returns>Announce response</returns>
         public AnnounceResponse Announce(Tracker tracker)
         {
             Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))} " +
