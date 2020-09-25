@@ -1,14 +1,3 @@
-//
-// Author: Robert Tizzard
-//
-// Library: C# class library to implement the BitTorrent protocol.
-//
-// Description: Provide all the necessary functionality for communication 
-// with remote trackers using HTTP/UDP.
-//
-// Copyright 2019.
-//
-
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -18,10 +7,7 @@ using System.Timers;
 
 namespace BitTorrentLibrary
 {
-    /// <summary>
-    /// Tracker class.
-    /// </summary>
-    public class TrackerUDP :Tracker
+    public class AnnouncerUDP : IAnnouncer
     {
         private readonly Random _transIDGenerator = new Random();
         private bool _connected = false;
@@ -94,7 +80,8 @@ namespace BitTorrentLibrary
                         }
                     }
                 }
-                if (!_connected) {
+                if (!_connected)
+                {
                     throw new Error("BitTorrent (TrackerUDP) Error : Could not connect to UDP tracker server.");
                 }
             }
@@ -104,11 +91,24 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (TrackerUDP) Error : " + ex.Message);
             }
         }
-        public AnnounceResponse Announce()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="trackerURL"></param>
+        public AnnouncerUDP(string trackerURL)
         {
-            Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(_infoHash, 0, _infoHash.Length))} " +
-                  $"peer_id={_peerID} port={_port} compact={_compact} no_peer_id={_noPeerID} uploaded={Uploaded}" +
-                  $"downloaded={Downloaded} left={Left} event={EventString[(int)Event]} ip={_ip} key={_key} trackerid={_trackerID} numwanted={_numWanted}");
+            udpConnection = new UdpClient();
+            udpConnection.Client.ReceiveTimeout = 15000;
+            Uri trackerURI = new Uri(trackerURL);
+            IPAddress[] trackerAddress = Dns.GetHostAddresses(trackerURI.Host);
+            _connectionEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
+        }
+        public AnnounceResponse Announce(Tracker tracker)
+        {
+            Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))} " +
+                  $"peer_id={tracker.PeerID} port={tracker.Port} compact={tracker.Compact} no_peer_id={tracker.NoPeerID} uploaded={tracker.Uploaded}" +
+                  $"downloaded={tracker.Downloaded} left={tracker.Left} event={Tracker.EventString[(int)tracker.Event]} ip={tracker.Ip} key={tracker.Key}" +
+                  $"trackerid={tracker.TrackerID} numwanted={tracker.NumWanted}");
 
             AnnounceResponse response = new AnnounceResponse
             {
@@ -117,7 +117,8 @@ namespace BitTorrentLibrary
 
             try
             {
-                if (!_connected) {
+                if (!_connected)
+                {
                     Connect();
                 }
 
@@ -127,16 +128,16 @@ namespace BitTorrentLibrary
                 PackUInt64(announcePacket, _connectionID);
                 PackUInt32(announcePacket, 1);
                 PackUInt32(announcePacket, transactionID);
-                announcePacket.AddRange(_infoHash);
-                announcePacket.AddRange(Encoding.ASCII.GetBytes(_peerID));
-                PackUInt64(announcePacket, Downloaded);
-                PackUInt64(announcePacket, Left);
-                PackUInt64(announcePacket, Uploaded);
-                PackUInt32(announcePacket, (UInt32)Event); // event
+                announcePacket.AddRange(tracker.InfoHash);
+                announcePacket.AddRange(Encoding.ASCII.GetBytes(tracker.PeerID));
+                PackUInt64(announcePacket, tracker.Downloaded);
+                PackUInt64(announcePacket, tracker.Left);
+                PackUInt64(announcePacket, tracker.Uploaded);
+                PackUInt32(announcePacket, (UInt32)tracker.Event); // event
                 PackUInt32(announcePacket, 0);             // ip
                 PackUInt32(announcePacket, 0);             // key
-                PackUInt32(announcePacket, _numWanted);
-                PackUInt32(announcePacket, _port);
+                PackUInt32(announcePacket, tracker.NumWanted);
+                PackUInt32(announcePacket, tracker.Port);
                 PackUInt32(announcePacket, 0);             // Extensions.
 
                 udpConnection.Send(announcePacket.ToArray(), announcePacket.Count);
@@ -158,7 +159,7 @@ namespace BitTorrentLibrary
                             ip = $"{announceReply[num]}.{announceReply[num + 1]}.{announceReply[num + 2]}.{announceReply[num + 3]}"
                         };
                         peer.port = ((UInt32)announceReply[num + 4] * 256) + announceReply[num + 5];
-                        if (peer.ip != _ip) // Ignore self in peers list
+                        if (peer.ip != tracker.Ip) // Ignore self in peers list
                         {
                             Log.Logger.Info($"Peer {peer.ip} Port {peer.port} found.");
                             response.peers.Add(peer);
@@ -170,10 +171,10 @@ namespace BitTorrentLibrary
                 {
                     if (transactionID == UnPackUInt32(announceReply, 4))
                     {
-                        byte [] errorMessage = new byte [announceReply.Length-4];
+                        byte[] errorMessage = new byte[announceReply.Length - 4];
                         announceReply.CopyTo(errorMessage, 4);
-                        response.failure=true;
-                        response.statusMessage =errorMessage.ToString();
+                        response.failure = true;
+                        response.statusMessage = errorMessage.ToString();
                     }
                 }
                 else
@@ -192,135 +193,6 @@ namespace BitTorrentLibrary
             }
 
             return response;
-        }
-        /// <summary>
-        /// Restart announce on interval changing and save minimum interval and trackr ID.
-        /// </summary>
-        /// <param name="response"></param>
-        private void UpdateRunningStatusFromAnnounce(AnnounceResponse response)
-        {
-            try
-            {
-                _trackerID = response.trackerID;
-                _minInterval = response.minInterval;
-
-                if (response.interval > _minInterval)
-                {
-                    UInt32 oldInterval = _interval;
-                    _interval = response.interval;
-                    if (oldInterval != _interval)
-                    {
-                        StopAnnouncing();
-                        StartAnnouncing();
-                    }
-                }
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
-            }
-        }
-        /// <summary>
-        /// On  announce event send announce request to tracker and get response.
-        /// </summary>
-        /// <param name="source">Source.</param>
-        /// <param name="e">E.</param>
-        /// <param name="tracker">Tracker.</param>
-        private static void OnAnnounceEvent(TrackerUDP tracker)
-        {
-            AnnounceResponse response = tracker.Announce();
-            tracker._updatePeerSwarm?.Invoke(response.peers);
-            tracker.UpdateRunningStatusFromAnnounce(response);
-        }
-        // /// <summary>
-        // /// Is a specified tracker supported.
-        // /// </summary>
-        // /// <param name="trackerURL"></param>
-        // /// <returns>==true tracker supported</returns>
-        // public bool IsSupported(string trackerURL)
-        // {
-        //     return trackerURL.StartsWith("udp://");
-        // }
-        /// <summary>
-        /// Initialise BitTorrent Tracker.
-        /// </summary>
-        /// <param name="trackerURL"></param>
-        /// <param name="infoHash"></param>
-        /// <param name="updatePeerSwarm"></param>
-        public TrackerUDP(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm = null)  : base(trackerURL, infoHash, updatePeerSwarm)
-        {
-            udpConnection = new UdpClient();
-            udpConnection.Client.ReceiveTimeout = 15000;
-            Uri trackerURI = new Uri(_trackerURL);
-            IPAddress[] trackerAddress = Dns.GetHostAddresses(trackerURI.Host);
-            _connectionEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
-        }
-        /// <summary>
-        /// Change tracker status.
-        /// </summary>
-        public void ChangeStatus(TrackerEvent status)
-        {
-            _announceTimer?.Stop();
-            Event = status;
-            OnAnnounceEvent(this);
-            Event = TrackerEvent.None;  // Reset it back to default on next tick
-            _announceTimer?.Start();
-        }
-        /// <summary>
-        /// Starts the announce requests to tracker.
-        /// </summary>
-        public void StartAnnouncing()
-        {
-            try
-            {
-                if (_announceTimer != null)
-                {
-                    StopAnnouncing();
-                }
-                _announceTimer = new System.Timers.Timer(_interval);
-                _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
-                _announceTimer.AutoReset = true;
-                _announceTimer.Enabled = true;
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Stop announcing to tracker..
-        /// </summary>
-        public void StopAnnouncing()
-        {
-            try
-            {
-                if (_announceTimer != null)
-                {
-                    _announceTimer.Stop();
-                    _announceTimer.Dispose();
-                    _announceTimer = null;
-                }
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
-            }
         }
     }
 }

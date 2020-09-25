@@ -79,7 +79,7 @@ namespace BitTorrent
                 Agent agent = new Agent(torrentFile, downloader);
 
                  if (agent.BytesLeftToDownload() != 0) {
-                     TrackerUDP tracker = new TrackerUDP(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm);
+                     Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm);
  
                      agent.MainTracker = tracker;
                      tracker.Left = agent.BytesLeftToDownload();
