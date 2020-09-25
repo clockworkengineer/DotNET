@@ -162,6 +162,19 @@ namespace BitTorrentLibrary
         /// <param name="peers"></param>
         public void UpdatePeerSwarm(List<PeerDetails> peers)
         {
+            Log.Logger.Info("Remove dead peers from swarm....");
+
+            List<string> deadPeers = (from peer in RemotePeers.Values
+                                      where !peer.Connected
+                                      select peer.Ip).ToList();
+
+            foreach (var ip in deadPeers)
+            {
+                RemotePeers.Remove(ip);
+                _deadPeersList.Add(ip);
+                Log.Logger.Info($"Dead Peer {ip} removed from swarm.");
+            }
+
             Log.Logger.Info("Connecting any new peers to swarm ....");
 
             foreach (var peer in peers)

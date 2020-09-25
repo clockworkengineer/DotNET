@@ -70,7 +70,7 @@ namespace BitTorrent
             try
             {
                 Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/tails.torrent");
+                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/zorin.torrent");
 
                 torrentFile.Load();
                 torrentFile.Parse();

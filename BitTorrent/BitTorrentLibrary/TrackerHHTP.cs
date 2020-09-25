@@ -4,8 +4,7 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Provide all the necessary functionality for communication 
-// with remote trackers. This should support both UDP/HTTP requests but 
-// at present only HTTP.
+// with remote trackers using HTTP/UDP.
 //
 // Copyright 2019.
 //

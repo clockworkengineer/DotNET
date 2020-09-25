@@ -4,8 +4,7 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Provide all the necessary functionality for communication 
-// with remote trackers. This should support both UDP/HTTP requests but 
-// at present only HTTP.
+// with remote trackers using HTTP/UDP.
 //
 // Copyright 2019.
 //
@@ -52,10 +51,10 @@ namespace BitTorrentLibrary
         private readonly string _trackerURL = String.Empty; // Tracker URL
         private UInt32 _interval = 2000;                    // Polling interval between each announce
         private UInt32 _minInterval;                        // Minumum allowed polling interval
-        private Random _transIDGenerator = new Random();
+        private readonly Random _transIDGenerator = new Random();
         private bool _connected = false;
         private UInt64 _connectionID;
-        private UdpClient udpConnection;
+        private readonly UdpClient udpConnection;
         private IPEndPoint _connectionEndPoint;
         private readonly UpdatePeers _updatePeerSwarm;      // Update peer swarm with connected peers
         public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
@@ -101,7 +100,7 @@ namespace BitTorrentLibrary
             value |= ((UInt32)buffer[offset + 3]);
             return value;
         }
-        
+
         private void Connect()
         {
             try
@@ -155,43 +154,43 @@ namespace BitTorrentLibrary
                     Connect();
                 }
 
-                List<byte> connectPacket = new List<byte>();
+                List<byte> announcePacket = new List<byte>();
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
 
-                PackUInt64(connectPacket, _connectionID);
-                PackUInt32(connectPacket, 1);
-                PackUInt32(connectPacket, transactionID);
-                connectPacket.AddRange(_infoHash);
-                connectPacket.AddRange(Encoding.ASCII.GetBytes(_peerID));
-                PackUInt64(connectPacket, Downloaded);
-                PackUInt64(connectPacket, Left);
-                PackUInt64(connectPacket, Uploaded);
-                PackUInt32(connectPacket, (UInt32)Event); // event
-                PackUInt32(connectPacket, 0);             // ip
-                PackUInt32(connectPacket, 0);             // key
-                PackUInt32(connectPacket, _numWanted);
-                PackUInt32(connectPacket, _port);
-                PackUInt32(connectPacket, 0);             // Extensions.
+                PackUInt64(announcePacket, _connectionID);
+                PackUInt32(announcePacket, 1);
+                PackUInt32(announcePacket, transactionID);
+                announcePacket.AddRange(_infoHash);
+                announcePacket.AddRange(Encoding.ASCII.GetBytes(_peerID));
+                PackUInt64(announcePacket, Downloaded);
+                PackUInt64(announcePacket, Left);
+                PackUInt64(announcePacket, Uploaded);
+                PackUInt32(announcePacket, (UInt32)Event); // event
+                PackUInt32(announcePacket, 0);             // ip
+                PackUInt32(announcePacket, 0);             // key
+                PackUInt32(announcePacket, _numWanted);
+                PackUInt32(announcePacket, _port);
+                PackUInt32(announcePacket, 0);             // Extensions.
 
-                udpConnection.Send(connectPacket.ToArray(), connectPacket.Count);
-                byte[] connectReply = udpConnection.Receive(ref _connectionEndPoint);
+                udpConnection.Send(announcePacket.ToArray(), announcePacket.Count);
+                byte[] announceReply = udpConnection.Receive(ref _connectionEndPoint);
 
-                if (UnPackUInt32(connectReply, 0) == 1)
+                if (UnPackUInt32(announceReply, 0) == 1)
                 {
-                    if (transactionID == UnPackUInt32(connectReply, 4))
+                    if (transactionID == UnPackUInt32(announceReply, 4))
                     {
-                        response.interval = UnPackUInt32(connectReply, 8);
-                        response.incomplete = UnPackUInt32(connectReply, 12);
-                        response.complete = UnPackUInt32(connectReply, 16);
+                        response.interval = UnPackUInt32(announceReply, 8);
+                        response.incomplete = UnPackUInt32(announceReply, 12);
+                        response.complete = UnPackUInt32(announceReply, 16);
                     }
-                    for (var num = 20; num < connectReply.Length; num += 6)
+                    for (var num = 20; num < announceReply.Length; num += 6)
                     {
                         PeerDetails peer = new PeerDetails
                         {
                             _peerID = String.Empty,
-                            ip = $"{connectReply[num]}.{connectReply[num + 1]}.{connectReply[num + 2]}.{connectReply[num + 3]}"
+                            ip = $"{announceReply[num]}.{announceReply[num + 1]}.{announceReply[num + 2]}.{announceReply[num + 3]}"
                         };
-                        peer.port = ((UInt32)connectReply[num + 4] * 256) + connectReply[num + 5];
+                        peer.port = ((UInt32)announceReply[num + 4] * 256) + announceReply[num + 5];
                         if (peer.ip != _ip) // Ignore self in peers list
                         {
                             Log.Logger.Info($"Peer {peer.ip} Port {peer.port} found.");
@@ -200,16 +199,19 @@ namespace BitTorrentLibrary
                     }
 
                 }
-                else if (UnPackUInt32(connectReply, 0) == 2)
+                else if (UnPackUInt32(announceReply, 0) == 2)
                 {
-                    if (transactionID == UnPackUInt32(connectReply, 4))
+                    if (transactionID == UnPackUInt32(announceReply, 4))
                     {
-                        String errorMessage = "Error";
+                        byte [] errorMessage = new byte [announceReply.Length-4];
+                        announceReply.CopyTo(errorMessage, 4);
+                        response.failure=true;
+                        response.statusMessage =errorMessage.ToString();
                     }
                 }
                 else
                 {
-
+                    throw new Error("(BitTorrent (TrackerUDP) Error : Invalid announce response.");
                 }
             }
             catch (Error)

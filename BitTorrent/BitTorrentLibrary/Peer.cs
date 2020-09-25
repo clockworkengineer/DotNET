@@ -58,7 +58,7 @@ namespace BitTorrentLibrary
         public byte[] RemotePieceBitfield { get; set; }     // Remote peer piece map
         public uint PacketLength { get; set; }              // Current packet length
         public PieceBuffer AssembledPiece { get; set; }     // Assembled pieces buffer
-      //  public Int64 TransferingPiece { get; set; } = -1;   // Piece being currently transfer
+                                                            //  public Int64 TransferingPiece { get; set; } = -1;   // Piece being currently transfer
         public string Ip { get; set; }                      // Remote peer ip
         public ManualResetEvent WaitForPieceAssembly { get; set; }
         public ManualResetEvent PeerChoking { get; set; }
@@ -126,18 +126,15 @@ namespace BitTorrentLibrary
                 remotePeer._peerSocket.BeginReceive(remotePeer.ReadBuffer, (Int32)remotePeer._bytesRead,
                            (Int32)(remotePeer.PacketLength - remotePeer._bytesRead), 0, ReadPacketAsyncHandler, remotePeer);
             }
-            catch (Error)
-            {
-            throw;
-            }
             catch (System.ObjectDisposedException)
             {
                 Log.Logger.Info($"ReadPacketCallBack()  {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
+                remotePeer.Close();
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex.Message);
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
+                remotePeer.Close();
             }
         }
 
@@ -220,6 +217,7 @@ namespace BitTorrentLibrary
         public void Close()
         {
             _peerSocket.Close();
+            Connected=false;
         }
 
         /// <summary>
