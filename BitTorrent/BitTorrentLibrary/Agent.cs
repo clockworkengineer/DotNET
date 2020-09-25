@@ -29,7 +29,7 @@ namespace BitTorrentLibrary
         public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
-        public TrackerHTTP MainTracker { get; set; }                 // Main torrent tracker
+        public TrackerUDP MainTracker { get; set; }                 // Main torrent tracker
 
         /// <summary>
         /// Stopping all peers so unchoke them all.
@@ -177,27 +177,31 @@ namespace BitTorrentLibrary
 
             Log.Logger.Info("Connecting any new peers to swarm ....");
 
-            foreach (var peer in peers)
+            if (RemotePeers.Count < 20)
             {
-                try
+                foreach (var peer in peers)
                 {
-                    if (!RemotePeers.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
+                    try
                     {
-                        Peer remotePeer = new Peer(_torrentDownloader, peer.ip, peer.port, InfoHash);
-                        remotePeer.Connect();
-                        if (remotePeer.Connected)
+                        if (!RemotePeers.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
                         {
-                            RemotePeers.Add(remotePeer.Ip, remotePeer);
-                            Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                            Peer remotePeer = new Peer(_torrentDownloader, peer.ip, peer.port, InfoHash);
+                            remotePeer.Connect();
+                            if (remotePeer.Connected)
+                            {
+                                RemotePeers.Add(remotePeer.Ip, remotePeer);
+                                Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                            }
                         }
                     }
-                }
-                catch (Exception)
-                {
-                    Log.Logger.Info($"Failed to connect to {peer.ip}");
-                    _deadPeersList.Add(peer.ip);
+                    catch (Exception)
+                    {
+                        Log.Logger.Info($"Failed to connect to {peer.ip}");
+                        _deadPeersList.Add(peer.ip);
+                    }
                 }
             }
+
 
             Log.Logger.Info($"Number of peers in swarm  {RemotePeers.Count}");
         }

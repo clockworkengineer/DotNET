@@ -21,42 +21,8 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Tracker class.
     /// </summary>
-    public class TrackerHTTP
+    public class TrackerHTTP : Tracker
     {
-        /// <summary>
-        /// Update swarm of active peers delegate
-        /// </summary>
-        public delegate void UpdatePeers(List<PeerDetails> peers);
-        /// <summary>
-        /// Tracker Announce event types.
-        /// </summary>
-        private static readonly string[] EventString = { "", "started", "stopped", "completed" };
-        public enum TrackerEvent
-        {
-            None = 0,      // Default announce has none for event
-            started = 1,   // The first request to the tracker must include the event key with this value
-            stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
-            completed = 3   // Must be sent to the tracker when the download completes
-        };
-        private Timer _announceTimer;                       // Timer for sending tracker announce events
-        private readonly string _peerID = String.Empty;     // Peers unique ID
-        private readonly UInt32 _port = 6681;               // Port that client s listening on 
-        private readonly string _ip = String.Empty;         // IP of host performing announce
-        private readonly UInt32 _compact = 1;               // Is the returned peer list compressed (1=yes,0=no)
-        private readonly UInt32 _noPeerID;                  // Unique peer ID for downloader
-        private readonly string _key = String.Empty;        // An additional identification that is not shared with any other peers (optional)
-        private string _trackerID = String.Empty;           // String that the client should send back on its next announcements. (optional).
-        private readonly UInt32 _numWanted = 5;             // Number of required download clients
-        private readonly string _infoHash = String.Empty;   // Encoded info hash for URI
-        private readonly string _trackerURL = String.Empty; // Tracker URL
-        private UInt32 _interval = 2000;                    // Polling interval between each announce
-        private UInt32 _minInterval;                        // Minumum allowed polling interval 
-        private readonly UpdatePeers _updatePeerSwarm;      // Update peer swarm with connected peers
-        public UInt64 Uploaded { get; set; }                // Bytes left in file to be downloaded
-        public UInt64 Downloaded { get; set; }              // Total downloaed bytes of file to local client
-        public UInt64 Left { get; set; }                    // Bytes left in file to be downloaded
-        public TrackerEvent Event { get; set; }             // Current state of torrent downloading
-
         /// <summary>
         /// Decodes the announce request response recieved from a tracker.
         /// </summary>
@@ -65,7 +31,6 @@ namespace BitTorrentLibrary
         private void DecodeAnnounceResponse(byte[] announceResponse, ref AnnounceResponse decodedResponse)
         {
             BNodeBase decodedAnnounce = Bencoding.Decode(announceResponse);
-
             decodedResponse.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "failure reason");
             if (decodedResponse.statusMessage != "")
             {
@@ -142,7 +107,6 @@ namespace BitTorrentLibrary
 
             decodedResponse.announceCount++;
         }
-
         /// <summary>
         /// Restart announce on interval changing and save minimum interval and trackr ID.
         /// </summary>
@@ -229,7 +193,7 @@ namespace BitTorrentLibrary
 
             return response;
         }
-        /// <summary>
+        ///<summary>
         /// On  announce event send announce request to tracker and get response.
         /// </summary>
         /// <param name="source">Source.</param>
@@ -241,28 +205,23 @@ namespace BitTorrentLibrary
             tracker._updatePeerSwarm?.Invoke(response.peers);
             tracker.UpdateRunningStatusFromAnnounce(response);
         }
-        /// <summary>
-        /// Is a specified tracker supported.
-        /// </summary>
-        /// <param name="trackerURL"></param>
-        /// <returns>==true tracker supported</returns>
-        public bool IsSupported(string trackerURL)
-        {
-            return trackerURL.StartsWith("http://");
-        }
+        // /// <summary>
+        // /// Is a specified tracker supported.
+        // /// </summary>
+        // /// <param name="trackerURL"></param>
+        // /// <returns>==true tracker supported</returns>
+        // public bool IsSupported(string trackerURL)
+        // {
+        //     return trackerURL.StartsWith("http://");
+        // }
         /// <summary>
         /// Initialise BitTorrent Tracker.
         /// </summary>
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public TrackerHTTP(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm = null)
+        public TrackerHTTP(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm = null) : base(trackerURL, infoHash, updatePeerSwarm)
         {
-            _peerID = PeerID.Get();
-            _ip = Peer.GetLocalHostIP();
-            _infoHash = Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(infoHash, 0, infoHash.Length));
-            _trackerURL = trackerURL;
-            _updatePeerSwarm = updatePeerSwarm;
         }
         /// <summary>
         /// Change tracker status.
@@ -326,5 +285,5 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent Error (Tracker): " + ex.Message);
             }
         }
-    }
-}
+     }
+ }
