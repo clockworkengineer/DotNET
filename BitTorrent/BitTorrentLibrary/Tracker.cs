@@ -51,11 +51,12 @@ namespace BitTorrentLibrary
         public uint NoPeerID { get; set; }                      // Unique peer ID for downloader
         public string Key { get; set; } = String.Empty;         // An additional identification that is not shared with any other peers (optional)
         public string TrackerID { get; set; } = String.Empty;   // String that the client should send back on its next announcements. (optional).
-        public uint NumWanted { get; set; } = 5;                // Number of required download clients
+        public int NumWanted { get; set; } = 5;                // Number of required download clients
         public byte[] InfoHash { get; set; }                    // Encoded info hash for URI
         public string TrackerURL { get; set; } = String.Empty;  // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
-        public uint MinInterval { get; set; }                   // Minumum allowed polling interval 
+        public uint MinInterval { get; set; }                   // Minumum allowed polling interval
+        public int MaximumSwarmSize { get; set; } = 10;         // Maximim swarm size
 
         /// <summary>
         /// Perform announce request on timer tick
@@ -73,12 +74,13 @@ namespace BitTorrentLibrary
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm)
+        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm, int maximumSwarmSize=10)
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Peer.GetLocalHostIP();
             InfoHash = infoHash;
             TrackerURL = trackerURL;
+            MaximumSwarmSize = maximumSwarmSize;
             _updatePeerSwarm = updatePeerSwarm;
             if (!TrackerURL.StartsWith("http://"))
             {
@@ -94,7 +96,7 @@ namespace BitTorrentLibrary
             }
             else
             {
-                Log.Logger.Info("Main tracker is HTTP...")
+                Log.Logger.Info("Main tracker is HTTP...");
                 _announcer = new AnnouncerHTTP(TrackerURL);
             }
         }

@@ -149,12 +149,12 @@ namespace BitTorrentLibrary
                 PackUInt64(announcePacket, tracker.Downloaded);
                 PackUInt64(announcePacket, tracker.Left);
                 PackUInt64(announcePacket, tracker.Uploaded);
-                PackUInt32(announcePacket, (UInt32)tracker.Event); // event
-                PackUInt32(announcePacket, 0);             // ip
-                PackUInt32(announcePacket, 0);             // key
-                PackUInt32(announcePacket, tracker.NumWanted);
+                PackUInt32(announcePacket, (UInt32)tracker.Event);      // event
+                PackUInt32(announcePacket, 0);                          // ip
+                PackUInt32(announcePacket, 0);                          // key
+                PackUInt32(announcePacket, (UInt32) tracker.NumWanted);
                 PackUInt32(announcePacket, tracker.Port);
-                PackUInt32(announcePacket, 0);             // Extensions.
+                PackUInt32(announcePacket, 0);                          // Extensions.
 
                 udpConnection.Send(announcePacket.ToArray(), announcePacket.Count);
                 byte[] announceReply = udpConnection.Receive(ref _connectionEndPoint);

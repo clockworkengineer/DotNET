@@ -23,25 +23,30 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent
     {
-        public delegate void ProgessCallBack(Object progressData);   // Download progress function
+        public delegate void ProgessCallBack(Object progressData);   // Download progress 
+        private readonly CancellationTokenSource _cancelTaskSource;  // Cancellation token source
+        private ProgessCallBack _progressFunction = null;            // Download progress function
+        private Object _progressData = null;                         // Download progress function data
         private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
         private readonly ManualResetEvent _downloading;              // WaitOn when downloads == false
         private readonly Downloader _torrentDownloader;              // Downloader for torrent
         public Dictionary<string, Peer> RemotePeers { get; set; }    // Connected remote peers
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
-        public Tracker MainTracker { get; set; }                 // Main torrent tracker
+        public Tracker MainTracker { get; set; }                     // Main torrent tracker
 
         /// <summary>
         /// Stopping all peers so unchoke them all.
         /// </summary>
         private void UnblockAllChokingPeers()
         {
+            _downloading.Set();
             foreach (var peer in from peer in RemotePeers.Values
                                  where !peer.PeerChoking.WaitOne(0)
                                  select peer)
             {
                 peer.PeerChoking.Set();
+                peer.BitfieldReceived.Set();
             }
         }
         /// <summary>
@@ -67,13 +72,13 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="progressFunction">Progress function.</param>
         /// <param name="progressData">Progress data.</param>
-        private void AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData, CancellationTokenSource cancelAssemblerTaskSource)
+        private void AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData, CancellationTokenSource cancelTaskSource)
         {
             try
             {
                 Log.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
-                CancellationToken cancelAssemblerTask = cancelAssemblerTaskSource.Token;
+                CancellationToken cancelTask = cancelTaskSource.Token;
 
                 PWP.Unchoke(remotePeer);
 
@@ -86,26 +91,20 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                        //             remotePeer.TransferingPiece = nextPiece;
-
                         RequestPieceFromPeer(remotePeer, nextPiece);
 
                         remotePeer.WaitForPieceAssembly.WaitOne();
                         remotePeer.WaitForPieceAssembly.Reset();
 
-                        ///   if (remotePeer.TransferingPiece != -1)
-                        //  {
                         Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
-                        //     remotePeer.TransferingPiece = -1;
                         _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
                         MainTracker.Left = BytesLeftToDownload();
-                        MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
-                        // }
+                        MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;                       // }
 
                         progressFunction?.Invoke(progressData);
 
-                        if (cancelAssemblerTask.IsCancellationRequested)
+                        if (cancelTask.IsCancellationRequested)
                         {
                             UnblockAllChokingPeers();
                             return;
@@ -126,7 +125,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Error(ex.Message);
-                cancelAssemblerTaskSource.Cancel();
+                cancelTaskSource.Cancel();
             }
         }
         /// <summary>
@@ -151,6 +150,7 @@ namespace BitTorrentLibrary
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _deadPeersList = new HashSet<string>();
             _downloading = new ManualResetEvent(true);
+            _cancelTaskSource = new CancellationTokenSource();
         }
         /// <summary>
         /// Connect peers and add to swarm on success.
@@ -187,6 +187,8 @@ namespace BitTorrentLibrary
                             {
                                 RemotePeers.Add(remotePeer.Ip, remotePeer);
                                 Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                            } else {
+                                _deadPeersList.Add(peer.ip);
                             }
                         }
                     }
@@ -199,22 +201,31 @@ namespace BitTorrentLibrary
                 }
             }
 
+            MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize-RemotePeers.Count, 0);
             Log.Logger.Info($"Number of peers in swarm  {RemotePeers.Count}");
+        }
+
+        /// <summary>
+        /// Set download progress function and data
+        /// </summary>
+        /// <param name="progressFunction">User defined grogress function.</param>
+        /// <param name="progressData">User defined grogress function data.</param>
+        public void Progress(ProgessCallBack progressFunction = null, Object progressData = null)
+        {
+            _progressFunction = progressFunction;
+            _progressData = progressData;
         }
 
         /// <summary>
         /// Download a torrent using an piece assembler per connected peer.
         /// </summary>
-        /// <param name="progressFunction">User defined grogress function.</param>
-        /// <param name="progressData">User defined grogress function data.</param>
-        public void Download(ProgessCallBack progressFunction = null, Object progressData = null)
+        public void Download()
         {
             try
             {
                 if (MainTracker.Left > 0)
                 {
                     List<Task> assembleTasks = new List<Task>();
-                    CancellationTokenSource cancelAssemblerTaskSource = new CancellationTokenSource();
 
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
@@ -222,12 +233,12 @@ namespace BitTorrentLibrary
 
                     foreach (var peer in RemotePeers.Values)
                     {
-                        assembleTasks.Add(Task.Run(() => AssemblePieces(peer, progressFunction, progressData, cancelAssemblerTaskSource)));
+                        assembleTasks.Add(Task.Run(() => AssemblePieces(peer, _progressFunction, _progressData, _cancelTaskSource)));
                     }
 
                     Task.WaitAll(assembleTasks.ToArray());
 
-                    if (!cancelAssemblerTaskSource.IsCancellationRequested)
+                    if (!_cancelTaskSource.IsCancellationRequested)
                     {
                         MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
                         Log.Logger.Info("Whole Torrent finished downloading.");
@@ -253,13 +264,11 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Download torrent asynchronously.
         /// </summary>
-        /// <param name="progressFunction">User defined grogress function.</param>
-        /// <param name="progressData">User defined grogress function data.</param>
-        public async Task DownloadAsync(ProgessCallBack progressFunction = null, Object progressData = null)
+        public async Task DownloadAsync()
         {
             try
             {
-                await Task.Run(() => Download(progressFunction, progressData)).ConfigureAwait(false);
+                await Task.Run(() => Download()).ConfigureAwait(false);
             }
             catch (Error)
             {
