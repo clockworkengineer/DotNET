@@ -414,8 +414,10 @@ namespace BitTorrentLibrary
                 for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
                 {
                     BlockPieceRequested(pieceNumber, blockNumber, false);
+                    BlockPieceLocal(pieceNumber, blockNumber, false);
                 }
                 BlockPieceRequested(pieceNumber, blockNumber, false);
+                BlockPieceLocal(pieceNumber, blockNumber, false);
             }
             catch (Exception ex)
             {

@@ -8,9 +8,11 @@
 // Copyright 2019.
 //
 
+
 using System;
 using System.Text;
 using System.Threading;
+using System.IO;
 using NLog;
 using BitTorrentLibrary;
 
@@ -67,10 +69,16 @@ namespace BitTorrent
 
         public static void Main(string[] args)
         {
+            
             try
             {
+                if (File.Exists("/home/robt/Projects/dotNET/BitTorrent/ClientUI/bin/Debug/netcoreapp3.1/file.txt")) 
+                {
+                    File.Delete("/home/robt/Projects/dotNET/BitTorrent/ClientUI/bin/Debug/netcoreapp3.1/file.txt");
+                }
+
                 Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/large.jpeg.torrent");
+                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/arco.torrent");
 
                 torrentFile.Load();
                 torrentFile.Parse();
@@ -78,21 +86,24 @@ namespace BitTorrent
                 Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
                 Agent agent = new Agent(torrentFile, downloader);
 
-                 if (agent.BytesLeftToDownload() != 0) {
-                     Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm);
- 
-                     agent.MainTracker = tracker;
-                     tracker.Left = agent.BytesLeftToDownload();
+                if (agent.BytesLeftToDownload() != 0)
+                {
+                    Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm);
 
-                     tracker.ChangeStatus(Tracker.TrackerEvent.None);
-                     tracker.StartAnnouncing();
+                    agent.MainTracker = tracker;
+                    tracker.Left = agent.BytesLeftToDownload();
 
-                     agent.Download();
+                    tracker.ChangeStatus(Tracker.TrackerEvent.None);
+                    tracker.StartAnnouncing();
 
-                     agent.Close();
-                 } else {
-                     Log.Logger.Info("Torrent has been fully downloaded.");
-                 }
+                    agent.Download();
+
+                    agent.Close();
+                }
+                else
+                {
+                    Log.Logger.Info("Torrent has been fully downloaded.");
+                }
             }
             catch (Error ex)
             {

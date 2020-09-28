@@ -13,6 +13,7 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
 {
@@ -36,7 +37,7 @@ namespace BitTorrentLibrary
             else
             {
                 socket.Close();
-                throw new Error("BitTorrent (Peer) Error: Peer connect timed out.");
+                throw new Error("BitTorrent (Connect) Error: Peer connect timed out.");
             }
         }
     }
@@ -58,8 +59,10 @@ namespace BitTorrentLibrary
         public byte[] RemotePieceBitfield { get; set; }     // Remote peer piece map
         public uint PacketLength { get; set; }              // Current packet length
         public PieceBuffer AssembledPiece { get; set; }     // Assembled pieces buffer
-                                                            //  public Int64 TransferingPiece { get; set; } = -1;   // Piece being currently transfer
         public string Ip { get; set; }                      // Remote peer ip
+        public Task AssemblerTask { get; set; }             // Peer piece assembly task
+
+        public CancellationTokenSource CancelTaskSource { get; set; }
         public ManualResetEvent WaitForPieceAssembly { get; set; }
         public ManualResetEvent PeerChoking { get; set; }
         public ManualResetEvent BitfieldReceived { get; set; }
@@ -180,6 +183,7 @@ namespace BitTorrentLibrary
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
+            CancelTaskSource = new CancellationTokenSource();
         }
 
         /// <summary>
@@ -216,8 +220,13 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Close()
         {
-            _peerSocket.Close();
-            Connected=false;
+            if (Connected)
+            {
+                Connected = false;
+                CancelTaskSource.Cancel();
+                _peerSocket.Close();
+                Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}.");
+            }
         }
 
         /// <summary>
