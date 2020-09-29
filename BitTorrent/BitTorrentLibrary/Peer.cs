@@ -142,30 +142,6 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Gets the local host ip.
-        /// </summary>
-        /// <returns>The local host ip.</returns>
-        static public string GetLocalHostIP()
-        {
-            string localHostIP = "127.0.0.1";
-            try
-            {
-                using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
-                {
-                    socket.Connect("8.8.8.8", 65530);
-                    IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
-                    localHostIP = endPoint.Address.ToString();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex.Message);
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
-            }
-            return localHostIP;
-        }
-
-        /// <summary>
         /// Initializes a new instance of Peer class.
         /// </summary>
         /// <param name="fileDownloader">File downloader.</param>

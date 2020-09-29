@@ -45,7 +45,7 @@ namespace BitTorrentLibrary
         public UInt64 Left { get; set; }                        // Bytes left in file to be downloaded
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; set; } = String.Empty;      // Peers unique ID
-        public uint Port { get; set; } = 6681;                  // Port that client s listening on 
+        public uint Port { get; set; } = Host.DefaultPort;   // Port that client s listening on 
         public string Ip { get; set; } = String.Empty;          // IP of host performing announce
         public uint Compact { get; set; } = 1;                  // Is the returned peer list compressed (1=yes,0=no)
         public uint NoPeerID { get; set; }                      // Unique peer ID for downloader
@@ -77,7 +77,7 @@ namespace BitTorrentLibrary
         public Tracker(Agent agent, int maximumSwarmSize = 10)
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
-            Ip = Peer.GetLocalHostIP();
+            Ip = Host.GetIP();
             InfoHash = agent.InfoHash;
             TrackerURL = agent.TrackerURL;
             MaximumSwarmSize = maximumSwarmSize;
