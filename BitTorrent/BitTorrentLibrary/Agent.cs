@@ -257,11 +257,10 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
-                    MainTracker.ChangeStatus(Tracker.TrackerEvent.started);
-
                     _downloadFinished.WaitOne();
 
                     MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
+                    
                     Log.Logger.Info("Whole Torrent finished downloading.");
 
                 }

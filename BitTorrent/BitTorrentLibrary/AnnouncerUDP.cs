@@ -20,12 +20,17 @@ namespace BitTorrentLibrary
     /// </summary>
     public class AnnouncerUDP : IAnnouncer
     {
-        private readonly Random _transIDGenerator = new Random();
-        private bool _connected = false;
-        private UInt64 _connectionID;
-        private readonly UdpClient udpConnection;
-        private IPEndPoint _connectionEndPoint;
+        private readonly Random _transIDGenerator = new Random();   // Transaction ID generator
+        private bool _connected = false;                            // == true connected
+        private UInt64 _connectionID;                               // Returned connection ID
+        private readonly UdpClient _trackerConnection;              // Tracker UDP connection
+        private IPEndPoint _trackerEndPoint;                        // Tracker enpoint
 
+        /// <summary>
+        /// Pack UInt64 MSB first into 8 bytes buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="value"></param>
         private void PackUInt64(List<byte> buffer, UInt64 value)
         {
             buffer.Add((byte)(value >> 56));
@@ -37,6 +42,11 @@ namespace BitTorrentLibrary
             buffer.Add((byte)(value >> 8));
             buffer.Add((byte)(value));
         }
+        /// <summary>
+        /// Pack UInt32 MSB first into 8 bytes buffer.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="value"></param>
         private void PackUInt32(List<byte> buffer, UInt32 value)
         {
             buffer.Add((byte)(value >> 24));
@@ -44,6 +54,12 @@ namespace BitTorrentLibrary
             buffer.Add((byte)(value >> 8));
             buffer.Add((byte)(value));
         }
+        /// <summary>
+        /// Unpack into a UInt64 MSB from an byte buffer at a given offset.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         private UInt64 UnPackUInt64(byte[] buffer, UInt32 offset)
         {
             UInt64 value = ((UInt64)buffer[offset]) << 56;
@@ -56,6 +72,12 @@ namespace BitTorrentLibrary
             value |= ((UInt64)buffer[offset + 7]);
             return value;
         }
+        /// <summary>
+        /// Unpack into a UInt32 MSB from an byte buffer at a given offset.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         private UInt32 UnPackUInt32(byte[] buffer, UInt32 offset)
         {
             UInt32 value = ((UInt32)buffer[offset]) << 24;
@@ -64,7 +86,9 @@ namespace BitTorrentLibrary
             value |= ((UInt32)buffer[offset + 3]);
             return value;
         }
-
+        /// <summary>
+        /// Connect to UDP tracker server.
+        /// </summary>
         private void Connect()
         {
             try
@@ -76,9 +100,9 @@ namespace BitTorrentLibrary
                 PackUInt32(connectPacket, 0);
                 PackUInt32(connectPacket, transactionID);
 
-                udpConnection.Connect(_connectionEndPoint);
-                udpConnection.Send(connectPacket.ToArray(), connectPacket.Count);
-                byte[] connectReply = udpConnection.Receive(ref _connectionEndPoint);
+                _trackerConnection.Connect(_trackerEndPoint);
+                _trackerConnection.Send(connectPacket.ToArray(), connectPacket.Count);
+                byte[] connectReply = _trackerConnection.Receive(ref _trackerEndPoint);
                 if (connectReply.Length == 16)
                 {
                     if (UnPackUInt32(connectReply, 0) == 0)
@@ -108,11 +132,11 @@ namespace BitTorrentLibrary
         /// <param name="trackerURL"></param>
         public AnnouncerUDP(string trackerURL)
         {
-            udpConnection = new UdpClient();
-            udpConnection.Client.ReceiveTimeout = 15000;
+            _trackerConnection = new UdpClient();
+            _trackerConnection.Client.ReceiveTimeout = 15000;
             Uri trackerURI = new Uri(trackerURL);
             IPAddress[] trackerAddress = Dns.GetHostAddresses(trackerURI.Host);
-            _connectionEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
+            _trackerEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
         }
         /// <summary>
         /// Perform an announce request to tracker and return any response.
@@ -152,12 +176,12 @@ namespace BitTorrentLibrary
                 PackUInt32(announcePacket, (UInt32)tracker.Event);      // event
                 PackUInt32(announcePacket, 0);                          // ip
                 PackUInt32(announcePacket, 0);                          // key
-                PackUInt32(announcePacket, (UInt32) tracker.NumWanted);
+                PackUInt32(announcePacket, (UInt32)tracker.NumWanted);
                 PackUInt32(announcePacket, tracker.Port);
                 PackUInt32(announcePacket, 0);                          // Extensions.
 
-                udpConnection.Send(announcePacket.ToArray(), announcePacket.Count);
-                byte[] announceReply = udpConnection.Receive(ref _connectionEndPoint);
+                _trackerConnection.Send(announcePacket.ToArray(), announcePacket.Count);
+                byte[] announceReply = _trackerConnection.Receive(ref _trackerEndPoint);
 
                 if (UnPackUInt32(announceReply, 0) == 1)
                 {

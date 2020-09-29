@@ -89,12 +89,8 @@ namespace BitTorrent
 
                 if (agent.BytesLeftToDownload()!= 0)
                 {
-                    Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm);
+                    Tracker tracker = new Tracker(agent);
 
-                    agent.MainTracker = tracker;
-                    tracker.Left = agent.BytesLeftToDownload();
-
-                    tracker.ChangeStatus(Tracker.TrackerEvent.None);
                     tracker.StartAnnouncing();
 
                     agent.Download();

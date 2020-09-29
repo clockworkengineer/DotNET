@@ -74,14 +74,17 @@ namespace BitTorrentLibrary
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(string trackerURL, byte[] infoHash, UpdatePeers updatePeerSwarm, int maximumSwarmSize=10)
+        public Tracker(Agent agent, int maximumSwarmSize = 10)
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Peer.GetLocalHostIP();
-            InfoHash = infoHash;
-            TrackerURL = trackerURL;
+            InfoHash = agent.InfoHash;
+            TrackerURL = agent.TrackerURL;
             MaximumSwarmSize = maximumSwarmSize;
-            _updatePeerSwarm = updatePeerSwarm;
+            _updatePeerSwarm = agent.UpdatePeerSwarm;
+            agent.MainTracker = this;
+            Left = agent.BytesLeftToDownload();
+
             if (!TrackerURL.StartsWith("http://"))
             {
                 if (TrackerURL.StartsWith("udp://"))
@@ -117,8 +120,12 @@ namespace BitTorrentLibrary
                     Interval = response.interval;
                     if (oldInterval != Interval)
                     {
-                        StopAnnouncing();
-                        StartAnnouncing();
+                        if (_announceTimer != null)
+                        {
+                            _announceTimer.Stop();
+                            _announceTimer.Interval = Interval;
+                            _announceTimer.Start();
+                        }
                     }
                 }
             }
@@ -151,7 +158,7 @@ namespace BitTorrentLibrary
                 Event = TrackerEvent.None;  // Reset it back to default on next tick
                 _announceTimer?.Start();
             }
-           catch (Error)
+            catch (Error)
             {
                 throw;
             }
@@ -168,10 +175,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (_announceTimer != null)
-                {
-                    StopAnnouncing();
-                }
+                ChangeStatus(TrackerEvent.started);
                 _announceTimer = new System.Timers.Timer(Interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = true;
