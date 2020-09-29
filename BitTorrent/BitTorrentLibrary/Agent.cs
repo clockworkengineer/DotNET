@@ -3,8 +3,10 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: All the high level torrent processing including download and upload
-// of files.
+// Description: All the high level torrent processing including download/upload
+// of files and updating the peers in the current swarm downloading. 
+// 
+// NOTE: ONLY DOWNLOAD SUPPORTED AT PRESENT (ITS ONE BIG LEECHER).
 //
 // Copyright 2019.
 //
@@ -34,7 +36,7 @@ namespace BitTorrentLibrary
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
         public Tracker MainTracker { get; set; }                     // Main torrent tracker
-        public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assemler Tasks
+        public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler Tasks
 
         /// <summary>
         /// Request piece number from remote peer.
@@ -84,7 +86,8 @@ namespace BitTorrentLibrary
 
                 while (MainTracker.Left != 0)
                 {
-                    for (UInt32 nextPiece = 0; _torrentDownloader.SelectNextPiece(remotePeer, ref nextPiece);)
+                    UInt32 nextPiece=0;
+                    while(_torrentDownloader.SelectNextPiece(remotePeer, ref nextPiece))
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
@@ -92,7 +95,13 @@ namespace BitTorrentLibrary
 
                         RequestPieceFromPeer(remotePeer, nextPiece);
 
-                        while(!remotePeer.WaitForPieceAssembly.WaitOne(100)){
+                        while (!remotePeer.WaitForPieceAssembly.WaitOne(100))
+                        {
+                            if (!remotePeer.PeerChoking.WaitOne(0))
+                            {
+                                Log.Logger.Debug("++CHOKE RECIEVED WHILE MAKING REQUESTS.");
+                                break;
+                            }
                             cancelTask.ThrowIfCancellationRequested();
                         }
                         remotePeer.WaitForPieceAssembly.Reset();
@@ -112,7 +121,7 @@ namespace BitTorrentLibrary
                         }
                         else
                         {
-                            Log.Logger.Info("%ERROR: PIECE PROBABLY MISSING 1");
+                            Log.Logger.Info($"++REMARK FOR DOWNLOAD PIECE {lastPiece}.");
                             _torrentDownloader.Dc.MarkPieceNotRequested((UInt32)lastPiece);
                         }
 
@@ -136,7 +145,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Error(ex.Message);
                 if (lastPiece != -1)
                 {
-                    Log.Logger.Info("%ERROR: PIECE PROBABLY MISSING 2");
+                    Log.Logger.Info($"REMARK FOR DOWNLOAD PIECE {lastPiece}.");
                     _torrentDownloader.Dc.MarkPieceNotRequested((UInt32)lastPiece);
                 }
             }

@@ -163,7 +163,7 @@ namespace BitTorrentLibrary
                     hex.Append("\n");
                 }
             }
-            Log.Logger.Debug("\n"+ hex + "\n");
+            Log.Logger.Debug("\n" + hex + "\n");
 
             remotePeer.TorrentDownloader.Dc.MergePieceBitfield(remotePeer);
         }
@@ -184,12 +184,19 @@ namespace BitTorrentLibrary
         private static void HandlePIECE(Peer remotePeer)
         {
 
-                UInt32 pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
-                UInt32 blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
+            UInt32 pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
+            UInt32 blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
 
-                Log.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
-
+            Log.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
+            
+            if (remotePeer.PeerChoking.WaitOne(0))
+            {
                 remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
+            }
+            else
+            {
+                Log.Logger.Debug("++CHOKING SO PIECE REQUEST REPLY BEING IGNORED");
+            }
 
         }
 
@@ -228,7 +235,7 @@ namespace BitTorrentLibrary
 
                 byte[] handshakeResponse = new byte[handshakePacket.Count];
 
-                remotePeer.PeerRead( handshakeResponse, handshakeResponse.Length);
+                remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
                 connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
             }
@@ -239,7 +246,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
 
             return (connected, remotePeerID);
@@ -294,7 +301,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -320,7 +327,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -346,7 +353,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -374,7 +381,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -402,7 +409,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -430,7 +437,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -457,7 +464,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -493,7 +500,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -525,7 +532,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
 
@@ -557,7 +564,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: "+ex.Message);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
     }

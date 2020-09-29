@@ -72,9 +72,10 @@ namespace BitTorrent
             
             try
             {
-                if (File.Exists("/home/robt/Projects/dotNET/BitTorrent/ClientUI/bin/Debug/netcoreapp3.1/file.txt")) 
+
+                if (File.Exists($"{Directory.GetCurrentDirectory()}/file.txt"));
                 {
-                    File.Delete("/home/robt/Projects/dotNET/BitTorrent/ClientUI/bin/Debug/netcoreapp3.1/file.txt");
+                    File.Delete($"{Directory.GetCurrentDirectory()}/file.txt");
                 }
 
                 Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
@@ -86,7 +87,7 @@ namespace BitTorrent
                 Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
                 Agent agent = new Agent(torrentFile, downloader);
 
-                if (agent.BytesLeftToDownload() != 0)
+                if (agent.BytesLeftToDownload()!= 0)
                 {
                     Tracker tracker = new Tracker(agent.TrackerURL, agent.InfoHash, agent.UpdatePeerSwarm);
 
