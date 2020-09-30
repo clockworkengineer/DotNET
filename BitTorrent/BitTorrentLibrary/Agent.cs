@@ -63,7 +63,7 @@ namespace BitTorrentLibrary
         /// <param name="progressData">Progress data.</param>
         private void AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData)
         {
-            Int64 lastPiece = -1;
+            Int64 currentPiece = -1;
 
             try
             {
@@ -91,7 +91,7 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                        lastPiece = (Int32)nextPiece;
+                        currentPiece = (Int32)nextPiece;
 
                         RequestPieceFromPeer(remotePeer, nextPiece);
 
@@ -117,12 +117,12 @@ namespace BitTorrentLibrary
                             progressFunction?.Invoke(progressData);
 
                             Log.Logger.Info((_torrentDownloader.Dc.TotalBytesDownloaded / (double)_torrentDownloader.Dc.TotalBytesToDownload).ToString("0.00%"));
-                            lastPiece = -1;
+                            currentPiece = -1;
                         }
                         else
                         {
-                            Log.Logger.Info($"++REMARK FOR DOWNLOAD PIECE {lastPiece}.");
-                            _torrentDownloader.Dc.MarkPieceNotRequested((UInt32)lastPiece);
+                            Log.Logger.Info($"++REMARK FOR DOWNLOAD PIECE {currentPiece}.");
+                            _torrentDownloader.Dc.MarkPieceNotRequested((UInt32)currentPiece);
                         }
 
                         while (!_downloading.WaitOne(100))
@@ -143,10 +143,10 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Error(ex.Message);
-                if (lastPiece != -1)
+                if (currentPiece != -1)
                 {
-                    Log.Logger.Info($"REMARK FOR DOWNLOAD PIECE {lastPiece}.");
-                    _torrentDownloader.Dc.MarkPieceNotRequested((UInt32)lastPiece);
+                    Log.Logger.Info($"REMARK FOR DOWNLOAD PIECE {currentPiece}.");
+                    _torrentDownloader.Dc.MarkPieceNotRequested((UInt32)currentPiece);
                 }
             }
 

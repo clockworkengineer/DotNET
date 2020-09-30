@@ -155,7 +155,7 @@ namespace BitTorrentLibrary
             _infoHash = infoHash;
             TorrentDownloader = fileDownloader;
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
-            AssembledPiece = new PieceBuffer(fileDownloader.Dc.PieceLengthInBytes);
+            AssembledPiece = new PieceBuffer(fileDownloader.Dc.PieceLength);
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);

@@ -47,7 +47,7 @@ namespace BitTorrentLibrary
         public BlockingCollection<PieceBuffer> PieceBufferWriteQueue { get; set; }
         public ulong TotalBytesDownloaded { get; set; }
         public ulong TotalBytesToDownload { get; set; }
-        public uint PieceLengthInBytes { get; set; }
+        public uint PieceLength { get; set; }
         public uint BlocksPerPiece { get; set; }
         public byte[] PiecesInfoHash { get; set; }
         public uint NumberOfPieces { get; set; }
@@ -63,7 +63,7 @@ namespace BitTorrentLibrary
             try
             {
                 TotalBytesToDownload = totalDownloadLength;
-                PieceLengthInBytes = pieceLength;
+                PieceLength = pieceLength;
                 PiecesInfoHash = pieces;
                 NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
                 BlocksPerPiece = pieceLength / Constants.BlockSize;

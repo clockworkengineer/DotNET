@@ -111,7 +111,7 @@ namespace BitTorrentLibrary
         /// </summary>
         private void CreatePieceMap()
         {
-            byte [] pieceBuffer = new byte[Dc.PieceLengthInBytes];
+            byte [] pieceBuffer = new byte[Dc.PieceLength];
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
             int bytesRead = 0;
@@ -128,7 +128,7 @@ namespace BitTorrentLibrary
                     {
                         bytesInBuffer += (UInt32)bytesRead;
 
-                        if (bytesInBuffer == Dc.PieceLengthInBytes)
+                        if (bytesInBuffer == Dc.PieceLength)
                         {
                             GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
                             bytesInBuffer = 0;
@@ -158,10 +158,10 @@ namespace BitTorrentLibrary
 
                 if (CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, Dc.GetPieceLength(pieceBuffer.Number)))
                 {
-                    Log.Logger.Debug($"WritePieceToFiles({pieceBuffer.Number})");
+                    Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
-                    UInt64 startOffset = pieceBuffer.Number * Dc.PieceLengthInBytes;
-                    UInt64 endOffset = startOffset + Dc.PieceLengthInBytes;
+                    UInt64 startOffset = pieceBuffer.Number * Dc.PieceLength;
+                    UInt64 endOffset = startOffset + Dc.PieceLength;
 
                     foreach (var file in _filesToDownload)
                     {
@@ -172,11 +172,13 @@ namespace BitTorrentLibrary
                             using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
                             {
                                 stream.Seek((Int64)(startWrite - file.offset), SeekOrigin.Begin);
-                                stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % Dc.PieceLengthInBytes), (Int32)(endWrite - startWrite));
+                                stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % Dc.PieceLength), (Int32)(endWrite - startWrite));
                                 stream.Flush();
                             }
                         }
                     }
+
+                     Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
                 }
                 else
                 {
@@ -278,23 +280,22 @@ namespace BitTorrentLibrary
                 // is required when trying to get the next unrequested non-local piece
                 lock (_pieceLock)
                 {
-                    Log.Logger.Trace("selectNextPiece()");
 
                     for (UInt32 pieceNumber = 0; pieceNumber < Dc.NumberOfPieces; pieceNumber++)
                     {
                         if (remotePeer.IsPieceOnRemotePeer(pieceNumber))
                         {
                             UInt32 blockNumber = 0;
-                            for (; !Dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
-                            {
-                                if (!Dc.IsBlockPieceRequested(pieceNumber, blockNumber) &&
-                                    !Dc.IsBlockPieceLocal(pieceNumber, blockNumber))
-                                {
-                                    nextPiece = pieceNumber;
-                                    Dc.MarkPieceRequested(pieceNumber);
-                                    return true;
-                                }
-                            }
+                            // for (; !Dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                            // {
+                            //     if (!Dc.IsBlockPieceRequested(pieceNumber, blockNumber) &&
+                            //         !Dc.IsBlockPieceLocal(pieceNumber, blockNumber))
+                            //     {
+                            //         nextPiece = pieceNumber;
+                            //         Dc.MarkPieceRequested(pieceNumber);
+                            //         return true;
+                            //     }
+                            // }
                             if (!Dc.IsBlockPieceRequested(pieceNumber, blockNumber) &&
                                 !Dc.IsBlockPieceLocal(pieceNumber, blockNumber))
                             {

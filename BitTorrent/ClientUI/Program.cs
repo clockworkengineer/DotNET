@@ -69,37 +69,45 @@ namespace BitTorrent
 
         public static void Main(string[] args)
         {
-            
+
             try
             {
+                for (var test = 0; test < 5 ; test++) {
 
-                if (File.Exists($"{Directory.GetCurrentDirectory()}/file.txt"));
-                {
-                    File.Delete($"{Directory.GetCurrentDirectory()}/file.txt");
-                }
+                    if (File.Exists($"{Directory.GetCurrentDirectory()}/file.txt"))
+                    {
+                        File.Delete($"{Directory.GetCurrentDirectory()}/file.txt");
+                    }
 
-                Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/arco.torrent");
 
-                torrentFile.Load();
-                torrentFile.Parse();
+                    if (File.Exists("/home/robt/utorrent/arcolinux-v20.9.2.iso"))
+                    {
+                        File.Delete("/home/robt/utorrent/arcolinux-v20.9.2.iso");
+                    }
 
-                Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
-                Agent agent = new Agent(torrentFile, downloader);
+                    Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
+                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/arco.torrent");
 
-                if (agent.BytesLeftToDownload()!= 0)
-                {
-                    Tracker tracker = new Tracker(agent);
+                    torrentFile.Load();
+                    torrentFile.Parse();
 
-                    tracker.StartAnnouncing();
+                    Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
+                    Agent agent = new Agent(torrentFile, downloader);
 
-                    agent.Download();
+                    if (agent.BytesLeftToDownload() != 0)
+                    {
+                        Tracker tracker = new Tracker(agent);
 
-                    agent.Close();
-                }
-                else
-                {
-                    Log.Logger.Info("Torrent has been fully downloaded.");
+                        tracker.StartAnnouncing();
+
+                        agent.Download();
+
+                        agent.Close();
+                    }
+                    else
+                    {
+                        Log.Logger.Info("Torrent has been fully downloaded.");
+                    }
                 }
             }
             catch (Error ex)
