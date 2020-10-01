@@ -67,6 +67,7 @@ namespace BitTorrentLibrary
             AnnounceResponse response = tracker._announcer.Announce(tracker);
             tracker._updatePeerSwarm?.Invoke(response.peers);
             tracker.UpdateRunningStatusFromAnnounce(response);
+            tracker._announceTimer?.Start();
         }
         /// <summary>
         /// Initialise BitTorrent Tracker.
@@ -178,7 +179,7 @@ namespace BitTorrentLibrary
                 ChangeStatus(TrackerEvent.started);
                 _announceTimer = new System.Timers.Timer(Interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
-                _announceTimer.AutoReset = true;
+                _announceTimer.AutoReset = false;
                 _announceTimer.Enabled = true;
             }
             catch (Error)

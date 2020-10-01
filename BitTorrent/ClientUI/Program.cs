@@ -72,21 +72,15 @@ namespace BitTorrent
 
             try
             {
-                for (var test = 0; test < 5 ; test++) {
+                for (var test = 0; test < 1 ; test++) {
 
                     if (File.Exists($"{Directory.GetCurrentDirectory()}/file.txt"))
                     {
                         File.Delete($"{Directory.GetCurrentDirectory()}/file.txt");
                     }
 
-
-                    if (File.Exists("/home/robt/utorrent/arcolinux-v20.9.2.iso"))
-                    {
-                        File.Delete("/home/robt/utorrent/arcolinux-v20.9.2.iso");
-                    }
-
                     Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/mint.iso.torrent");
+                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/neon.torrent");
 
                     torrentFile.Load();
                     torrentFile.Parse();
