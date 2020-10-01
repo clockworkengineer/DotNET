@@ -74,7 +74,7 @@ namespace BitTorrentLibrary
                     PieceMap[pieceNumber].blocks = new byte[BlocksPerPiece];
                 }
 
-                PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
+                PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
             }
             catch (Exception ex)
             {
