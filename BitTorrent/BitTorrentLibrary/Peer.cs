@@ -235,7 +235,7 @@ namespace BitTorrentLibrary
             {
                 UInt32 blockNumber = blockOffset / Constants.BlockSize;
 
-                Log.Logger.Trace($"placeBlockIntoPiece({pieceNumber},{blockOffset},{PacketLength - 9})");
+                Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{PacketLength - 9})");
 
                 Buffer.BlockCopy(ReadBuffer, 9, AssembledPiece.Buffer, (Int32)blockOffset, (Int32)PacketLength - 9);
 

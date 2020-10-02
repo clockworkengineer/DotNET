@@ -123,7 +123,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex.Message);
-                throw new Error("BitTorrent (TrackerUDP) Error : " + ex.Message);
+               // throw new Error("BitTorrent (TrackerUDP) Error : " + ex.Message);
             }
         }
         /// <summary>
@@ -219,7 +219,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    throw new Error("(BitTorrent (TrackerUDP) Error : Invalid announce response.");
+                    throw new Error("BitTorrent (TrackerUDP) Error : Invalid announce response.");
                 }
             }
             catch (Error)
@@ -229,7 +229,9 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex.Message);
-                throw new Error("BitTorrent (TrackerUDP) Error : " + ex.Message);
+                Log.Logger.Info("BitTorrent (TrackerUDP) Error : Trying to reconnect.");
+                _connected=false;
+                Connect();
             }
 
             return response;

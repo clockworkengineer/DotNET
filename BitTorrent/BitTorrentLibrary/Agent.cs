@@ -114,6 +114,7 @@ namespace BitTorrentLibrary
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
                             _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece), cancelTask);
+                            
                             MainTracker.Left = BytesLeftToDownload();
                             MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
 
