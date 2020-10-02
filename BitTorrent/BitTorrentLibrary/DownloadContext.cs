@@ -24,7 +24,6 @@ namespace BitTorrentLibrary
         public const byte HaveLocal = 0x01; // Downloaded
         public const byte Requested = 0x2;  // Has been requested
         public const byte OnPeer = 0x04;    // Is present on a remote peer
-        public const byte LastBlock = 0x08; // Last block in a piece
     }
 
     /// <summary>
@@ -34,7 +33,7 @@ namespace BitTorrentLibrary
     {
         public byte[] blocks;           // Block mappings for piece
         public UInt16 peerCount;        // Peers with the piece
-        public UInt32 lastBlockLength;  // Length of last block in piece
+        public UInt32 pieceLength;      // Piece length in bytes
     }
 
     /// <summary>
@@ -42,11 +41,10 @@ namespace BitTorrentLibrary
     /// </summary>
     public class DownloadContext
     {
-
         public PieceBlockMap[] PieceMap { get; set; }
         public BlockingCollection<PieceBuffer> PieceBufferWriteQueue { get; set; }
-        public ulong TotalBytesDownloaded { get; set; }
-        public ulong TotalBytesToDownload { get; set; }
+        public UInt64 TotalBytesDownloaded { get; set; }
+        public UInt64 TotalBytesToDownload { get; set; }
         public uint PieceLength { get; set; }
         public uint BlocksPerPiece { get; set; }
         public byte[] PiecesInfoHash { get; set; }
@@ -189,32 +187,6 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Sets a block as last within a piece.
-        /// </summary>
-        /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        /// <param name="last">If set to <c>true</c> block is the last in a piece.</param>
-        public void BlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber, bool last)
-        {
-            try
-            {
-                if (last)
-                {
-                    PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.LastBlock;
-                }
-                else
-                {
-                    PieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.LastBlock ^ 0xff);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
-
-        /// <summary>
         /// Is a block of  piece present on a remote peer.
         /// </summary>
         /// <returns><c>true</c>, if block piece on peer. <c>false</c> otherwise.</returns>
@@ -272,47 +244,13 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Is a block the last within piece.
-        /// </summary>
-        /// <returns><c>true</c>, if block piece last within a piece, <c>false</c> otherwise.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        public bool IsBlockPieceLast(UInt32 pieceNumber, UInt32 blockNumber)
-        {
-            try
-            {
-                return (PieceMap[pieceNumber].blocks[blockNumber] & Mapping.LastBlock) == Mapping.LastBlock;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
-
-        /// <summary>
         /// Get the length of a piece in bytes.
         /// </summary>
         /// <returns>The piece length.</returns>
         /// <param name="pieceNumber">Piece number.</param>
         public UInt32 GetPieceLength(UInt32 pieceNumber)
         {
-            UInt32 length = 0;
-
-            try
-            {
-                for (UInt32 blockNumber = 0; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
-                {
-                    length += Constants.BlockSize;
-                }
-                length += PieceMap[pieceNumber].lastBlockLength;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-            return length;
+            return (PieceMap[pieceNumber].pieceLength);
         }
 
         /// <summary>
@@ -325,16 +263,19 @@ namespace BitTorrentLibrary
             try
             {
                 UInt32 blockNumber = 0;
-                for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
                 {
                     if (!IsBlockPieceLocal(pieceNumber, blockNumber))
                     {
                         return false;
                     }
                 }
-                if (!IsBlockPieceLocal(pieceNumber, blockNumber))
+                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
                 {
-                    return false;
+                    if (!IsBlockPieceLocal(pieceNumber, blockNumber))
+                    {
+                        return false;
+                    }
                 }
             }
             catch (Exception ex)
@@ -363,11 +304,14 @@ namespace BitTorrentLibrary
                         {
                             PieceMap[pieceNumber].peerCount++;
                             UInt32 blockNumber = 0;
-                            for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                            for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
                             {
                                 remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                             }
-                            remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
+                            if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+                            {
+                                remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
+                            }
                         }
                     }
                 }
@@ -389,11 +333,14 @@ namespace BitTorrentLibrary
             try
             {
                 UInt32 blockNumber = 0;
-                for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
                 {
                     BlockPieceRequested(pieceNumber, blockNumber, true);
                 }
-                BlockPieceRequested(pieceNumber, blockNumber, true);
+                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+                {
+                    BlockPieceRequested(pieceNumber, blockNumber, true);
+                }
             }
             catch (Exception ex)
             {
@@ -411,13 +358,16 @@ namespace BitTorrentLibrary
             try
             {
                 UInt32 blockNumber = 0;
-                for (; !IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
                 {
                     BlockPieceRequested(pieceNumber, blockNumber, false);
                     BlockPieceLocal(pieceNumber, blockNumber, false);
                 }
-                BlockPieceRequested(pieceNumber, blockNumber, false);
-                BlockPieceLocal(pieceNumber, blockNumber, false);
+                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+                {
+                    BlockPieceRequested(pieceNumber, blockNumber, false);
+                    BlockPieceLocal(pieceNumber, blockNumber, false);
+                }
             }
             catch (Exception ex)
             {

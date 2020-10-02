@@ -245,7 +245,7 @@ namespace BitTorrentLibrary
                 if (TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
                 {
                     AssembledPiece.Number = pieceNumber;
-                    TorrentDownloader.Dc.TotalBytesDownloaded += TorrentDownloader.Dc.GetPieceLength(pieceNumber);
+                    TorrentDownloader.Dc.TotalBytesDownloaded += TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength;
                     WaitForPieceAssembly.Set();
                 }
             }

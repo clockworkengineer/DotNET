@@ -46,13 +46,16 @@ namespace BitTorrentLibrary
         private void RequestPieceFromPeer(Peer remotePeer, uint pieceNumber)
         {
             UInt32 blockNumber = 0;
-            for (; !remotePeer.TorrentDownloader.Dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
+            for (; blockNumber < remotePeer.TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
             {
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
-            PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
-                         _torrentDownloader.Dc.PieceMap[pieceNumber].lastBlockLength);
+            if (remotePeer.TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+            {
+                PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
+                             remotePeer.TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
+            }
         }
         /// <summary>
         /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
@@ -86,8 +89,8 @@ namespace BitTorrentLibrary
 
                 while (MainTracker.Left != 0)
                 {
-                    UInt32 nextPiece=0;
-                    while(_torrentDownloader.SelectNextPiece(remotePeer, ref nextPiece))
+                    UInt32 nextPiece = 0;
+                    while (_torrentDownloader.SelectNextPiece(remotePeer, ref nextPiece))
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
@@ -260,7 +263,7 @@ namespace BitTorrentLibrary
                     _downloadFinished.WaitOne();
 
                     MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
-                    
+
                     Log.Logger.Info("Whole Torrent finished downloading.");
 
                 }

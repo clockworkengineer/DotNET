@@ -94,16 +94,12 @@ namespace BitTorrentLibrary
             if (numberOfBytes % Constants.BlockSize != 0)
             {
                 Dc.BlockPieceLocal(pieceNumber, numberOfBytes / Constants.BlockSize, pieceThere);
-                Dc.BlockPieceLast(pieceNumber, numberOfBytes / Constants.BlockSize, true);
-                Dc.PieceMap[pieceNumber].lastBlockLength = numberOfBytes % Constants.BlockSize;
             }
             else
             {
                 Dc.BlockPieceLocal(pieceNumber, blockNumber - 1, pieceThere);
-                Dc.BlockPieceLast(pieceNumber, blockNumber - 1, true);
-                Dc.PieceMap[pieceNumber].lastBlockLength = Constants.BlockSize;
-
             }
+            Dc.PieceMap[pieceNumber].pieceLength = numberOfBytes;
         }
 
         /// <summary>
@@ -158,7 +154,7 @@ namespace BitTorrentLibrary
             {
                 PieceBuffer pieceBuffer = Dc.PieceBufferWriteQueue.Take();
 
-                if (CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, Dc.GetPieceLength(pieceBuffer.Number)))
+                if (CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, Dc.PieceMap[pieceBuffer.Number].pieceLength))
                 {
                     Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
