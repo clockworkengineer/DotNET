@@ -244,16 +244,6 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Get the length of a piece in bytes.
-        /// </summary>
-        /// <returns>The piece length.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        public UInt32 GetPieceLength(UInt32 pieceNumber)
-        {
-            return (PieceMap[pieceNumber].pieceLength);
-        }
-
-        /// <summary>
         /// Has a piece been assembled.
         /// </summary>
         /// <returns><c>true</c>, if piece been assembled, <c>false</c> otherwise.</returns>
@@ -328,18 +318,43 @@ namespace BitTorrentLibrary
         /// Mark all blocks of a piece as requested.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
-        public void MarkPieceRequested(UInt32 pieceNumber)
+        public void MarkPieceRequested(UInt32 pieceNumber, bool requested)
         {
             try
             {
                 UInt32 blockNumber = 0;
                 for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
                 {
-                    BlockPieceRequested(pieceNumber, blockNumber, true);
+                    BlockPieceRequested(pieceNumber, blockNumber, requested);
                 }
                 if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
                 {
-                    BlockPieceRequested(pieceNumber, blockNumber, true);
+                    BlockPieceRequested(pieceNumber, blockNumber, requested);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Mark all blocks of a piece as local (downloaded).
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        public void MarkPieceLocal(UInt32 pieceNumber, bool local)
+        {
+            try
+            {
+                UInt32 blockNumber = 0;
+                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
+                {
+                    BlockPieceLocal(pieceNumber, blockNumber, local);
+                }
+                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+                {
+                    BlockPieceLocal(pieceNumber, blockNumber, local);
                 }
             }
             catch (Exception ex)

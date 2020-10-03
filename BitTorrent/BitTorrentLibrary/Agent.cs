@@ -114,7 +114,7 @@ namespace BitTorrentLibrary
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
                             _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece), cancelTask);
-                            
+
                             MainTracker.Left = BytesLeftToDownload();
                             MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
 
@@ -126,7 +126,8 @@ namespace BitTorrentLibrary
                         else
                         {
                             Log.Logger.Info($"++REMARK FOR DOWNLOAD PIECE {currentPiece}.");
-                            _torrentDownloader.Dc.MarkPieceNotRequested((UInt32)currentPiece);
+                            _torrentDownloader.Dc.MarkPieceRequested((UInt32)currentPiece, false);
+                            _torrentDownloader.Dc.MarkPieceLocal((UInt32)currentPiece, false);
                         }
 
                         while (!_downloading.WaitOne(100))
@@ -150,7 +151,8 @@ namespace BitTorrentLibrary
                 if (currentPiece != -1)
                 {
                     Log.Logger.Info($"REMARK FOR DOWNLOAD PIECE {currentPiece}.");
-                    _torrentDownloader.Dc.MarkPieceNotRequested((UInt32)currentPiece);
+                    _torrentDownloader.Dc.MarkPieceRequested((UInt32)currentPiece, false);
+                    _torrentDownloader.Dc.MarkPieceLocal((UInt32)currentPiece, false);
                 }
             }
 

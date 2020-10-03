@@ -32,9 +32,9 @@ namespace BitTorrentLibrary
         public DownloadContext Dc { get; set; }              // Torrent download context
 
         /// <summary>
-        /// Creates the empty files on diskas place holders of files to be downloaded.
+        /// Creates the empty files on disk as place holders of files to be downloaded.
         /// </summary>
-        private void CreateEmptyFilesOnDisk()
+        private void CreateLocalTorrentStructure()
         {
             Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
 
@@ -86,20 +86,8 @@ namespace BitTorrentLibrary
             {
                 Dc.TotalBytesDownloaded += numberOfBytes;
             }
-            UInt32 blockNumber = 0;
-            for (; blockNumber < numberOfBytes / Constants.BlockSize; blockNumber++)
-            {
-                Dc.BlockPieceLocal(pieceNumber, blockNumber, pieceThere);
-            }
-            if (numberOfBytes % Constants.BlockSize != 0)
-            {
-                Dc.BlockPieceLocal(pieceNumber, numberOfBytes / Constants.BlockSize, pieceThere);
-            }
-            else
-            {
-                Dc.BlockPieceLocal(pieceNumber, blockNumber - 1, pieceThere);
-            }
             Dc.PieceMap[pieceNumber].pieceLength = numberOfBytes;
+            Dc.MarkPieceLocal(pieceNumber,pieceThere);
         }
 
         /// <summary>
@@ -220,7 +208,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                CreateEmptyFilesOnDisk();
+                CreateLocalTorrentStructure();
                 CreatePieceMap();
             }
             catch (Error)
@@ -231,37 +219,6 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex);
             }
-        }
-
-        /// <summary>
-        /// Determine whether a piece has already been downloaded.
-        /// </summary>
-        /// <returns><c>true</c>, if piece has been downloaded, <c>false</c> otherwise.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        public bool HavePiece(UInt32 pieceNumber)
-        {
-            try
-            {
-                Log.Logger.Trace($"havePiece({pieceNumber})");
-
-                for (UInt32 blockNumber = 0; blockNumber < Dc.BlocksPerPiece; blockNumber++)
-                {
-                    if (!Dc.IsBlockPieceLocal(pieceNumber, blockNumber))
-                    {
-                        return false;
-                    }
-                }
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -283,22 +240,10 @@ namespace BitTorrentLibrary
                     {
                         if (remotePeer.IsPieceOnRemotePeer(pieceNumber))
                         {
-                            UInt32 blockNumber = 0;
-                            // for (; !Dc.IsBlockPieceLast(pieceNumber, blockNumber); blockNumber++)
-                            // {
-                            //     if (!Dc.IsBlockPieceRequested(pieceNumber, blockNumber) &&
-                            //         !Dc.IsBlockPieceLocal(pieceNumber, blockNumber))
-                            //     {
-                            //         nextPiece = pieceNumber;
-                            //         Dc.MarkPieceRequested(pieceNumber);
-                            //         return true;
-                            //     }
-                            // }
-                            if (!Dc.IsBlockPieceRequested(pieceNumber, blockNumber) &&
-                                !Dc.IsBlockPieceLocal(pieceNumber, blockNumber))
+                            if (!Dc.IsBlockPieceRequested(pieceNumber, 0) && !Dc.IsBlockPieceLocal(pieceNumber, 0))
                             {
                                 nextPiece = pieceNumber;
-                                Dc.MarkPieceRequested(pieceNumber);
+                                Dc.MarkPieceRequested(pieceNumber,true);
                                 return true;
                             }
                         }
