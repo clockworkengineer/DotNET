@@ -165,26 +165,26 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="blockNumber">Block number.</param>
         /// <param name="downloaded">If set to <c>true</c> black has been downloaded.</param>
-        public void BlockPieceDownloaded(UInt32 pieceNumber, UInt32 blockNumber, bool downloaded)
-        {
-            try
-            {
-                if (downloaded)
-                {
-                    PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
-                    PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
-                }
-                else
-                {
-                    PieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
+        // public void BlockPieceDownloaded(UInt32 pieceNumber, UInt32 blockNumber, bool downloaded)
+        // {
+        //     try
+        //     {
+        //         if (downloaded)
+        //         {
+        //             PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
+        //             PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
+        //         }
+        //         else
+        //         {
+        //             PieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+        //         }
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Log.Logger.Debug(ex);
+        //         throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+        //     }
+        // }
 
         /// <summary>
         /// Is a block of  piece present on a remote peer.
@@ -192,18 +192,18 @@ namespace BitTorrentLibrary
         /// <returns><c>true</c>, if block piece on peer. <c>false</c> otherwise.</returns>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="blockNumber">Block number.</param>
-        public bool IsBlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber)
-        {
-            try
-            {
-                return (PieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
+        // public bool IsBlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber)
+        // {
+        //     try
+        //     {
+        //         return (PieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer;
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Log.Logger.Debug(ex);
+        //         throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+        //     }
+        // }
 
         /// <summary>
         /// Is a block piece local (ie has been downloaded).
@@ -365,31 +365,5 @@ namespace BitTorrentLibrary
             }
         }
 
-        /// <summary>
-        /// Mark all blocks of a piece as unrequested.
-        /// </summary>
-        /// <param name="pieceNumber">Piece number.</param>
-        public void MarkPieceNotRequested(UInt32 pieceNumber)
-        {
-            try
-            {
-                UInt32 blockNumber = 0;
-                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
-                {
-                    BlockPieceRequested(pieceNumber, blockNumber, false);
-                    BlockPieceLocal(pieceNumber, blockNumber, false);
-                }
-                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
-                {
-                    BlockPieceRequested(pieceNumber, blockNumber, false);
-                    BlockPieceLocal(pieceNumber, blockNumber, false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
     }
 }

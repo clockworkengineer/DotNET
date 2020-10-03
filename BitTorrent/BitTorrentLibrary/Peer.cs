@@ -238,13 +238,12 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{PacketLength - 9})");
 
-                Buffer.BlockCopy(ReadBuffer, 9, AssembledPiece.Buffer, (Int32)blockOffset, (Int32)PacketLength - 9);
+                AssembledPiece.AddBlockFromPacket(ReadBuffer, blockNumber);
 
-                Dc.BlockPieceDownloaded(pieceNumber, blockNumber, true);
-                Dc.BlockPieceRequested(pieceNumber, blockNumber, false);
-
-                if (Dc.IsPieceLocal(pieceNumber))
+                if (AssembledPiece.AllBlocksThere)
                 {
+                    Dc.MarkPieceLocal(pieceNumber, true);
+                    Dc.MarkPieceRequested(pieceNumber, false);
                     AssembledPiece.Number = pieceNumber;
                     Dc.TotalBytesDownloaded += Dc.PieceMap[pieceNumber].pieceLength;
                     WaitForPieceAssembly.Set();
