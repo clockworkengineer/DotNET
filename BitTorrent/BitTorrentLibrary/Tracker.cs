@@ -84,7 +84,7 @@ namespace BitTorrentLibrary
             MaximumSwarmSize = maximumSwarmSize;
             _updatePeerSwarm = agent.UpdatePeerSwarm;
             agent.MainTracker = this;
-            Left = agent.BytesLeftToDownload();
+            Left = agent.Left;
 
             if (!TrackerURL.StartsWith("http://"))
             {

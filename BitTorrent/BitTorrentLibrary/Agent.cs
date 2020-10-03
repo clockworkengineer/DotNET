@@ -109,13 +109,13 @@ namespace BitTorrentLibrary
                         }
                         remotePeer.WaitForPieceAssembly.Reset();
 
-                        if (_torrentDownloader.Dc.HasPieceBeenAssembled(nextPiece))
+                        if (_torrentDownloader.Dc.IsPieceLocal(nextPiece))
                         {
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
                             _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece), cancelTask);
 
-                            MainTracker.Left = BytesLeftToDownload();
+                            MainTracker.Left = Left;
                             MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
 
                             progressFunction?.Invoke(progressData);
@@ -164,10 +164,8 @@ namespace BitTorrentLibrary
         /// Return the number of bytes left in a torrent to download.
         /// </summary>
         /// <returns></returns>
-        public UInt64 BytesLeftToDownload()
-        {
-            return _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded;
-        }
+        public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded;
+        
         /// <summary>
         /// Initializes a new instance of a torrent agent.
         /// </summary>

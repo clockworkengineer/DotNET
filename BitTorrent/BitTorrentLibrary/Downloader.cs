@@ -231,7 +231,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                // In onorder to stop same the piece requested with different peers a lock 
+                // Inorder to stop same the piece requested with different peers a lock 
                 // is required when trying to get the next unrequested non-local piece
                 lock (_pieceLock)
                 {

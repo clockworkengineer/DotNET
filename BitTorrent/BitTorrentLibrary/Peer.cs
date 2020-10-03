@@ -242,7 +242,7 @@ namespace BitTorrentLibrary
                 TorrentDownloader.Dc.BlockPieceDownloaded(pieceNumber, blockNumber, true);
                 TorrentDownloader.Dc.BlockPieceRequested(pieceNumber, blockNumber, false);
 
-                if (TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
+                if (TorrentDownloader.Dc.IsPieceLocal(pieceNumber))
                 {
                     AssembledPiece.Number = pieceNumber;
                     TorrentDownloader.Dc.TotalBytesDownloaded += TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength;

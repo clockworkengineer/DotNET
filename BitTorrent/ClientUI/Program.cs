@@ -88,7 +88,7 @@ namespace BitTorrent
                     Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
                     Agent agent = new Agent(torrentFile, downloader);
 
-                    if (agent.BytesLeftToDownload() != 0)
+                    if (agent.Left!= 0)
                     {
                         Tracker tracker = new Tracker(agent);
 

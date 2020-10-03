@@ -129,7 +129,7 @@ namespace BitTorrentLibrary
         private static void HandleHAVE(Peer remotePeer)
         {
             uint pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
-            if (!remotePeer.TorrentDownloader.Dc.HasPieceBeenAssembled(pieceNumber))
+            if (!remotePeer.TorrentDownloader.Dc.IsPieceLocal(pieceNumber))
             {
                 PWP.Interested(remotePeer);
                 remotePeer.SetPieceOnRemotePeer(pieceNumber);

@@ -243,38 +243,6 @@ namespace BitTorrentLibrary
             }
         }
 
-        /// <summary>
-        /// Has a piece been assembled.
-        /// </summary>
-        /// <returns><c>true</c>, if piece been assembled, <c>false</c> otherwise.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        public bool HasPieceBeenAssembled(UInt32 pieceNumber)
-        {
-            try
-            {
-                UInt32 blockNumber = 0;
-                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
-                {
-                    if (!IsBlockPieceLocal(pieceNumber, blockNumber))
-                    {
-                        return false;
-                    }
-                }
-                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
-                {
-                    if (!IsBlockPieceLocal(pieceNumber, blockNumber))
-                    {
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-            return true;
-        }
 
         /// <summary>
         /// Merges the piece bitfield of a remote peer with the torrents piece map.
@@ -312,6 +280,39 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Has a piece been fully downloaded.
+        /// </summary>
+        /// <returns><c>true</c>, if piece is lcoal, <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        public bool IsPieceLocal(UInt32 pieceNumber)
+        {
+            try
+            {
+                UInt32 blockNumber = 0;
+                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
+                {
+                    if (!IsBlockPieceLocal(pieceNumber, blockNumber))
+                    {
+                        return false;
+                    }
+                }
+                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+                {
+                    if (!IsBlockPieceLocal(pieceNumber, blockNumber))
+                    {
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+            }
+            return true;
         }
 
         /// <summary>
