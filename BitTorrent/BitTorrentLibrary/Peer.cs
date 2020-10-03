@@ -67,27 +67,7 @@ namespace BitTorrentLibrary
         public ManualResetEvent PeerChoking { get; set; }
         public ManualResetEvent BitfieldReceived { get; set; }
 
-        /// <summary>
-        /// Send packet to remote peer.
-        /// </summary>
-        /// <param name="buffer">Buffer.</param>
-        public void PeerWrite(byte[] buffer)
-        {
-            _peerSocket.Send(buffer);
-        }
-
-        /// <summary>
-        /// Read packet from remote peer.
-        /// </summary>
-        /// <returns>The read.</returns>
-        /// <param name="buffer">Buffer.</param>
-        /// <param name="length">Length.</param>
-        public int PeerRead(byte[] buffer, int length)
-        {
-            return _peerSocket.Receive(buffer, length, SocketFlags.None);
-        }
-
-        /// <summary>
+  /// <summary>
         /// Peer read packet asynchronous callback.
         /// </summary>
         /// <param name="readAsyncState">Read async state.</param>
@@ -160,6 +140,27 @@ namespace BitTorrentLibrary
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
+        }
+
+
+        /// <summary>
+        /// Send packet to remote peer.
+        /// </summary>
+        /// <param name="buffer">Buffer.</param>
+        public void PeerWrite(byte[] buffer)
+        {
+            _peerSocket.Send(buffer);
+        }
+
+        /// <summary>
+        /// Read packet from remote peer.
+        /// </summary>
+        /// <returns>The read.</returns>
+        /// <param name="buffer">Buffer.</param>
+        /// <param name="length">Length.</param>
+        public int PeerRead(byte[] buffer, int length)
+        {
+            return _peerSocket.Receive(buffer, length, SocketFlags.None);
         }
 
         /// <summary>

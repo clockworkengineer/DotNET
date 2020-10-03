@@ -37,6 +37,7 @@ namespace BitTorrentLibrary
             completed = 3   // Must be sent to the tracker when the download completes
         };
 
+        private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
         protected UpdatePeers _updatePeerSwarm;                 // Update peer swarm with connected peers
@@ -70,9 +71,11 @@ namespace BitTorrentLibrary
                 tracker._updatePeerSwarm?.Invoke(response.peers);
                 tracker.UpdateRunningStatusFromAnnounce(response);
                 tracker._announceTimer?.Start();
+            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                tracker._announcerExceptions.Add(ex);
             }
         }
         /// <summary>
@@ -91,6 +94,7 @@ namespace BitTorrentLibrary
             _updatePeerSwarm = agent.UpdatePeerSwarm;
             agent.MainTracker = this;
             Left = agent.Left;
+            _announcerExceptions = new List<Exception>();
 
             if (!TrackerURL.StartsWith("http://"))
             {

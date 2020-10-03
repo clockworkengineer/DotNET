@@ -80,7 +80,7 @@ namespace BitTorrent
                     }
 
                     Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/zorin.torrent");
+                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/neon.torrent");
 
                     torrentFile.Load();
                     torrentFile.Parse();

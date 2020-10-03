@@ -93,7 +93,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Creates the piece map from the current disc which details the state of the pieces
         /// within a torrentdownload. This could be whether a piece  is present on a remote peer,
-        /// has been requested or has already been downloaded/
+        /// has been requested or has already been downloaded.
         /// </summary>
         private void CreatePieceMap()
         {
