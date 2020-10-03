@@ -64,10 +64,16 @@ namespace BitTorrentLibrary
         /// <param name="tracker"></param>
         private static void OnAnnounceEvent(Tracker tracker)
         {
-            AnnounceResponse response = tracker._announcer.Announce(tracker);
-            tracker._updatePeerSwarm?.Invoke(response.peers);
-            tracker.UpdateRunningStatusFromAnnounce(response);
-            tracker._announceTimer?.Start();
+            try
+            {
+                AnnounceResponse response = tracker._announcer.Announce(tracker);
+                tracker._updatePeerSwarm?.Invoke(response.peers);
+                tracker.UpdateRunningStatusFromAnnounce(response);
+                tracker._announceTimer?.Start();
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+            }
         }
         /// <summary>
         /// Initialise BitTorrent Tracker.
@@ -105,7 +111,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Restart announce on interval changing and save minimum interval and trackr ID.
+        /// Restart announce on interval changing and save minimum interval and trackre ID.
         /// </summary>
         /// <param name="response"></param>
         private void UpdateRunningStatusFromAnnounce(AnnounceResponse response)
@@ -141,10 +147,8 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// On  announce event send announce request to tracker and get response.
+        /// Change tracker event status and send to server.
         /// </summary>
-        /// <param name="source">Source.</param>
-        /// <param name="e">E.</param>
         /// <param name="tracker">Tracker.</param>
         /// <summary>
         /// Change tracker status.

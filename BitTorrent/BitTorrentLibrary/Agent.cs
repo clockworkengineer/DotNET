@@ -37,6 +37,7 @@ namespace BitTorrentLibrary
         public string TrackerURL { get; }                            // Main Tracker URL
         public Tracker MainTracker { get; set; }                     // Main torrent tracker
         public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler Tasks
+         public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download
 
         /// <summary>
         /// Request piece number from remote peer.
@@ -160,11 +161,6 @@ namespace BitTorrentLibrary
             ActiveAssemblerTasks--;
 
         }
-        /// <summary>
-        /// Return the number of bytes left in a torrent to download.
-        /// </summary>
-        /// <returns></returns>
-        public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded;
         
         /// <summary>
         /// Initializes a new instance of a torrent agent.
@@ -212,7 +208,7 @@ namespace BitTorrentLibrary
                     {
                         if (!RemotePeers.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
                         {
-                            Peer remotePeer = new Peer(_torrentDownloader.Dc, peer.ip, peer.port, InfoHash);
+                            Peer remotePeer = new Peer(peer.ip, peer.port, InfoHash, _torrentDownloader.Dc);
                             remotePeer.Connect();
                             if (remotePeer.Connected)
                             {

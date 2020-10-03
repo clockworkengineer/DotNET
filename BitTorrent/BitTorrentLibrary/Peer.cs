@@ -144,11 +144,11 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Initializes a new instance of Peer class.
         /// </summary>
-        /// <param name="fileDownloader">File downloader.</param>
         /// <param name="ip">Ip.</param>
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
-        public Peer(DownloadContext dc, string ip, UInt32 port, byte[] infoHash)
+        /// <param name="dc">Download context.</param>
+        public Peer(string ip, UInt32 port, byte[] infoHash, DownloadContext dc)
         {
             Ip = ip;
             _port = port;
