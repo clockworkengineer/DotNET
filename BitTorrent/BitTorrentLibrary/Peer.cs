@@ -54,7 +54,7 @@ namespace BitTorrentLibrary
         public byte[] ReadBuffer { get; set; }              // Read buffer
         public bool Connected { get; set; }                 // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }            // Id of remote peer
-        public Downloader TorrentDownloader { get; set; }   // Downloader for torrent
+        public DownloadContext Dc {get; set; }              // Torrent download context
         public bool Interested { get; set; } = true;        // == true then interested in remote peer pieces
         public byte[] RemotePieceBitfield { get; set; }     // Remote peer piece map
         public uint PacketLength { get; set; }              // Current packet length
@@ -148,14 +148,14 @@ namespace BitTorrentLibrary
         /// <param name="ip">Ip.</param>
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
-        public Peer(Downloader fileDownloader, string ip, UInt32 port, byte[] infoHash)
+        public Peer(DownloadContext dc, string ip, UInt32 port, byte[] infoHash)
         {
             Ip = ip;
             _port = port;
             _infoHash = infoHash;
-            TorrentDownloader = fileDownloader;
+            Dc = dc;
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
-            AssembledPiece = new PieceBuffer(fileDownloader.Dc.PieceLength);
+            AssembledPiece = new PieceBuffer(Dc.PieceLength);
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
@@ -239,13 +239,13 @@ namespace BitTorrentLibrary
 
                 Buffer.BlockCopy(ReadBuffer, 9, AssembledPiece.Buffer, (Int32)blockOffset, (Int32)PacketLength - 9);
 
-                TorrentDownloader.Dc.BlockPieceDownloaded(pieceNumber, blockNumber, true);
-                TorrentDownloader.Dc.BlockPieceRequested(pieceNumber, blockNumber, false);
+                Dc.BlockPieceDownloaded(pieceNumber, blockNumber, true);
+                Dc.BlockPieceRequested(pieceNumber, blockNumber, false);
 
-                if (TorrentDownloader.Dc.IsPieceLocal(pieceNumber))
+                if (Dc.IsPieceLocal(pieceNumber))
                 {
                     AssembledPiece.Number = pieceNumber;
-                    TorrentDownloader.Dc.TotalBytesDownloaded += TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength;
+                    Dc.TotalBytesDownloaded += Dc.PieceMap[pieceNumber].pieceLength;
                     WaitForPieceAssembly.Set();
                 }
             }

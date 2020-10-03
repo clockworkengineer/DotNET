@@ -129,13 +129,13 @@ namespace BitTorrentLibrary
         private static void HandleHAVE(Peer remotePeer)
         {
             uint pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
-            if (!remotePeer.TorrentDownloader.Dc.IsPieceLocal(pieceNumber))
+            if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
             {
                 PWP.Interested(remotePeer);
                 remotePeer.SetPieceOnRemotePeer(pieceNumber);
-                for (UInt32 blockNumber = 0; blockNumber < remotePeer.TorrentDownloader.Dc.BlocksPerPiece; blockNumber++)
+                for (UInt32 blockNumber = 0; blockNumber < remotePeer.Dc.BlocksPerPiece; blockNumber++)
                 {
-                    remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
+                    remotePeer.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                 }
             }
 
@@ -165,7 +165,7 @@ namespace BitTorrentLibrary
             }
             Log.Logger.Debug("\n" + hex + "\n");
 
-            remotePeer.TorrentDownloader.Dc.MergePieceBitfield(remotePeer);
+            remotePeer.Dc.MergePieceBitfield(remotePeer);
         }
 
         /// <summary>
@@ -491,7 +491,7 @@ namespace BitTorrentLibrary
 
                 remotePeer.PeerWrite(requestPacket.ToArray());
 
-                remotePeer.TorrentDownloader.Dc.BlockPieceRequested(pieceNumber, blockOffset / Constants.BlockSize, true);
+                remotePeer.Dc.BlockPieceRequested(pieceNumber, blockOffset / Constants.BlockSize, true);
             }
             catch (Error)
             {

@@ -264,11 +264,11 @@ namespace BitTorrentLibrary
                             UInt32 blockNumber = 0;
                             for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
                             {
-                                remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
+                                remotePeer.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                             }
                             if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
                             {
-                                remotePeer.TorrentDownloader.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
+                                remotePeer.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
                             }
                         }
                     }

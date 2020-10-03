@@ -46,15 +46,15 @@ namespace BitTorrentLibrary
         private void RequestPieceFromPeer(Peer remotePeer, uint pieceNumber)
         {
             UInt32 blockNumber = 0;
-            for (; blockNumber < remotePeer.TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
+            for (; blockNumber < remotePeer.Dc.PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
             {
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
-            if (remotePeer.TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+            if (remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
             {
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
-                             remotePeer.TorrentDownloader.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
+                             remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
             }
         }
         /// <summary>
@@ -212,7 +212,7 @@ namespace BitTorrentLibrary
                     {
                         if (!RemotePeers.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
                         {
-                            Peer remotePeer = new Peer(_torrentDownloader, peer.ip, peer.port, InfoHash);
+                            Peer remotePeer = new Peer(_torrentDownloader.Dc, peer.ip, peer.port, InfoHash);
                             remotePeer.Connect();
                             if (remotePeer.Connected)
                             {
