@@ -37,23 +37,38 @@ namespace BitTorrentLibrary
         public string TrackerURL { get; }                            // Main Tracker URL
         public Tracker MainTracker { get; set; }                     // Main torrent tracker
         public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler Tasks
-         public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download
+        public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="evt"></param>
+        /// <param name="cancelTask"></param>
+        public void WaitOnWithCanancelation(ManualResetEvent evt, CancellationToken cancelTask)
+        {
+            while (!evt.WaitOne(100))
+            {
+                cancelTask.ThrowIfCancellationRequested();
+            }
+        }
         /// <summary>
         /// Request piece number from remote peer.
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="pieceNumber"></param>
-        private void RequestPieceFromPeer(Peer remotePeer, uint pieceNumber)
+        private void RequestPieceFromPeer(Peer remotePeer, uint pieceNumber, CancellationToken cancelTask)
         {
             UInt32 blockNumber = 0;
             for (; blockNumber < remotePeer.Dc.PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
             {
+
+                WaitOnWithCanancelation(remotePeer.PeerChoking, cancelTask);
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
             if (remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
             {
+                WaitOnWithCanancelation(remotePeer.PeerChoking, cancelTask);
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
                              remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
             }
@@ -79,14 +94,8 @@ namespace BitTorrentLibrary
 
                 PWP.Unchoke(remotePeer);
 
-                while (!remotePeer.BitfieldReceived.WaitOne(100))
-                {
-                    cancelTask.ThrowIfCancellationRequested();
-                }
-                while (!remotePeer.PeerChoking.WaitOne(100))
-                {
-                    cancelTask.ThrowIfCancellationRequested();
-                }
+                WaitOnWithCanancelation(remotePeer.BitfieldReceived, cancelTask);
+                WaitOnWithCanancelation(remotePeer.PeerChoking, cancelTask);
 
                 while (MainTracker.Left != 0)
                 {
@@ -97,25 +106,25 @@ namespace BitTorrentLibrary
 
                         currentPiece = (Int32)nextPiece;
 
-                        RequestPieceFromPeer(remotePeer, nextPiece);
+                        RequestPieceFromPeer(remotePeer, nextPiece, cancelTask);
 
                         while (!remotePeer.WaitForPieceAssembly.WaitOne(100))
                         {
-                            if (!remotePeer.PeerChoking.WaitOne(0))
-                            {
-                                Log.Logger.Debug("++CHOKE RECIEVED WHILE MAKING REQUESTS.");
-                                break;
-                            }
+                            // if (!remotePeer.PeerChoking.WaitOne(0))
+                            // {
+                            //     Log.Logger.Debug("++CHOKE RECIEVED WHILE MAKING REQUESTS.");
+                            //     break;
+                            // }
                             cancelTask.ThrowIfCancellationRequested();
                         }
                         remotePeer.WaitForPieceAssembly.Reset();
 
-                        if (_torrentDownloader.Dc.IsPieceLocal(nextPiece))
+                        if (remotePeer.AssembledPiece.AllBlocksThere)
                         {
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
                             _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece), cancelTask);
-                            
+
                             remotePeer.AssembledPiece.Reset();
 
                             MainTracker.Left = Left;
@@ -126,21 +135,14 @@ namespace BitTorrentLibrary
                             Log.Logger.Info((_torrentDownloader.Dc.TotalBytesDownloaded / (double)_torrentDownloader.Dc.TotalBytesToDownload).ToString("0.00%"));
                             currentPiece = -1;
                         }
-                        else
-                        {
-                            Log.Logger.Info($"++REMARK FOR DOWNLOAD PIECE {currentPiece}.");
-                            _torrentDownloader.Dc.MarkPieceRequested((UInt32)currentPiece, false);
-                            _torrentDownloader.Dc.MarkPieceLocal((UInt32)currentPiece, false);
-                        }
+                        // else
+                        // {
+                        //     Log.Logger.Info($"++REMARK FOR DOWNLOAD PIECE {currentPiece}.");
+                        //     _torrentDownloader.Dc.MarkPieceRequested((UInt32)currentPiece, false);
+                        //     _torrentDownloader.Dc.MarkPieceLocal((UInt32)currentPiece, false);
+                        // }
+                        WaitOnWithCanancelation(_downloading, cancelTask);
 
-                        while (!_downloading.WaitOne(100))
-                        {
-                            cancelTask.ThrowIfCancellationRequested();
-                        }
-                        while (!remotePeer.PeerChoking.WaitOne(100))
-                        {
-                            cancelTask.ThrowIfCancellationRequested();
-                        }
                     }
 
                 }
@@ -163,7 +165,7 @@ namespace BitTorrentLibrary
             ActiveAssemblerTasks--;
 
         }
-        
+
         /// <summary>
         /// Initializes a new instance of a torrent agent.
         /// </summary>
@@ -234,8 +236,11 @@ namespace BitTorrentLibrary
             }
 
             MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize - RemotePeers.Count, 0);
+
             Log.Logger.Info($"Number of peers in swarm  {RemotePeers.Count}/{MainTracker.MaximumSwarmSize}. Active {ActiveAssemblerTasks}.");
+
         }
+
 
         /// <summary>
         /// Set download progress function and data

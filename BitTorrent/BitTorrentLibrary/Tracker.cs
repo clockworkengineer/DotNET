@@ -46,7 +46,7 @@ namespace BitTorrentLibrary
         public UInt64 Left { get; set; }                        // Bytes left in file to be downloaded
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; set; } = String.Empty;      // Peers unique ID
-        public uint Port { get; set; } = Host.DefaultPort;   // Port that client s listening on 
+        public uint Port { get; set; } = Host.DefaultPort;      // Port that client s listening on 
         public string Ip { get; set; } = String.Empty;          // IP of host performing announce
         public uint Compact { get; set; } = 1;                  // Is the returned peer list compressed (1=yes,0=no)
         public uint NoPeerID { get; set; }                      // Unique peer ID for downloader
@@ -70,12 +70,15 @@ namespace BitTorrentLibrary
                 AnnounceResponse response = tracker._announcer.Announce(tracker);
                 tracker._updatePeerSwarm?.Invoke(response.peers);
                 tracker.UpdateRunningStatusFromAnnounce(response);
-                tracker._announceTimer?.Start();
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
                 tracker._announcerExceptions.Add(ex);
+            }
+            finally
+            {
+                tracker._announceTimer?.Start();
             }
         }
         /// <summary>

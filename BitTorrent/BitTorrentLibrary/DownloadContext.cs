@@ -365,5 +365,31 @@ namespace BitTorrentLibrary
             }
         }
 
+
+        /// <summary>
+        /// Mark all blocks of a piece are (not) on remote peer.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        public void MarkPieceOnRemotePeer(UInt32 pieceNumber, bool onRemotePeer)
+        {
+            try
+            {
+                UInt32 blockNumber = 0;
+                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
+                {
+                    BlockPieceLocal(pieceNumber, blockNumber, onRemotePeer);
+                }
+                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+                {
+                    BlockPieceLocal(pieceNumber, blockNumber, onRemotePeer);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+            }
+        }
+
     }
 }

@@ -133,10 +133,7 @@ namespace BitTorrentLibrary
             {
                 PWP.Interested(remotePeer);
                 remotePeer.SetPieceOnRemotePeer(pieceNumber);
-                for (UInt32 blockNumber = 0; blockNumber < remotePeer.Dc.BlocksPerPiece; blockNumber++)
-                {
-                    remotePeer.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
-                }
+                remotePeer.Dc.MarkPieceOnRemotePeer(pieceNumber, true);
             }
 
             Log.Logger.Debug($"Have piece= {pieceNumber}");
@@ -188,15 +185,15 @@ namespace BitTorrentLibrary
             UInt32 blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
 
             Log.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
-            
-            if (remotePeer.PeerChoking.WaitOne(0))
-            {
-                remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
-            }
-            else
-            {
-                Log.Logger.Debug("++CHOKING SO PIECE REQUEST REPLY BEING IGNORED");
-            }
+
+            // if (remotePeer.PeerChoking.WaitOne(0))
+            // {
+            remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
+            // }
+            // else
+            // {
+            //     Log.Logger.Debug("++CHOKING SO PIECE REQUEST REPLY BEING IGNORED");
+            // }
 
         }
 
