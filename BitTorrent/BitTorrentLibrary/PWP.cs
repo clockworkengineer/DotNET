@@ -369,7 +369,7 @@ namespace BitTorrentLibrary
 
                 remotePeer.PeerWrite(requestPacket.ToArray());
 
-                remotePeer.Interested = true;
+                remotePeer.PeerInterested = true;
             }
             catch (Error)
             {
@@ -397,7 +397,7 @@ namespace BitTorrentLibrary
 
                 remotePeer.PeerWrite(requestPacket.ToArray());
 
-                remotePeer.Interested = false;
+                remotePeer.PeerInterested = false;
             }
             catch (Error)
             {

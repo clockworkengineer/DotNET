@@ -13,6 +13,7 @@
 //
 
 using System;
+using System.Text;
 using System.Net;
 using System.Net.Sockets;
 
@@ -20,14 +21,28 @@ namespace BitTorrentLibrary
 {
     public class Uploader
     {
-        Uploader() {
+
+        private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
+        private Socket socket;
+
+        private byte[] _peerID;
+        private byte[] _infoHash;
+
+        public Uploader()
+        {
 
         }
-        public static void Upload(){
+
+        public int PeerRead(byte[] buffer, int length)
+        {
+            return socket.Receive(buffer, length, SocketFlags.None);
+        }
+
+        public void Upload()
+        {
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Host.GetIP());
             IPAddress ipAddress = ipHostInfo.AddressList[0];
             IPEndPoint localEndPoint = new IPEndPoint(ipHostInfo.AddressList[0], (int)Host.DefaultPort);
-            Socket socket;
 
             Socket listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             listener.Bind(localEndPoint);
@@ -42,6 +57,12 @@ namespace BitTorrentLibrary
             string remotePeerIP = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString();
 
             Log.Logger.Info($"Remote peer IP = {remotePeerIP}");
+
+            _infoHash = new byte[20];
+            _peerID = new byte[20];
+            byte[] intialPacket = new byte[_protocolName.Length+1+8+_infoHash.Length+_peerID.Length];
+
+            var bytesRead = PeerRead(intialPacket, intialPacket.Length);
 
             socket.Close();
 

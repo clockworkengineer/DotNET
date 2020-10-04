@@ -54,20 +54,21 @@ namespace BitTorrentLibrary
         public byte[] ReadBuffer { get; set; }              // Read buffer
         public bool Connected { get; set; }                 // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }            // Id of remote peer
-        public DownloadContext Dc {get; set; }              // Torrent download context
-        public bool Interested { get; set; } = true;        // == true then interested in remote peer pieces
+        public DownloadContext Dc { get; set; }              // Torrent download context
         public byte[] RemotePieceBitfield { get; set; }     // Remote peer piece map
         public uint PacketLength { get; set; }              // Current packet length
         public PieceBuffer AssembledPiece { get; set; }     // Assembled pieces buffer
         public string Ip { get; set; }                      // Remote peer ip
         public Task AssemblerTask { get; set; }             // Peer piece assembly task
-
+        public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
+        public bool AmChoked { get; set; } = true;                       // == true then client is choing remote peer.
+        public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
+        public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }
         public ManualResetEvent WaitForPieceAssembly { get; set; }
-        public ManualResetEvent PeerChoking { get; set; }
         public ManualResetEvent BitfieldReceived { get; set; }
 
-  /// <summary>
+        /// <summary>
         /// Peer read packet asynchronous callback.
         /// </summary>
         /// <param name="readAsyncState">Read async state.</param>

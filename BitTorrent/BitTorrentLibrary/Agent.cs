@@ -40,11 +40,11 @@ namespace BitTorrentLibrary
         public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download
 
         /// <summary>
-        /// 
+        /// Wait for event to be set throwing a cancel exception if it is fired.
         /// </summary>
         /// <param name="evt"></param>
         /// <param name="cancelTask"></param>
-        public void WaitOnWithCanancelation(ManualResetEvent evt, CancellationToken cancelTask)
+        public void WaitOnWithCancelation(ManualResetEvent evt, CancellationToken cancelTask)
         {
             while (!evt.WaitOne(100))
             {
@@ -62,13 +62,13 @@ namespace BitTorrentLibrary
             for (; blockNumber < remotePeer.Dc.PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
             {
 
-                WaitOnWithCanancelation(remotePeer.PeerChoking, cancelTask);
+                WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
             if (remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
             {
-                WaitOnWithCanancelation(remotePeer.PeerChoking, cancelTask);
+                WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
                              remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
             }
@@ -94,8 +94,9 @@ namespace BitTorrentLibrary
 
                 PWP.Unchoke(remotePeer);
 
-                WaitOnWithCanancelation(remotePeer.BitfieldReceived, cancelTask);
-                WaitOnWithCanancelation(remotePeer.PeerChoking, cancelTask);
+                WaitOnWithCancelation(_downloading, cancelTask);
+                WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
+                WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
 
                 while (MainTracker.Left != 0)
                 {
@@ -141,7 +142,7 @@ namespace BitTorrentLibrary
                         //     _torrentDownloader.Dc.MarkPieceRequested((UInt32)currentPiece, false);
                         //     _torrentDownloader.Dc.MarkPieceLocal((UInt32)currentPiece, false);
                         // }
-                        WaitOnWithCanancelation(_downloading, cancelTask);
+                        WaitOnWithCancelation(_downloading, cancelTask);
 
                     }
 
@@ -179,7 +180,7 @@ namespace BitTorrentLibrary
             InfoHash = torrentFile.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _deadPeersList = new HashSet<string>();
-            _downloading = new ManualResetEvent(true);
+            _downloading = new ManualResetEvent(false);
             _downloadFinished = new ManualResetEvent(false);
 
         }
@@ -262,6 +263,8 @@ namespace BitTorrentLibrary
             {
                 if (MainTracker.Left > 0)
                 {
+                    Start();
+
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
                     _downloadFinished.WaitOne();
