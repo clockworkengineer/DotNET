@@ -143,6 +143,10 @@ namespace BitTorrentLibrary
             CancelTaskSource = new CancellationTokenSource();
         }
 
+        public Peer(Socket socket, string ip, UInt32 port, byte[] infoHash, DownloadContext dc) : this(ip, port, infoHash, dc)
+        {
+            _peerSocket = socket;
+        }
 
         /// <summary>
         /// Send packet to remote peer.
@@ -162,6 +166,21 @@ namespace BitTorrentLibrary
         public int PeerRead(byte[] buffer, int length)
         {
             return _peerSocket.Receive(buffer, length, SocketFlags.None);
+        }
+
+        /// <summary>
+        /// Perform initial handshake with peer that has connected to host.
+        /// </summary>
+        public void Accept()
+        {
+            try
+            {
+ 
+            }
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
+            }
         }
 
         /// <summary>

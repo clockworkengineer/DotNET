@@ -17,6 +17,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 
 namespace BitTorrentLibrary
 {
@@ -25,9 +27,11 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent
     {
+
         public delegate void ProgessCallBack(Object progressData);   // Download progress 
         private ProgessCallBack _progressFunction = null;            // Download progress function
         private Object _progressData = null;                         // Download progress function data
+        private Task _uploaderTask = null;                           // Uploader listenr task
         private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
         private readonly ManualResetEvent _downloadFinished;         // WaitOn when download finsihed == true
         private readonly ManualResetEvent _downloading;              // WaitOn when downloads == false
@@ -37,14 +41,57 @@ namespace BitTorrentLibrary
         public string TrackerURL { get; }                            // Main Tracker URL
         public Tracker MainTracker { get; set; }                     // Main torrent tracker
         public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler Tasks
-        public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download
+        public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download;
+
+        private void UploaderListerTask()
+        {
+            IPHostEntry ipHostInfo = Dns.GetHostEntry(Host.GetIP());
+            IPEndPoint localEndPoint = new IPEndPoint(ipHostInfo.AddressList[0], (int)Host.DefaultPort);
+            Socket listener = new Socket(ipHostInfo.AddressList[0].AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket remotePeerSocket;
+
+            listener.Bind(localEndPoint);
+            listener.Listen(100);
+
+            while (true)
+            {
+                Log.Logger.Info("Waiting for remote peer connect...");
+
+                remotePeerSocket = listener.Accept();
+
+                Log.Logger.Info("Remote peer connected...");
+
+                string remotePeerIP = ((IPEndPoint)(remotePeerSocket.RemoteEndPoint)).Address.ToString();
+                UInt32 remotePeerPort = (UInt32)((IPEndPoint)(remotePeerSocket.RemoteEndPoint)).Port;
+
+                Log.Logger.Info($"++Remote peer IP = {remotePeerIP}:{remotePeerPort}.");
+
+                if(remotePeerIP=="192.168.1.1") { // NO IDEA WHATS BEHIND THIS AT PRESENT (HANGS IF WE DONT CLOSE THIS)
+                    remotePeerSocket.Close();
+                }
+
+                Peer remotePeer = new Peer(remotePeerSocket, remotePeerIP, remotePeerPort, InfoHash, _torrentDownloader.Dc);
+                remotePeer.Accept();
+                if (remotePeer.Connected)
+                {
+                    RemotePeers.Add(remotePeer.Ip, remotePeer);
+                    Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] from remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                    remotePeer.AssemblerTask = Task.Run(() => AssemblePieces(remotePeer, _progressFunction, _progressData));
+                }
+                else
+                {
+                    _deadPeersList.Add(remotePeer.Ip);
+                }
+            }
+
+        }
 
         /// <summary>
         /// Wait for event to be set throwing a cancel exception if it is fired.
         /// </summary>
         /// <param name="evt"></param>
         /// <param name="cancelTask"></param>
-        public void WaitOnWithCancelation(ManualResetEvent evt, CancellationToken cancelTask)
+        private void WaitOnWithCancelation(ManualResetEvent evt, CancellationToken cancelTask)
         {
             while (!evt.WaitOne(100))
             {
@@ -182,6 +229,7 @@ namespace BitTorrentLibrary
             _deadPeersList = new HashSet<string>();
             _downloading = new ManualResetEvent(false);
             _downloadFinished = new ManualResetEvent(false);
+            _uploaderTask = Task.Run(() => UploaderListerTask());
 
         }
         /// <summary>
