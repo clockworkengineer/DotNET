@@ -51,6 +51,20 @@ namespace BitTorrentLibrary
             return packedUInt32;
         }
 
+        private static List<byte> BuildInitialHandshake(Peer remotePeer, byte[] infoHash)
+        {
+            List<byte> handshakePacket = new List<byte>
+                {
+                    (byte)_protocolName.Length
+                };
+            handshakePacket.AddRange(_protocolName);
+            handshakePacket.AddRange(new byte[8]);
+            handshakePacket.AddRange(infoHash);
+            handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.Get()));
+
+            return handshakePacket;
+        }
+
         /// <summary>
         /// Validates the peer connect.
         /// </summary>
@@ -207,25 +221,62 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Intials the handshake.
+        /// Perform initial handshake with remote peer that connected to local client to upload.
         /// </summary>
-        /// <returns>The handshake.</returns>
-        /// <param name="remotePeer">Remote peer.</param>
-        /// <param name="infoHash">Info hash.</param>
-        public static ValueTuple<bool, byte[]> IntialHandshake(Peer remotePeer, byte[] infoHash)
+        /// <param name="remotePeer"></param>
+        /// <param name="infoHash"></param>
+        /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
+        public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer, byte[] infoHash)
         {
             byte[] remotePeerID = null;
             bool connected = false;
 
             try
             {
-                List<byte> handshakePacket = new List<byte>
+                List<byte> handshakePacket = BuildInitialHandshake(remotePeer, infoHash);
+
+                byte[] handshakeResponse = new byte[handshakePacket.Count];
+
+                UInt32 bytesRead = (UInt32) remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+
+                connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out remotePeerID);
+
+                if (connected)
                 {
-                    (byte)_protocolName.Length
-                };
-                handshakePacket.AddRange(_protocolName);
-                handshakePacket.AddRange(new byte[8]);
-                handshakePacket.AddRange(infoHash);
+                    remotePeer.PeerWrite(handshakePacket.ToArray());
+                }
+
+                return (connected, remotePeerID);
+
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
+            }
+
+            return (connected, remotePeerID);
+        }
+
+        /// <summary>
+        /// Perform initial handshake with remote peer that the local client connected to.
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <param name="infoHash"></param>
+        /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
+        public static ValueTuple<bool, byte[]> ConnectToIntialHandshake(Peer remotePeer, byte[] infoHash)
+        {
+            byte[] remotePeerID = null;
+            bool connected = false;
+
+            try
+            {
+                List<byte> handshakePacket = BuildInitialHandshake(remotePeer, infoHash);
+
                 handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.Get()));
 
                 remotePeer.PeerWrite(handshakePacket.ToArray());

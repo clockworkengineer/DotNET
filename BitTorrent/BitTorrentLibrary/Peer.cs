@@ -60,6 +60,7 @@ namespace BitTorrentLibrary
         public PieceBuffer AssembledPiece { get; set; }     // Assembled pieces buffer
         public string Ip { get; set; }                      // Remote peer ip
         public Task AssemblerTask { get; set; }             // Peer piece assembly task
+        public Task UploaderTask {get; set; }                            // Uploader listenr task
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
         public bool AmChoked { get; set; } = true;                       // == true then client is choing remote peer.
         public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
@@ -175,7 +176,15 @@ namespace BitTorrentLibrary
         {
             try
             {
- 
+
+                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectFromIntialHandshake(this, _infoHash);
+
+                if (peerResponse.Item1)
+                {
+                    RemotePeerID = peerResponse.Item2;
+                    Connected = true;
+                    _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, this);
+                }
             }
             catch (Exception ex)
             {
@@ -197,7 +206,7 @@ namespace BitTorrentLibrary
 
                 _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)_port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
 
-                ValueTuple<bool, byte[]> peerResponse = PWP.IntialHandshake(this, _infoHash);
+                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this, _infoHash);
 
                 if (peerResponse.Item1)
                 {
