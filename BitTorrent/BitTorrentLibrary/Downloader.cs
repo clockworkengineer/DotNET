@@ -240,7 +240,7 @@ namespace BitTorrentLibrary
                     {
                         if (remotePeer.IsPieceOnRemotePeer(pieceNumber))
                         {
-                            if (!Dc.IsBlockPieceRequested(pieceNumber, 0) && !Dc.IsBlockPieceLocal(pieceNumber, 0))
+                            if (!Dc.IsPieceRequested(pieceNumber) && !Dc.IsPieceLocal(pieceNumber))
                             {
                                 nextPiece = pieceNumber;
                                 Dc.MarkPieceRequested(pieceNumber,true);

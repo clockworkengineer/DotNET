@@ -147,7 +147,7 @@ namespace BitTorrentLibrary
             {
                 PWP.Interested(remotePeer);
                 remotePeer.SetPieceOnRemotePeer(pieceNumber);
-                remotePeer.Dc.MarkPieceOnRemotePeer(pieceNumber, true);
+                remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
             }
 
             Log.Logger.Debug($"Have piece= {pieceNumber}");
@@ -540,7 +540,7 @@ namespace BitTorrentLibrary
 
                 remotePeer.PeerWrite(requestPacket.ToArray());
 
-                remotePeer.Dc.BlockPieceRequested(pieceNumber, blockOffset / Constants.BlockSize, true);
+                remotePeer.Dc.MarkPieceRequested(pieceNumber, true);
             }
             catch (Error)
             {

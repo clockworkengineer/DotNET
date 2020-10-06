@@ -31,7 +31,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public struct PieceBlockMap
     {
-        public byte[] blocks;           // Block mappings for piece
+        public byte mapping;            // Piece mapping
         public UInt16 peerCount;        // Peers with the piece
         public UInt32 pieceLength;      // Piece length in bytes
     }
@@ -65,13 +65,7 @@ namespace BitTorrentLibrary
                 PiecesInfoHash = pieces;
                 NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
                 BlocksPerPiece = pieceLength / Constants.BlockSize;
-
                 PieceMap = new PieceBlockMap[NumberOfPieces];
-                for (var pieceNumber = 0; pieceNumber < NumberOfPieces; pieceNumber++)
-                {
-                    PieceMap[pieceNumber].blocks = new byte[BlocksPerPiece];
-                }
-
                 PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
             }
             catch (Exception ex)
@@ -82,22 +76,21 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Sets a block piece as downloaded.
+        /// Sets a piece as downloaded.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        /// <param name="local">If set to <c>true</c> block has been downloaded.</param>
-        public void BlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber, bool local)
+        /// <param name="local">If set to <c>true</c> piece has been downloaded.</param>
+        public void MarkPieceLocal(UInt32 pieceNumber, bool local)
         {
             try
             {
                 if (local)
                 {
-                    PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
+                    PieceMap[pieceNumber].mapping |= Mapping.HaveLocal;
                 }
                 else
                 {
-                    PieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
+                    PieceMap[pieceNumber].mapping &= (Mapping.HaveLocal ^ 0xff);
                 }
             }
             catch (Exception ex)
@@ -108,22 +101,21 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Sets a block piece as requested.
+        /// Sets a piece as requested.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        /// <param name="requested">If set to <c>true</c> block has been requested.</param>
-        public void BlockPieceRequested(UInt32 pieceNumber, UInt32 blockNumber, bool requested)
+        /// <param name="requested">If set to <c>true</c> piece has been requested.</param>
+        public void MarkPieceRequested(UInt32 pieceNumber, bool requested)
         {
             try
             {
                 if (requested)
                 {
-                    PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.Requested;
+                    PieceMap[pieceNumber].mapping |= Mapping.Requested;
                 }
                 else
                 {
-                    PieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.Requested ^ 0xff);
+                    PieceMap[pieceNumber].mapping &= (Mapping.Requested ^ 0xff);
                 }
             }
             catch (Exception ex)
@@ -134,22 +126,21 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Sets a block piece as present on remote peer.
+        /// Sets a piece as present on remote peer.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        /// <param name="noPeer">If set to <c>true</c> block is present on remote peer.</param>
-        public void BlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber, bool noPeer)
+        /// <param name="noPeer">If set to <c>true</c> piece is present on remote peer.</param>
+        public void MarkPieceOnPeer(UInt32 pieceNumber, bool noPeer)
         {
             try
             {
                 if (noPeer)
                 {
-                    PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
+                    PieceMap[pieceNumber].mapping |= Mapping.OnPeer;
                 }
                 else
                 {
-                    PieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.OnPeer ^ 0xff);
+                    PieceMap[pieceNumber].mapping &= (Mapping.OnPeer ^ 0xff);
                 }
             }
             catch (Exception ex)
@@ -160,62 +151,15 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Sets a block as having been downloaded from a peer.
+        /// Has a  piece been requested from a peer.
         /// </summary>
+        /// <returns><c>true</c>, if piece has been requested, <c>false</c> otherwise.</returns>
         /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        /// <param name="downloaded">If set to <c>true</c> black has been downloaded.</param>
-        // public void BlockPieceDownloaded(UInt32 pieceNumber, UInt32 blockNumber, bool downloaded)
-        // {
-        //     try
-        //     {
-        //         if (downloaded)
-        //         {
-        //             PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.OnPeer;
-        //             PieceMap[pieceNumber].blocks[blockNumber] |= Mapping.HaveLocal;
-        //         }
-        //         else
-        //         {
-        //             PieceMap[pieceNumber].blocks[blockNumber] &= (Mapping.HaveLocal ^ 0xff);
-        //         }
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Log.Logger.Debug(ex);
-        //         throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-        //     }
-        // }
-
-        /// <summary>
-        /// Is a block of  piece present on a remote peer.
-        /// </summary>
-        /// <returns><c>true</c>, if block piece on peer. <c>false</c> otherwise.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        // public bool IsBlockPieceOnPeer(UInt32 pieceNumber, UInt32 blockNumber)
-        // {
-        //     try
-        //     {
-        //         return (PieceMap[pieceNumber].blocks[blockNumber] & Mapping.OnPeer) == Mapping.OnPeer;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Log.Logger.Debug(ex);
-        //         throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-        //     }
-        // }
-
-        /// <summary>
-        /// Is a block piece local (ie has been downloaded).
-        /// </summary>
-        /// <returns><c>true</c>, if block piece is local <c>false</c> otherwise.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        public bool IsBlockPieceLocal(UInt32 pieceNumber, UInt32 blockNumber)
+        public bool IsPieceRequested(UInt32 pieceNumber)
         {
             try
             {
-                return (PieceMap[pieceNumber].blocks[blockNumber] & Mapping.HaveLocal) == Mapping.HaveLocal;
+                return (PieceMap[pieceNumber].mapping & Mapping.Requested) == Mapping.Requested;
             }
             catch (Exception ex)
             {
@@ -224,25 +168,25 @@ namespace BitTorrentLibrary
             }
         }
 
+
         /// <summary>
-        /// Has a block piece been requested from a peer.
+        /// Has a piece been fully downloaded.
         /// </summary>
-        /// <returns><c>true</c>, if block piece has been requested, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c>, if piece is local, <c>false</c> otherwise.</returns>
         /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="blockNumber">Block number.</param>
-        public bool IsBlockPieceRequested(UInt32 pieceNumber, UInt32 blockNumber)
+        public bool IsPieceLocal(UInt32 pieceNumber)
         {
             try
             {
-                return (PieceMap[pieceNumber].blocks[blockNumber] & Mapping.Requested) == Mapping.Requested;
+                return (PieceMap[pieceNumber].mapping & Mapping.HaveLocal) == Mapping.HaveLocal;
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
-        }
 
+        }
 
         /// <summary>
         /// Merges the piece bitfield of a remote peer with the torrents piece map.
@@ -261,15 +205,7 @@ namespace BitTorrentLibrary
                         if ((map & bit) != 0)
                         {
                             PieceMap[pieceNumber].peerCount++;
-                            UInt32 blockNumber = 0;
-                            for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
-                            {
-                                remotePeer.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
-                            }
-                            if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
-                            {
-                                remotePeer.Dc.BlockPieceOnPeer(pieceNumber, blockNumber, true);
-                            }
+                            remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
                         }
                     }
                 }
@@ -282,114 +218,6 @@ namespace BitTorrentLibrary
             }
         }
 
-        /// <summary>
-        /// Has a piece been fully downloaded.
-        /// </summary>
-        /// <returns><c>true</c>, if piece is lcoal, <c>false</c> otherwise.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        public bool IsPieceLocal(UInt32 pieceNumber)
-        {
-            try
-            {
-                UInt32 blockNumber = 0;
-                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
-                {
-                    if (!IsBlockPieceLocal(pieceNumber, blockNumber))
-                    {
-                        return false;
-                    }
-                }
-                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
-                {
-                    if (!IsBlockPieceLocal(pieceNumber, blockNumber))
-                    {
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Mark all blocks of a piece as requested.
-        /// </summary>
-        /// <param name="pieceNumber">Piece number.</param>
-        public void MarkPieceRequested(UInt32 pieceNumber, bool requested)
-        {
-            try
-            {
-                UInt32 blockNumber = 0;
-                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
-                {
-                    BlockPieceRequested(pieceNumber, blockNumber, requested);
-                }
-                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
-                {
-                    BlockPieceRequested(pieceNumber, blockNumber, requested);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Mark all blocks of a piece as local (downloaded).
-        /// </summary>
-        /// <param name="pieceNumber">Piece number.</param>
-        public void MarkPieceLocal(UInt32 pieceNumber, bool local)
-        {
-            try
-            {
-                UInt32 blockNumber = 0;
-                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
-                {
-                    BlockPieceLocal(pieceNumber, blockNumber, local);
-                }
-                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
-                {
-                    BlockPieceLocal(pieceNumber, blockNumber, local);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
-
-
-        /// <summary>
-        /// Mark all blocks of a piece are (not) on remote peer.
-        /// </summary>
-        /// <param name="pieceNumber">Piece number.</param>
-        public void MarkPieceOnRemotePeer(UInt32 pieceNumber, bool onRemotePeer)
-        {
-            try
-            {
-                UInt32 blockNumber = 0;
-                for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
-                {
-                    BlockPieceOnPeer(pieceNumber, blockNumber, onRemotePeer);
-                }
-                if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
-                {
-                    BlockPieceOnPeer(pieceNumber, blockNumber, onRemotePeer);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
 
     }
 }
