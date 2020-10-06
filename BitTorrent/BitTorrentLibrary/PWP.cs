@@ -237,7 +237,7 @@ namespace BitTorrentLibrary
 
                 byte[] handshakeResponse = new byte[handshakePacket.Count];
 
-                UInt32 bytesRead = (UInt32) remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+                UInt32 bytesRead = (UInt32)remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
                 connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out remotePeerID);
 
@@ -276,8 +276,6 @@ namespace BitTorrentLibrary
             try
             {
                 List<byte> handshakePacket = BuildInitialHandshake(remotePeer, infoHash);
-
-                handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.Get()));
 
                 remotePeer.PeerWrite(handshakePacket.ToArray());
 
@@ -413,14 +411,17 @@ namespace BitTorrentLibrary
         {
             try
             {
-                List<byte> requestPacket = new List<byte>();
+                if (remotePeer.PeerInterested)
+                {
+                    List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(PackUInt32(1));
-                requestPacket.Add(Constants.MessageINTERESTED);
+                    requestPacket.AddRange(PackUInt32(1));
+                    requestPacket.Add(Constants.MessageINTERESTED);
 
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
 
-                remotePeer.PeerInterested = true;
+                    remotePeer.PeerInterested = true;
+                }
             }
             catch (Error)
             {

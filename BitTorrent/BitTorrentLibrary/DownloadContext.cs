@@ -377,11 +377,11 @@ namespace BitTorrentLibrary
                 UInt32 blockNumber = 0;
                 for (; blockNumber < PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
                 {
-                    BlockPieceLocal(pieceNumber, blockNumber, onRemotePeer);
+                    BlockPieceOnPeer(pieceNumber, blockNumber, onRemotePeer);
                 }
                 if (PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
                 {
-                    BlockPieceLocal(pieceNumber, blockNumber, onRemotePeer);
+                    BlockPieceOnPeer(pieceNumber, blockNumber, onRemotePeer);
                 }
             }
             catch (Exception ex)

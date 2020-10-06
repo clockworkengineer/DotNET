@@ -37,13 +37,17 @@ namespace BitTorrentLibrary
         private readonly ManualResetEvent _downloading;              // WaitOn when downloads == false
         private readonly Downloader _torrentDownloader;              // Downloader for torrent
         public Dictionary<string, Peer> RemotePeerSwarm { get; set; }// Connected remote peers in swarm
-        public Dictionary<string, Peer> RemotePeerUploaders { get; set; }// Connected remote peers in swarm
+        public Dictionary<string, Peer> RemotePeerUpload { get; set; }// Connected remote uploading peers 
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
         public Tracker MainTracker { get; set; }                     // Main torrent tracker
-        public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler Tasks
+        public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler tasks
+        public int ActiveUploadingTasks { get; set; } = 0;           // Active uploading tasks
         public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download;
 
+        /// <summary>
+        /// 
+        /// </summary>
         private void UploaderListenerTask()
         {
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Host.GetIP());
@@ -67,7 +71,8 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Info($"++Remote peer IP = {remotePeerIP}:{remotePeerPort}.");
 
-                if(remotePeerIP=="192.168.1.1") { // NO IDEA WHATS BEHIND THIS AT PRESENT (HANGS IF WE DONT CLOSE THIS)
+                if (remotePeerIP == "192.168.1.1")
+                { // NO IDEA WHATS BEHIND THIS AT PRESENT (HANGS IF WE DONT CLOSE THIS)
                     remotePeerSocket.Close();
                     continue;
                 }
@@ -76,9 +81,9 @@ namespace BitTorrentLibrary
                 remotePeer.Accept();
                 if (remotePeer.Connected)
                 {
-                    RemotePeerUploaders.Add(remotePeer.Ip, remotePeer);
+                    RemotePeerUpload.Add(remotePeer.Ip, remotePeer);
                     Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] from remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                    remotePeer.UploaderTask= Task.Run(() => UploadPieces(remotePeer));
+                    remotePeer.UploaderTask = Task.Run(() => UploadPieces(remotePeer));
                 }
                 else
                 {
@@ -122,18 +127,18 @@ namespace BitTorrentLibrary
                              remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
             }
         }
-         /// <summary>
+        /// <summary>
         /// Upload requested pieces task
         /// </summary>
         /// <returns>Task reference on completion.</returns>
         /// <param name="remotePeer">Remote peer.</param>
         private void UploadPieces(Peer remotePeer)
         {
- 
+
 
             try
             {
-         
+
             }
             catch (Exception ex)
             {
@@ -242,18 +247,21 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(MetaInfoFile torrentFile, Downloader downloader)
+        public Agent(MetaInfoFile torrentFile, Downloader downloader, bool uploader = false)
         {
             _torrentDownloader = downloader;
             _torrentDownloader.BuildDownloadedPiecesMap();
             RemotePeerSwarm = new Dictionary<string, Peer>();
-            RemotePeerUploaders = new Dictionary<string, Peer>();
+            RemotePeerUpload = new Dictionary<string, Peer>();
             InfoHash = torrentFile.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _deadPeersList = new HashSet<string>();
             _downloading = new ManualResetEvent(false);
             _downloadFinished = new ManualResetEvent(false);
-            _uploaderListenerTask = Task.Run(() => UploaderListenerTask());
+            if (uploader)
+            {
+                _uploaderListenerTask = Task.Run(() => UploaderListenerTask());
+            }
 
         }
         /// <summary>
