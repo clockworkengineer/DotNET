@@ -34,7 +34,6 @@ namespace BitTorrentLibrary
         private Task _uploaderListenerTask = null;                   // Upload peer connection listener task
         private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
         private readonly ManualResetEvent _downloadFinished;         // WaitOn when download finsihed == true
-        private readonly ManualResetEvent _downloading;              // WaitOn when downloads == false
         private readonly Downloader _torrentDownloader;              // Downloader for torrent
         public Dictionary<string, Peer> RemotePeerSwarm { get; set; }// Connected remote peers in swarm
         public Dictionary<string, Peer> RemotePeerUpload { get; set; }// Connected remote uploading peers 
@@ -168,7 +167,7 @@ namespace BitTorrentLibrary
 
                 PWP.Unchoke(remotePeer);
 
-                WaitOnWithCancelation(_downloading, cancelTask);
+                WaitOnWithCancelation(remotePeer.Paused, cancelTask);
                 WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
                 WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
 
@@ -216,7 +215,7 @@ namespace BitTorrentLibrary
                         //     _torrentDownloader.Dc.MarkPieceRequested((UInt32)currentPiece, false);
                         //     _torrentDownloader.Dc.MarkPieceLocal((UInt32)currentPiece, false);
                         // }
-                        WaitOnWithCancelation(_downloading, cancelTask);
+                        WaitOnWithCancelation(remotePeer.Paused, cancelTask);
 
                     }
 
@@ -256,7 +255,7 @@ namespace BitTorrentLibrary
             InfoHash = torrentFile.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _deadPeersList = new HashSet<string>();
-            _downloading = new ManualResetEvent(false);
+
             _downloadFinished = new ManualResetEvent(false);
             if (uploader)
             {
@@ -398,9 +397,9 @@ namespace BitTorrentLibrary
                 if (RemotePeerSwarm != null)
                 {
                     Log.Logger.Info("Closing peer sockets.");
-                    foreach (var peer in RemotePeerSwarm.Values)
+                    foreach (var remotePeer in RemotePeerSwarm.Values)
                     {
-                        peer.Close();
+                        remotePeer.Close();
                     }
                 }
                 MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
@@ -423,7 +422,10 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _downloading.Set();
+                foreach (var remotePeer in RemotePeerSwarm.Values)
+                {
+                    remotePeer.Paused.Set();
+                }
             }
             catch (Error)
             {
@@ -443,7 +445,10 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _downloading.Reset();
+                foreach (var remotePeer in RemotePeerSwarm.Values)
+                {
+                    remotePeer.Paused.Reset();
+                }
             }
             catch (Error)
             {
