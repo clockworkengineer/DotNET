@@ -29,7 +29,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Piece block map.
     /// </summary>
-    public struct PieceBlockMap
+    public struct PieceData
     {
         public byte mapping;            // Piece mapping
         public UInt16 peerCount;        // Peers with the piece
@@ -41,7 +41,8 @@ namespace BitTorrentLibrary
     /// </summary>
     public class DownloadContext
     {
-        public PieceBlockMap[] PieceMap { get; set; }
+        private readonly Object _PieceMapLock = new object();
+        public PieceData[] PieceMap { get; set; }
         public BlockingCollection<PieceBuffer> PieceBufferWriteQueue { get; set; }
         public UInt64 TotalBytesDownloaded { get; set; }
         public UInt64 TotalBytesToDownload { get; set; }
@@ -65,7 +66,7 @@ namespace BitTorrentLibrary
                 PiecesInfoHash = pieces;
                 NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
                 BlocksPerPiece = pieceLength / Constants.BlockSize;
-                PieceMap = new PieceBlockMap[NumberOfPieces];
+                PieceMap = new PieceData[NumberOfPieces];
                 PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
             }
             catch (Exception ex)
@@ -84,13 +85,16 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (local)
+                lock (_PieceMapLock)
                 {
-                    PieceMap[pieceNumber].mapping |= Mapping.HaveLocal;
-                }
-                else
-                {
-                    PieceMap[pieceNumber].mapping &= (Mapping.HaveLocal ^ 0xff);
+                    if (local)
+                    {
+                        PieceMap[pieceNumber].mapping |= Mapping.HaveLocal;
+                    }
+                    else
+                    {
+                        PieceMap[pieceNumber].mapping &= (Mapping.HaveLocal ^ 0xff);
+                    }
                 }
             }
             catch (Exception ex)
@@ -109,13 +113,16 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (requested)
+                lock (_PieceMapLock)
                 {
-                    PieceMap[pieceNumber].mapping |= Mapping.Requested;
-                }
-                else
-                {
-                    PieceMap[pieceNumber].mapping &= (Mapping.Requested ^ 0xff);
+                    if (requested)
+                    {
+                        PieceMap[pieceNumber].mapping |= Mapping.Requested;
+                    }
+                    else
+                    {
+                        PieceMap[pieceNumber].mapping &= (Mapping.Requested ^ 0xff);
+                    }
                 }
             }
             catch (Exception ex)
@@ -134,13 +141,16 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (noPeer)
+                lock (_PieceMapLock)
                 {
-                    PieceMap[pieceNumber].mapping |= Mapping.OnPeer;
-                }
-                else
-                {
-                    PieceMap[pieceNumber].mapping &= (Mapping.OnPeer ^ 0xff);
+                    if (noPeer)
+                    {
+                        PieceMap[pieceNumber].mapping |= Mapping.OnPeer;
+                    }
+                    else
+                    {
+                        PieceMap[pieceNumber].mapping &= (Mapping.OnPeer ^ 0xff);
+                    }
                 }
             }
             catch (Exception ex)
@@ -159,7 +169,10 @@ namespace BitTorrentLibrary
         {
             try
             {
-                return (PieceMap[pieceNumber].mapping & Mapping.Requested) == Mapping.Requested;
+                lock (_PieceMapLock)
+                {
+                    return (PieceMap[pieceNumber].mapping & Mapping.Requested) == Mapping.Requested;
+                }
             }
             catch (Exception ex)
             {
@@ -178,7 +191,10 @@ namespace BitTorrentLibrary
         {
             try
             {
-                return (PieceMap[pieceNumber].mapping & Mapping.HaveLocal) == Mapping.HaveLocal;
+                lock (_PieceMapLock)
+                {
+                    return (PieceMap[pieceNumber].mapping & Mapping.HaveLocal) == Mapping.HaveLocal;
+                }
             }
             catch (Exception ex)
             {

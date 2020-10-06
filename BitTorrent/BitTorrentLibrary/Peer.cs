@@ -60,7 +60,7 @@ namespace BitTorrentLibrary
         public PieceBuffer AssembledPiece { get; set; }     // Assembled pieces buffer
         public string Ip { get; set; }                      // Remote peer ip
         public Task AssemblerTask { get; set; }             // Peer piece assembly task
-        public Task UploaderTask {get; set; }                            // Uploader listenr task
+        public Task UploaderTask {get; set; }                            // Uploader task
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
         public bool AmChoked { get; set; } = true;                       // == true then client is choing remote peer.
         public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
