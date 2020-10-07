@@ -65,9 +65,9 @@ namespace BitTorrentLibrary
         public bool AmChoked { get; set; } = true;                       // == true then client is choing remote peer.
         public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
-        public CancellationTokenSource CancelTaskSource { get; set; }
-        public ManualResetEvent WaitForPieceAssembly { get; set; }
-        public ManualResetEvent BitfieldReceived { get; set; }
+        public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
+        public ManualResetEvent WaitForPieceAssembly { get; set; }       // When event set then piece has been fully assrmble
+        public ManualResetEvent BitfieldReceived { get; set; }           // When event set then peer has recieved bitfield from remote peer.
         public ManualResetEvent Paused { get; set; }                     // == true (set) download/upload paused.
 
         /// <summary>

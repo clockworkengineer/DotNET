@@ -22,26 +22,23 @@ using System.Net.Sockets;
 
 namespace BitTorrentLibrary
 {
+    public delegate void ProgessCallBack(Object progressData);      // Download progress 
+
     /// <summary>
     /// File Agent class definition.
     /// </summary>
     public class Agent
     {
-
-        public delegate void ProgessCallBack(Object progressData);   // Download progress 
-        private ProgessCallBack _progressFunction = null;            // Download progress function
-        private Object _progressData = null;                         // Download progress function data
         private Task _uploaderListenerTask = null;                   // Upload peer connection listener task
         private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
         private readonly ManualResetEvent _downloadFinished;         // WaitOn when download finsihed == true
         private readonly Downloader _torrentDownloader;              // Downloader for torrent
+        private readonly Assembler _pieceAssembler;                  // Piece assembler for agent
         public Dictionary<string, Peer> RemotePeerSwarm { get; set; }// Connected remote peers in swarm
         public Dictionary<string, Peer> RemotePeerUpload { get; set; }// Connected remote uploading peers 
         public byte[] InfoHash { get; }                              // Torrent info hash
         public string TrackerURL { get; }                            // Main Tracker URL
         public Tracker MainTracker { get; set; }                     // Main torrent tracker
-        public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler tasks
-        public int ActiveUploadingTasks { get; set; } = 0;           // Active uploading tasks
         public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download;
 
         /// <summary>
@@ -93,40 +90,6 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Wait for event to be set throwing a cancel exception if it is fired.
-        /// </summary>
-        /// <param name="evt"></param>
-        /// <param name="cancelTask"></param>
-        private void WaitOnWithCancelation(ManualResetEvent evt, CancellationToken cancelTask)
-        {
-            while (!evt.WaitOne(100))
-            {
-                cancelTask.ThrowIfCancellationRequested();
-            }
-        }
-        /// <summary>
-        /// Request piece number from remote peer.
-        /// </summary>
-        /// <param name="remotePeer"></param>
-        /// <param name="pieceNumber"></param>
-        private void RequestPieceFromPeer(Peer remotePeer, uint pieceNumber, CancellationToken cancelTask)
-        {
-            UInt32 blockNumber = 0;
-            for (; blockNumber < remotePeer.Dc.PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
-            {
-
-                WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
-                PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
-            }
-
-            if (remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
-            {
-                WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
-                PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
-                             remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
-            }
-        }
-        /// <summary>
         /// Upload requested pieces task
         /// </summary>
         /// <returns>Task reference on completion.</returns>
@@ -147,115 +110,20 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
-        /// </summary>
-        /// <returns>Task reference on completion.</returns>
-        /// <param name="remotePeer">Remote peer.</param>
-        /// <param name="progressFunction">Progress function.</param>
-        /// <param name="progressData">Progress data.</param>
-        private void AssemblePieces(Peer remotePeer, ProgessCallBack progressFunction, Object progressData)
-        {
-            Int64 currentPiece = -1;
-
-            try
-            {
-                ActiveAssemblerTasks++;
-
-                Log.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
-
-                CancellationToken cancelTask = remotePeer.CancelTaskSource.Token;
-
-                PWP.Unchoke(remotePeer);
-
-                WaitOnWithCancelation(remotePeer.Paused, cancelTask);
-                WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
-                WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
-
-                while (MainTracker.Left != 0)
-                {
-                    UInt32 nextPiece = 0;
-                    while (_torrentDownloader.SelectNextPiece(remotePeer, ref nextPiece))
-                    {
-                        Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
-
-                        currentPiece = (Int32)nextPiece;
-
-                        RequestPieceFromPeer(remotePeer, nextPiece, cancelTask);
-
-                        while (!remotePeer.WaitForPieceAssembly.WaitOne(100))
-                        {
-                            // if (!remotePeer.PeerChoking.WaitOne(0))
-                            // {
-                            //     Log.Logger.Debug("++CHOKE RECIEVED WHILE MAKING REQUESTS.");
-                            //     break;
-                            // }
-                            cancelTask.ThrowIfCancellationRequested();
-                        }
-                        remotePeer.WaitForPieceAssembly.Reset();
-
-                        if (remotePeer.AssembledPiece.AllBlocksThere)
-                        {
-                            Log.Logger.Debug($"All blocks for piece {nextPiece} received");
-
-                            _torrentDownloader.Dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece), cancelTask);
-
-                            remotePeer.AssembledPiece.Reset();
-
-                            MainTracker.Left = Left;
-                            MainTracker.Downloaded = _torrentDownloader.Dc.TotalBytesDownloaded;
-
-                            progressFunction?.Invoke(progressData);
-
-                            Log.Logger.Info((_torrentDownloader.Dc.TotalBytesDownloaded / (double)_torrentDownloader.Dc.TotalBytesToDownload).ToString("0.00%"));
-                            currentPiece = -1;
-                        }
-                        // else
-                        // {
-                        //     Log.Logger.Info($"++REMARK FOR DOWNLOAD PIECE {currentPiece}.");
-                        //     _torrentDownloader.Dc.MarkPieceRequested((UInt32)currentPiece, false);
-                        //     _torrentDownloader.Dc.MarkPieceLocal((UInt32)currentPiece, false);
-                        // }
-                        WaitOnWithCancelation(remotePeer.Paused, cancelTask);
-
-                    }
-
-                }
-
-                _downloadFinished.Set();
-
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error(ex.Message);
-                if (currentPiece != -1)
-                {
-                    Log.Logger.Info($"REMARK FOR DOWNLOAD PIECE {currentPiece}.");
-                    _torrentDownloader.Dc.MarkPieceRequested((UInt32)currentPiece, false);
-                    _torrentDownloader.Dc.MarkPieceLocal((UInt32)currentPiece, false);
-                    remotePeer.AssembledPiece.Reset();
-                }
-            }
-
-            Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
-            ActiveAssemblerTasks--;
-
-        }
-
-        /// <summary>
         /// Initializes a new instance of a torrent agent.
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(MetaInfoFile torrentFile, Downloader downloader, bool uploader = false)
+        public Agent(MetaInfoFile torrentFile, Downloader downloader, Assembler pieceAssembler, bool uploader = false)
         {
             _torrentDownloader = downloader;
             _torrentDownloader.BuildDownloadedPiecesMap();
+            _pieceAssembler = pieceAssembler;
             RemotePeerSwarm = new Dictionary<string, Peer>();
             RemotePeerUpload = new Dictionary<string, Peer>();
             InfoHash = torrentFile.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _deadPeersList = new HashSet<string>();
-
             _downloadFinished = new ManualResetEvent(false);
             if (uploader)
             {
@@ -298,7 +166,7 @@ namespace BitTorrentLibrary
                             {
                                 RemotePeerSwarm.Add(remotePeer.Ip, remotePeer);
                                 Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                                remotePeer.AssemblerTask = Task.Run(() => AssemblePieces(remotePeer, _progressFunction, _progressData));
+                                remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer, _downloadFinished));
                             }
                             else
                             {
@@ -317,20 +185,8 @@ namespace BitTorrentLibrary
 
             MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize - RemotePeerSwarm.Count, 0);
 
-            Log.Logger.Info($"Number of peers in swarm  {RemotePeerSwarm.Count}/{MainTracker.MaximumSwarmSize}. Active {ActiveAssemblerTasks}.");
+            Log.Logger.Info($"Number of peers in swarm  {RemotePeerSwarm.Count}/{MainTracker.MaximumSwarmSize}. Active {_pieceAssembler.ActiveAssemblerTasks}.");
 
-        }
-
-
-        /// <summary>
-        /// Set download progress function and data
-        /// </summary>
-        /// <param name="progressFunction">User defined grogress function.</param>
-        /// <param name="progressData">User defined grogress function data.</param>
-        public void Progress(ProgessCallBack progressFunction = null, Object progressData = null)
-        {
-            _progressFunction = progressFunction;
-            _progressData = progressData;
         }
 
         /// <summary>

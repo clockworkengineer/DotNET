@@ -37,13 +37,12 @@ namespace BitTorrentLibrary
             completed = 3   // Must be sent to the tracker when the download completes
         };
 
+        private DownloadContext _dc;                            // Download context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
         protected UpdatePeers _updatePeerSwarm;                 // Update peer swarm with connected peers
         public UInt64 Uploaded { get; set; }                    // Bytes left in file to be downloaded
-        public UInt64 Downloaded { get; set; }                  // Total downloaed bytes of file to local client
-        public UInt64 Left { get; set; }                        // Bytes left in file to be downloaded
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; set; } = String.Empty;      // Peers unique ID
         public uint Port { get; set; } = Host.DefaultPort;      // Port that client s listening on 
@@ -58,6 +57,9 @@ namespace BitTorrentLibrary
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
         public int MaximumSwarmSize { get; set; } = 10;         // Maximim swarm size
+
+        public UInt64 Downloaded => _dc.TotalBytesDownloaded;                        // Total downloaed bytes of file to local client
+        public UInt64 Left => _dc.TotalBytesToDownload - _dc.TotalBytesDownloaded;   // Bytes left in file to be downloaded
 
         /// <summary>
         /// Perform announce request on timer tick
@@ -87,7 +89,7 @@ namespace BitTorrentLibrary
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(Agent agent, int maximumSwarmSize = 10)
+        public Tracker(Agent agent, Downloader downloader, int maximumSwarmSize = 10)
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
@@ -95,8 +97,8 @@ namespace BitTorrentLibrary
             TrackerURL = agent.TrackerURL;
             MaximumSwarmSize = maximumSwarmSize;
             _updatePeerSwarm = agent.UpdatePeerSwarm;
+            _dc = downloader.Dc;
             agent.MainTracker = this;
-            Left = agent.Left;
             _announcerExceptions = new List<Exception>();
 
             if (!TrackerURL.StartsWith("http://"))

@@ -24,8 +24,7 @@ namespace BitTorrentLibrary
     /// File downloader.
     /// </summary>
     public class Downloader
-    {
-        private readonly Object _pieceLock;                  // Piece Lock            
+    {       
         private readonly List<FileDetails> _filesToDownload; // Files in torrent to be downloaded
         private readonly SHA1 _sha;                          // Object to create SHA1 piece info hash
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
@@ -186,7 +185,6 @@ namespace BitTorrentLibrary
             Dc = new DownloadContext(totalDownloadLength,
                 uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"])),
                 torrentMetaInfo.MetaInfoDict["pieces"]);
-            _pieceLock = new object();
             _sha = new SHA1CryptoServiceProvider();
             _pieceBufferWriterTask = new Task(PieceBufferWriter);
             _pieceBufferWriterTask.Start();
@@ -220,46 +218,6 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
             }
         }
-
-        /// <summary>
-        /// Selects the next piece to be downloaded.
-        /// </summary>
-        /// <returns><c>true</c>, if next piece was selected, <c>false</c> otherwise.</returns>
-        /// <param name="remotePeer">Remote peer.</param>
-        /// <param name="nextPiece">Next piece.</param>
-        public bool SelectNextPiece(Peer remotePeer, ref UInt32 nextPiece)
-        {
-            try
-            {
-                // Inorder to stop same the piece requested with different peers a lock 
-                // is required when trying to get the next unrequested non-local piece
-                lock (_pieceLock)
-                {
-
-                    for (UInt32 pieceNumber = 0; pieceNumber < Dc.NumberOfPieces; pieceNumber++)
-                    {
-                        if (remotePeer.IsPieceOnRemotePeer(pieceNumber))
-                        {
-                            if (!Dc.IsPieceRequested(pieceNumber) && !Dc.IsPieceLocal(pieceNumber))
-                            {
-                                nextPiece = pieceNumber;
-                                Dc.MarkPieceRequested(pieceNumber,true);
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-            }
-
-            return false;
-        }
+ 
     }
 }
