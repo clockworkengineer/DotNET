@@ -1,3 +1,12 @@
+//
+// Author: Robert Tizzard
+//
+// Library: C# class library to implement the BitTorrent protocol.
+//
+// Description: 
+//
+// Copyright 2019.
+//
 using System;
 using System.Text;
 using System.Threading;
@@ -69,29 +78,48 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="pieceNumber"></param>
-        private void RequestPieceFromPeer(Peer remotePeer, uint pieceNumber, CancellationToken cancelTask)
+        private bool GetPieceFromPeer(Peer remotePeer, uint pieceNumber, CancellationToken cancelTask)
         {
+            remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Dc.PieceMap[pieceNumber].pieceLength);
+            
             UInt32 blockNumber = 0;
             for (; blockNumber < remotePeer.Dc.PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
             {
-
-                WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
+                if (!remotePeer.PeerChoking.WaitOne(0))
+                {
+                    return false;
+                }
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
             if (remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
             {
-                WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
+                if (!remotePeer.PeerChoking.WaitOne(0))
+                {
+                    return false;
+                }
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
                              remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
             }
+            while (!remotePeer.WaitForPieceAssembly.WaitOne(100))
+            {
+                cancelTask.ThrowIfCancellationRequested();
+                if (!remotePeer.PeerChoking.WaitOne(0))
+                {
+                    remotePeer.WaitForPieceAssembly.Reset();
+                    return false;
+                }
+            }
+            remotePeer.WaitForPieceAssembly.Reset();
+            return (remotePeer.AssembledPiece.AllBlocksThere);
         }
 
-        public Assembler(Downloader torrentDownloader, ProgessCallBack progressFunction=null, Object progressData=null)
+
+        public Assembler(Downloader torrentDownloader, ProgessCallBack progressFunction = null, Object progressData = null)
         {
             _dc = torrentDownloader.Dc;
             _progressFunction = progressFunction;
-            _progressData = _progressData;
+            _progressData = progressData;
         }
 
         /// <summary>
@@ -128,41 +156,30 @@ namespace BitTorrentLibrary
 
                         currentPiece = (Int32)nextPiece;
 
-                        RequestPieceFromPeer(remotePeer, nextPiece, cancelTask);
-
-                        while (!remotePeer.WaitForPieceAssembly.WaitOne(100))
+                        if (GetPieceFromPeer(remotePeer, nextPiece, cancelTask))
                         {
-                            // if (!remotePeer.PeerChoking.WaitOne(0))
-                            // {
-                            //     Log.Logger.Debug("++CHOKE RECIEVED WHILE MAKING REQUESTS.");
-                            //     break;
-                            // }
-                            cancelTask.ThrowIfCancellationRequested();
-                        }
-                        remotePeer.WaitForPieceAssembly.Reset();
 
-                        if (remotePeer.AssembledPiece.AllBlocksThere)
-                        {
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
 
                             _dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece), cancelTask);
 
                             remotePeer.AssembledPiece.Reset();
 
-                            // MainTracker.Left = Left;
-                            // MainTracker.Downloaded = Dc.TotalBytesDownloaded;
-
                             _progressFunction?.Invoke(_progressData);
 
                             Log.Logger.Info((_dc.TotalBytesDownloaded / (double)_dc.TotalBytesToDownload).ToString("0.00%"));
                             currentPiece = -1;
+
                         }
-                        // else
-                        // {
-                        //     Log.Logger.Info($"++REMARK FOR DOWNLOAD PIECE {currentPiece}.");
-                        //     Dc.MarkPieceRequested((UInt32)currentPiece, false);
-                        //     Dc.MarkPieceLocal((UInt32)currentPiece, false);
-                        // }
+                        else
+                        {
+                            Log.Logger.Info($"REMARK FOR DOWNLOAD PIECE {currentPiece}.");
+                            _dc.MarkPieceRequested((UInt32)currentPiece, false);
+                            _dc.MarkPieceLocal((UInt32)currentPiece, false);
+                            remotePeer.AssembledPiece.Reset();
+                        }
+
+                        WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
                         WaitOnWithCancelation(remotePeer.Paused, cancelTask);
 
                     }

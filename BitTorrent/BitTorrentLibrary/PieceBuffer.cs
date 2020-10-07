@@ -79,6 +79,10 @@ namespace BitTorrentLibrary
             _blockPresent = Enumerable.Repeat(false, (int)_blockCount).ToArray();
         }
 
+        public void SetBlocksPresent(UInt32 pieceLength) {
+            _blockCount = pieceLength / Constants.BlockSize;
+        }
+
 
     }
 }

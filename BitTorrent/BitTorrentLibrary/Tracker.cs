@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
             completed = 3   // Must be sent to the tracker when the download completes
         };
 
-        private DownloadContext _dc;                            // Download context
+        private readonly DownloadContext _dc;                   // Download context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
