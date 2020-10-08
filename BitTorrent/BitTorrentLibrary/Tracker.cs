@@ -57,9 +57,9 @@ namespace BitTorrentLibrary
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
         public int MaximumSwarmSize { get; set; } = 10;         // Maximim swarm size
+        public UInt64 Downloaded => _dc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
+        public UInt64 Left => _dc.BytesLeftToDownload();        // Bytes left in torrent to download
 
-        public UInt64 Downloaded => _dc.TotalBytesDownloaded;                        // Total downloaed bytes of file to local client
-        public UInt64 Left => _dc.TotalBytesToDownload - _dc.TotalBytesDownloaded;   // Bytes left in file to be downloaded
 
         /// <summary>
         /// Perform announce request on timer tick

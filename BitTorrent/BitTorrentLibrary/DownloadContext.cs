@@ -77,6 +77,22 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
+        /// Calculate bytes left to download and report going negative and zero.
+        /// </summary>
+        /// <returns></returns>
+        public UInt64 BytesLeftToDownload()
+        {
+            Int64 bytesLeft = (Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded;
+            if (bytesLeft < 0)
+            {
+                bytesLeft = 0;
+                Log.Logger.Debug("BitTorrent Error: Bytes to download turned negative; adjusting.");
+            }
+            return (UInt64)bytesLeft;
+        }
+
+
+        /// <summary>
         /// Sets a piece as downloaded.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>

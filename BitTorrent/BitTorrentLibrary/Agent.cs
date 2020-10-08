@@ -29,20 +29,20 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent
     {
-        private Task _uploaderListenerTask = null;                   // Upload peer connection listener task
-        private readonly HashSet<string> _deadPeersList;             // Peers that failed to connect
-        private readonly ManualResetEvent _downloadFinished;         // WaitOn when download finsihed == true
-        private readonly Downloader _torrentDownloader;              // Downloader for torrent
-        private readonly Assembler _pieceAssembler;                  // Piece assembler for agent
-        public Dictionary<string, Peer> RemotePeerSwarm { get; set; }// Connected remote peers in swarm
-        public Dictionary<string, Peer> RemotePeerUpload { get; set; }// Connected remote uploading peers 
-        public byte[] InfoHash { get; }                              // Torrent info hash
-        public string TrackerURL { get; }                            // Main Tracker URL
-        public Tracker MainTracker { get; set; }                     // Main torrent tracker
-        public UInt64 Left => _torrentDownloader.Dc.TotalBytesToDownload - _torrentDownloader.Dc.TotalBytesDownloaded; //Number of bytes left to download;
+        private Task _uploaderListenerTask = null;                         // Upload peer connection listener task
+        private readonly HashSet<string> _deadPeersList;                   // Peers that failed to connect
+        private readonly ManualResetEvent _downloadFinished;               // WaitOn when download finsihed == true
+        private readonly Downloader _torrentDownloader;                    // Downloader for torrent
+        private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
+        public Dictionary<string, Peer> RemotePeerSwarm { get; set; }      // Connected remote peers in swarm
+        public Dictionary<string, Peer> RemotePeerUpload { get; set; }     // Connected remote uploading peers 
+        public byte[] InfoHash { get; }                                    // Torrent info hash
+        public string TrackerURL { get; }                                  // Main Tracker URL
+        public Tracker MainTracker { get; set; }                           // Main torrent tracker
+        public UInt64 Left => _torrentDownloader.Dc.BytesLeftToDownload(); // Number of bytes left to download;
 
         /// <summary>
-        /// 
+        /// Listen for remote peer connects and on success start peer task.
         /// </summary>
         private void UploaderListenerTask()
         {
@@ -98,14 +98,14 @@ namespace BitTorrentLibrary
         {
 
 
-            try
-            {
+            // try
+            // {
 
-            }
-            catch (Exception ex)
-            {
+            // }
+            // catch (Exception ex)
+            // {
 
-            }
+            // }
 
         }
 
@@ -196,7 +196,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (MainTracker.Left > 0)
+                if (MainTracker.Left != 0)
                 {
                     Start();
 
