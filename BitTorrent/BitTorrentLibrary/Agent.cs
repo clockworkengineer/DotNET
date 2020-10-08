@@ -5,10 +5,8 @@
 //
 // Description: All the high level torrent processing including download/upload
 // of files and updating the peers in the current swarm downloading. 
-// 
-// NOTE: ONLY DOWNLOAD SUPPORTED AT PRESENT (ITS ONE BIG LEECHER).
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;
@@ -22,16 +20,16 @@ using System.Net.Sockets;
 
 namespace BitTorrentLibrary
 {
-    public delegate void ProgessCallBack(Object progressData);      // Download progress 
+    public delegate void ProgessCallBack(Object progressData);      // Download progress callback
 
     /// <summary>
     /// File Agent class definition.
     /// </summary>
     public class Agent
     {
-        private Task _uploaderListenerTask = null;                         // Upload peer connection listener task
+        private readonly Task _uploaderListenerTask = null;                // Upload peer connection listener task
         private readonly HashSet<string> _deadPeersList;                   // Peers that failed to connect
-        private readonly ManualResetEvent _downloadFinished;               // WaitOn when download finsihed == true
+        private readonly ManualResetEvent _downloadFinished;               // WaitOn when download finished == true
         private readonly Downloader _torrentDownloader;                    // Downloader for torrent
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         public Dictionary<string, Peer> RemotePeerSwarm { get; set; }      // Connected remote peers in swarm
@@ -97,16 +95,6 @@ namespace BitTorrentLibrary
         private void UploadPieces(Peer remotePeer)
         {
 
-
-            // try
-            // {
-
-            // }
-            // catch (Exception ex)
-            // {
-
-            // }
-
         }
 
         /// <summary>
@@ -114,7 +102,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(MetaInfoFile torrentFile, Downloader downloader, Assembler pieceAssembler, bool uploader = false)
+        public Agent(MetaInfoFile torrentFile, Downloader downloader, Assembler pieceAssembler, Disassembler pieceDisassebler = null)
         {
             _torrentDownloader = downloader;
             _torrentDownloader.BuildDownloadedPiecesMap();
@@ -125,7 +113,7 @@ namespace BitTorrentLibrary
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _deadPeersList = new HashSet<string>();
             _downloadFinished = new ManualResetEvent(false);
-            if (uploader)
+            if (pieceDisassebler!=null)
             {
                 _uploaderListenerTask = Task.Run(() => UploaderListenerTask());
             }

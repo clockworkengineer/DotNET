@@ -6,7 +6,7 @@
 //
 // Description: Peer to peer network I/O functionality.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 using System;
 using System.Text;
@@ -62,7 +62,7 @@ namespace BitTorrentLibrary
         public Task AssemblerTask { get; set; }             // Peer piece assembly task
         public Task UploaderTask { get; set; }                           // Uploader task
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
-        public bool AmChoked { get; set; } = true;                       // == true then client is choing remote peer.
+        public bool AmChoked { get; set; } = true;                       // == true then client is choking remote peer.
         public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token

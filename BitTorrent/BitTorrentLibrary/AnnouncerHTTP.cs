@@ -5,7 +5,7 @@
 //
 // Description: Perform HTTP annouce requests in remote tracker.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

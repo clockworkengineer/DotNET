@@ -5,8 +5,9 @@
 //
 // Description: 
 //
-// Copyright 2019.
+// Copyright 2020.
 //
+
 using System;
 using System.Text;
 using System.Threading;
@@ -65,23 +66,23 @@ namespace BitTorrentLibrary
         /// Queue sucessfully assembled piece or flag for redownload.
         /// </summary>
         /// <param name="remotePeer"></param>
-        /// <param name="nextPiece"></param>
+        /// <param name="pieceNumber"></param>
         /// <param name="pieceAssembled"></param>
-        public void SavePieceToDisk(Peer remotePeer, UInt32 nextPiece, bool pieceAssembled)
+        public void SavePieceToDisk(Peer remotePeer, UInt32 pieceNumber, bool pieceAssembled)
         {
             if (pieceAssembled)
             {
-                Log.Logger.Debug($"All blocks for piece {nextPiece} received");
+                Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
                 _dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
                 remotePeer.AssembledPiece.Reset();
                 _progressFunction?.Invoke(_progressData);
                 Log.Logger.Info((_dc.TotalBytesDownloaded / (double)_dc.TotalBytesToDownload).ToString("0.00%"));
             }
-            else
+            else if (!_dc.IsPieceLocal(pieceNumber))
             {
-                Log.Logger.Debug($"REMARK FOR DOWNLOAD PIECE {nextPiece}.");
-                _dc.MarkPieceRequested((UInt32)nextPiece, false);
-                _dc.MarkPieceLocal((UInt32)nextPiece, false);
+                Log.Logger.Debug($"REMARK FOR DOWNLOAD PIECE {pieceNumber}.");
+                _dc.MarkPieceRequested((UInt32)pieceNumber, false);
+                _dc.MarkPieceLocal((UInt32)pieceNumber, false);
                 remotePeer.AssembledPiece.Reset();
             }
 

@@ -5,7 +5,7 @@
 //
 // Description: BitTorrent related constants.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

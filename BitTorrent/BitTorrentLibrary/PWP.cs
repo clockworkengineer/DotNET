@@ -5,7 +5,7 @@
 //
 // Description: Peer Wire Protocol handling code.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;
@@ -200,14 +200,7 @@ namespace BitTorrentLibrary
 
             Log.Logger.Debug($"Piece {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
 
-            // if (remotePeer.PeerChoking.WaitOne(0))
-            // {
             remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
-            // }
-            // else
-            // {
-            //     Log.Logger.Debug("++CHOKING SO PIECE REQUEST REPLY BEING IGNORED");
-            // }
 
         }
 

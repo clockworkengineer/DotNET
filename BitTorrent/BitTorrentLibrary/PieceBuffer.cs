@@ -6,7 +6,7 @@
 // Description: Buffer used to hold and assemble  pieces from
 // blocks downloaded/uploaded.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;
@@ -78,8 +78,12 @@ namespace BitTorrentLibrary
             _blockCount = (uint)_blockPresent.Length;
             _blockPresent = Enumerable.Repeat(false, (int)_blockCount).ToArray();
         }
-
-        public void SetBlocksPresent(UInt32 pieceLength) {
+        /// <summary>
+        /// /// 
+        /// </summary>
+        /// <param name="pieceLength"></param>
+        public void SetBlocksPresent(UInt32 pieceLength)
+        {
             _blockCount = pieceLength / Constants.BlockSize;
         }
 

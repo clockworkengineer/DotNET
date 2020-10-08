@@ -5,7 +5,7 @@
 //
 // Description: Class containing reference to logger used.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

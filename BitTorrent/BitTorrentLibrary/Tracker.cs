@@ -7,7 +7,7 @@
 // with remote trackers using HTTP/UDP. At present this just uses the main
 // announce tracker found and doesnt use the announce-list backups.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

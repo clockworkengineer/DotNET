@@ -6,7 +6,7 @@
 // Description: Structure containing details returned from a announce request 
 // to a tracker server.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

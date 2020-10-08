@@ -6,7 +6,7 @@
 // Description: BitTorrent Bencoding encoding/decoding support reading
 // torrent file data to be processed.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

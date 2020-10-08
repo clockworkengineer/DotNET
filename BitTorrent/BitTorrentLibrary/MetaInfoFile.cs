@@ -8,7 +8,7 @@
 // is extracted during this process is placed into a dictionary for retrieval
 // by other modules.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

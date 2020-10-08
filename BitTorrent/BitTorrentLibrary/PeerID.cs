@@ -5,7 +5,7 @@
 //
 // Description: Generate peer ID for a client.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

@@ -7,11 +7,10 @@
 // download progress, a pieces download map and functions for accessing this map to
 // change a pieces status.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 
 namespace BitTorrentLibrary
@@ -77,20 +76,20 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Calculate bytes left to download and report going negative and zero.
+        /// Calculate bytes left to download and report going negative.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Bytes left in torrent to download</returns>
         public UInt64 BytesLeftToDownload()
         {
             Int64 bytesLeft = (Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded;
             if (bytesLeft < 0)
             {
                 bytesLeft = 0;
-                Log.Logger.Debug("BitTorrent Error: Bytes to download turned negative; adjusting.");
+                Log.Logger.Debug("BitTorrent (DownloadConext) Error: Bytes to download turned negative; adjusting.");
+                throw new Error("BitTorrent (DownloadConext) Error: Bytes to download turned negative.");
             }
             return (UInt64)bytesLeft;
         }
-
 
         /// <summary>
         /// Sets a piece as downloaded.

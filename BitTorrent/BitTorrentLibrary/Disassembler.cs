@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description:
+// Description: 
 //
 // Copyright 2020.
 //
@@ -12,8 +12,14 @@ using System;
 
 namespace BitTorrentLibrary
 {
-  public interface IAnnouncer
+    public class Disassembler
     {
-        AnnounceResponse Announce(Tracker tracker);
+        public Disassembler() {
+
+        }
+
+        public void DisassemlePieces(Peer remotePeer) {
+
+        }
     }
 }

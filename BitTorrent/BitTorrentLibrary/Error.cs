@@ -6,7 +6,7 @@
 // Description: Class used in reporting any BitTorrent internal
 // errors.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;

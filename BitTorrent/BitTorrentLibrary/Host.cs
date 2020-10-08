@@ -5,8 +5,9 @@
 //
 // Description: Local client network host details.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
+
 using System;
 using System.Net;
 using System.Net.Sockets;

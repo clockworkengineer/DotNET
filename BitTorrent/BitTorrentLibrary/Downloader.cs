@@ -8,7 +8,7 @@
 // to determine which pieces are missing and need downloading and
 // written to the correct positions.
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;
@@ -167,7 +167,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                     Log.Logger.Error($"Error: Hash for piece {pieceBuffer.Number} is invalid.");
+                     Log.Logger.Error($"BiTorrent (Downloader) Error: Hash for piece {pieceBuffer.Number} is invalid.");
                 }
             }
         }

@@ -5,7 +5,7 @@
 //
 // Description: Details associated with each file in a torrent to download
 //
-// Copyright 2019.
+// Copyright 2020.
 //
 
 using System;
