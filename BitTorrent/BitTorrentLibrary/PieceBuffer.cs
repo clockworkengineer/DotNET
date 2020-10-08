@@ -24,7 +24,7 @@ namespace BitTorrentLibrary
         public uint Length { get; set; }                // Piece Length
         public byte[] Buffer { get; set; }              // Piece Buffer
         public uint Number { get; set; }                // Piece Number
-        public bool AllBlocksThere => _blockCount == 0;   // == true All blocks have been downloaded
+        public bool AllBlocksThere => _blockCount == 0; // == true All blocks have been downloaded
 
         /// <summary>
         /// Create an empty piece buffer.
@@ -79,12 +79,15 @@ namespace BitTorrentLibrary
             _blockPresent = Enumerable.Repeat(false, (int)_blockCount).ToArray();
         }
         /// <summary>
-        /// /// 
+        ///
         /// </summary>
         /// <param name="pieceLength"></param>
         public void SetBlocksPresent(UInt32 pieceLength)
         {
-            _blockCount = pieceLength / Constants.BlockSize;
+            _blockCount = (pieceLength / Constants.BlockSize);
+            if (pieceLength % Constants.BlockSize != 0) {
+                _blockCount++;
+            }
         }
 
 
