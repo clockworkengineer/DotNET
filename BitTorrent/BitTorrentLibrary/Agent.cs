@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -27,17 +28,62 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent
     {
-        private readonly Task _uploaderListenerTask = null;                // Upload peer connection listener task
+        private readonly BlockingCollection<PeerDetails> _peersTooSwarm;   // Peers to add to swarm queue
+        private readonly Task _downloaderListenerTask;                     // Peer swarm listener task
+        private readonly Task _uploaderListenerTask;                       // Upload peer connection listener task
         private readonly HashSet<string> _deadPeersList;                   // Peers that failed to connect
         private readonly ManualResetEvent _downloadFinished;               // WaitOn when download finished == true
         private readonly Downloader _torrentDownloader;                    // Downloader for torrent
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
-        public Dictionary<string, Peer> RemotePeerSwarm { get; set; }      // Connected remote peers in swarm
-        public Dictionary<string, Peer> RemotePeerUpload { get; set; }     // Connected remote uploading peers 
+        private readonly Disassembler _pieceDisassembler;                  // Piece disassembler for agent
+        private ConcurrentDictionary<string, Peer> _peerSwarm;             // Connected remote peers in swarm
+        private ConcurrentDictionary<string, Peer> _peerUploaders;         // Connected remote uploading peers 
         public byte[] InfoHash { get; }                                    // Torrent info hash
         public string TrackerURL { get; }                                  // Main Tracker URL
         public Tracker MainTracker { get; set; }                           // Main torrent tracker
         public UInt64 Left => _torrentDownloader.Dc.BytesLeftToDownload(); // Number of bytes left to download;
+
+        /// <summary>
+        /// Inspects download peer queue and connects and creates piece assembler task before
+        /// adding to swarm.
+        /// </summary>
+        private void DownloaderListenerTask()
+        {
+
+            while (!_peersTooSwarm.IsCompleted)
+            {
+                PeerDetails peer = _peersTooSwarm.Take();
+                try
+                {
+                    if (!_peerSwarm.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
+                    {
+                        Peer remotePeer = new Peer(peer.ip, peer.port, InfoHash, _torrentDownloader.Dc);
+                        remotePeer.Connect();
+                        if (remotePeer.Connected)
+                        {
+                            if (_peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
+                            {
+                                Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                                remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer, _downloadFinished));
+                            } else {
+                                _deadPeersList.Add(peer.ip);
+                                remotePeer.Close();
+                            }
+                        }
+                        else
+                        {
+                            _deadPeersList.Add(peer.ip);
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Log.Logger.Info($"Failed to connect to {peer.ip}");
+                    _deadPeersList.Add(peer.ip);
+                }
+            }
+
+        }
 
         /// <summary>
         /// Listen for remote peer connects and on success start peer task.
@@ -75,9 +121,9 @@ namespace BitTorrentLibrary
                 remotePeer.Accept();
                 if (remotePeer.Connected)
                 {
-                    RemotePeerUpload.Add(remotePeer.Ip, remotePeer);
+                    _peerUploaders.TryAdd(remotePeer.Ip, remotePeer);
                     Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] from remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                    remotePeer.UploaderTask = Task.Run(() => UploadPieces(remotePeer));
+                    remotePeer.UploaderTask = Task.Run(() => _pieceDisassembler.DisassemlePieces(remotePeer));
                 }
                 else
                 {
@@ -88,36 +134,37 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Upload requested pieces task
-        /// </summary>
-        /// <returns>Task reference on completion.</returns>
-        /// <param name="remotePeer">Remote peer.</param>
-        private void UploadPieces(Peer remotePeer)
-        {
-
-        }
-
-        /// <summary>
         /// Initializes a new instance of a torrent agent.
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(MetaInfoFile torrentFile, Downloader downloader, Assembler pieceAssembler, Disassembler pieceDisassebler = null)
+        public Agent(MetaInfoFile torrentFile, Downloader downloader, Assembler pieceAssembler = null, Disassembler pieceDisassembler = null)
         {
             _torrentDownloader = downloader;
             _torrentDownloader.BuildDownloadedPiecesMap();
             _pieceAssembler = pieceAssembler;
-            RemotePeerSwarm = new Dictionary<string, Peer>();
-            RemotePeerUpload = new Dictionary<string, Peer>();
+            _pieceDisassembler = pieceDisassembler;
+            _peerSwarm = new ConcurrentDictionary<string, Peer>();
+            _peerUploaders = new ConcurrentDictionary<string, Peer>();
+            _peersTooSwarm = new BlockingCollection<PeerDetails>();
             InfoHash = torrentFile.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _deadPeersList = new HashSet<string>();
             _downloadFinished = new ManualResetEvent(false);
-            if (pieceDisassebler!=null)
+            if (pieceDisassembler != null)
             {
                 _uploaderListenerTask = Task.Run(() => UploaderListenerTask());
             }
+            if (pieceAssembler != null)
+            {
+                _downloaderListenerTask = Task.Run(() => DownloaderListenerTask());
+            }
 
+
+        }
+        ~Agent()
+        {
+            _peersTooSwarm.CompleteAdding();
         }
         /// <summary>
         /// Connect peers and add to swarm on success.
@@ -129,52 +176,32 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info("Remove dead peers from swarm....");
 
-                List<string> deadPeers = (from peer in RemotePeerSwarm.Values
+                List<string> deadPeers = (from peer in _peerSwarm.Values
                                           where !peer.Connected
                                           select peer.Ip).ToList();
 
                 foreach (var ip in deadPeers)
                 {
-                    RemotePeerSwarm.Remove(ip);
-                    _deadPeersList.Add(ip);
-                    Log.Logger.Info($"Dead Peer {ip} removed from swarm.");
+                    Peer deadPeer;
+                    if (_peerSwarm.TryRemove(ip, out deadPeer))
+                    {
+                        _deadPeersList.Add(ip);
+                        Log.Logger.Info($"Dead Peer {ip} removed from swarm.");
+                    }
                 }
 
-                Log.Logger.Info("Connecting any new peers to swarm ....");
+                Log.Logger.Info("Queuing new peers for swarm ....");
 
                 foreach (var peer in peers)
                 {
-                    try
-                    {
-                        if (!RemotePeerSwarm.ContainsKey(peer.ip) && !_deadPeersList.Contains(peer.ip))
-                        {
-                            Peer remotePeer = new Peer(peer.ip, peer.port, InfoHash, _torrentDownloader.Dc);
-                            remotePeer.Connect();
-                            if (remotePeer.Connected)
-                            {
-                                RemotePeerSwarm.Add(remotePeer.Ip, remotePeer);
-                                Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                                remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer, _downloadFinished));
-                            }
-                            else
-                            {
-                                _deadPeersList.Add(peer.ip);
-                            }
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        Log.Logger.Info($"Failed to connect to {peer.ip}");
-                        _deadPeersList.Add(peer.ip);
-                    }
-
+                    _peersTooSwarm.Add(peer);
                 }
+
+                MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize - _peerSwarm.Count, 0);
+
+                Log.Logger.Info($"Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}. Active {_pieceAssembler.ActiveAssemblerTasks}.");
+
             }
-
-            MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize - RemotePeerSwarm.Count, 0);
-
-            Log.Logger.Info($"Number of peers in swarm  {RemotePeerSwarm.Count}/{MainTracker.MaximumSwarmSize}. Active {_pieceAssembler.ActiveAssemblerTasks}.");
-
         }
 
         /// <summary>
@@ -186,7 +213,6 @@ namespace BitTorrentLibrary
             {
                 if (MainTracker.Left != 0)
                 {
-                    Start();
 
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
@@ -238,10 +264,10 @@ namespace BitTorrentLibrary
             try
             {
                 MainTracker.StopAnnouncing();
-                if (RemotePeerSwarm != null)
+                if (_peerSwarm != null)
                 {
                     Log.Logger.Info("Closing peer sockets.");
-                    foreach (var remotePeer in RemotePeerSwarm.Values)
+                    foreach (var remotePeer in _peerSwarm.Values)
                     {
                         remotePeer.Close();
                     }
@@ -266,7 +292,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                foreach (var remotePeer in RemotePeerSwarm.Values)
+                foreach (var remotePeer in _peerSwarm.Values)
                 {
                     remotePeer.Paused.Set();
                 }
@@ -289,7 +315,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                foreach (var remotePeer in RemotePeerSwarm.Values)
+                foreach (var remotePeer in _peerSwarm.Values)
                 {
                     remotePeer.Paused.Reset();
                 }
