@@ -70,32 +70,36 @@ namespace BitTorrentLibrary
         /// <param name="pieceAssembled"></param>
         public void SavePieceToDisk(Peer remotePeer, UInt32 pieceNumber, bool pieceAssembled)
         {
-            bool pieceValid = _dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, _dc.PieceMap[pieceNumber].pieceLength);
 
-            if (pieceAssembled && pieceValid)
+            if (pieceAssembled)
             {
-                Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
-                _dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
-                remotePeer.AssembledPiece.Reset();
-                _progressFunction?.Invoke(_progressData);
-                Log.Logger.Info((_dc.TotalBytesDownloaded / (double)_dc.TotalBytesToDownload).ToString("0.00%"));
+                bool pieceValid = _dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, _dc.PieceMap[pieceNumber].pieceLength);
+                if (pieceValid)
+                {
+                    Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
+                    _dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
+                    _progressFunction?.Invoke(_progressData);
+                }
+                else
+                {
+                    Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
+                    Log.Logger.Debug($"REMARK FOR DOWNLOAD PIECE {pieceNumber}.");
+                    _dc.MarkPieceRequested((UInt32)pieceNumber, false);
+                    _dc.MarkPieceLocal((UInt32)pieceNumber, false);
+                    // remotePeer.Close();
+                }
             }
             else
             {
-                Log.Logger.Debug($"REMARK FOR DOWNLOAD PIECE {pieceNumber}.");
-                _dc.MarkPieceRequested((UInt32)pieceNumber, false);
-                _dc.MarkPieceLocal((UInt32)pieceNumber, false);
-                remotePeer.AssembledPiece.Reset();
+                if (!_dc.IsPieceLocal(pieceNumber))
+                {
+                    Log.Logger.Debug($"REMARK FOR DOWNLOAD PIECE {pieceNumber}.");
+                    _dc.MarkPieceRequested((UInt32)pieceNumber, false);
+                    _dc.MarkPieceLocal((UInt32)pieceNumber, false);
+                }
             }
 
-            // We recieved piece assembled with invalid infohash closedown and
-            // move to dead peers lists.
-            if (pieceAssembled && !pieceValid)
-            {
-                Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.SHUT IT DOWN.");
-                remotePeer.Close();
-            }
-
+            remotePeer.AssembledPiece.Reset();
 
         }
         /// <summary>
@@ -194,7 +198,8 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                        SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
+                        bool pieceRequested = GetPieceFromPeer(remotePeer, nextPiece, cancelTask);
+                        SavePieceToDisk(remotePeer, nextPiece, pieceRequested);
 
                         WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
                         WaitOnWithCancelation(remotePeer.Paused, cancelTask);

@@ -276,7 +276,7 @@ namespace BitTorrentLibrary
                     Dc.MarkPieceLocal(pieceNumber, true);
                     Dc.MarkPieceRequested(pieceNumber, false);
                     AssembledPiece.Number = pieceNumber;
-                    Dc.TotalBytesDownloaded += Dc.PieceMap[pieceNumber].pieceLength;
+                    // Dc.TotalBytesDownloaded += Dc.PieceMap[pieceNumber].pieceLength;
                     WaitForPieceAssembly.Set();
                 }
             }

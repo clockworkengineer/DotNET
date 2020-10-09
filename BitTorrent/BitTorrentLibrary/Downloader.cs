@@ -138,7 +138,8 @@ namespace BitTorrentLibrary
                         }
                     }
                 }
-
+                Dc.TotalBytesDownloaded += Dc.PieceMap[pieceBuffer.Number].pieceLength;
+                Log.Logger.Info((Dc.TotalBytesDownloaded / (double)Dc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
             }
