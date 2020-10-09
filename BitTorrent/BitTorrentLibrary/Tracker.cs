@@ -189,6 +189,11 @@ namespace BitTorrentLibrary
         {
             try
             {
+                // If all of torrent downloaded reset total bytes downloaded
+                if (Left==0) {
+                    _dc.TotalBytesDownloaded = 0;
+                    _dc.TotalBytesToDownload = 0;
+                }
                 ChangeStatus(TrackerEvent.started);
                 _announceTimer = new System.Timers.Timer(Interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);

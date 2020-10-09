@@ -200,7 +200,8 @@ namespace BitTorrentLibrary
 
                 MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize - _peerSwarm.Count, 0);
 
-                Log.Logger.Info($"Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}. Active {_pieceAssembler.ActiveAssemblerTasks}.");
+                Log.Logger.Info($"Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}. Active Assemblers {_pieceAssembler?.ActiveAssemblerTasks}."+
+                                $"Active Disassemblers {_pieceDisassembler?.ActiveDisassemblerTasks}");
 
             }
         }

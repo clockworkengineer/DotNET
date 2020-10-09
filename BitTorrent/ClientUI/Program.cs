@@ -72,7 +72,8 @@ namespace BitTorrent
 
             try
             {
-                for (var test = 0; test < 1 ; test++) {
+                for (var test = 0; test < 1; test++)
+                {
 
                     if (File.Exists($"{Directory.GetCurrentDirectory()}/file.txt"))
                     {
@@ -86,10 +87,11 @@ namespace BitTorrent
                     torrentFile.Parse();
 
                     Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
-                    Assembler assembler = new Assembler(downloader);
-                    Agent agent = new Agent(torrentFile, downloader, assembler);
+                    Assembler assembler = null;//new Assembler(downloader);
+                    Disassembler disassembler = new Disassembler(downloader);
+                    Agent agent = new Agent(torrentFile, downloader, assembler, disassembler);
 
-                    if (agent.Left!= 0)
+                    if (agent.Left != 0)
                     {
                         Tracker tracker = new Tracker(agent, downloader);
 
@@ -105,6 +107,11 @@ namespace BitTorrent
                     else
                     {
                         Log.Logger.Info("Torrent has been fully downloaded.");
+                        Tracker tracker = new Tracker(agent, downloader);
+
+                        tracker.StartAnnouncing();
+
+                        Console.Read();
                     }
                 }
             }

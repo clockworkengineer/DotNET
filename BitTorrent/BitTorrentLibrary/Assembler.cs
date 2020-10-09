@@ -198,8 +198,7 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
-                        bool pieceRequested = GetPieceFromPeer(remotePeer, nextPiece, cancelTask);
-                        SavePieceToDisk(remotePeer, nextPiece, pieceRequested);
+                        SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
 
                         WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
                         WaitOnWithCancelation(remotePeer.Paused, cancelTask);

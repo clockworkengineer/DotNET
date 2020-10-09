@@ -9,16 +9,27 @@
 //
 
 using System;
+using System.Threading;
 
 namespace BitTorrentLibrary
 {
     public class Disassembler
     {
-        public Disassembler() {
+        public UInt32 ActiveDisassemblerTasks { get; set; }
+        public Disassembler(Downloader downloader)
+        {
 
         }
 
-        public void DisassemlePieces(Peer remotePeer) {
+        public void DisassemlePieces(Peer remotePeer)
+        {
+
+            ActiveDisassemblerTasks++;
+
+            while(true) {
+                Thread.Sleep(1000);
+            }
+            ActiveDisassemblerTasks--;
 
         }
     }
