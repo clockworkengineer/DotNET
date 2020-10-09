@@ -65,7 +65,9 @@ namespace BitTorrentLibrary
                             {
                                 Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
                                 remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer, _downloadFinished));
-                            } else {
+                            }
+                            else
+                            {
                                 _deadPeersList.Add(peer.ip);
                                 remotePeer.Close();
                             }
@@ -292,10 +294,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                foreach (var remotePeer in _peerSwarm.Values)
-                {
-                    remotePeer.Paused.Set();
-                }
+                _torrentDownloader.Dc.Paused.Set();
             }
             catch (Error)
             {
@@ -315,10 +314,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                foreach (var remotePeer in _peerSwarm.Values)
-                {
-                    remotePeer.Paused.Reset();
-                }
+                _torrentDownloader.Dc.Paused.Reset();
             }
             catch (Error)
             {

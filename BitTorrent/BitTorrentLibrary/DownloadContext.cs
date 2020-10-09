@@ -12,6 +12,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace BitTorrentLibrary
 {
@@ -49,6 +50,7 @@ namespace BitTorrentLibrary
         public uint BlocksPerPiece { get; set; }
         public byte[] PiecesInfoHash { get; set; }
         public uint NumberOfPieces { get; set; }
+        public ManualResetEvent Paused { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the DownloadContext class.
@@ -58,21 +60,14 @@ namespace BitTorrentLibrary
         /// <param name="pieces">Pieces.</param>
         public DownloadContext(UInt64 totalDownloadLength, UInt32 pieceLength, byte[] pieces)
         {
-            try
-            {
-                TotalBytesToDownload = totalDownloadLength;
-                PieceLength = pieceLength;
-                PiecesInfoHash = pieces;
-                NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
-                BlocksPerPiece = pieceLength / Constants.BlockSize;
-                PieceMap = new PieceData[NumberOfPieces];
-                PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
+            TotalBytesToDownload = totalDownloadLength;
+            PieceLength = pieceLength;
+            PiecesInfoHash = pieces;
+            NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
+            BlocksPerPiece = pieceLength / Constants.BlockSize;
+            PieceMap = new PieceData[NumberOfPieces];
+            PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
+            Paused = new ManualResetEvent(false);
         }
 
         /// <summary>

@@ -139,8 +139,8 @@ namespace BitTorrentLibrary
             Dc = dc;
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
             AssembledPiece = new PieceBuffer(Dc.PieceLength);
+            Paused = Dc.Paused;
             WaitForPieceAssembly = new ManualResetEvent(false);
-            Paused = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
