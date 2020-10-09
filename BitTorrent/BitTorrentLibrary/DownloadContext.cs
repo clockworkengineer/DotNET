@@ -12,6 +12,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Threading;
 
 namespace BitTorrentLibrary
@@ -41,6 +42,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class DownloadContext
     {
+        private readonly SHA1 _sha;                          // Object to create SHA1 piece info hash
         private readonly Object _PieceMapLock = new object();
         public PieceData[] PieceMap { get; set; }
         public BlockingCollection<PieceBuffer> PieceBufferWriteQueue { get; set; }
@@ -68,6 +70,28 @@ namespace BitTorrentLibrary
             PieceMap = new PieceData[NumberOfPieces];
             PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
             Paused = new ManualResetEvent(false);
+            _sha = new SHA1CryptoServiceProvider();
+        }
+
+        /// <summary>
+        /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.
+        /// </summary>
+        /// <returns><c>true</c>, if piece hash agrees (it has been downloaded), <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="pieceBuffer">Piece buffer.</param>
+        /// <param name="numberOfBytes">Number of bytes.</param>
+        public bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
+        {
+            byte[] hash = _sha.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
+            UInt32 pieceOffset = pieceNumber * Constants.HashLength;
+            for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
+            {
+                if (hash[byteNumber] != PiecesInfoHash[pieceOffset + byteNumber])
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -76,14 +100,11 @@ namespace BitTorrentLibrary
         /// <returns>Bytes left in torrent to download</returns>
         public UInt64 BytesLeftToDownload()
         {
-            Int64 bytesLeft = (Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded;
-            if (bytesLeft < 0)
+            if ((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded < 0)
             {
-                bytesLeft = 0;
-                Log.Logger.Debug("BitTorrent (DownloadConext) Error: Bytes to download turned negative; adjusting.");
-                throw new Error("BitTorrent (DownloadConext) Error: Bytes to download turned negative.");
+                throw new Error("BitTorrent (DownloadConext) Error: Bytes left to download turned negative.");
             }
-            return (UInt64)bytesLeft;
+            return (UInt64)((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded);
         }
 
         /// <summary>

@@ -14,7 +14,6 @@
 using System;
 using System.Text;
 using System.IO;
-using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -26,7 +25,7 @@ namespace BitTorrentLibrary
     public class Downloader
     {       
         private readonly List<FileDetails> _filesToDownload; // Files in torrent to be downloaded
-        private readonly SHA1 _sha;                          // Object to create SHA1 piece info hash
+
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
         public DownloadContext Dc { get; set; }              // Torrent download context
 
@@ -52,27 +51,6 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.
-        /// </summary>
-        /// <returns><c>true</c>, if piece hash agrees (it has been downloaded), <c>false</c> otherwise.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="pieceBuffer">Piece buffer.</param>
-        /// <param name="numberOfBytes">Number of bytes.</param>
-        private bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
-        {
-            byte[] hash = _sha.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
-            UInt32 pieceOffset = pieceNumber * Constants.HashLength;
-            for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
-            {
-                if (hash[byteNumber] != Dc.PiecesInfoHash[pieceOffset + byteNumber])
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        /// <summary>
         /// Generates the piece map from buffer.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
@@ -80,7 +58,7 @@ namespace BitTorrentLibrary
         /// <param name="numberOfBytes">Number of bytes in piece.</param>
         private void GeneratePieceMapFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
-            bool pieceThere = CheckPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
+            bool pieceThere = Dc.CheckPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
             if (pieceThere)
             {
                 Dc.TotalBytesDownloaded += numberOfBytes;
@@ -141,7 +119,7 @@ namespace BitTorrentLibrary
             {
                 PieceBuffer pieceBuffer = Dc.PieceBufferWriteQueue.Take();
 
-                if (CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, Dc.PieceMap[pieceBuffer.Number].pieceLength))
+                if (Dc.CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, Dc.PieceMap[pieceBuffer.Number].pieceLength))
                 {
                     Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
@@ -185,7 +163,6 @@ namespace BitTorrentLibrary
             Dc = new DownloadContext(totalDownloadLength,
                 uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"])),
                 torrentMetaInfo.MetaInfoDict["pieces"]);
-            _sha = new SHA1CryptoServiceProvider();
             _pieceBufferWriterTask = new Task(PieceBufferWriter);
             _pieceBufferWriterTask.Start();
         }

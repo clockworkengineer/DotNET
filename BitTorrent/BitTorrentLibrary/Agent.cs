@@ -184,8 +184,7 @@ namespace BitTorrentLibrary
 
                 foreach (var ip in deadPeers)
                 {
-                    Peer deadPeer;
-                    if (_peerSwarm.TryRemove(ip, out deadPeer))
+                    if (_peerSwarm.TryRemove(ip, out Peer deadPeer))
                     {
                         _deadPeersList.Add(ip);
                         Log.Logger.Info($"Dead Peer {ip} removed from swarm.");
@@ -194,9 +193,9 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Info("Queuing new peers for swarm ....");
 
-                foreach (var peer in peers)
+                foreach (var peerDetails in peers)
                 {
-                    _peersTooSwarm.Add(peer);
+                    _peersTooSwarm.Add(peerDetails);
                 }
 
                 MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize - _peerSwarm.Count, 0);
