@@ -79,7 +79,7 @@ namespace BitTorrentLibrary
             _blockPresent = Enumerable.Repeat(false, (int)_blockCount).ToArray();
         }
         /// <summary>
-        ///
+        /// Set blocks to assemble count
         /// </summary>
         /// <param name="pieceLength"></param>
         public void SetBlocksPresent(UInt32 pieceLength)

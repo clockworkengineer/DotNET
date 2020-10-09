@@ -23,7 +23,7 @@ namespace BitTorrentLibrary
     /// File downloader.
     /// </summary>
     public class Downloader
-    {       
+    {
         private readonly List<FileDetails> _filesToDownload; // Files in torrent to be downloaded
 
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
@@ -64,7 +64,7 @@ namespace BitTorrentLibrary
                 Dc.TotalBytesDownloaded += numberOfBytes;
             }
             Dc.PieceMap[pieceNumber].pieceLength = numberOfBytes;
-            Dc.MarkPieceLocal(pieceNumber,pieceThere);
+            Dc.MarkPieceLocal(pieceNumber, pieceThere);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace BitTorrentLibrary
         /// </summary>
         private void CreatePieceMap()
         {
-            byte [] pieceBuffer = new byte[Dc.PieceLength];
+            byte[] pieceBuffer = new byte[Dc.PieceLength];
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
             int bytesRead = 0;
@@ -115,38 +115,32 @@ namespace BitTorrentLibrary
         /// </summary>
         private void PieceBufferWriter()
         {
-            while(!Dc.PieceBufferWriteQueue.IsCompleted)
+            while (!Dc.PieceBufferWriteQueue.IsCompleted)
             {
                 PieceBuffer pieceBuffer = Dc.PieceBufferWriteQueue.Take();
 
-                if (Dc.CheckPieceHash(pieceBuffer.Number, pieceBuffer.Buffer, Dc.PieceMap[pieceBuffer.Number].pieceLength))
+                Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
+
+                UInt64 startOffset = pieceBuffer.Number * Dc.PieceLength;
+                UInt64 endOffset = startOffset + Dc.PieceLength;
+
+                foreach (var file in _filesToDownload)
                 {
-                    Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
-
-                    UInt64 startOffset = pieceBuffer.Number * Dc.PieceLength;
-                    UInt64 endOffset = startOffset + Dc.PieceLength;
-
-                    foreach (var file in _filesToDownload)
+                    if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
                     {
-                        if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                        UInt64 startWrite = Math.Max(startOffset, file.offset);
+                        UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
+                        using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
                         {
-                            UInt64 startWrite = Math.Max(startOffset, file.offset);
-                            UInt64 endWrite = Math.Min(endOffset, file.offset + file.length);
-                            using (Stream stream = new FileStream(file.name, FileMode.OpenOrCreate))
-                            {
-                                stream.Seek((Int64)(startWrite - file.offset), SeekOrigin.Begin);
-                                stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % Dc.PieceLength), (Int32)(endWrite - startWrite));
-                                stream.Flush();
-                            }
+                            stream.Seek((Int64)(startWrite - file.offset), SeekOrigin.Begin);
+                            stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % Dc.PieceLength), (Int32)(endWrite - startWrite));
+                            stream.Flush();
                         }
                     }
+                }
 
-                     Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
-                }
-                else
-                {
-                     Log.Logger.Error($"BiTorrent (Downloader) Error: Hash for piece {pieceBuffer.Number} is invalid.");
-                }
+                Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
+
             }
         }
 
@@ -195,6 +189,6 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
             }
         }
- 
+
     }
 }
