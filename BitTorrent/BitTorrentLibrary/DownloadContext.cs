@@ -265,6 +265,38 @@ namespace BitTorrentLibrary
             }
         }
 
+        /// <summary>
+        /// Build piece bitfield to send to remote peer.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
+        public byte[] BuildPieceBitfield(Peer remotePeer)
+        {
+            try
+            {
+                byte[] bitfield = new byte[NumberOfPieces];
+   
+                for (UInt32 pieceNumber = 0; pieceNumber < NumberOfPieces; pieceNumber++)
+                {
+                    for (byte bit = 0x80; bit != 0; bit >>= 1)
+                    {
+                        if (IsPieceLocal(pieceNumber))
+                        {
+                            bitfield[pieceNumber>>3] |= bit;
+                        }
+                    }
+
+                }
+                return (bitfield);
+
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+            }
+        }
+
+
 
     }
 }

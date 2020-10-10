@@ -87,8 +87,8 @@ namespace BitTorrent
                     torrentFile.Parse();
 
                     Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
-                    Assembler assembler = null;//new Assembler(downloader);
-                    Disassembler disassembler = new Disassembler(downloader);
+                    Assembler assembler = new Assembler(downloader);
+                    Disassembler disassembler = null;//= new Disassembler(downloader);
                     Agent agent = new Agent(torrentFile, downloader, assembler, disassembler);
 
                     if (agent.Left != 0)
