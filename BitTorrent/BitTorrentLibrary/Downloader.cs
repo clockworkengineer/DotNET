@@ -146,35 +146,9 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Initializes a new instance of the FileDownloader class.
-        /// </summary>
-        /// <param name="filesToDownload">Files to download.</param>
-        /// <param name="pieceLength">Piece length.</param>
-        /// <param name="pieces">Pieces.</param>
-        public Downloader(MetaInfoFile torrentMetaInfo, string downloadPath)
-        {
-            (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
-            _filesToDownload = filesToDownload;
-            Dc = new DownloadContext(totalDownloadLength,
-                uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"])),
-                torrentMetaInfo.MetaInfoDict["pieces"]);
-            _pieceBufferWriterTask = new Task(PieceBufferWriter);
-            _pieceBufferWriterTask.Start();
-        }
-
-        /// <summary>
-        /// Releases unmanaged resources and performs other cleanup operations before the
-        /// FileDownloader class is reclaimed by garbage collection.
-        /// </summary>
-        ~Downloader()
-        {
-            Dc.PieceBufferWriteQueue.CompleteAdding();
-        }
-
-        /// <summary>
         /// Build already downloaded pieces map.
         /// </summary>
-        public void BuildDownloadedPiecesMap()
+        private void BuildDownloadedPiecesMap()
         {
             try
             {
@@ -190,6 +164,34 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
             }
         }
+
+        /// <summary>
+        /// Initializes a new instance of the FileDownloader class.
+        /// </summary>
+        /// <param name="filesToDownload">Files to download.</param>
+        /// <param name="pieceLength">Piece length.</param>
+        /// <param name="pieces">Pieces.</param>
+        public Downloader(MetaInfoFile torrentMetaInfo, string downloadPath)
+        {
+            (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
+            _filesToDownload = filesToDownload;
+            Dc = new DownloadContext(totalDownloadLength,
+                uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"])),
+                torrentMetaInfo.MetaInfoDict["pieces"]);
+            _pieceBufferWriterTask = new Task(PieceBufferWriter);
+            _pieceBufferWriterTask.Start();
+            BuildDownloadedPiecesMap();
+        }
+
+        /// <summary>
+        /// Releases unmanaged resources and performs other cleanup operations before the
+        /// FileDownloader class is reclaimed by garbage collection.
+        /// </summary>
+        ~Downloader()
+        {
+            Dc.PieceBufferWriteQueue.CompleteAdding();
+        }
+
 
     }
 }

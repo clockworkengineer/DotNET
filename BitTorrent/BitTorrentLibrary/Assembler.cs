@@ -42,7 +42,7 @@ namespace BitTorrentLibrary
                     pieces.Add((UInt32)pieceNumber);
                 }
             }
-            foreach (var piece in pieces.OrderBy(x => rnd.Next()).ToArray())
+            foreach (var piece in pieces) //.OrderBy(x => rnd.Next()).ToArray())
             {
                 _suggestedPieces.Enqueue(piece);
             }
@@ -64,22 +64,17 @@ namespace BitTorrentLibrary
                 {
                     if (_suggestedPieces.TryDequeue(out nextPiece))
                     {
+
+                        if (remotePeer.IsPieceOnRemotePeer(nextPiece))
                         {
-                            if (remotePeer.Dc.IsPieceLocal(nextPiece))
-                            {
-                                continue;
-                            }
-                            if (remotePeer.IsPieceOnRemotePeer(nextPiece))
-                            {
-                                //                              _dc.MarkPieceRequested(nextPiece, true);
-                                return (true);
-                            }
-                            else
-                            {
-                                Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
-                                _suggestedPieces.Enqueue(nextPiece);
-                            }
+                            return (true);
                         }
+                        else
+                        {
+                            Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
+                            _suggestedPieces.Enqueue(nextPiece);
+                        }
+
                     }
 
                 }
@@ -118,10 +113,7 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
                     Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                    //                   _dc.MarkPieceRequested((UInt32)pieceNumber, false);
-                    //                   _dc.MarkPieceLocal((UInt32)pieceNumber, false);
                     _suggestedPieces.Enqueue(pieceNumber);
-                    // remotePeer.Close();
                 }
             }
             else
@@ -129,8 +121,6 @@ namespace BitTorrentLibrary
                 if (!_dc.IsPieceLocal(pieceNumber))
                 {
                     Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                    //                    _dc.MarkPieceRequested((UInt32)pieceNumber, false);
-                    //                    _dc.MarkPieceLocal((UInt32)pieceNumber, false);
                     _suggestedPieces.Enqueue(pieceNumber);
                 }
             }

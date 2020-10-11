@@ -573,7 +573,6 @@ namespace BitTorrentLibrary
 
                 remotePeer.PeerWrite(requestPacket.ToArray());
 
-     //           remotePeer.Dc.MarkPieceRequested(pieceNumber, true);
             }
             catch (Error)
             {

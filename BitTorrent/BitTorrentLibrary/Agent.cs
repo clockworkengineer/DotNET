@@ -143,7 +143,6 @@ namespace BitTorrentLibrary
         public Agent(MetaInfoFile torrentFile, Downloader downloader, Assembler pieceAssembler = null, Disassembler pieceDisassembler = null)
         {
             _torrentDownloader = downloader;
-            _torrentDownloader.BuildDownloadedPiecesMap();
             _pieceAssembler = pieceAssembler;
             _pieceDisassembler = pieceDisassembler;
             _peerSwarm = new ConcurrentDictionary<string, Peer>();
