@@ -36,8 +36,8 @@ namespace BitTorrentLibrary
         private readonly Downloader _torrentDownloader;                    // Downloader for torrent
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private readonly Disassembler _pieceDisassembler;                  // Piece disassembler for agent
-        private ConcurrentDictionary<string, Peer> _peerSwarm;             // Connected remote peers in swarm
-        private ConcurrentDictionary<string, Peer> _peerUploaders;         // Connected remote uploading peers 
+        private readonly ConcurrentDictionary<string, Peer> _peerSwarm;    // Connected remote peers in swarm
+        private readonly ConcurrentDictionary<string, Peer> _peerUploaders;// Connected remote uploading peers 
         public byte[] InfoHash { get; }                                    // Torrent info hash
         public string TrackerURL { get; }                                  // Main Tracker URL
         public Tracker MainTracker { get; set; }                           // Main torrent tracker
@@ -219,11 +219,9 @@ namespace BitTorrentLibrary
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
                     _downloadFinished.WaitOne();
-
                     MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
 
                     Log.Logger.Info("Whole Torrent finished downloading.");
-
                 }
 
             }
@@ -294,7 +292,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _torrentDownloader.Dc.Paused.Set();
+                _pieceAssembler?.Paused.Set();
             }
             catch (Error)
             {
@@ -314,7 +312,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _torrentDownloader.Dc.Paused.Reset();
+                _pieceAssembler?.Paused.Reset();
             }
             catch (Error)
             {

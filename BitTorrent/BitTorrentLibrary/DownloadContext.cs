@@ -23,7 +23,7 @@ namespace BitTorrentLibrary
     public static class Mapping
     {
         public const byte HaveLocal = 0x01; // Downloaded
-        public const byte Requested = 0x2;  // Has been requested
+     //   public const byte Requested = 0x2;  // Has been requested
         public const byte OnPeer = 0x04;    // Is present on a remote peer
     }
 
@@ -52,7 +52,6 @@ namespace BitTorrentLibrary
         public uint BlocksPerPiece { get; set; }
         public byte[] PiecesInfoHash { get; set; }
         public uint NumberOfPieces { get; set; }
-        public ManualResetEvent Paused { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the DownloadContext class.
@@ -69,7 +68,6 @@ namespace BitTorrentLibrary
             BlocksPerPiece = pieceLength / Constants.BlockSize;
             PieceMap = new PieceData[NumberOfPieces];
             PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
-            Paused = new ManualResetEvent(false);
             _sha = new SHA1CryptoServiceProvider();
         }
 
@@ -140,28 +138,28 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="requested">If set to <c>true</c> piece has been requested.</param>
-        public void MarkPieceRequested(UInt32 pieceNumber, bool requested)
-        {
-            try
-            {
-                lock (_PieceMapLock)
-                {
-                    if (requested)
-                    {
-                        PieceMap[pieceNumber].mapping |= Mapping.Requested;
-                    }
-                    else
-                    {
-                        PieceMap[pieceNumber].mapping &= (Mapping.Requested ^ 0xff);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
+        // public void MarkPieceRequested(UInt32 pieceNumber, bool requested)
+        // {
+        //     try
+        //     {
+        //         lock (_PieceMapLock)
+        //         {
+        //             if (requested)
+        //             {
+        //                 PieceMap[pieceNumber].mapping |= Mapping.Requested;
+        //             }
+        //             else
+        //             {
+        //                 PieceMap[pieceNumber].mapping &= (Mapping.Requested ^ 0xff);
+        //             }
+        //         }
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Log.Logger.Debug(ex);
+        //         throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+        //     }
+        // }
 
         /// <summary>
         /// Sets a piece as present on remote peer.
@@ -196,21 +194,21 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <returns><c>true</c>, if piece has been requested, <c>false</c> otherwise.</returns>
         /// <param name="pieceNumber">Piece number.</param>
-        public bool IsPieceRequested(UInt32 pieceNumber)
-        {
-            try
-            {
-                lock (_PieceMapLock)
-                {
-                    return (PieceMap[pieceNumber].mapping & Mapping.Requested) == Mapping.Requested;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
+        // public bool IsPieceRequested(UInt32 pieceNumber)
+        // {
+        //     try
+        //     {
+        //         lock (_PieceMapLock)
+        //         {
+        //             return (PieceMap[pieceNumber].mapping & Mapping.Requested) == Mapping.Requested;
+        //         }
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Log.Logger.Debug(ex);
+        //         throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+        //     }
+        // }
 
 
         /// <summary>
@@ -268,8 +266,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Build piece bitfield to send to remote peer.
         /// </summary>
-        /// <param name="remotePeer">Remote peer.</param>
-        public byte[] BuildPieceBitfield(Peer remotePeer)
+        public byte[] BuildPieceBitfield()
         {
             try
             {
@@ -295,8 +292,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
-
-
 
     }
 }

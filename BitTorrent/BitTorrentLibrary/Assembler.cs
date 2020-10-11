@@ -10,18 +10,43 @@
 
 using System;
 using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading;
 
 namespace BitTorrentLibrary
 {
     public class Assembler
     {
+        private ConcurrentQueue<UInt32> _suggestedPieces;
         private readonly Object _pieceLock = new object();           // Piece Lock     
         private readonly ProgessCallBack _progressFunction = null;   // Download progress function
         private readonly Object _progressData = null;                // Download progress function data
         private readonly DownloadContext _dc;                        // Download context for torrent
+        public ManualResetEvent Paused { get; set; }                 // == true (set) pause downloading from peer
         public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler tasks
 
+        /// <summary>
+        /// 
+        /// </summary>
+        private void BuildSuggestedPiecesQueue()
+        {
+            _suggestedPieces = new ConcurrentQueue<uint>();
+            List<UInt32> pieces = new List<UInt32>();
+            Random rnd = new Random();
+            foreach (var pieceNumber in Enumerable.Range(0, (int)_dc.NumberOfPieces))
+            {
+                if (!_dc.IsPieceLocal((UInt32)pieceNumber))
+                {
+                    pieces.Add((UInt32)pieceNumber);
+                }
+            }
+            foreach (var piece in pieces.OrderBy(x => rnd.Next()).ToArray())
+            {
+                _suggestedPieces.Enqueue(piece);
+            }
+        }
         /// <summary>
         /// Selects the next piece to be downloaded.
         /// </summary>
@@ -33,24 +58,33 @@ namespace BitTorrentLibrary
             try
             {
                 // Inorder to stop same the piece requested with different peers a lock 
-                // is required when trying to get the next unrequested non-local piece
-                lock (_pieceLock)
-                {
+                // is required when trying to get the next unrequested non-local pi
 
-                    for (UInt32 pieceNumber = 0; pieceNumber < _dc.NumberOfPieces; pieceNumber++)
+                while (!_suggestedPieces.IsEmpty)
+                {
+                    if (_suggestedPieces.TryDequeue(out nextPiece))
                     {
-                        if (remotePeer.IsPieceOnRemotePeer(pieceNumber))
                         {
-                            if (!_dc.IsPieceRequested(pieceNumber) && !_dc.IsPieceLocal(pieceNumber))
+                            if (remotePeer.Dc.IsPieceLocal(nextPiece))
                             {
-                                nextPiece = pieceNumber;
-                                _dc.MarkPieceRequested(pieceNumber, true);
-                                return true;
+                                continue;
+                            }
+                            if (remotePeer.IsPieceOnRemotePeer(nextPiece))
+                            {
+                                //                              _dc.MarkPieceRequested(nextPiece, true);
+                                return (true);
+                            }
+                            else
+                            {
+                                Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
+                                _suggestedPieces.Enqueue(nextPiece);
                             }
                         }
                     }
+
                 }
             }
+
             catch (Error)
             {
                 throw;
@@ -83,9 +117,10 @@ namespace BitTorrentLibrary
                 else
                 {
                     Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
-                    Log.Logger.Debug($"REMARK FOR DOWNLOAD PIECE {pieceNumber}.");
-                    _dc.MarkPieceRequested((UInt32)pieceNumber, false);
-                    _dc.MarkPieceLocal((UInt32)pieceNumber, false);
+                    Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
+                    //                   _dc.MarkPieceRequested((UInt32)pieceNumber, false);
+                    //                   _dc.MarkPieceLocal((UInt32)pieceNumber, false);
+                    _suggestedPieces.Enqueue(pieceNumber);
                     // remotePeer.Close();
                 }
             }
@@ -93,9 +128,10 @@ namespace BitTorrentLibrary
             {
                 if (!_dc.IsPieceLocal(pieceNumber))
                 {
-                    Log.Logger.Debug($"REMARK FOR DOWNLOAD PIECE {pieceNumber}.");
-                    _dc.MarkPieceRequested((UInt32)pieceNumber, false);
-                    _dc.MarkPieceLocal((UInt32)pieceNumber, false);
+                    Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
+                    //                    _dc.MarkPieceRequested((UInt32)pieceNumber, false);
+                    //                    _dc.MarkPieceLocal((UInt32)pieceNumber, false);
+                    _suggestedPieces.Enqueue(pieceNumber);
                 }
             }
 
@@ -168,6 +204,8 @@ namespace BitTorrentLibrary
             _dc = torrentDownloader.Dc;
             _progressFunction = progressFunction;
             _progressData = progressData;
+            Paused = new ManualResetEvent(false);
+            BuildSuggestedPiecesQueue();
         }
 
         /// <summary>
@@ -186,9 +224,12 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
+                WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
+
                 PWP.Unchoke(remotePeer);
 
-                WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
+                PWP.Interested(remotePeer);
+
                 WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
 
                 while (_dc.BytesLeftToDownload() != 0)
@@ -196,12 +237,13 @@ namespace BitTorrentLibrary
 
                     while (SelectNextPiece(remotePeer, ref nextPiece))
                     {
+
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
 
                         SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
 
                         WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
-                        WaitOnWithCancelation(remotePeer.Paused, cancelTask);
+                        WaitOnWithCancelation(Paused, cancelTask);
 
                     }
 
@@ -215,7 +257,6 @@ namespace BitTorrentLibrary
                 Log.Logger.Error(ex.Message);
                 SavePieceToDisk(remotePeer, nextPiece, remotePeer.AssembledPiece.AllBlocksThere);
             }
-
 
             Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 

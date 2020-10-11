@@ -68,7 +68,6 @@ namespace BitTorrentLibrary
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
         public ManualResetEvent WaitForPieceAssembly { get; set; }       // When event set then piece has been fully assrmble
         public ManualResetEvent BitfieldReceived { get; set; }           // When event set then peer has recieved bitfield from remote peer.
-        public ManualResetEvent Paused { get; set; }                     // == true (set) download/upload paused.
 
         /// <summary>
         /// Peer read packet asynchronous callback.
@@ -139,7 +138,6 @@ namespace BitTorrentLibrary
             Dc = dc;
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
             AssembledPiece = new PieceBuffer(Dc.PieceLength);
-            Paused = Dc.Paused;
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
@@ -273,8 +271,8 @@ namespace BitTorrentLibrary
 
                 if (AssembledPiece.AllBlocksThere)
                 {
-                    Dc.MarkPieceLocal(pieceNumber, true);
-                    Dc.MarkPieceRequested(pieceNumber, false);
+               //     Dc.MarkPieceLocal(pieceNumber, true);
+               //     Dc.MarkPieceRequested(pieceNumber, false);
                     AssembledPiece.Number = pieceNumber;
                     WaitForPieceAssembly.Set();
                 }

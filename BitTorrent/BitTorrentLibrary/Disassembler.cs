@@ -53,7 +53,7 @@ namespace BitTorrentLibrary
 
             ActiveDisassemblerTasks++;
 
-            PWP.Bitfield(remotePeer, remotePeer.Dc.BuildPieceBitfield(remotePeer));
+            PWP.Bitfield(remotePeer, remotePeer.Dc.BuildPieceBitfield());
             PWP.Uninterested(remotePeer);
 
             foreach (var suggestion in PieceSuggestions(remotePeer, 10)) {
@@ -64,6 +64,7 @@ namespace BitTorrentLibrary
             {
                 Thread.Sleep(1000);
             }
+            
             ActiveDisassemblerTasks--;
 
         }

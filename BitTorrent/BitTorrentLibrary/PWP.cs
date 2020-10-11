@@ -434,7 +434,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (remotePeer.PeerInterested)
+                if (!remotePeer.AmInterested)
                 {
                     Log.Logger.Debug("TX INTERESTED");
 
@@ -445,7 +445,7 @@ namespace BitTorrentLibrary
 
                     remotePeer.PeerWrite(requestPacket.ToArray());
 
-                    remotePeer.PeerInterested = true;
+                    remotePeer.AmInterested = true;
                 }
             }
             catch (Error)
@@ -476,7 +476,7 @@ namespace BitTorrentLibrary
 
                 remotePeer.PeerWrite(requestPacket.ToArray());
 
-                remotePeer.PeerInterested = false;
+                remotePeer.AmInterested = false;
             }
             catch (Error)
             {
@@ -573,7 +573,7 @@ namespace BitTorrentLibrary
 
                 remotePeer.PeerWrite(requestPacket.ToArray());
 
-                remotePeer.Dc.MarkPieceRequested(pieceNumber, true);
+     //           remotePeer.Dc.MarkPieceRequested(pieceNumber, true);
             }
             catch (Error)
             {
