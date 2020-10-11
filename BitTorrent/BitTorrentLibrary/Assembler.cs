@@ -10,87 +10,21 @@
 
 using System;
 using System.Text;
-using System.Linq;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
+
 using System.Threading;
 
 namespace BitTorrentLibrary
 {
     public class Assembler
     {
-        private ConcurrentQueue<UInt32> _suggestedPieces;
-        private readonly Object _pieceLock = new object();           // Piece Lock     
+
+        private readonly Selector _pieceSelector;                    // Piece to download selector
         private readonly ProgessCallBack _progressFunction = null;   // Download progress function
         private readonly Object _progressData = null;                // Download progress function data
         private readonly DownloadContext _dc;                        // Download context for torrent
         public ManualResetEvent Paused { get; set; }                 // == true (set) pause downloading from peer
         public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler tasks
 
-        /// <summary>
-        /// 
-        /// </summary>
-        private void BuildSuggestedPiecesQueue()
-        {
-            _suggestedPieces = new ConcurrentQueue<uint>();
-            List<UInt32> pieces = new List<UInt32>();
-            Random rnd = new Random();
-            foreach (var pieceNumber in Enumerable.Range(0, (int)_dc.NumberOfPieces))
-            {
-                if (!_dc.IsPieceLocal((UInt32)pieceNumber))
-                {
-                    pieces.Add((UInt32)pieceNumber);
-                }
-            }
-            foreach (var piece in pieces) //.OrderBy(x => rnd.Next()).ToArray())
-            {
-                _suggestedPieces.Enqueue(piece);
-            }
-        }
-        /// <summary>
-        /// Selects the next piece to be downloaded.
-        /// </summary>
-        /// <returns><c>true</c>, if next piece was selected, <c>false</c> otherwise.</returns>
-        /// <param name="remotePeer">Remote peer.</param>
-        /// <param name="nextPiece">Next piece.</param>
-        private bool SelectNextPiece(Peer remotePeer, ref UInt32 nextPiece)
-        {
-            try
-            {
-                // Inorder to stop same the piece requested with different peers a lock 
-                // is required when trying to get the next unrequested non-local pi
-
-                while (!_suggestedPieces.IsEmpty)
-                {
-                    if (_suggestedPieces.TryDequeue(out nextPiece))
-                    {
-
-                        if (remotePeer.IsPieceOnRemotePeer(nextPiece))
-                        {
-                            return (true);
-                        }
-                        else
-                        {
-                            Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
-                            _suggestedPieces.Enqueue(nextPiece);
-                        }
-
-                    }
-
-                }
-            }
-
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-            }
-
-            return false;
-        }
         /// <summary>
         /// Queue sucessfully assembled piece or flag for redownload.
         /// </summary>
@@ -113,7 +47,7 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
                     Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                    _suggestedPieces.Enqueue(pieceNumber);
+                    _pieceSelector.PutPieceBack(pieceNumber);
                 }
             }
             else
@@ -121,7 +55,7 @@ namespace BitTorrentLibrary
                 if (!_dc.IsPieceLocal(pieceNumber))
                 {
                     Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                    _suggestedPieces.Enqueue(pieceNumber);
+                    _pieceSelector.PutPieceBack(pieceNumber);
                 }
             }
 
@@ -189,13 +123,14 @@ namespace BitTorrentLibrary
         /// <param name="torrentDownloader"></param>
         /// <param name="progressFunction"></param>
         /// <param name="progressData"></param>
-        public Assembler(Downloader torrentDownloader, ProgessCallBack progressFunction = null, Object progressData = null)
+        public Assembler(Downloader torrentDownloader, Selector pieceSeclector, ProgessCallBack progressFunction = null, Object progressData = null)
         {
             _dc = torrentDownloader.Dc;
             _progressFunction = progressFunction;
             _progressData = progressData;
+            _pieceSelector = pieceSeclector;
             Paused = new ManualResetEvent(false);
-            BuildSuggestedPiecesQueue();
+
         }
 
         /// <summary>
@@ -225,7 +160,7 @@ namespace BitTorrentLibrary
                 while (_dc.BytesLeftToDownload() != 0)
                 {
 
-                    while (SelectNextPiece(remotePeer, ref nextPiece))
+                    while (_pieceSelector.NextPiece(remotePeer, ref nextPiece))
                     {
 
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
@@ -236,6 +171,8 @@ namespace BitTorrentLibrary
                         WaitOnWithCancelation(Paused, cancelTask);
 
                     }
+
+                    Thread.Sleep(100);
 
                 }
 
