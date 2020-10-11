@@ -17,7 +17,7 @@ namespace BitTorrentLibrary
 {
     public class Selector
     {
-        private readonly ConcurrentQueue<UInt32> _suggestedPieces;
+        private readonly BlockingCollection<UInt32> _suggestedPieces;
         private readonly DownloadContext _dc;
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
             }
             foreach (var piece in pieces.OrderBy(x => rnd.Next()).ToArray())
             {
-                _suggestedPieces.Enqueue(piece);
+                _suggestedPieces.Add(piece);
             }
         }
         /// <summary>
@@ -47,7 +47,8 @@ namespace BitTorrentLibrary
         public Selector(DownloadContext dc)
         {
             _dc = dc;
-            _suggestedPieces = new ConcurrentQueue<uint>();
+            _dc.PieceSelector = this;
+            _suggestedPieces = new BlockingCollection<UInt32>();
             BuildSuggestedPiecesQueue();
         }
         /// <summary>
@@ -63,21 +64,18 @@ namespace BitTorrentLibrary
                 // Inorder to stop same the piece requested with different peers a lock 
                 // is required when trying to get the next unrequested non-local pi
 
-                while (!_suggestedPieces.IsEmpty)
+                while (!_suggestedPieces.IsCompleted)
                 {
-                    if (_suggestedPieces.TryDequeue(out nextPiece))
+                    nextPiece = (UInt32) _suggestedPieces.Take();
+
+                    if (remotePeer.IsPieceOnRemotePeer(nextPiece))
                     {
-
-                        if (remotePeer.IsPieceOnRemotePeer(nextPiece))
-                        {
-                            return (true);
-                        }
-                        else
-                        {
-                            Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
-                            _suggestedPieces.Enqueue(nextPiece);
-                        }
-
+                        return (true);
+                    }
+                    else
+                    {
+                        Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
+                        _suggestedPieces.Add(nextPiece);
                     }
 
                 }
@@ -96,7 +94,11 @@ namespace BitTorrentLibrary
         }
         public void PutPieceBack(UInt32 pieceNumber)
         {
-            _suggestedPieces.Enqueue(pieceNumber);
+            _suggestedPieces.Add(pieceNumber);
+        }
+
+        public void DownloadComplete() {
+            _suggestedPieces.CompleteAdding();
         }
     }
 }

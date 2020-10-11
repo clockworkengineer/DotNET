@@ -51,6 +51,7 @@ namespace BitTorrentLibrary
         public uint BlocksPerPiece { get; set; }
         public byte[] PiecesInfoHash { get; set; }
         public uint NumberOfPieces { get; set; }
+        public Selector PieceSelector { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the DownloadContext class.

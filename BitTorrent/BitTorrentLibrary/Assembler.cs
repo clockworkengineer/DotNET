@@ -69,7 +69,7 @@ namespace BitTorrentLibrary
         /// <param name="cancelTask"></param>
         private void WaitOnWithCancelation(ManualResetEvent evt, CancellationToken cancelTask)
         {
-            while (!evt.WaitOne(100))
+            while (!evt.WaitOne(300))
             {
                 cancelTask.ThrowIfCancellationRequested();
             }
@@ -104,7 +104,7 @@ namespace BitTorrentLibrary
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
                              remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
             }
-            while (!remotePeer.WaitForPieceAssembly.WaitOne(100))
+            while (!remotePeer.WaitForPieceAssembly.WaitOne(300))
             {
                 cancelTask.ThrowIfCancellationRequested();
                 if (!remotePeer.PeerChoking.WaitOne(0))
@@ -157,23 +157,12 @@ namespace BitTorrentLibrary
 
                 WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
 
-                while (_dc.BytesLeftToDownload() != 0)
+                while (_pieceSelector.NextPiece(remotePeer, ref nextPiece))
                 {
-
-                    while (_pieceSelector.NextPiece(remotePeer, ref nextPiece))
-                    {
-
-                        Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
-
-                        SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
-
-                        WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
-                        WaitOnWithCancelation(Paused, cancelTask);
-
-                    }
-
-                    Thread.Sleep(100);
-
+                    Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
+                    SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
+                    WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
+                    WaitOnWithCancelation(Paused, cancelTask);
                 }
 
                 _downloadFinished.Set();

@@ -25,7 +25,6 @@ namespace BitTorrentLibrary
     public class Downloader
     {
         private readonly List<FileDetails> _filesToDownload; // Files in torrent to be downloaded
-
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
         public DownloadContext Dc { get; set; }              // Torrent download context
 
@@ -141,6 +140,10 @@ namespace BitTorrentLibrary
                 Dc.TotalBytesDownloaded += Dc.PieceMap[pieceBuffer.Number].pieceLength;
                 Log.Logger.Info((Dc.TotalBytesDownloaded / (double)Dc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
+
+                if (Dc.BytesLeftToDownload() ==0) {
+                    Dc.PieceSelector.DownloadComplete();
+                }
 
             }
         }
