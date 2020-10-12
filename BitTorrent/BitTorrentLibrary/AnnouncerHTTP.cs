@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Perform HTTP annouce requests in remote tracker.
+// Description: Perform HTTP announce requests to remote tracker.
 //
 // Copyright 2020.
 //
@@ -106,7 +106,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Intialise instance of HTTP tracker.
+        /// Setup data and resources needed by HTTP tracker.
         /// </summary>
         /// <param name="trackerURL"></param>
         public AnnouncerHTTP(string trackerURL)

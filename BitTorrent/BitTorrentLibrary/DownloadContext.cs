@@ -220,7 +220,8 @@ namespace BitTorrentLibrary
         {
             try
             {
-                byte[] bitfield = new byte[NumberOfPieces];
+ 
+                byte[] bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
    
                 for (UInt32 pieceNumber = 0; pieceNumber < NumberOfPieces; pieceNumber++)
                 {

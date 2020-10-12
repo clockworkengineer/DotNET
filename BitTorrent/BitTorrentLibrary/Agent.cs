@@ -136,7 +136,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Initializes a new instance of a torrent agent.
+        /// Setup data and resources needed by agent.
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
@@ -168,7 +168,7 @@ namespace BitTorrentLibrary
             _peersTooSwarm.CompleteAdding();
         }
         /// <summary>
-        /// Connect peers and add to swarm on success.
+        /// Connect peers and add to swarm on connection success.
         /// </summary>
         /// <param name="peers"></param>
         public void UpdatePeerSwarm(List<PeerDetails> peers)

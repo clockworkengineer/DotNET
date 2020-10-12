@@ -6,7 +6,9 @@
 // Description: The Downloader class encapsulates all code and
 // data relating to the readining/writing of the local torrent files
 // to determine which pieces are missing and need downloading and
-// written to the correct positions.
+// written to the correct positions. NEEDS FUNCTIONALITY TO READ PIECES
+// THAT HAVE BEEN REQUESTED FROM DISK AND BUFFERED FOR REQUESTS FROM
+// PEERS.
 //
 // Copyright 2020.
 //
@@ -112,7 +114,7 @@ namespace BitTorrentLibrary
         /// Task to take a queued download piece and write it away to the relevant file
         /// sections to which it belongs.
         /// </summary>
-        private void PieceBufferWriter()
+        private void PieceBufferDiskWriter()
         {
             while (!Dc.PieceBufferWriteQueue.IsCompleted)
             {
@@ -141,7 +143,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Info((Dc.TotalBytesDownloaded / (double)Dc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
-                if (Dc.BytesLeftToDownload() ==0) {
+                if (Dc.BytesLeftToDownload() == 0) {
                     Dc.PieceSelector.DownloadComplete();
                 }
 
@@ -169,7 +171,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Initializes a new instance of the FileDownloader class.
+        /// Setup data and resources needed by downloader.
         /// </summary>
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
@@ -181,14 +183,14 @@ namespace BitTorrentLibrary
             Dc = new DownloadContext(totalDownloadLength,
                 uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"])),
                 torrentMetaInfo.MetaInfoDict["pieces"]);
-            _pieceBufferWriterTask = new Task(PieceBufferWriter);
+            _pieceBufferWriterTask = new Task(PieceBufferDiskWriter);
             _pieceBufferWriterTask.Start();
             BuildDownloadedPiecesMap();
         }
 
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the
-        /// FileDownloader class is reclaimed by garbage collection.
+        /// downloader class is reclaimed by garbage collection.
         /// </summary>
         ~Downloader()
         {

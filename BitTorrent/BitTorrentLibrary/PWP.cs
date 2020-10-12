@@ -212,7 +212,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Handles the piece.
+        /// Handles piece command from a remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandlePIECE(Peer remotePeer)
@@ -228,7 +228,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Handles the cancel.
+        /// Handles cacnel command from remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandleCANCEL(Peer remotePeer)
@@ -241,7 +241,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Perform initial handshake with remote peer that connected to local client to upload.
+        /// Perform initial handshake with remote peer that connected to local client.
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="infoHash"></param>
@@ -318,7 +318,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Remotes the peer message process.
+        /// Route the peer message to process.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public static void RemotePeerMessageProcess(Peer remotePeer)
@@ -371,7 +371,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Choke the specified remotePeer.
+        /// Choke the specified remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public static void Choke(Peer remotePeer)
@@ -399,7 +399,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Unchoke the specified remotePeer.
+        /// Unchoke the specified remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public static void Unchoke(Peer remotePeer)
@@ -427,7 +427,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Interested the specified remotePeer.
+        /// Signal interest the specified remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public static void Interested(Peer remotePeer)
@@ -460,7 +460,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Uninterested the specified remotePeer.
+        /// Signa uninterest the specified remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public static void Uninterested(Peer remotePeer)
@@ -490,7 +490,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Have the specified remotePeer and pieceNumber.
+        /// Signal that have the piece to specified remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="pieceNumber">Piece number.</param>
@@ -551,7 +551,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Request the specified remotePeer, pieceNumber, blockOffset and blockSize.
+        /// Request the specified piece number, block offset and block size from remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="pieceNumber">Piece number.</param>
@@ -586,7 +586,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Piece the specified remotePeer, pieceNumber, blockOffset and blockData.
+        /// Return specified piece, block offset plus its data to remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="pieceNumber">Piece number.</param>
@@ -620,7 +620,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Cancel the specified remotePeer, pieceNumber, blockOffset and blockData.
+        /// Cancel the specified piece, block offset and block size request to remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="pieceNumber">Piece number.</param>

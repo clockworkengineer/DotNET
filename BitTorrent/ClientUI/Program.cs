@@ -89,7 +89,7 @@ namespace BitTorrent
                     Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
                     Selector selector = new Selector(downloader.Dc);
                     Assembler assembler = new Assembler(downloader, selector);
-                    Disassembler disassembler = null;//new Disassembler(downloader);
+                    Disassembler disassembler =  null; //= new Disassembler(downloader);
                     Agent agent = new Agent(torrentFile, downloader, assembler, disassembler);
 
                     if (agent.Left != 0)
@@ -108,11 +108,11 @@ namespace BitTorrent
                     else
                     {
                         Log.Logger.Info("Torrent has been fully downloaded.");
-                        // Tracker tracker = new Tracker(agent, downloader);
+                        Tracker tracker = new Tracker(agent, downloader);
 
-                        // tracker.StartAnnouncing();
+                         tracker.StartAnnouncing();
 
-                        //.Read();
+                        Console.Read();
                     }
                 }
             }

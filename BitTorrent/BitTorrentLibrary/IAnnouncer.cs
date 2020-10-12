@@ -3,7 +3,8 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description:
+// Description:   Tracker interface at the moment only HTTP/UDP actually
+// suport this.
 //
 // Copyright 2020.
 //

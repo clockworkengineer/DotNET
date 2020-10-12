@@ -3,14 +3,18 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Provide functionality for downloading pieces of a torrent
+// from a remote server using the piece selector algorithm passed to it. If
+// the remote peer chokes while a piece is being processed then the the processing
+// of the piece halts and it is requeued for download; except when the piece has
+// sucessfully been assembled locally when the choke occurs then it is queued for
+// writing to disk.
 //
 // Copyright 2020.
 //
 
 using System;
 using System.Text;
-
 using System.Threading;
 
 namespace BitTorrentLibrary
@@ -26,12 +30,12 @@ namespace BitTorrentLibrary
         public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler tasks
 
         /// <summary>
-        /// Queue sucessfully assembled piece or flag for redownload.
+        /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="pieceNumber"></param>
         /// <param name="pieceAssembled"></param>
-        public void SavePieceToDisk(Peer remotePeer, UInt32 pieceNumber, bool pieceAssembled)
+        private void SavePieceToDisk(Peer remotePeer, UInt32 pieceNumber, bool pieceAssembled)
         {
 
             if (pieceAssembled)
@@ -75,7 +79,8 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Request piece number from remote peer.
+        /// Request piece from remote peer. If peer is choked or an cancel arises exit without completeing
+        /// requests so that piece can be requeued for handling later.
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="pieceNumber"></param>
@@ -118,7 +123,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Setup data and resources needed by an assembler.
+        /// Setup data and resources needed by assembler.
         /// </summary>
         /// <param name="torrentDownloader"></param>
         /// <param name="progressFunction"></param>
@@ -135,6 +140,9 @@ namespace BitTorrentLibrary
 
         /// <summary>
         /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
+        /// If a choke or cancel occurs when a piece is being handled the piece is requeued for handling later by another
+        /// task or same thread. Handling this at the piece level and not block simplifies the code significantly for not
+        /// much added disadvantage.
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="_downloadFinished"></param>
@@ -147,7 +155,7 @@ namespace BitTorrentLibrary
             {
                 ActiveAssemblerTasks++;
 
-                Log.Logger.Debug($"Running block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
+                Log.Logger.Debug($"Running piece assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
                 WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
 
@@ -157,7 +165,7 @@ namespace BitTorrentLibrary
 
                 WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
 
-                while (_pieceSelector.NextPiece(remotePeer, ref nextPiece))
+                while (_pieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
                 {
                     Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
                     SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));

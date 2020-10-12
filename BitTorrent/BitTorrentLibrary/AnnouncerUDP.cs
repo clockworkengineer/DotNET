@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Perform UDP annouce requests in remote tracker.
+// Description: Perform UDP announce requests to remote tracker.
 //
 // Copyright 2020.
 //
@@ -126,7 +126,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Intialise instance of UDP tracker
+        /// Setup data and resources needed by UDP tracker.
         /// </summary>
         /// <param name="trackerURL"></param>
         public AnnouncerUDP(string trackerURL)

@@ -150,11 +150,11 @@ namespace BitTorrentLibrary
             }
             catch (System.IO.DirectoryNotFoundException)
             {
-                throw new Error($"Error: Could not find torrent file {TorrentFileName}");
+                throw new Error($"BitTorrent (MetaInfoFile) Error: Could not find torrent file {TorrentFileName}");
             }
             catch (System.IO.FileNotFoundException)
             {
-                throw new Error($"Error: Could not find torrent file {TorrentFileName}");
+                throw new Error($"BitTorrent (MetaInfoFile) Error: Could not find torrent file {TorrentFileName}");
             }
             catch (Exception ex)
             {
@@ -260,7 +260,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (MetaInfoFile): Failed to create download file list.");
+                throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list.");
             }
             return (totalBytes, filesToDownload);
         }

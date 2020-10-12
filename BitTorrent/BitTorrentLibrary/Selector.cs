@@ -3,7 +3,10 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: 
+// Description: Contains code and data ti implement a specific piece
+// selection method for piece download. In this case create a list of all
+// non-local pieces that are available and place them in a queue in a random
+// order.
 //
 // Copyright 2020.
 //
@@ -12,6 +15,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace BitTorrentLibrary
 {
@@ -21,7 +25,7 @@ namespace BitTorrentLibrary
         private readonly DownloadContext _dc;
 
         /// <summary>
-        /// 
+        /// Build queue of pieces in random order.
         /// </summary>
         private void BuildSuggestedPiecesQueue()
         {
@@ -41,7 +45,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// 
+        /// Setup data and resources needed by selector.
         /// </summary>
         /// <param name="dc"></param>
         public Selector(DownloadContext dc)
@@ -57,33 +61,34 @@ namespace BitTorrentLibrary
         /// <returns><c>true</c>, if next piece was selected, <c>false</c> otherwise.</returns>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="nextPiece">Next piece.</param>
-        public bool NextPiece(Peer remotePeer, ref UInt32 nextPiece)
+        public bool NextPiece(Peer remotePeer, ref UInt32 nextPiece, CancellationToken cancelTask)
         {
             try
             {
-                // Inorder to stop same the piece requested with different peers a lock 
-                // is required when trying to get the next unrequested non-local pi
 
                 while (!_suggestedPieces.IsCompleted)
                 {
-                    nextPiece = (UInt32) _suggestedPieces.Take();
+                    nextPiece = (UInt32)_suggestedPieces.Take(cancelTask);
 
-                    if (remotePeer.IsPieceOnRemotePeer(nextPiece))
+                    if (!_suggestedPieces.IsCompleted)
                     {
-                        return (true);
-                    }
-                    else
-                    {
-                        Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
-                        _suggestedPieces.Add(nextPiece);
+                        if (remotePeer.IsPieceOnRemotePeer(nextPiece))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
+                            _suggestedPieces.Add(nextPiece);
+                        }
                     }
 
                 }
             }
 
-            catch (Error)
+            catch (InvalidOperationException ex)
             {
-                throw;
+                 Log.Logger.Debug("NextPiece close down."+ex.Message);
             }
             catch (Exception ex)
             {
@@ -92,12 +97,22 @@ namespace BitTorrentLibrary
 
             return false;
         }
+        /// <summary>
+        /// Places piece at end of queue.
+        /// </summary>
+        /// <param name="pieceNumber"></param>
         public void PutPieceBack(UInt32 pieceNumber)
         {
-            _suggestedPieces.Add(pieceNumber);
+            if (!_suggestedPieces.IsCompleted)
+            {
+                _suggestedPieces.Add(pieceNumber);
+            }
         }
-
-        public void DownloadComplete() {
+        /// <summary>
+        /// Close down piece queue when downloaded last piece.
+        /// </summary>
+        public void DownloadComplete()
+        {
             _suggestedPieces.CompleteAdding();
         }
     }

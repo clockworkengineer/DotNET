@@ -66,7 +66,7 @@ namespace BitTorrentLibrary
         public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
-        public ManualResetEvent WaitForPieceAssembly { get; set; }       // When event set then piece has been fully assrmble
+        public ManualResetEvent WaitForPieceAssembly { get; set; }       // When event set then piece has been fully assembled
         public ManualResetEvent BitfieldReceived { get; set; }           // When event set then peer has recieved bitfield from remote peer.
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Initializes a new instance of Peer class.
+        /// Setup data and resources needed by peer.
         /// </summary>
         /// <param name="ip">Ip.</param>
         /// <param name="port">Port.</param>
@@ -143,7 +143,15 @@ namespace BitTorrentLibrary
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
         }
-
+        /// <summary>
+        /// Contructor with socket from remote peer connect provided
+        /// </summary>
+        /// <param name="socket"></param>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="infoHash"></param>
+        /// <param name="dc"></param>
+        /// <returns></returns>
         public Peer(Socket socket, string ip, UInt32 port, byte[] infoHash, DownloadContext dc) : this(ip, port, infoHash, dc)
         {
             _peerSocket = socket;
@@ -271,8 +279,6 @@ namespace BitTorrentLibrary
 
                 if (AssembledPiece.AllBlocksThere)
                 {
-               //     Dc.MarkPieceLocal(pieceNumber, true);
-               //     Dc.MarkPieceRequested(pieceNumber, false);
                     AssembledPiece.Number = pieceNumber;
                     WaitForPieceAssembly.Set();
                 }
