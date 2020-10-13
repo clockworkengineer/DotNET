@@ -130,6 +130,7 @@ namespace BitTorrentLibrary
         {
             Log.Logger.Debug("RX CHOKE");
             remotePeer.PeerChoking.Reset();
+            remotePeer.WaitForPieceAssembly.Set();
         }
 
         /// <summary>

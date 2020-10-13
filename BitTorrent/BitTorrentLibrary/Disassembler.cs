@@ -19,7 +19,6 @@ namespace BitTorrentLibrary
     {
         private readonly Random _pieceGenerator = new Random();
         public UInt32 ActiveDisassemblerTasks { get; set; }
-
         private UInt32[] PieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions)
         {
             HashSet<UInt32> suggestions = new HashSet<uint>();
@@ -36,7 +35,6 @@ namespace BitTorrentLibrary
                     }
                 }
             }
-
 
             return (suggestions.ToArray());
 

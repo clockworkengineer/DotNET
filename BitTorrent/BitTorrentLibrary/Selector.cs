@@ -68,6 +68,7 @@ namespace BitTorrentLibrary
 
                 while (!_suggestedPieces.IsCompleted)
                 {
+ 
                     nextPiece = (UInt32)_suggestedPieces.Take(cancelTask);
 
                     if (!_suggestedPieces.IsCompleted)
@@ -82,7 +83,6 @@ namespace BitTorrentLibrary
                             _suggestedPieces.Add(nextPiece);
                         }
                     }
-
                 }
             }
 
@@ -93,6 +93,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                throw;
             }
 
             return false;

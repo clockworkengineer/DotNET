@@ -67,7 +67,7 @@ namespace BitTorrentLibrary
             NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
             BlocksPerPiece = pieceLength / Constants.BlockSize;
             PieceMap = new PieceData[NumberOfPieces];
-            PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
+            PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
             _sha = new SHA1CryptoServiceProvider();
         }
 
