@@ -21,8 +21,8 @@ namespace BitTorrentLibrary
 {
     public class Selector
     {
-        private readonly BlockingCollection<UInt32> _suggestedPieces;
-        private readonly DownloadContext _dc;
+        private readonly BlockingCollection<UInt32> _suggestedPieces;   // Suggested piece quee (collection defaults to FIFO queue)
+        private readonly DownloadContext _dc;                           // Download context for torrent
 
         /// <summary>
         /// Build queue of pieces in random order.
@@ -66,34 +66,36 @@ namespace BitTorrentLibrary
             try
             {
 
-                while (!_suggestedPieces.IsCompleted)
+                // Only two correct ways out of this loop.
+                // 1) Found a piece on peer to download so return true.
+                // 2) The queue has has AddComplete called on it and Try() fires InvalidOperationException.
+                while (true)
                 {
- 
+
                     nextPiece = (UInt32)_suggestedPieces.Take(cancelTask);
 
-                    if (!_suggestedPieces.IsCompleted)
+                    if (remotePeer.IsPieceOnRemotePeer(nextPiece))
                     {
-                        if (remotePeer.IsPieceOnRemotePeer(nextPiece))
-                        {
-                            return true;
-                        }
-                        else
-                        {
-                            Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
-                            _suggestedPieces.Add(nextPiece);
-                        }
+                        return true;
+                    }
+                    else
+                    {
+                        Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
+                        _suggestedPieces.Add(nextPiece);
                     }
                 }
             }
 
             catch (InvalidOperationException ex)
             {
-                 Log.Logger.Debug("NextPiece close down."+ex.Message);
+                // Queue is empty and has had AddCompleted called for it (ie. download complete)
+                Log.Logger.Debug("NextPiece close down." + ex.Message);
             }
             catch (Exception ex)
             {
+                // Pass unknown exception up
                 Log.Logger.Debug(ex);
-                throw;
+                throw new Error("BitTorrent (Selector) Error: "+ex.Message);
             }
 
             return false;

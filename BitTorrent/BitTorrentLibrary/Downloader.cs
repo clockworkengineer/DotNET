@@ -135,7 +135,6 @@ namespace BitTorrentLibrary
                         {
                             stream.Seek((Int64)(startWrite - file.offset), SeekOrigin.Begin);
                             stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % Dc.PieceLength), (Int32)(endWrite - startWrite));
-                        //    stream.Flush();
                         }
                     }
                 }

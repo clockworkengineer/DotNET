@@ -280,7 +280,7 @@ namespace BitTorrentLibrary
                 if (AssembledPiece.AllBlocksThere)
                 {
                     AssembledPiece.Number = pieceNumber;
-                    Dc.MarkPieceLocal(pieceNumber, true);
+                  //  Dc.MarkPieceLocal(pieceNumber, true);
                     WaitForPieceAssembly.Set();
                 }
             }
