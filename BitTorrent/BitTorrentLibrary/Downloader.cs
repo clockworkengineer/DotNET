@@ -122,6 +122,8 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
+                int bytesWritten = 0;
+
                 UInt64 startOffset = pieceBuffer.Number * Dc.PieceLength;
                 UInt64 endOffset = startOffset + Dc.PieceLength;
 
@@ -135,6 +137,11 @@ namespace BitTorrentLibrary
                         {
                             stream.Seek((Int64)(startWrite - file.offset), SeekOrigin.Begin);
                             stream.Write(pieceBuffer.Buffer, (Int32)(startWrite % Dc.PieceLength), (Int32)(endWrite - startWrite));
+                            bytesWritten += (Int32)(endWrite - startWrite);
+                            if (bytesWritten == Dc.PieceMap[pieceBuffer.Number].pieceLength)
+                            {
+                                break;
+                            }
                         }
                     }
                 }
@@ -142,7 +149,8 @@ namespace BitTorrentLibrary
                 Log.Logger.Info((Dc.TotalBytesDownloaded / (double)Dc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
-                if (Dc.BytesLeftToDownload() == 0) {
+                if (Dc.BytesLeftToDownload() == 0)
+                {
                     Dc.PieceSelector.DownloadComplete();
                 }
 
@@ -194,6 +202,45 @@ namespace BitTorrentLibrary
         ~Downloader()
         {
             Dc.PieceBufferWriteQueue.CompleteAdding();
+        }
+
+        /// <summary>
+        /// Read piece from torrent
+        /// </summary>
+        public PieceBuffer GetPieceFromTorrent(UInt32 pieceNumber)
+        {
+
+            PieceBuffer pieceBuffer = new PieceBuffer(Dc.PieceMap[pieceNumber].pieceLength);
+
+            Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
+
+            int bytesRead = 0;
+
+            UInt64 startOffset = pieceBuffer.Number * Dc.PieceLength;
+            UInt64 endOffset = startOffset + Dc.PieceLength;
+
+            foreach (var file in _filesToDownload)
+            {
+                if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
+                {
+                    UInt64 startRead = Math.Max(startOffset, file.offset);
+                    UInt64 endRead = Math.Min(endOffset, file.offset + file.length);
+                    using (Stream stream = new FileStream(file.name, FileMode.Open))
+                    {
+                        stream.Seek((Int64)(startRead - file.offset), SeekOrigin.Begin);
+                        stream.Read(pieceBuffer.Buffer, (Int32)(startRead % Dc.PieceLength), (Int32)(endRead - startRead));
+                        bytesRead += (Int32)(endRead - startRead);
+                        if (bytesRead == Dc.PieceMap[pieceBuffer.Number].pieceLength)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Log.Logger.Debug($"Piece ({pieceBuffer.Number}) read from file.");
+
+            return pieceBuffer;
         }
 
 
