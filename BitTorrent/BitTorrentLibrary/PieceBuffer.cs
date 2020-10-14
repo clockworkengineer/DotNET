@@ -41,6 +41,16 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
+        /// Create an empty piece buffer.
+        /// </summary>
+        /// <param name="length">Length.</param>
+        public PieceBuffer(UInt32 pieceNumber, UInt32 length) : this(length)
+        {
+            Number = pieceNumber;
+
+        }
+
+        /// <summary>
         /// Create a piece buffer from a copy of another.
         /// </summary>
         /// <param name="pieceBuffer">Piece buffer.</param>
