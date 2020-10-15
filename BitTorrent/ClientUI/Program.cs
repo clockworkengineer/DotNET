@@ -81,7 +81,7 @@ namespace BitTorrent
                     }
 
                     Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/open.torrent");
+                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/redo.torrent");
 
                     torrentFile.Load();
                     torrentFile.Parse();
@@ -89,31 +89,25 @@ namespace BitTorrent
                     Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
                     Selector selector = new Selector(downloader.Dc);
                     Assembler assembler = new Assembler(downloader, selector);
-                    Disassembler disassembler =  null; //= new Disassembler(downloader);
+                    Disassembler disassembler = null;//new Disassembler(downloader);
                     Agent agent = new Agent(torrentFile, downloader, assembler, disassembler);
 
-                    if (agent.Left != 0)
+                    Tracker tracker = new Tracker(agent, downloader);
+
+                    tracker.StartAnnouncing();
+
+                    agent.Start();
+
+                    agent.Download();
+
+                    while (true)
                     {
-                        Tracker tracker = new Tracker(agent, downloader);
-
-                        tracker.StartAnnouncing();
-
-                        agent.Start();
-
-                        agent.Download();
-
-                        agent.Close();
-
+                        Thread.Sleep(1000);
                     }
-                    else
-                    {
-                        Log.Logger.Info("Torrent has been fully downloaded.");
-                        Tracker tracker = new Tracker(agent, downloader);
 
-                         tracker.StartAnnouncing();
+                    agent.Close();
 
-                        Console.Read();
-                    }
+
                 }
             }
             catch (Error ex)

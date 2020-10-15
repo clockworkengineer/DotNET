@@ -168,7 +168,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
                 if (Dc.BytesLeftToDownload() == 0)
-                {
+                {                 
                     Dc.PieceSelector.DownloadComplete();
                 }
 

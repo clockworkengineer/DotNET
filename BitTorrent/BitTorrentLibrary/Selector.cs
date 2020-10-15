@@ -90,6 +90,7 @@ namespace BitTorrentLibrary
             {
                 // Queue is empty and has had AddCompleted called for it (ie. download complete)
                 Log.Logger.Debug("NextPiece close down." + ex.Message);
+                throw;
             }
             catch (Exception ex)
             {
@@ -117,6 +118,10 @@ namespace BitTorrentLibrary
         public void DownloadComplete()
         {
             _suggestedPieces.CompleteAdding();
+        }
+
+        public int PieceQueueSize() {
+            return(_suggestedPieces.Count);
         }
     }
 }

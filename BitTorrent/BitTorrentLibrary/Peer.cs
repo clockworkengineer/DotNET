@@ -62,7 +62,7 @@ namespace BitTorrentLibrary
         public Task AssemblerTask { get; set; }             // Peer piece assembly task
         public Task UploaderTask { get; set; }                           // Uploader task
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
-        public bool AmChoked { get; set; } = true;                       // == true then client is choking remote peer.
+        public bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
         public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
@@ -139,7 +139,7 @@ namespace BitTorrentLibrary
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
             AssembledPiece = new PieceBuffer(Dc.PieceLength);
             WaitForPieceAssembly = new ManualResetEvent(false);
-            PeerChoking = new ManualResetEvent(false);
+            PeerChoking = new ManualResetEvent(true);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
         }

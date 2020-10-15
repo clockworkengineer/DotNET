@@ -15,6 +15,8 @@
 
 using System;
 using System.Text;
+using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace BitTorrentLibrary
@@ -30,6 +32,34 @@ namespace BitTorrentLibrary
         public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler tasks
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <param name="numberOfSuggestions"></param>
+        /// <returns></returns>
+
+        private UInt32[] PieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions)
+        {
+            Random pieceGenerator = new Random();
+            HashSet<UInt32> suggestions = new HashSet<uint>();
+
+            while (numberOfSuggestions-- > 0)
+            {
+                while (true)
+                {
+                    UInt32 suggestion = (UInt32)pieceGenerator.Next(0, (int)remotePeer.Dc.NumberOfPieces);
+                    if (remotePeer.Dc.IsPieceLocal(suggestion) && !suggestions.Contains(suggestion))
+                    {
+                        suggestions.Add(suggestion);
+                        break;
+                    }
+                }
+            }
+
+            return (suggestions.ToArray());
+
+        }
+        /// <summary>
         /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.
         /// </summary>
         /// <param name="remotePeer"></param>
@@ -43,10 +73,13 @@ namespace BitTorrentLibrary
                 bool pieceValid = _dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, _dc.PieceMap[pieceNumber].pieceLength);
                 if (pieceValid)
                 {
-                    Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
-                    _dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
-                    _progressFunction?.Invoke(_progressData);
-                    _dc.MarkPieceLocal(pieceNumber, true);
+                    if (!_dc.PieceBufferWriteQueue.IsCompleted)
+                    {
+                        Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
+                        _dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
+                        _progressFunction?.Invoke(_progressData);
+                        _dc.MarkPieceLocal(pieceNumber, true);
+                    }
                 }
                 else
                 {
@@ -127,23 +160,6 @@ namespace BitTorrentLibrary
             }
             return (remotePeer.AssembledPiece.AllBlocksThere);
         }
-
-        /// <summary>
-        /// Setup data and resources needed by assembler.
-        /// </summary>
-        /// <param name="torrentDownloader"></param>
-        /// <param name="progressFunction"></param>
-        /// <param name="progressData"></param>
-        public Assembler(Downloader torrentDownloader, Selector pieceSeclector, ProgessCallBack progressFunction = null, Object progressData = null)
-        {
-            _dc = torrentDownloader.Dc;
-            _progressFunction = progressFunction;
-            _progressData = progressData;
-            _pieceSelector = pieceSeclector;
-            Paused = new ManualResetEvent(false);
-
-        }
-
         /// <summary>
         /// Assembles the pieces of a torrent block by block.A task is created using this method for each connected peer.
         /// If a choke or cancel occurs when a piece is being handled the piece is requeued for handling later by another
@@ -151,15 +167,12 @@ namespace BitTorrentLibrary
         /// much added disadvantage.
         /// </summary>
         /// <param name="remotePeer"></param>
-        /// <param name="_downloadFinished"></param>
-        public void AssemblePieces(Peer remotePeer, ManualResetEvent _downloadFinished)
+        /// <param name="cancelTask"></param>
+        private void AssembleMissingPieces(Peer remotePeer, CancellationToken cancelTask)
         {
             UInt32 nextPiece = 0;
-            CancellationToken cancelTask = remotePeer.CancelTaskSource.Token;
-
             try
             {
-                ActiveAssemblerTasks++;
 
                 Log.Logger.Debug($"Running piece assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
@@ -185,10 +198,68 @@ namespace BitTorrentLibrary
                 Log.Logger.Error(ex.Message);
                 SavePieceToDisk(remotePeer, nextPiece, remotePeer.AssembledPiece.AllBlocksThere);
             }
+        }
 
-            if (_dc.BytesLeftToDownload()==0){
-                remotePeer.CancelTaskSource.Cancel();
-                _downloadFinished.Set();
+        /// <summary>
+        /// Setup data and resources needed by assembler.
+        /// </summary>
+        /// <param name="torrentDownloader"></param>
+        /// <param name="progressFunction"></param>
+        /// <param name="progressData"></param>
+        public Assembler(Downloader torrentDownloader, Selector pieceSeclector, ProgessCallBack progressFunction = null, Object progressData = null)
+        {
+            _dc = torrentDownloader.Dc;
+            _progressFunction = progressFunction;
+            _progressData = progressData;
+            _pieceSelector = pieceSeclector;
+            Paused = new ManualResetEvent(false);
+
+        }
+
+        /// <summary>
+        /// Task method to download any missing pieces of torrent and when that is done to simply
+        /// loop processing remote peer commands until the connection is closed.
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <param name="_downloadFinished"></param>
+        public void AssemblePieces(Peer remotePeer, ManualResetEvent _downloadFinished)
+        {
+
+            CancellationToken cancelTask = remotePeer.CancelTaskSource.Token;
+
+            ActiveAssemblerTasks++;
+
+            if (_dc.BytesLeftToDownload() > 0)
+            {
+                AssembleMissingPieces(remotePeer, cancelTask);
+                if (_dc.BytesLeftToDownload() == 0)
+                {
+                    _downloadFinished.Set();
+                }
+            }
+
+            if (_dc.BytesLeftToDownload() == 0)
+            {
+                if (remotePeer.Connected)
+                {
+                  //  PWP.Bitfield(remotePeer, remotePeer.Dc.BuildPieceBitfield());
+                    PWP.Uninterested(remotePeer);
+
+                    foreach (var suggestion in PieceSuggestions(remotePeer, 10))
+                    {
+                        PWP.Have(remotePeer, suggestion);
+                    }
+
+                    PWP.Unchoke(remotePeer);
+                    while (true)
+                    {
+                        Thread.Sleep(1000);
+                        if (!remotePeer.Connected)
+                        {
+                            break;
+                        }
+                    }
+                }
             }
 
             Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");

@@ -53,7 +53,7 @@ namespace BitTorrentLibrary
         public string TrackerURL { get; set; } = String.Empty;  // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
-        public int MaximumSwarmSize { get; set; } = 10;         // Maximim swarm size
+        public int MaximumSwarmSize { get; set; }              // Maximim swarm size
         public UInt64 Downloaded => _dc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _dc.BytesLeftToDownload();        // Bytes left in torrent to download
 
