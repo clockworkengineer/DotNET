@@ -76,13 +76,17 @@ namespace BitTorrentLibrary
         private void ReadPacketAsyncHandler(IAsyncResult readAsyncState)
         {
             Peer remotePeer = (Peer)readAsyncState.AsyncState;
-
             try
             {
-                UInt32 bytesRead = (UInt32)remotePeer._peerSocket.EndReceive(readAsyncState);
+                Int32 bytesRead = (Int32)remotePeer._peerSocket.EndReceive(readAsyncState, out SocketError socketError);
 
-                remotePeer._bytesRead += bytesRead;
+                if ((bytesRead<=0)||(socketError != SocketError.Success))
+                {
+                    remotePeer.Close();
+                    return;
+                }
 
+                remotePeer._bytesRead += (UInt32)bytesRead;
                 if (!remotePeer._lengthRead)
                 {
                     if (remotePeer._bytesRead == Constants.SizeOfUInt32)
@@ -109,7 +113,7 @@ namespace BitTorrentLibrary
                 }
 
                 remotePeer._peerSocket.BeginReceive(remotePeer.ReadBuffer, (Int32)remotePeer._bytesRead,
-                           (Int32)(remotePeer.PacketLength - remotePeer._bytesRead), 0, ReadPacketAsyncHandler, remotePeer);
+                           (Int32)(remotePeer.PacketLength - remotePeer._bytesRead), 0, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
             }
             catch (System.ObjectDisposedException)
             {
@@ -220,7 +224,7 @@ namespace BitTorrentLibrary
                 {
                     RemotePeerID = peerResponse.Item2;
                     Connected = true;
-                    _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, this);
+                    _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, new AsyncCallback(ReadPacketAsyncHandler), this);
                 }
             }
             catch (Exception ex)
@@ -280,7 +284,7 @@ namespace BitTorrentLibrary
                 if (AssembledPiece.AllBlocksThere)
                 {
                     AssembledPiece.Number = pieceNumber;
-                  //  Dc.MarkPieceLocal(pieceNumber, true);
+                    //  Dc.MarkPieceLocal(pieceNumber, true);
                     WaitForPieceAssembly.Set();
                 }
             }

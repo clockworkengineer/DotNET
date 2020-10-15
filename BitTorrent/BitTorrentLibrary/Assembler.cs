@@ -29,7 +29,8 @@ namespace BitTorrentLibrary
         private readonly Object _progressData = null;                // Download progress function data
         private readonly DownloadContext _dc;                        // Download context for torrent
         public ManualResetEvent Paused { get; set; }                 // == true (set) pause downloading from peer
-        public int ActiveAssemblerTasks { get; set; } = 0;           // Active Assembler tasks
+        public int ActiveDownloaders { get; set; } = 0;              // Active Downloaders
+        public int ActiveUploaders { get; set; } = 0;                // Active Uploaders
 
         /// <summary>
         /// 
@@ -227,22 +228,24 @@ namespace BitTorrentLibrary
 
             CancellationToken cancelTask = remotePeer.CancelTaskSource.Token;
 
-            ActiveAssemblerTasks++;
-
+   
             if (_dc.BytesLeftToDownload() > 0)
             {
+                ActiveDownloaders++;
                 AssembleMissingPieces(remotePeer, cancelTask);
                 if (_dc.BytesLeftToDownload() == 0)
                 {
                     _downloadFinished.Set();
                 }
+                ActiveDownloaders--;
             }
 
             if (_dc.BytesLeftToDownload() == 0)
             {
                 if (remotePeer.Connected)
                 {
-                  //  PWP.Bitfield(remotePeer, remotePeer.Dc.BuildPieceBitfield());
+
+                    ActiveUploaders++;
                     PWP.Uninterested(remotePeer);
 
                     foreach (var suggestion in PieceSuggestions(remotePeer, 10))
@@ -259,12 +262,11 @@ namespace BitTorrentLibrary
                             break;
                         }
                     }
+                    ActiveUploaders--;
                 }
             }
 
             Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
-
-            ActiveAssemblerTasks--;
 
         }
     }
