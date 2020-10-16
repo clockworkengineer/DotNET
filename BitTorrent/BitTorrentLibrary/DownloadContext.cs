@@ -52,6 +52,7 @@ namespace BitTorrentLibrary
         public byte[] PiecesInfoHash { get; set; }
         public uint NumberOfPieces { get; set; }
         public Selector PieceSelector { get; set; }
+        public ManualResetEvent DownloadFinished { get; }
 
         /// <summary>
         /// Initializes a new instance of the DownloadContext class.
@@ -69,6 +70,7 @@ namespace BitTorrentLibrary
             PieceMap = new PieceData[NumberOfPieces];
             PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
             _sha = new SHA1CryptoServiceProvider();
+            DownloadFinished = new ManualResetEvent(false);
         }
 
         /// <summary>

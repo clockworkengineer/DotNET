@@ -99,7 +99,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (Selector) Error: "+ex.Message);
             }
 
-            return false;
         }
         /// <summary>
         /// Places piece at end of queue.
@@ -117,6 +116,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public void DownloadComplete()
         {
+            _dc.DownloadFinished.Set();
             _suggestedPieces.CompleteAdding();
         }
 

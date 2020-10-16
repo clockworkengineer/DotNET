@@ -81,7 +81,7 @@ namespace BitTorrent
                     }
 
                     Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/redo.torrent");
+                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/mint.iso.torrent");
 
                     torrentFile.Load();
                     torrentFile.Parse();
@@ -89,7 +89,6 @@ namespace BitTorrent
                     Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
                     Selector selector = new Selector(downloader.Dc);
                     Assembler assembler = new Assembler(downloader, selector);
-                   // Disassembler disassembler = null;//new Disassembler(downloader);
                     Agent agent = new Agent(torrentFile, downloader, assembler);
 
                     Tracker tracker = new Tracker(agent, downloader);

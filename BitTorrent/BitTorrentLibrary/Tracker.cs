@@ -48,12 +48,12 @@ namespace BitTorrentLibrary
         public uint NoPeerID { get; set; }                      // Unique peer ID for downloader
         public string Key { get; set; } = String.Empty;         // An additional identification that is not shared with any other peers (optional)
         public string TrackerID { get; set; } = String.Empty;   // String that the client should send back on its next announcements. (optional).
-        public int NumWanted { get; set; } = 5;                // Number of required download clients
+        public int NumWanted { get; set; } = 5;                 // Number of required download clients
         public byte[] InfoHash { get; set; }                    // Encoded info hash for URI
         public string TrackerURL { get; set; } = String.Empty;  // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
-        public int MaximumSwarmSize { get; set; }              // Maximim swarm size
+        public int MaximumSwarmSize { get; set; }               // Maximim swarm size
         public UInt64 Downloaded => _dc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _dc.BytesLeftToDownload();        // Bytes left in torrent to download
 
@@ -93,7 +93,7 @@ namespace BitTorrentLibrary
             InfoHash = agent.InfoHash;
             TrackerURL = agent.TrackerURL;
             MaximumSwarmSize = maximumSwarmSize;
-            _updatePeerSwarm = agent.UpdatePeerSwarm;
+            _updatePeerSwarm = agent.UpdatePeerSwarmQueue;
             _dc = downloader.Dc;
             agent.MainTracker = this;
             _announcerExceptions = new List<Exception>();
