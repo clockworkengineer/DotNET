@@ -47,11 +47,12 @@ namespace BitTorrentLibrary
                 while (true)
                 {
                     UInt32 suggestion = (UInt32)pieceGenerator.Next(0, (int)remotePeer.Dc.NumberOfPieces);
-                    if (remotePeer.Dc.IsPieceLocal(suggestion) && !suggestions.Contains(suggestion))
+                    if (!remotePeer.IsPieceOnRemotePeer(suggestion) && !suggestions.Contains(suggestion))
                     {
                         suggestions.Add(suggestion);
                         break;
                     }
+
                 }
             }
 
@@ -214,17 +215,21 @@ namespace BitTorrentLibrary
                 if (remotePeer.Connected)
                 {
                     ActiveUploaders++;
-                    PWP.Uninterested(remotePeer);
 
-                    foreach (var suggestion in PieceSuggestions(remotePeer, 10))
-                    {
-                        PWP.Have(remotePeer, suggestion);
-                    }
+                    PWP.Uninterested(remotePeer);
 
                     PWP.Unchoke(remotePeer);
                     while (true)
                     {
-                        Thread.Sleep(1000);
+                        if (!remotePeer.PeerInterested)
+                        {
+                            foreach (var suggestion in PieceSuggestions(remotePeer, 10))
+                            {
+                                PWP.Have(remotePeer, suggestion);
+                            }
+
+                        }
+                        Thread.Sleep(10);
                         cancelTask.ThrowIfCancellationRequested();
                     }
                 }

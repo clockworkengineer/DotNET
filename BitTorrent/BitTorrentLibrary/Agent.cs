@@ -77,6 +77,7 @@ namespace BitTorrentLibrary
                     remotePeer.Connect();
                     if (remotePeer.Connected)
                     {
+
                         if (_peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                         {
                             Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");

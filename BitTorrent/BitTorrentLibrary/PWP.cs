@@ -205,11 +205,19 @@ namespace BitTorrentLibrary
         private static void HandleREQUEST(Peer remotePeer)
         {
 
-            UInt32 pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
-            UInt32 blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
-            UInt32 blockLength = UnpackUInt32(remotePeer.ReadBuffer, 9);
+          
+            PieceRequest request = new PieceRequest();
 
-            Log.Logger.Info($"RX REQUEST {pieceNumber} Block Offset {blockOffset} Data Size {blockLength}\n.");
+            request.remotePeer = remotePeer;
+            request.pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
+            request.blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
+            request.blockSize = UnpackUInt32(remotePeer.ReadBuffer, 9);
+
+            remotePeer.Dc.PieceRequestQueue.Add(request);
+
+            Log.Logger.Info($"RX REQUEST {request.pieceNumber} Block Offset {request.blockOffset} Data Size {request.blockSize}\n.");
+
+
         }
 
         /// <summary>

@@ -45,6 +45,8 @@ namespace BitTorrentLibrary
         private readonly Object _PieceMapLock = new object();
         public PieceData[] PieceMap { get; set; }
         public BlockingCollection<PieceBuffer> PieceBufferWriteQueue { get; set; }
+
+        public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
         public UInt64 TotalBytesDownloaded { get; set; }
         public UInt64 TotalBytesToDownload { get; set; }
         public uint PieceLength { get; set; }
@@ -69,6 +71,7 @@ namespace BitTorrentLibrary
             BlocksPerPiece = pieceLength / Constants.BlockSize;
             PieceMap = new PieceData[NumberOfPieces];
             PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
+            PieceRequestQueue = new BlockingCollection<PieceRequest>();
             _sha = new SHA1CryptoServiceProvider();
             DownloadFinished = new ManualResetEvent(false);
         }
@@ -222,16 +225,16 @@ namespace BitTorrentLibrary
         {
             try
             {
- 
+
                 byte[] bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
-   
+
                 for (UInt32 pieceNumber = 0; pieceNumber < NumberOfPieces; pieceNumber++)
                 {
                     for (byte bit = 0x80; bit != 0; bit >>= 1)
                     {
                         if (IsPieceLocal(pieceNumber))
                         {
-                            bitfield[pieceNumber>>3] |= bit;
+                            bitfield[pieceNumber >> 3] |= bit;
                         }
                     }
 

@@ -29,6 +29,7 @@ namespace BitTorrentLibrary
     {
         private readonly List<FileDetails> _filesToDownload; // Files in torrent to be downloaded
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
+        private readonly Task _pieceRequestProcessingTask;   // Task for processing piece requests from remote peers
         public DownloadContext Dc { get; set; }              // Torrent download context
 
         /// <summary>
@@ -148,6 +149,23 @@ namespace BitTorrentLibrary
 
             Log.Logger.Debug("Finished generating downloaded map.");
         }
+        /// <summary>
+        /// Read piece from torrent
+        /// </summary>
+        public PieceBuffer GetPieceFromTorrent(UInt32 pieceNumber)
+        {
+
+            PieceBuffer pieceBuffer = new PieceBuffer(pieceNumber, Dc.PieceMap[pieceNumber].pieceLength);
+
+            Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
+
+            TransferPiece(ref pieceBuffer, true);
+
+            Log.Logger.Debug($"Piece ({pieceBuffer.Number}) read from file.");
+
+            return pieceBuffer;
+        }
+
 
         /// <summary>
         /// Task to take a queued download piece and write it away to the relevant file
@@ -168,9 +186,26 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
                 if (Dc.BytesLeftToDownload() == 0)
-                {                 
+                {
                     Dc.PieceSelector.DownloadComplete();
                 }
+
+            }
+        }
+        private void PieceRequestProcessingTask()
+        {
+            while (!Dc.PieceRequestQueue.IsCompleted)
+            {
+                PieceRequest request = Dc.PieceRequestQueue.Take();
+
+                Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
+
+                PieceBuffer requestBuffer = GetPieceFromTorrent(request.pieceNumber);
+                byte[] requestBlock = new byte[request.blockSize];
+
+                Array.Copy(requestBuffer.Buffer, (Int32) request.blockOffset, requestBlock, 0, (Int32) request.blockSize);
+
+                PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
 
             }
         }
@@ -211,6 +246,8 @@ namespace BitTorrentLibrary
                 torrentMetaInfo.MetaInfoDict["pieces"]);
             _pieceBufferWriterTask = new Task(PieceBufferDiskWriter);
             _pieceBufferWriterTask.Start();
+            _pieceRequestProcessingTask  = new Task(PieceRequestProcessingTask);
+            _pieceRequestProcessingTask.Start();
             BuildDownloadedPiecesMap();
         }
 
@@ -222,24 +259,6 @@ namespace BitTorrentLibrary
         {
             Dc.PieceBufferWriteQueue.CompleteAdding();
         }
-
-        /// <summary>
-        /// Read piece from torrent
-        /// </summary>
-        public PieceBuffer GetPieceFromTorrent(UInt32 pieceNumber)
-        {
-
-            PieceBuffer pieceBuffer = new PieceBuffer(pieceNumber, Dc.PieceMap[pieceNumber].pieceLength);
-
-            Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
-
-            TransferPiece(ref pieceBuffer, true);
-
-            Log.Logger.Debug($"Piece ({pieceBuffer.Number}) read from file.");
-
-            return pieceBuffer;
-        }
-
 
     }
 }
