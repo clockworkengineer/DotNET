@@ -39,22 +39,22 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private UInt32[] PieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions)
         {
-            Random pieceGenerator = new Random();
-            HashSet<UInt32> suggestions = new HashSet<uint>();
+            List<UInt32> suggestions = new List<UInt32>();
 
-            while (numberOfSuggestions-- > 0)
+            UInt32 startPiece = 0;
+            UInt32 currentPiece = startPiece;
+
+            do
             {
-                while (true)
+                if (!remotePeer.IsPieceOnRemotePeer(currentPiece))
                 {
-                    UInt32 suggestion = (UInt32)pieceGenerator.Next(0, (int)remotePeer.Dc.NumberOfPieces);
-                    if (!remotePeer.IsPieceOnRemotePeer(suggestion) && !suggestions.Contains(suggestion))
-                    {
-                        suggestions.Add(suggestion);
-                        break;
-                    }
-
+                    suggestions.Add(currentPiece);
+                    numberOfSuggestions--;
                 }
-            }
+                currentPiece++;
+                currentPiece %= remotePeer.Dc.NumberOfPieces;
+            } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
+
 
             return (suggestions.ToArray());
 
@@ -219,15 +219,18 @@ namespace BitTorrentLibrary
                     PWP.Unchoke(remotePeer);
                     while (true)
                     {
-                        if (!remotePeer.PeerInterested)
+                        if (remotePeer.NumberOfMissingPieces > 0)
                         {
-                            foreach (var suggestion in PieceSuggestions(remotePeer, 10))
+                            if (!remotePeer.PeerInterested)
                             {
-                                PWP.Have(remotePeer, suggestion);
-                            }
+                                foreach (var suggestion in PieceSuggestions(remotePeer, 10))
+                                {
+                                    PWP.Have(remotePeer, suggestion);
+                                }
 
+                            }
                         }
-                        Thread.Sleep(10);
+                        Thread.Sleep(100);
                         cancelTask.ThrowIfCancellationRequested();
                     }
                 }
@@ -275,7 +278,7 @@ namespace BitTorrentLibrary
                     AssembleMissingPieces(remotePeer, cancelTask);
                 }
 
-                //ProcessRemotePeerRequests(remotePeer, cancelTask);
+                ProcessRemotePeerRequests(remotePeer, cancelTask);
 
             }
             catch (Exception ex)

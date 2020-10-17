@@ -173,11 +173,12 @@ namespace BitTorrentLibrary
 
             Log.Logger.Info($"RX HAVE= {pieceNumber}");
 
+            remotePeer.SetPieceOnRemotePeer(pieceNumber);
+            remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
+
             if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
             {
                 PWP.Interested(remotePeer);
-                remotePeer.SetPieceOnRemotePeer(pieceNumber);
-                remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
             }
         }
 
@@ -205,7 +206,7 @@ namespace BitTorrentLibrary
         private static void HandleREQUEST(Peer remotePeer)
         {
 
-          
+
             PieceRequest request = new PieceRequest();
 
             request.remotePeer = remotePeer;
