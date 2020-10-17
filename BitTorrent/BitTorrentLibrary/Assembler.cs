@@ -177,8 +177,6 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Debug($"Running piece assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
-                WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
-
                 PWP.Unchoke(remotePeer);
 
                 PWP.Interested(remotePeer);
@@ -270,12 +268,14 @@ namespace BitTorrentLibrary
 
                 CancellationToken cancelTask = remotePeer.CancelTaskSource.Token;
 
+                WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
+
                 if (_dc.BytesLeftToDownload() > 0)
                 {
                     AssembleMissingPieces(remotePeer, cancelTask);
                 }
 
-                ProcessRemotePeerRequests(remotePeer, cancelTask);
+                //ProcessRemotePeerRequests(remotePeer, cancelTask);
 
             }
             catch (Exception ex)

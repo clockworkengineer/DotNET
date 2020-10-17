@@ -46,27 +46,28 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Peer
     {
-        private readonly UInt32 _port;                      // Port
-        private Socket _peerSocket;                         // Socket for I/O
-        private readonly byte[] _infoHash;                  // Info Hash of torrent
-        private UInt32 _bytesRead;                          // Bytes read in read request
-        private bool _lengthRead;                           // == true packet length has been read
-        public byte[] ReadBuffer { get; set; }              // Read buffer
-        public bool Connected { get; set; }                 // == true connected to remote peer
-        public byte[] RemotePeerID { get; set; }            // Id of remote peer
-        public DownloadContext Dc { get; set; }              // Torrent download context
-        public byte[] RemotePieceBitfield { get; set; }     // Remote peer piece map
-        public uint PacketLength { get; set; }              // Current packet length
-        public PieceBuffer AssembledPiece { get; set; }     // Assembled pieces buffer
-        public string Ip { get; set; }                      // Remote peer ip
-        public Task AssemblerTask { get; set; }             // Peer piece assembly task
+        private readonly UInt32 _port;                                   // Port
+        private Socket _peerSocket;                                      // Socket for I/O
+        private readonly byte[] _infoHash;                               // Info Hash of torrent
+        private UInt32 _bytesRead;                                       // Bytes read in read request
+        private bool _lengthRead;                                        // == true packet length has been read
+        public byte[] ReadBuffer { get; set; }                           // Read buffer
+        public bool Connected { get; set; }                              // == true connected to remote peer
+        public byte[] RemotePeerID { get; set; }                         // Id of remote peer
+        public DownloadContext Dc { get; set; }                          // Torrent download context
+        public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
+        public uint PacketLength { get; set; }                           // Current packet length
+        public PieceBuffer AssembledPiece { get; set; }                  // Assembled pieces buffer
+        public string Ip { get; set; }                                   // Remote peer ip
+        public Task AssemblerTask { get; set; }                          // Peer piece assembly task
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
         public bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
         public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
         public ManualResetEvent WaitForPieceAssembly { get; set; }       // When event set then piece has been fully assembled
-        public ManualResetEvent BitfieldReceived { get; set; }           // When event set then peer has recieved bitfield from remote peer.
+        public ManualResetEvent BitfieldReceived { get; set; }           // When event set then peer has recieved bitfield from remote peer
+        public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
 
         /// <summary>
         /// Peer read packet asynchronous callback.
@@ -79,7 +80,7 @@ namespace BitTorrentLibrary
             {
                 Int32 bytesRead = (Int32)remotePeer._peerSocket.EndReceive(readAsyncState, out SocketError socketError);
 
-                if ((bytesRead<=0)||(socketError != SocketError.Success))
+                if ((bytesRead <= 0) || (socketError != SocketError.Success))
                 {
                     remotePeer.Close();
                     return;
@@ -145,6 +146,7 @@ namespace BitTorrentLibrary
             PeerChoking = new ManualResetEvent(true);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
+            NumberOfMissingPieces = Dc.NumberOfPieces;
         }
         /// <summary>
         /// Contructor with socket from remote peer connect provided
@@ -262,7 +264,10 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+            if (!IsPieceOnRemotePeer(pieceNumber)) {
+                RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                NumberOfMissingPieces--;
+            }
         }
 
         /// <summary>

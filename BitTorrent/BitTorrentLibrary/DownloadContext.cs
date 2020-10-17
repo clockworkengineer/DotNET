@@ -206,6 +206,7 @@ namespace BitTorrentLibrary
                         {
                             PieceMap[pieceNumber].peerCount++;
                             remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
+                            remotePeer.NumberOfMissingPieces--;
                         }
                     }
                 }
