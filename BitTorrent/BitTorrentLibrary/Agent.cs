@@ -200,9 +200,10 @@ namespace BitTorrentLibrary
 
                 MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize - _peerSwarm.Count, 0);
 
-                DisplayStats();
-
             }
+
+            DisplayStats();
+            
         }
         /// <summary>
         /// Download a torrent using an piece assembler per connected peer.

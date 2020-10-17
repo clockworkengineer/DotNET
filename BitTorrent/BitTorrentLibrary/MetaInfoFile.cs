@@ -123,9 +123,7 @@ namespace BitTorrentLibrary
             BNodeBase infoEncodedBytes = Bencoding.GetDictionaryEntry(bNodeRoot, "info");
             if (infoEncodedBytes != null)
             {
-                byte[] infoHash = Bencoding.Encode(infoEncodedBytes);
-                SHA1 sha = new SHA1CryptoServiceProvider();
-                MetaInfoDict["info hash"] = sha.ComputeHash(infoHash);
+                MetaInfoDict["info hash"] = new SHA1CryptoServiceProvider().ComputeHash(Bencoding.Encode(infoEncodedBytes));
             }
         }
 

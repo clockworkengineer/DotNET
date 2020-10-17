@@ -192,6 +192,9 @@ namespace BitTorrentLibrary
 
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
         private void PieceRequestProcessingTask()
         {
             while (!Dc.PieceRequestQueue.IsCompleted)
@@ -206,6 +209,8 @@ namespace BitTorrentLibrary
                 Array.Copy(requestBuffer.Buffer, (Int32) request.blockOffset, requestBlock, 0, (Int32) request.blockSize);
 
                 PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
+
+                Dc.TotalBytesUploaded += request.blockSize;
 
             }
         }

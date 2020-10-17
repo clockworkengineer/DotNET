@@ -41,14 +41,14 @@ namespace BitTorrentLibrary
     /// </summary>
     public class DownloadContext
     {
-        private readonly SHA1 _sha;                          // Object to create SHA1 piece info hash
+        private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
         private readonly Object _PieceMapLock = new object();
         public PieceData[] PieceMap { get; set; }
         public BlockingCollection<PieceBuffer> PieceBufferWriteQueue { get; set; }
-
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
         public UInt64 TotalBytesDownloaded { get; set; }
         public UInt64 TotalBytesToDownload { get; set; }
+        public UInt64 TotalBytesUploaded { get; set; }
         public uint PieceLength { get; set; }
         public uint BlocksPerPiece { get; set; }
         public byte[] PiecesInfoHash { get; set; }
@@ -57,7 +57,7 @@ namespace BitTorrentLibrary
         public ManualResetEvent DownloadFinished { get; }
 
         /// <summary>
-        /// Initializes a new instance of the DownloadContext class.
+        ///Setup data and resources needed by download context.
         /// </summary>
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
@@ -72,7 +72,7 @@ namespace BitTorrentLibrary
             PieceMap = new PieceData[NumberOfPieces];
             PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
             PieceRequestQueue = new BlockingCollection<PieceRequest>();
-            _sha = new SHA1CryptoServiceProvider();
+            _SHA1 = new SHA1CryptoServiceProvider();
             DownloadFinished = new ManualResetEvent(false);
         }
 
@@ -85,7 +85,7 @@ namespace BitTorrentLibrary
         /// <param name="numberOfBytes">Number of bytes.</param>
         public bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
-            byte[] hash = _sha.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
+            byte[] hash = _SHA1.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
             UInt32 pieceOffset = pieceNumber * Constants.HashLength;
             for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
             {

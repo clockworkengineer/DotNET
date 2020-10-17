@@ -39,7 +39,6 @@ namespace BitTorrentLibrary
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
         protected UpdatePeers _updatePeerSwarm;                 // Update peer swarm with connected peers
-        public UInt64 Uploaded { get; set; }                    // Bytes left in file to be downloaded
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; set; } = String.Empty;      // Peers unique ID
         public uint Port { get; set; } = Host.DefaultPort;      // Port that client s listening on 
@@ -56,6 +55,7 @@ namespace BitTorrentLibrary
         public int MaximumSwarmSize { get; set; }               // Maximim swarm size
         public UInt64 Downloaded => _dc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _dc.BytesLeftToDownload();        // Bytes left in torrent to download
+        public UInt64 Uploaded => _dc.TotalBytesUploaded;       // Total bytes uploaded
 
 
         /// <summary>
@@ -187,7 +187,8 @@ namespace BitTorrentLibrary
             try
             {
                 // If all of torrent downloaded reset total bytes downloaded
-                if (Left==0) {
+                if (Left == 0)
+                {
                     _dc.TotalBytesDownloaded = 0;
                     _dc.TotalBytesToDownload = 0;
                 }
