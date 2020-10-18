@@ -561,6 +561,7 @@ namespace BitTorrentLibrary
 
                 requestPacket.AddRange(PackUInt32((UInt32)bitField.Length + 1));
                 requestPacket.Add(BITFIELD);
+                requestPacket.AddRange(bitField);
 
                 remotePeer.PeerWrite(requestPacket.ToArray());
             }

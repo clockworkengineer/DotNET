@@ -177,6 +177,8 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Debug($"Running piece assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
+                PWP.Bitfield(remotePeer, remotePeer.Dc.BuildPieceBitfield());
+                
                 PWP.Unchoke(remotePeer);
 
                 PWP.Interested(remotePeer);
