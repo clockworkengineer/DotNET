@@ -141,7 +141,6 @@ namespace BitTorrentLibrary
                 {
                     _peerSwarm.TryAdd(remotePeer.Ip, remotePeer);
                     Log.Logger.Info($"++BTP: Local Peer [{ PeerID.Get()}] from remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                    PWP.Bitfield(remotePeer, remotePeer.Dc.BuildPieceBitfield());
                     remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
                 }
 
