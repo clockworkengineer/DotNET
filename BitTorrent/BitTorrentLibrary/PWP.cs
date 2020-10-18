@@ -31,7 +31,7 @@ namespace BitTorrentLibrary
         private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
 
         /// <summary>
-        /// Unpacks a uint32 from a byte buffer at a given offset.
+Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         /// </summary>
         /// <returns>The user interface nt32.</returns>
         /// <param name="buffer">Buffer.</param>
@@ -132,16 +132,18 @@ namespace BitTorrentLibrary
 
             return true;
         }
-
         /// <summary>
         /// Handles choke command from remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandleCHOKE(Peer remotePeer)
         {
-            Log.Logger.Info("RX CHOKE");
-            remotePeer.PeerChoking.Reset();
-            remotePeer.WaitForPieceAssembly.Set();
+            if (!remotePeer.PeerChoking.WaitOne(0))
+            {
+                Log.Logger.Info("RX CHOKE");
+                remotePeer.PeerChoking.Reset();
+                remotePeer.WaitForPieceAssembly.Set();
+            }
         }
 
         /// <summary>
@@ -150,30 +152,36 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandleUNCHOKE(Peer remotePeer)
         {
-            Log.Logger.Info("RX UNCHOKED");
-            remotePeer.PeerChoking.Set();
+            if (!remotePeer.PeerChoking.WaitOne(0))
+            {
+                Log.Logger.Info("RX UNCHOKED");
+                remotePeer.PeerChoking.Set();
+            }
         }
-
         /// <summary>
         /// Handles interested command from remote peer.
         /// </summary>
         /// <param name="remoePeer">Remoe peer.</param>
         private static void HandleINTERESTED(Peer remotePeer)
         {
-            Log.Logger.Info("RX INTERESTED");
-            remotePeer.PeerInterested = true;
+            if (!remotePeer.PeerInterested)
+            {
+                Log.Logger.Info("RX INTERESTED");
+                remotePeer.PeerInterested = true;
+            }
         }
-
         /// <summary>
         /// Handles uninterested command from remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandleUNINTERESTED(Peer remotePeer)
         {
-            Log.Logger.Info("RX UNINTERESTED");
-            remotePeer.PeerInterested = false;
+            if (remotePeer.PeerInterested)
+            {
+                Log.Logger.Info("RX UNINTERESTED");
+                remotePeer.PeerInterested = false;
+            }
         }
-
         /// <summary>
         /// Handles have piece command from remote peer.
         /// </summary>
@@ -187,12 +195,7 @@ namespace BitTorrentLibrary
             remotePeer.SetPieceOnRemotePeer(pieceNumber);
             remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
 
-            if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
-            {
-                PWP.Interested(remotePeer);
-            }
         }
-
         /// <summary>
         /// Handles bitfield command from remote peer.
         /// </summary>
@@ -209,14 +212,12 @@ namespace BitTorrentLibrary
 
             remotePeer.Dc.MergePieceBitfield(remotePeer);
         }
-
         /// <summary>
         /// Handles request command from remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandleREQUEST(Peer remotePeer)
         {
-
 
             PieceRequest request = new PieceRequest();
 
@@ -231,7 +232,6 @@ namespace BitTorrentLibrary
 
 
         }
-
         /// <summary>
         /// Handles piece command from a remote peer.
         /// </summary>
@@ -247,9 +247,8 @@ namespace BitTorrentLibrary
             remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
 
         }
-
         /// <summary>
-        /// Handles cacnel command from remote peer.
+        /// Handles cancel command from remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandleCANCEL(Peer remotePeer)
@@ -260,7 +259,6 @@ namespace BitTorrentLibrary
 
             Log.Logger.Info($"RX CANCEL {pieceNumber} Block Offset {blockOffset} Data Size {blockLength}\n.");
         }
-
         /// <summary>
         /// Perform initial handshake with remote peer that connected to local client.
         /// </summary>
@@ -301,7 +299,6 @@ namespace BitTorrentLibrary
             }
 
         }
-
         /// <summary>
         /// Perform initial handshake with remote peer that the local client connected to.
         /// </summary>
@@ -337,7 +334,6 @@ namespace BitTorrentLibrary
 
             return (connected, remotePeerID);
         }
-
         /// <summary>
         /// Route the peer message to process.
         /// </summary>
@@ -390,7 +386,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Choke the specified remote peer.
         /// </summary>
@@ -423,7 +418,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Unchoke the specified remote peer.
         /// </summary>
@@ -456,7 +450,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Signal interest the specified remote peer.
         /// </summary>
@@ -489,25 +482,27 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
-        /// Signa uninterest the specified remote peer.
+        /// Signal uninterest the specified remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public static void Uninterested(Peer remotePeer)
         {
             try
             {
-                Log.Logger.Info("TX UNINTERESTED");
+                if (remotePeer.AmInterested)
+                {
+                    Log.Logger.Info("TX UNINTERESTED");
 
-                List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(PackUInt32(1));
-                requestPacket.Add(UNINTERESTED);
+                    requestPacket.AddRange(PackUInt32(1));
+                    requestPacket.Add(UNINTERESTED);
 
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
 
-                remotePeer.AmInterested = false;
+                    remotePeer.AmInterested = false;
+                }
             }
             catch (Error)
             {
@@ -519,7 +514,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Signal that have the piece to specified remote peer.
         /// </summary>
@@ -549,9 +543,8 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
-        /// Bitfield the specified remotePeer and bitField.
+        /// Send current piece bitfield to remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="bitField">Bit field.</param>
@@ -580,7 +573,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Request the specified piece number, block offset and block size from remote peer.
         /// </summary>
@@ -615,7 +607,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Return specified piece, block offset plus its data to remote peer.
         /// </summary>
@@ -649,7 +640,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (PWP) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Cancel the specified piece, block offset and block size request to remote peer.
         /// </summary>
