@@ -131,8 +131,12 @@ namespace BitTorrentLibrary
                 string announceURL = $"{tracker.TrackerURL}?info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))}" +
                     $"&peer_id={tracker.PeerID}&port={tracker.Port}&compact={tracker.Compact}" +
                     $"&no_peer_id={tracker.NoPeerID}&uploaded={tracker.Uploaded}&downloaded={tracker.Downloaded}" +
-                    $"&left={tracker.Left}&event={Tracker.EventString[(int)tracker.Event]}" +
-                    $"&ip={tracker.Ip}&key={tracker.Key}&trackerid={tracker.TrackerID}&numwanted={tracker.NumWanted}";
+                    $"&left={tracker.Left}&ip={tracker.Ip}&key={tracker.Key}&trackerid={tracker.TrackerID}&numwanted={tracker.NumWanted}";
+
+                // Some trackers require no event present if its value is none
+                if (tracker.Event!=Tracker.TrackerEvent.None) {
+                    announceURL += $"&event={Tracker.EventString[(int)tracker.Event]}";
+                }
 
                 HttpWebRequest httpGetRequest = WebRequest.Create(announceURL) as HttpWebRequest;
 
