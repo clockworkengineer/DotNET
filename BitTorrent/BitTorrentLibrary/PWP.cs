@@ -17,9 +17,23 @@ namespace BitTorrentLibrary
 {
     public static class PWP
     {
+        public delegate void PWPHandler(Peer remotePeer);
+
+        private static readonly PWPHandler[] _protocolHandler =
+        {
+            HandleCHOKE,
+            HandleUNCHOKE,
+            HandleINTERESTED,
+            HandleUNINTERESTED,
+            HandleHAVE,
+            HandleBITFIELD,
+            HandleREQUEST,
+            HandlePIECE,
+            HandleCANCEL
+        };
 
         /// <summary>
-        ///  Ids of wire protocol messages
+        ///  Ids of wire protocol commands
         /// </summary>
         private const byte CHOKE = 0;
         private const byte UNCHOKE = 1;
@@ -40,7 +54,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private static string RemotePeerID(Peer remotePeer)
         {
-            return "["+Encoding.ASCII.GetString(remotePeer.RemotePeerID)+"] ";
+            return "[" + Encoding.ASCII.GetString(remotePeer.RemotePeerID) + "] ";
         }
         /// <summary>
         /// Unpacks a UInt32 from a byte buffer at a given offset.
@@ -353,38 +367,14 @@ namespace BitTorrentLibrary
         {
             try
             {
-                switch (remotePeer.ReadBuffer[0])
+                byte command = remotePeer.ReadBuffer[0];
+                if ((command >= CHOKE) && (command <= CANCEL))
                 {
-                    case CHOKE:
-                        HandleCHOKE(remotePeer);
-                        break;
-                    case UNCHOKE:
-                        HandleUNCHOKE(remotePeer);
-                        break;
-                    case INTERESTED:
-                        HandleINTERESTED(remotePeer);
-                        break;
-                    case UNINTERESTED:
-                        HandleUNINTERESTED(remotePeer);
-                        break;
-                    case HAVE:
-                        HandleHAVE(remotePeer);
-                        break;
-                    case BITFIELD:
-                        HandleBITFIELD(remotePeer);
-                        break;
-                    case REQUEST:
-                        HandleREQUEST(remotePeer);
-                        break;
-                    case PIECE:
-                        HandlePIECE(remotePeer);
-                        break;
-                    case CANCEL:
-                        HandleCANCEL(remotePeer);
-                        break;
-                    default:
-                        Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{remotePeer.ReadBuffer[0]}");
-                        break;
+                    _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
+                }
+                else
+                {
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
                 }
             }
             catch (Error)

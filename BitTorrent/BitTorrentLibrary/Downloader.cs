@@ -193,7 +193,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// 
+        /// Process any piece requests in buffer and send to remote peer.
         /// </summary>
         private void PieceRequestProcessingTask()
         {
@@ -234,8 +234,6 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
             }
         }
-
-
         /// <summary>
         /// Setup data and resources needed by downloader.
         /// </summary>
@@ -246,14 +244,16 @@ namespace BitTorrentLibrary
         {
             (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
             _filesToDownload = filesToDownload;
+
             Dc = new DownloadContext(totalDownloadLength,
                 uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"])),
                 torrentMetaInfo.MetaInfoDict["pieces"]);
-            _pieceBufferWriterTask = new Task(PieceBufferDiskWriter);
-            _pieceBufferWriterTask.Start();
-            _pieceRequestProcessingTask  = new Task(PieceRequestProcessingTask);
-            _pieceRequestProcessingTask.Start();
+
+            _pieceBufferWriterTask = Task.Run(() => PieceBufferDiskWriter());
+            _pieceRequestProcessingTask  =  Task.Run(() => PieceRequestProcessingTask());
+            
             BuildDownloadedPiecesMap();
+            
         }
 
         /// <summary>
