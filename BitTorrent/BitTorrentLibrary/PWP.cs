@@ -18,20 +18,32 @@ namespace BitTorrentLibrary
     public static class PWP
     {
 
-        public const byte CHOKE = 0;        // Ids of wire protocol messages
-        public const byte UNCHOKE = 1;
-        public const byte INTERESTED = 2;
-        public const byte UNINTERESTED = 3;
-        public const byte HAVE = 4;
-        public const byte BITFIELD = 5;
-        public const byte REQUEST = 6;
-        public const byte PIECE = 7;
-        public const byte CANCEL = 8;
+        /// <summary>
+        ///  Ids of wire protocol messages
+        /// </summary>
+        private const byte CHOKE = 0;
+        private const byte UNCHOKE = 1;
+        private const byte INTERESTED = 2;
+        private const byte UNINTERESTED = 3;
+        private const byte HAVE = 4;
+        private const byte BITFIELD = 5;
+        private const byte REQUEST = 6;
+        private const byte PIECE = 7;
+        private const byte CANCEL = 8;
 
         private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
 
         /// <summary>
-Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
+        /// Convert remote peer ID to string
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <returns></returns>
+        private static string RemotePeerID(Peer remotePeer)
+        {
+            return "["+Encoding.ASCII.GetString(remotePeer.RemotePeerID)+"] ";
+        }
+        /// <summary>
+        /// Unpacks a UInt32 from a byte buffer at a given offset.
         /// </summary>
         /// <returns>The user interface nt32.</returns>
         /// <param name="buffer">Buffer.</param>
@@ -99,7 +111,6 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
 
             return handshakePacket;
         }
-
         /// <summary>
         /// Validates the peer connect.
         /// </summary>
@@ -140,7 +151,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             if (!remotePeer.PeerChoking.WaitOne(0))
             {
-                Log.Logger.Info("RX CHOKE");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}RX CHOKE");
                 remotePeer.PeerChoking.Reset();
                 remotePeer.WaitForPieceAssembly.Set();
             }
@@ -154,7 +165,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             if (!remotePeer.PeerChoking.WaitOne(0))
             {
-                Log.Logger.Info("RX UNCHOKED");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNCHOKED");
                 remotePeer.PeerChoking.Set();
             }
         }
@@ -166,7 +177,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             if (!remotePeer.PeerInterested)
             {
-                Log.Logger.Info("RX INTERESTED");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}RX INTERESTED");
                 remotePeer.PeerInterested = true;
             }
         }
@@ -178,7 +189,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             if (remotePeer.PeerInterested)
             {
-                Log.Logger.Info("RX UNINTERESTED");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNINTERESTED");
                 remotePeer.PeerInterested = false;
             }
         }
@@ -190,7 +201,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             uint pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
 
-            Log.Logger.Info($"RX HAVE= {pieceNumber}");
+            Log.Logger.Info($"{RemotePeerID(remotePeer)}RX HAVE= {pieceNumber}");
 
             remotePeer.SetPieceOnRemotePeer(pieceNumber);
             remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
@@ -202,7 +213,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandleBITFIELD(Peer remotePeer)
         {
-            Log.Logger.Info("RX BITFIELD");
+            Log.Logger.Info($"{RemotePeerID(remotePeer)}RX BITFIELD");
 
             remotePeer.RemotePieceBitfield = new byte[(Int32)remotePeer.PacketLength - 1];
 
@@ -228,7 +239,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
 
             remotePeer.Dc.PieceRequestQueue.Add(request);
 
-            Log.Logger.Info($"RX REQUEST {request.pieceNumber} Block Offset {request.blockOffset} Data Size {request.blockSize}\n.");
+            Log.Logger.Info($"{RemotePeerID(remotePeer)}RX REQUEST {request.pieceNumber} Block Offset {request.blockOffset} Data Size {request.blockSize}\n.");
 
 
         }
@@ -242,7 +253,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
             UInt32 pieceNumber = UnpackUInt32(remotePeer.ReadBuffer, 1);
             UInt32 blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
 
-            Log.Logger.Info($"RX PIECE {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
+            Log.Logger.Info($"{RemotePeerID(remotePeer)}RX PIECE {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
 
             remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
 
@@ -257,7 +268,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
             UInt32 blockOffset = UnpackUInt32(remotePeer.ReadBuffer, 5);
             UInt32 blockLength = UnpackUInt32(remotePeer.ReadBuffer, 9);
 
-            Log.Logger.Info($"RX CANCEL {pieceNumber} Block Offset {blockOffset} Data Size {blockLength}\n.");
+            Log.Logger.Info($"{RemotePeerID(remotePeer)}RX CANCEL {pieceNumber} Block Offset {blockOffset} Data Size {blockLength}\n.");
         }
         /// <summary>
         /// Perform initial handshake with remote peer that connected to local client.
@@ -372,7 +383,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
                         HandleCANCEL(remotePeer);
                         break;
                     default:
-                        Log.Logger.Info($"RX UNKOWN REQUEST{remotePeer.ReadBuffer[0]}");
+                        Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{remotePeer.ReadBuffer[0]}");
                         break;
                 }
             }
@@ -396,7 +407,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
             {
                 if (!remotePeer.AmChoking)
                 {
-                    Log.Logger.Info("TX CHOKE");
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CHOKE");
 
                     List<byte> requestPacket = new List<byte>();
 
@@ -428,7 +439,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
             {
                 if (remotePeer.AmChoking)
                 {
-                    Log.Logger.Info("TX UNCHOKE");
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNCHOKE");
 
                     List<byte> requestPacket = new List<byte>();
 
@@ -460,7 +471,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
             {
                 if (!remotePeer.AmInterested)
                 {
-                    Log.Logger.Info("TX INTERESTED");
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX INTERESTED");
 
                     List<byte> requestPacket = new List<byte>();
 
@@ -492,7 +503,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
             {
                 if (remotePeer.AmInterested)
                 {
-                    Log.Logger.Info("TX UNINTERESTED");
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNINTERESTED");
 
                     List<byte> requestPacket = new List<byte>();
 
@@ -523,7 +534,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             try
             {
-                Log.Logger.Info($"TX HAVE {pieceNumber}");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX HAVE {pieceNumber}");
 
                 List<byte> requestPacket = new List<byte>();
 
@@ -552,7 +563,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             try
             {
-                Log.Logger.Info("TX BITFIELD");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX BITFIELD");
 
                 DumpBitfield(bitField);
 
@@ -584,7 +595,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             try
             {
-                Log.Logger.Info($"TX REQUEST Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX REQUEST Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
                 List<byte> requestPacket = new List<byte>();
 
@@ -618,7 +629,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             try
             {
-                Log.Logger.Info($"TX PIECE {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockData.Length}");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX PIECE {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockData.Length}");
 
                 List<byte> requestPacket = new List<byte>();
 
@@ -651,7 +662,7 @@ Ti        /// Unpacks a UInt32 from a byte buffer at a given offset.
         {
             try
             {
-                Log.Logger.Info($"TX CANCEL Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CANCEL Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
                 List<byte> requestPacket = new List<byte>();
 
