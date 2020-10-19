@@ -21,29 +21,67 @@ namespace BitTorrentLibrary
 {
     public class Selector
     {
-        private readonly BlockingCollection<UInt32> _suggestedPieces;              // Suggested piece quee (collection defaults to FIFO queue)
-        private readonly DownloadContext _dc;                                      // Download context for torrent}
-
+        private readonly DownloadContext _dc;         // Download context for torrent
+        private readonly Object _pieceMissingLock;
+        private readonly byte[] _piecesMissing;
+        private UInt32 _missingPiecesCount = 0;
 
         /// <summary>
-        /// Build queue of pieces in random order.
+        /// Set piece as missing in bitfield.
         /// </summary>
-        private void BuildSuggestedPiecesQueue()
+        /// <param name="pieceNumber"></param>
+        /// <param name="missing"></param>
+        private void SetPieceMissing(UInt32 pieceNumber, bool missing)
         {
-
-            List<UInt32> pieces = new List<UInt32>();
-            Random rnd = new Random();
-            foreach (var pieceNumber in Enumerable.Range(0, (int)_dc.NumberOfPieces))
+            lock (_pieceMissingLock)
             {
-                if (!_dc.IsPieceLocal((UInt32)pieceNumber))
+                if (missing)
                 {
-                    pieces.Add((UInt32)pieceNumber);
+                    _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                    _missingPiecesCount++;
+                }
+                else
+                {
+                    _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
+                    _missingPiecesCount--;
                 }
             }
-            foreach (var piece in pieces.OrderBy(x => rnd.Next()).ToArray())
+
+        }
+        /// <summary>
+        /// Is a piece missing from local peer.
+        /// </summary>
+        /// <param name="pieceNumber"></param>
+        /// <returns></returns>
+        private bool IsPieceMissing(UInt32 pieceNumber)
+        {
+            lock (_pieceMissingLock)
             {
-                _suggestedPieces.Add(piece);
+                return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
             }
+        }
+        /// <summary>
+        /// Return next suggested piece to download.
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <param name="startPiece"></param>
+        /// <returns></returns>
+        private Int64 GetSuggestedPiece(Peer remotePeer, UInt32 startPiece = 0)
+        {
+
+            UInt32 currentPiece = startPiece;
+            do
+            {
+                if (IsPieceMissing(currentPiece) && remotePeer.IsPieceOnRemotePeer(currentPiece))
+                {
+                    return currentPiece;
+                }
+                currentPiece++;
+                currentPiece %= remotePeer.Dc.NumberOfPieces;
+            } while (startPiece != currentPiece);
+
+            return -1;
+
         }
         /// <summary>
         /// Setup data and resources needed by selector.
@@ -53,8 +91,15 @@ namespace BitTorrentLibrary
         {
             _dc = dc;
             _dc.PieceSelector = this;
-            _suggestedPieces = new BlockingCollection<UInt32>();
-            BuildSuggestedPiecesQueue();
+            _pieceMissingLock = new Object();
+            _piecesMissing = new byte[dc.Bitfield.Length];
+            for (uint pieceNumber = 0; pieceNumber < _dc.NumberOfPieces; pieceNumber++)
+            {
+                if (!_dc.IsPieceLocal(pieceNumber))
+                {
+                    SetPieceMissing(pieceNumber, true);
+                }
+            }
         }
         /// <summary>
         /// Selects the next piece to be downloaded.
@@ -66,31 +111,16 @@ namespace BitTorrentLibrary
         {
             try
             {
+                Int64 suggestedPiece = GetSuggestedPiece(remotePeer, 0);
 
-                // Only two correct ways out of this loop.
-                // 1) Found a piece on peer to download so return true.
-                // 2) The queue has has AddComplete called on it and Try() fires InvalidOperationException.
-                while (true)
+                if (suggestedPiece != -1)
                 {
-
-                    nextPiece = (UInt32)_suggestedPieces.Take(cancelTask);
-                    if (remotePeer.IsPieceOnRemotePeer(nextPiece))
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        Log.Logger.Debug($"REQUEUING PIECE {nextPiece}");
-                        _suggestedPieces.Add(nextPiece);
-                    }
+                    nextPiece = (UInt32)suggestedPiece;
+                    SetPieceMissing(nextPiece, false);
+                    return true;
                 }
-            }
+                return false;
 
-            catch (InvalidOperationException ex)
-            {
-                // Queue is empty and has had AddCompleted called for it (ie. download complete)
-                Log.Logger.Debug("NextPiece close down." + ex.Message);
-                throw;
             }
             catch (Exception ex)
             {
@@ -101,28 +131,27 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Places piece at end of queue.
+        /// Mark piece as missing from local peer.
         /// </summary>
         /// <param name="pieceNumber"></param>
-        public void PutPieceBack(UInt32 pieceNumber)
+        public void MarkPieceAsMissing(UInt32 pieceNumber)
         {
-            if (!_suggestedPieces.IsCompleted)
-            {
-                _suggestedPieces.Add(pieceNumber);
-            }
+            SetPieceMissing(pieceNumber, true);
         }
         /// <summary>
-        /// Close down piece queue when downloaded last piece.
+        /// Set download finished flag.
         /// </summary>
         public void DownloadComplete()
         {
             _dc.DownloadFinished.Set();
-            _suggestedPieces.CompleteAdding();
         }
-
-        public int PieceQueueSize()
+        /// <summary>
+        /// Return number of missing peices left.
+        /// </summary>
+        /// <returns></returns>
+        public int MissingPiecesCount()
         {
-            return (_suggestedPieces.Count);
+            return (int)_missingPiecesCount;
         }
         /// <summary>
         /// Generate an array of pieces that are local but missing from the remote peer for input
@@ -131,9 +160,9 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         /// <param name="numberOfSuggestions"></param>
         /// <returns></returns>
-        public UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, uint startPiece=0)
+        public UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, uint startPiece = 0)
         {
-            List<UInt32> suggestions = new List<UInt32>();;
+            List<UInt32> suggestions = new List<UInt32>();
             UInt32 currentPiece = startPiece;
 
             do

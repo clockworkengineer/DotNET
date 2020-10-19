@@ -53,7 +53,7 @@ namespace BitTorrentLibrary
                     peersChoking++;
                 }
             }
-            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Piece Queue Size {_torrentDownloader.Dc.PieceSelector.PieceQueueSize()}] " +
+            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Piece Queue Size {_torrentDownloader.Dc.PieceSelector.MissingPiecesCount()}] " +
             $"[Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}] [Active Downloaders {_pieceAssembler?.ActiveDownloaders}] " +
             $"[Active Uploaders {_pieceAssembler?.ActiveUploaders}]");
         }

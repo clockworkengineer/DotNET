@@ -220,7 +220,7 @@ namespace BitTorrentLibrary
             remotePeer.SetPieceOnRemotePeer(pieceNumber);
 
             if (!remotePeer.Dc.IsPieceLocal(pieceNumber)) {
-                remotePeer.Dc.PieceSelector.PutPieceBack(pieceNumber);
+                remotePeer.Dc.PieceSelector.MarkPieceAsMissing(pieceNumber);
             }
 
         }

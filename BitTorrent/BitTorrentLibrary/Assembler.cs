@@ -56,7 +56,7 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
                         Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        _pieceSelector.PutPieceBack(pieceNumber);
+                        _pieceSelector.MarkPieceAsMissing(pieceNumber);
                         _dc.MarkPieceLocal(pieceNumber, false);
                     }
                 }
@@ -65,7 +65,7 @@ namespace BitTorrentLibrary
                     if (!_dc.IsPieceLocal(pieceNumber))
                     {
                         Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        _pieceSelector.PutPieceBack(pieceNumber);
+                        _pieceSelector.MarkPieceAsMissing(pieceNumber);
                     }
                 }
 
@@ -155,12 +155,15 @@ namespace BitTorrentLibrary
 
                 WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
 
-                while (_pieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
+                while (!remotePeer.Dc.DownloadFinished.WaitOne(0))
                 {
-                    Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
-                    SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
-                    WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
-                    WaitOnWithCancelation(Paused, cancelTask);
+                    while (_pieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
+                    {
+                        Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
+                        SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
+                        WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
+                        WaitOnWithCancelation(Paused, cancelTask);
+                    }
                 }
 
             }
