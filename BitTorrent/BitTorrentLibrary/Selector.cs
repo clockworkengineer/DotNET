@@ -22,7 +22,7 @@ namespace BitTorrentLibrary
     public class Selector
     {
         private readonly BlockingCollection<UInt32> _suggestedPieces;   // Suggested piece quee (collection defaults to FIFO queue)
-        private readonly DownloadContext _dc;                           // Download context for torrent
+        private readonly DownloadContext _dc;                           // Download context for torrent}
 
         /// <summary>
         /// Build queue of pieces in random order.
@@ -96,7 +96,7 @@ namespace BitTorrentLibrary
             {
                 // Pass unknown exception up
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Selector) Error: "+ex.Message);
+                throw new Error("BitTorrent (Selector) Error: " + ex.Message);
             }
 
         }
@@ -120,8 +120,39 @@ namespace BitTorrentLibrary
             _suggestedPieces.CompleteAdding();
         }
 
-        public int PieceQueueSize() {
-            return(_suggestedPieces.Count);
+        public int PieceQueueSize()
+        {
+            return (_suggestedPieces.Count);
+        }
+        /// <summary>
+        /// Generate an arrow of pieces that are local but missing from the remote peer for input
+        /// to Have packet requests sent to remote peer.
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <param name="numberOfSuggestions"></param>
+        /// <returns></returns>
+        public UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions)
+        {
+            List<UInt32> suggestions = new List<UInt32>();
+
+            UInt32 startPiece = 0;
+            UInt32 currentPiece = startPiece;
+
+            do
+            {
+                if (!remotePeer.IsPieceOnRemotePeer(currentPiece) && remotePeer.Dc.IsPieceLocal(currentPiece))
+                {
+                    suggestions.Add(currentPiece);
+                    numberOfSuggestions--;
+                }
+                currentPiece++;
+                currentPiece %= remotePeer.Dc.NumberOfPieces;
+            } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
+
+
+            return (suggestions.ToArray());
+
         }
     }
+
 }

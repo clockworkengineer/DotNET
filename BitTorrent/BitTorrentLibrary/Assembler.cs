@@ -32,34 +32,6 @@ namespace BitTorrentLibrary
         public int ActiveUploaders { get; set; } = 0;                // Active Uploaders
 
         /// <summary>
-        /// Generate random piece number array for use in HAVE requests sent to remote peers.
-        /// </summary>
-        /// <param name="remotePeer"></param>
-        /// <param name="numberOfSuggestions"></param>
-        /// <returns></returns>
-        private UInt32[] PieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions)
-        {
-            List<UInt32> suggestions = new List<UInt32>();
-
-            UInt32 startPiece = 0;
-            UInt32 currentPiece = startPiece;
-
-            do
-            {
-                if (!remotePeer.IsPieceOnRemotePeer(currentPiece))
-                {
-                    suggestions.Add(currentPiece);
-                    numberOfSuggestions--;
-                }
-                currentPiece++;
-                currentPiece %= remotePeer.Dc.NumberOfPieces;
-            } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
-
-
-            return (suggestions.ToArray());
-
-        }
-        /// <summary>
         /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.
         /// </summary>
         /// <param name="remotePeer"></param>
@@ -68,37 +40,37 @@ namespace BitTorrentLibrary
         private void SavePieceToDisk(Peer remotePeer, UInt32 pieceNumber, bool pieceAssembled)
         {
 
-            if (pieceAssembled)
+            if (!remotePeer.Dc.DownloadFinished.WaitOne(0))
             {
-                bool pieceValid = _dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, _dc.PieceMap[pieceNumber].pieceLength);
-                if (pieceValid)
+                if (pieceAssembled)
                 {
-                    if (!_dc.PieceBufferWriteQueue.IsCompleted)
+                    bool pieceValid = _dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, _dc.PieceMap[pieceNumber].pieceLength);
+                    if (pieceValid)
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
                         _dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
                         _progressFunction?.Invoke(_progressData);
                         _dc.MarkPieceLocal(pieceNumber, true);
                     }
+                    else
+                    {
+                        Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
+                        Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
+                        _pieceSelector.PutPieceBack(pieceNumber);
+                        _dc.MarkPieceLocal(pieceNumber, false);
+                    }
                 }
                 else
                 {
-                    Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
-                    Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                    _pieceSelector.PutPieceBack(pieceNumber);
-                    _dc.MarkPieceLocal(pieceNumber, false);
+                    if (!_dc.IsPieceLocal(pieceNumber))
+                    {
+                        Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
+                        _pieceSelector.PutPieceBack(pieceNumber);
+                    }
                 }
-            }
-            else
-            {
-                if (!_dc.IsPieceLocal(pieceNumber))
-                {
-                    Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                    _pieceSelector.PutPieceBack(pieceNumber);
-                }
-            }
 
-            remotePeer.AssembledPiece.Reset();
+                remotePeer.AssembledPiece.Reset();
+            }
 
         }
         /// <summary>
@@ -176,7 +148,7 @@ namespace BitTorrentLibrary
             {
 
                 Log.Logger.Debug($"Running piece assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
-                
+
                 PWP.Unchoke(remotePeer);
 
                 PWP.Interested(remotePeer);
@@ -217,22 +189,13 @@ namespace BitTorrentLibrary
                     PWP.Uninterested(remotePeer);
 
                     PWP.Unchoke(remotePeer);
+
                     while (true)
                     {
-                        if (remotePeer.NumberOfMissingPieces > 0)
-                        {
-                            if (!remotePeer.PeerInterested)
-                            {
-                                foreach (var suggestion in PieceSuggestions(remotePeer, 10))
-                                {
-                                    PWP.Have(remotePeer, suggestion);
-                                }
-
-                            }
-                        }
                         Thread.Sleep(100);
                         cancelTask.ThrowIfCancellationRequested();
                     }
+
                 }
             }
             catch (Exception ex)
@@ -272,6 +235,11 @@ namespace BitTorrentLibrary
                 CancellationToken cancelTask = remotePeer.CancelTaskSource.Token;
 
                 WaitOnWithCancelation(remotePeer.BitfieldReceived, cancelTask);
+
+                foreach (var pieceNumber in remotePeer.Dc.PieceSelector.LocalPieceSuggestions(remotePeer, 10))
+                {
+                    PWP.Have(remotePeer, pieceNumber);
+                }
 
                 if (_dc.BytesLeftToDownload() > 0)
                 {
