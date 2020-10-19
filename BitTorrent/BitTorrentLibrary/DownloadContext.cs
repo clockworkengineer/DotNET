@@ -30,7 +30,6 @@ namespace BitTorrentLibrary
     /// </summary>
     public struct PieceData
     {
-        public byte mapping;            // Piece mapping
         public UInt16 peerCount;        // Peers with the piece
         public UInt32 pieceLength;      // Piece length in bytes
     }
@@ -40,7 +39,6 @@ namespace BitTorrentLibrary
     /// </summary>
     public class DownloadContext
     {
-        private byte[] bitfield;                              // Local piece bitfield
         private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
         private readonly Object _PieceMapLock = new object();
         public PieceData[] PieceMap { get; set; }
@@ -55,6 +53,7 @@ namespace BitTorrentLibrary
         public uint NumberOfPieces { get; set; }
         public Selector PieceSelector { get; set; }
         public ManualResetEvent DownloadFinished { get; }
+        public byte[] Bitfield { get; }
 
         /// <summary>
         ///Setup data and resources needed by download context.
@@ -70,11 +69,11 @@ namespace BitTorrentLibrary
             NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
             BlocksPerPiece = pieceLength / Constants.BlockSize;
             PieceMap = new PieceData[NumberOfPieces];
-            PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>(10);
+            PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
             PieceRequestQueue = new BlockingCollection<PieceRequest>();
             _SHA1 = new SHA1CryptoServiceProvider();
             DownloadFinished = new ManualResetEvent(false);
-            bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
+            Bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
         }
 
         /// <summary>
@@ -124,11 +123,11 @@ namespace BitTorrentLibrary
                 {
                     if (local)
                     {
-                        bitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                        Bitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
                     }
                     else
                     {
-                        bitfield[pieceNumber >> 3] &= (byte) ~(0x80 >> (Int32)(pieceNumber & 0x7));
+                        Bitfield[pieceNumber >> 3] &= (byte) ~(0x80 >> (Int32)(pieceNumber & 0x7));
                     }
                 }
             }
@@ -150,7 +149,7 @@ namespace BitTorrentLibrary
             {
                 lock (_PieceMapLock)
                 {
-                    return (bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+                    return (Bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
                 }
             }
             catch (Exception ex)
@@ -162,7 +161,7 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Merges the piece bitfield of a remote peer with the torrents piece map.
+        /// Merges the piece bitfield of a remote peer with the torrents local piece map data.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public void MergePieceBitfield(Peer remotePeer)
@@ -183,37 +182,6 @@ namespace BitTorrentLibrary
                     }
                 }
                 remotePeer.BitfieldReceived.Set();
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Build local piece bitfield to send to remote peer.
-        /// </summary>
-        public byte[] BuildLocalPieceBitfield()
-        {
-            try
-            {
-
-                byte[] bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
-
-                for (UInt32 pieceNumber = 0; pieceNumber < NumberOfPieces; pieceNumber++)
-                {
-                    for (byte bit = 0x80; bit != 0; bit >>= 1)
-                    {
-                        if (IsPieceLocal(pieceNumber))
-                        {
-                            bitfield[pieceNumber >> 3] |= bit;
-                        }
-                    }
-
-                }
-                return (bitfield);
-
             }
             catch (Exception ex)
             {

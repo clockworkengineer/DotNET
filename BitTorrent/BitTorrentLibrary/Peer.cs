@@ -196,7 +196,7 @@ namespace BitTorrentLibrary
                 {
                     RemotePeerID = peerResponse.Item2;
                     Connected = true;
-                    PWP.Bitfield(this, Dc.BuildLocalPieceBitfield());
+                    PWP.Bitfield(this, Dc.Bitfield);
                     _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, this);
                 }
             }
@@ -225,7 +225,7 @@ namespace BitTorrentLibrary
                 if (peerResponse.Item1)
                 {
                     RemotePeerID = peerResponse.Item2;
-                    PWP.Bitfield(this, Dc.BuildLocalPieceBitfield());
+                    PWP.Bitfield(this, Dc.Bitfield);
                     Connected = true;
                     _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, new AsyncCallback(ReadPacketAsyncHandler), this);
                 }

@@ -151,7 +151,7 @@ namespace BitTorrentLibrary
                 }
             }
 
-            remotePeerID = new byte[Constants.HashLength];
+            remotePeerID = new byte[Constants.PeerIDLength];
 
             Buffer.BlockCopy(handshakeResponse, _protocolName.Length + 29, remotePeerID, 0, remotePeerID.Length);
 
