@@ -173,9 +173,9 @@ namespace BitTorrentLibrary
         /// </summary>
         private void PieceBufferDiskWriter()
         {
-            while (!Dc.PieceBufferWriteQueue.IsCompleted)
+            while (!Dc.PieceWriteQueue.IsCompleted)
             {
-                PieceBuffer pieceBuffer = Dc.PieceBufferWriteQueue.Take();
+                PieceBuffer pieceBuffer = Dc.PieceWriteQueue.Take();
 
                 Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
@@ -262,7 +262,7 @@ namespace BitTorrentLibrary
         /// </summary>
         ~Downloader()
         {
-            Dc.PieceBufferWriteQueue.CompleteAdding();
+            Dc.PieceWriteQueue.CompleteAdding();
         }
 
     }

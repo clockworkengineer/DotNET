@@ -74,7 +74,6 @@ namespace BitTorrentLibrary
                 {
 
                     nextPiece = (UInt32)_suggestedPieces.Take(cancelTask);
-
                     if (remotePeer.IsPieceOnRemotePeer(nextPiece))
                     {
                         return true;
@@ -132,11 +131,9 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         /// <param name="numberOfSuggestions"></param>
         /// <returns></returns>
-        public UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions)
+        public UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, uint startPiece=0)
         {
-            List<UInt32> suggestions = new List<UInt32>();
-
-            UInt32 startPiece = 0;
+            List<UInt32> suggestions = new List<UInt32>();;
             UInt32 currentPiece = startPiece;
 
             do
@@ -149,7 +146,6 @@ namespace BitTorrentLibrary
                 currentPiece++;
                 currentPiece %= remotePeer.Dc.NumberOfPieces;
             } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
-
 
             return (suggestions.ToArray());
 

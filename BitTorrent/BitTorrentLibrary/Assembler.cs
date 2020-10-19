@@ -48,7 +48,7 @@ namespace BitTorrentLibrary
                     if (pieceValid)
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
-                        _dc.PieceBufferWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
+                        _dc.PieceWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
                         _progressFunction?.Invoke(_progressData);
                         _dc.MarkPieceLocal(pieceNumber, true);
                     }

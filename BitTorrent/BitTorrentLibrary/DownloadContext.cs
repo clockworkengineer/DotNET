@@ -34,7 +34,7 @@ namespace BitTorrentLibrary
         private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
         private readonly Object _DCLock = new object();
         public PieceInfo[] PieceData { get; set; }
-        public BlockingCollection<PieceBuffer> PieceBufferWriteQueue { get; set; }
+        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; set; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
         public UInt64 TotalBytesDownloaded { get; set; }
         public UInt64 TotalBytesToDownload { get; set; }
@@ -61,7 +61,7 @@ namespace BitTorrentLibrary
             NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
             BlocksPerPiece = pieceLength / Constants.BlockSize;
             PieceData = new PieceInfo[NumberOfPieces];
-            PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
+            PieceWriteQueue = new BlockingCollection<PieceBuffer>();
             PieceRequestQueue = new BlockingCollection<PieceRequest>();
             _SHA1 = new SHA1CryptoServiceProvider();
             DownloadFinished = new ManualResetEvent(false);
