@@ -18,17 +18,9 @@ using System.Threading;
 namespace BitTorrentLibrary
 {
     /// <summary>
-    /// Possible piece mapping values.
+    /// Piece Information.
     /// </summary>
-    public static class Mapping
-    {
-        public const byte HaveLocal = 0x01; // Downloaded
-    }
-
-    /// <summary>
-    /// Piece block map.
-    /// </summary>
-    public struct PieceData
+    public struct PieceInfo
     {
         public UInt16 peerCount;        // Peers with the piece
         public UInt32 pieceLength;      // Piece length in bytes
@@ -40,8 +32,8 @@ namespace BitTorrentLibrary
     public class DownloadContext
     {
         private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
-        private readonly Object _PieceMapLock = new object();
-        public PieceData[] PieceMap { get; set; }
+        private readonly Object _DCLock = new object();
+        public PieceInfo[] PieceData { get; set; }
         public BlockingCollection<PieceBuffer> PieceBufferWriteQueue { get; set; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
         public UInt64 TotalBytesDownloaded { get; set; }
@@ -68,7 +60,7 @@ namespace BitTorrentLibrary
             PiecesInfoHash = pieces;
             NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
             BlocksPerPiece = pieceLength / Constants.BlockSize;
-            PieceMap = new PieceData[NumberOfPieces];
+            PieceData = new PieceInfo[NumberOfPieces];
             PieceBufferWriteQueue = new BlockingCollection<PieceBuffer>();
             PieceRequestQueue = new BlockingCollection<PieceRequest>();
             _SHA1 = new SHA1CryptoServiceProvider();
@@ -119,7 +111,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                lock (_PieceMapLock)
+                lock (_DCLock)
                 {
                     if (local)
                     {
@@ -127,7 +119,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        Bitfield[pieceNumber >> 3] &= (byte) ~(0x80 >> (Int32)(pieceNumber & 0x7));
+                        Bitfield[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
                     }
                 }
             }
@@ -147,7 +139,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                lock (_PieceMapLock)
+                lock (_DCLock)
                 {
                     return (Bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
                 }
@@ -176,7 +168,7 @@ namespace BitTorrentLibrary
                     {
                         if ((map & bit) != 0)
                         {
-                            PieceMap[pieceNumber].peerCount++;
+                            PieceData[pieceNumber].peerCount++;
                             remotePeer.NumberOfMissingPieces--;
                         }
                     }

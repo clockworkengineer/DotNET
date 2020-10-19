@@ -44,7 +44,7 @@ namespace BitTorrentLibrary
             {
                 if (pieceAssembled)
                 {
-                    bool pieceValid = _dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, _dc.PieceMap[pieceNumber].pieceLength);
+                    bool pieceValid = _dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, _dc.PieceData[pieceNumber].pieceLength);
                     if (pieceValid)
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
@@ -99,10 +99,10 @@ namespace BitTorrentLibrary
 
             remotePeer.WaitForPieceAssembly.Reset();
 
-            remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Dc.PieceMap[pieceNumber].pieceLength);
+            remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Dc.PieceData[pieceNumber].pieceLength);
 
             UInt32 blockNumber = 0;
-            for (; blockNumber < remotePeer.Dc.PieceMap[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
+            for (; blockNumber < remotePeer.Dc.PieceData[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
             {
                 if (!remotePeer.PeerChoking.WaitOne(0))
                 {
@@ -112,7 +112,7 @@ namespace BitTorrentLibrary
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
-            if (remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize != 0)
+            if (remotePeer.Dc.PieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
             {
                 if (!remotePeer.PeerChoking.WaitOne(0))
                 {
@@ -120,7 +120,7 @@ namespace BitTorrentLibrary
                 }
                 cancelTask.ThrowIfCancellationRequested();
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
-                             remotePeer.Dc.PieceMap[pieceNumber].pieceLength % Constants.BlockSize);
+                             remotePeer.Dc.PieceData[pieceNumber].pieceLength % Constants.BlockSize);
             }
 
             int index = WaitHandle.WaitAny(waitHandles);

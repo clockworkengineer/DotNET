@@ -61,7 +61,7 @@ namespace BitTorrentLibrary
                             stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % Dc.PieceLength), (Int32)(endTransfer - startTransfer));
                         }
                         bytesTransferred += (Int32)(endTransfer - startTransfer);
-                        if (bytesTransferred == Dc.PieceMap[transferBuffer.Number].pieceLength)
+                        if (bytesTransferred == Dc.PieceData[transferBuffer.Number].pieceLength)
                         {
                             break;
                         }
@@ -104,7 +104,7 @@ namespace BitTorrentLibrary
             {
                 Dc.TotalBytesDownloaded += numberOfBytes;
             }
-            Dc.PieceMap[pieceNumber].pieceLength = numberOfBytes;
+            Dc.PieceData[pieceNumber].pieceLength = numberOfBytes;
             Dc.MarkPieceLocal(pieceNumber, pieceThere);
         }
 
@@ -155,7 +155,7 @@ namespace BitTorrentLibrary
         public PieceBuffer GetPieceFromTorrent(UInt32 pieceNumber)
         {
 
-            PieceBuffer pieceBuffer = new PieceBuffer(pieceNumber, Dc.PieceMap[pieceNumber].pieceLength);
+            PieceBuffer pieceBuffer = new PieceBuffer(pieceNumber, Dc.PieceData[pieceNumber].pieceLength);
 
             Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
 
@@ -181,7 +181,7 @@ namespace BitTorrentLibrary
 
                 TransferPiece(ref pieceBuffer, false);
 
-                Dc.TotalBytesDownloaded += Dc.PieceMap[pieceBuffer.Number].pieceLength;
+                Dc.TotalBytesDownloaded += Dc.PieceData[pieceBuffer.Number].pieceLength;
                 Log.Logger.Info((Dc.TotalBytesDownloaded / (double)Dc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
