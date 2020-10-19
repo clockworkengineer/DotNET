@@ -218,7 +218,7 @@ namespace BitTorrentLibrary
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX HAVE= {pieceNumber}");
 
             remotePeer.SetPieceOnRemotePeer(pieceNumber);
-            remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
+   //         remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
 
             if (!remotePeer.Dc.IsPieceLocal(pieceNumber)) {
                 remotePeer.Dc.PieceSelector.PutPieceBack(pieceNumber);

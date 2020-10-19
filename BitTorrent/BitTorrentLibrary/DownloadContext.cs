@@ -23,7 +23,6 @@ namespace BitTorrentLibrary
     public static class Mapping
     {
         public const byte HaveLocal = 0x01; // Downloaded
-        public const byte OnPeer = 0x02;    // Is present on a remote peer
     }
 
     /// <summary>
@@ -41,6 +40,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class DownloadContext
     {
+        private byte[] bitfield;                              // Local piece bitfield
         private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
         private readonly Object _PieceMapLock = new object();
         public PieceData[] PieceMap { get; set; }
@@ -74,6 +74,7 @@ namespace BitTorrentLibrary
             PieceRequestQueue = new BlockingCollection<PieceRequest>();
             _SHA1 = new SHA1CryptoServiceProvider();
             DownloadFinished = new ManualResetEvent(false);
+            bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
         }
 
         /// <summary>
@@ -123,11 +124,11 @@ namespace BitTorrentLibrary
                 {
                     if (local)
                     {
-                        PieceMap[pieceNumber].mapping |= Mapping.HaveLocal;
+                        bitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
                     }
                     else
                     {
-                        PieceMap[pieceNumber].mapping &= (Mapping.HaveLocal ^ 0xff);
+                        bitfield[pieceNumber >> 3] &= (byte) ~(0x80 >> (Int32)(pieceNumber & 0x7));
                     }
                 }
             }
@@ -135,34 +136,6 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex);
                 throw new Error("BritTorent (DownloadConext) Error : " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Sets a piece as present on remote peer.
-        /// </summary>
-        /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="noPeer">If set to <c>true</c> piece is present on remote peer.</param>
-        public void MarkPieceOnPeer(UInt32 pieceNumber, bool noPeer)
-        {
-            try
-            {
-                lock (_PieceMapLock)
-                {
-                    if (noPeer)
-                    {
-                        PieceMap[pieceNumber].mapping |= Mapping.OnPeer;
-                    }
-                    else
-                    {
-                        PieceMap[pieceNumber].mapping &= (Mapping.OnPeer ^ 0xff);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
 
@@ -177,7 +150,7 @@ namespace BitTorrentLibrary
             {
                 lock (_PieceMapLock)
                 {
-                    return (PieceMap[pieceNumber].mapping & Mapping.HaveLocal) == Mapping.HaveLocal;
+                    return (bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
                 }
             }
             catch (Exception ex)
@@ -205,7 +178,6 @@ namespace BitTorrentLibrary
                         if ((map & bit) != 0)
                         {
                             PieceMap[pieceNumber].peerCount++;
-                            remotePeer.Dc.MarkPieceOnPeer(pieceNumber, true);
                             remotePeer.NumberOfMissingPieces--;
                         }
                     }
@@ -220,9 +192,9 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Build piece bitfield to send to remote peer.
+        /// Build local piece bitfield to send to remote peer.
         /// </summary>
-        public byte[] BuildPieceBitfield()
+        public byte[] BuildLocalPieceBitfield()
         {
             try
             {
