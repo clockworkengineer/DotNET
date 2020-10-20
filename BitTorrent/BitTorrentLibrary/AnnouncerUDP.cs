@@ -31,28 +31,35 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="value"></param>
-        private void PackUInt64(List<byte> buffer, UInt64 value)
+        private static byte[] PackUInt64(UInt64 uInt64value)
         {
-            buffer.Add((byte)(value >> 56));
-            buffer.Add((byte)(value >> 48));
-            buffer.Add((byte)(value >> 40));
-            buffer.Add((byte)(value >> 32));
-            buffer.Add((byte)(value >> 24));
-            buffer.Add((byte)(value >> 16));
-            buffer.Add((byte)(value >> 8));
-            buffer.Add((byte)(value));
+            byte[] packedUInt64 = new byte[Constants.SizeOfUInt32 * 2];
+
+            packedUInt64[0] = (byte)(uInt64value >> 56);
+            packedUInt64[1] = (byte)(uInt64value >> 48);
+            packedUInt64[2] = (byte)(uInt64value >> 40);
+            packedUInt64[3] = (byte)(uInt64value >> 32);
+            packedUInt64[4] = (byte)(uInt64value >> 24);
+            packedUInt64[5] = (byte)(uInt64value >> 16);
+            packedUInt64[6] = (byte)(uInt64value >> 8);
+            packedUInt64[7] = (byte)(uInt64value);
+
+            return packedUInt64;
         }
         /// <summary>
         /// Pack UInt32 MSB first into 8 bytes buffer.
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="value"></param>
-        private void PackUInt32(List<byte> buffer, UInt32 value)
+        private byte[] PackUInt32(UInt64 uInt32value)
         {
-            buffer.Add((byte)(value >> 24));
-            buffer.Add((byte)(value >> 16));
-            buffer.Add((byte)(value >> 8));
-            buffer.Add((byte)(value));
+            byte[] packedUInt32 = new byte[Constants.SizeOfUInt32];
+            packedUInt32[4] = (byte)(uInt32value >> 24);
+            packedUInt32[5] = (byte)(uInt32value >> 16);
+            packedUInt32[6] = (byte)(uInt32value >> 8);
+            packedUInt32[7] = (byte)(uInt32value);
+
+            return packedUInt32;
         }
         /// <summary>
         /// Unpack into a UInt64 MSB from an byte buffer at a given offset.
@@ -96,9 +103,9 @@ namespace BitTorrentLibrary
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
                 List<byte> connectPacket = new List<byte>();
 
-                PackUInt64(connectPacket, 0x41727101980);
-                PackUInt32(connectPacket, 0);
-                PackUInt32(connectPacket, transactionID);
+                connectPacket.AddRange(PackUInt64(0x41727101980));
+                connectPacket.AddRange(PackUInt32(0));
+                connectPacket.AddRange(PackUInt32(transactionID));
 
                 _trackerConnection.Connect(_trackerEndPoint);
                 _trackerConnection.Send(connectPacket.ToArray(), connectPacket.Count);
@@ -164,20 +171,20 @@ namespace BitTorrentLibrary
                 List<byte> announcePacket = new List<byte>();
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
 
-                PackUInt64(announcePacket, _connectionID);
-                PackUInt32(announcePacket, 1);
-                PackUInt32(announcePacket, transactionID);
+                announcePacket.AddRange(PackUInt64(_connectionID));
+                announcePacket.AddRange(PackUInt32(1));
+                announcePacket.AddRange(PackUInt32(transactionID));
                 announcePacket.AddRange(tracker.InfoHash);
                 announcePacket.AddRange(Encoding.ASCII.GetBytes(tracker.PeerID));
-                PackUInt64(announcePacket, tracker.Downloaded);
-                PackUInt64(announcePacket, tracker.Left);
-                PackUInt64(announcePacket, tracker.Uploaded);
-                PackUInt32(announcePacket, (UInt32)tracker.Event);      // event
-                PackUInt32(announcePacket, 0);                          // ip
-                PackUInt32(announcePacket, 0);                          // key
-                PackUInt32(announcePacket, (UInt32)tracker.NumWanted);
-                PackUInt32(announcePacket, tracker.Port);
-                PackUInt32(announcePacket, 0);                          // Extensions.
+                announcePacket.AddRange(PackUInt64(tracker.Downloaded));
+                announcePacket.AddRange(PackUInt64(tracker.Left));
+                announcePacket.AddRange(PackUInt64(tracker.Uploaded));
+                announcePacket.AddRange(PackUInt32((UInt32)tracker.Event));      // event
+                announcePacket.AddRange(PackUInt32(0));                          // ip
+                announcePacket.AddRange(PackUInt32(0));                          // key
+                announcePacket.AddRange(PackUInt32((UInt32)tracker.NumWanted));
+                announcePacket.AddRange(PackUInt32(tracker.Port));
+                announcePacket.AddRange(PackUInt32(0));                          // Extensions.
 
                 _trackerConnection.Send(announcePacket.ToArray(), announcePacket.Count);
                 byte[] announceReply = _trackerConnection.Receive(ref _trackerEndPoint);
@@ -225,7 +232,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex.Message);
-                throw new Error("BitTorrent (TrackerUDP) Error : "+ex.Message);
+                throw new Error("BitTorrent (TrackerUDP) Error : " + ex.Message);
             }
 
             return response;

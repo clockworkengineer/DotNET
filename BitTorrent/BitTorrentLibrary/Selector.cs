@@ -23,7 +23,7 @@ namespace BitTorrentLibrary
     public class Selector
     {
         private readonly DownloadContext _dc;       // Download context for torrent
-        private readonly Object _pieceMissingLock;  // Missing access lock
+        private readonly Object _nextPieceLock;     // Missing access lock
         private readonly byte[] _piecesMissing;     // Missing piece bitfield
         private UInt32 _missingPiecesCount = 0;     // Missing piece cound
 
@@ -34,19 +34,18 @@ namespace BitTorrentLibrary
         /// <param name="missing"></param>
         private void SetPieceMissing(UInt32 pieceNumber, bool missing)
         {
-            lock (_pieceMissingLock)
+
+            if (missing)
             {
-                if (missing)
-                {
-                    _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                    _missingPiecesCount++;
-                }
-                else
-                {
-                    _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                    _missingPiecesCount--;
-                }
+                _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                _missingPiecesCount++;
             }
+            else
+            {
+                _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
+                _missingPiecesCount--;
+            }
+
 
         }
         /// <summary>
@@ -56,10 +55,10 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private bool IsPieceMissing(UInt32 pieceNumber)
         {
-            lock (_pieceMissingLock)
-            {
-                return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
-            }
+
+
+            return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+
         }
         /// <summary>
         /// Return next suggested piece to download.
@@ -92,7 +91,7 @@ namespace BitTorrentLibrary
         {
             _dc = dc;
             _dc.PieceSelector = this;
-            _pieceMissingLock = new Object();
+            _nextPieceLock = new Object();
             _piecesMissing = new byte[dc.Bitfield.Length];
             for (uint pieceNumber = 0; pieceNumber < _dc.NumberOfPieces; pieceNumber++)
             {
@@ -112,15 +111,18 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Int64 suggestedPiece = GetSuggestedPiece(remotePeer, 0);
-
-                if (suggestedPiece != -1)
+                lock (_nextPieceLock)
                 {
-                    nextPiece = (UInt32)suggestedPiece;
-                    SetPieceMissing(nextPiece, false);
-                    return true;
+                    Int64 suggestedPiece = GetSuggestedPiece(remotePeer, 0);
+
+                    if (suggestedPiece != -1)
+                    {
+                        nextPiece = (UInt32)suggestedPiece;
+                        SetPieceMissing(nextPiece, false);
+                        return true;
+                    }
+                    return false;
                 }
-                return false;
 
             }
             catch (Exception ex)
@@ -137,7 +139,10 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber"></param>
         public void MarkPieceAsMissing(UInt32 pieceNumber)
         {
-            SetPieceMissing(pieceNumber, true);
+            if (!IsPieceMissing(pieceNumber))
+            {
+                SetPieceMissing(pieceNumber, true);
+            }
         }
         /// <summary>
         /// Set download finished flag.

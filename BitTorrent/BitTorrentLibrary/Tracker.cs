@@ -117,7 +117,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Restart announce on interval changing and save minimum interval and trackre ID.
+        /// Restart announce on interval changing and save minimum interval and tracker ID.
         /// </summary>
         /// <param name="response"></param>
         private void UpdateRunningStatusFromAnnounce(AnnounceResponse response)

@@ -32,7 +32,7 @@ namespace BitTorrentLibrary
     public class DownloadContext
     {
         private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
-        private readonly Object _DCLock = new object();
+        private readonly Object _dcLock = new object();
         public PieceInfo[] PieceData { get; set; }
         public BlockingCollection<PieceBuffer> PieceWriteQueue { get; set; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
@@ -111,7 +111,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                lock (_DCLock)
+                lock (_dcLock)
                 {
                     if (local)
                     {
@@ -139,7 +139,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                lock (_DCLock)
+                lock (_dcLock)
                 {
                     return (Bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
                 }
@@ -163,10 +163,9 @@ namespace BitTorrentLibrary
                 UInt32 pieceNumber = 0;
                 for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
                 {
-                    byte map = remotePeer.RemotePieceBitfield[i];
                     for (byte bit = 0x80; bit != 0; bit >>= 1, pieceNumber++)
                     {
-                        if ((map & bit) != 0)
+                        if ((remotePeer.RemotePieceBitfield[i] & bit) != 0)
                         {
                             PieceData[pieceNumber].peerCount++;
                             remotePeer.NumberOfMissingPieces--;

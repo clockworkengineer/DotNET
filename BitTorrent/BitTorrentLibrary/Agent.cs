@@ -29,8 +29,8 @@ namespace BitTorrentLibrary
     public class Agent
     {
         private readonly BlockingCollection<PeerDetails> _peersTooSwarm;   // Peers to add to swarm queue
-        private readonly Task _swarmPeerCreatorTask;                       // Peer swarm creator task
-        private readonly Task _peerConnectCreatorTask;                     // Peer swarm peer connect creator task
+        private readonly Task _peerConnectCreatorTask;                     // Peer swarm creator task
+        private readonly Task _peerListenCreatorTask;                      // Peer swarm peer connect creator task
         private readonly Downloader _torrentDownloader;                    // Downloader for torrent
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private readonly ConcurrentDictionary<string, Peer> _peerSwarm;    // Connected remote peers in swarm
@@ -53,16 +53,14 @@ namespace BitTorrentLibrary
                     peersChoking++;
                 }
             }
-            Log.Logger.Info($"%[Peers Choking {peersChoking}]" +
-            $"[Missing Piece Count {_torrentDownloader.Dc.PieceSelector.MissingPiecesCount()}] " +
-            $"[Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}] " +
-            $"[Active Downloaders {_pieceAssembler?.ActiveDownloaders}] " +
+            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {_torrentDownloader.Dc.PieceSelector.MissingPiecesCount()}] " +
+            $"[Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}] [Active Downloaders {_pieceAssembler?.ActiveDownloaders}] " +
             $"[Active Uploaders {_pieceAssembler?.ActiveUploaders}]");
         }
         /// <summary>
         /// Inspects  peer queue, connects to the peer and creates piece assembler task before adding to swarm.
         /// </summary>
-        private void PeerSwarmCreatorTask()
+        private void PeerConnectCreatorTask()
         {
 
             while (!_peersTooSwarm.IsCompleted)
@@ -102,7 +100,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Listen for remote peer connects and on success start peer task then add it o swarm.
         /// </summary>
-        private void PeerConnectCreatorTask()
+        private void PeerListenCreatorTask()
         {
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Host.GetIP());
             IPEndPoint localEndPoint = new IPEndPoint(ipHostInfo.AddressList[0], (int)Host.DefaultPort);
@@ -162,8 +160,8 @@ namespace BitTorrentLibrary
             _peersTooSwarm = new BlockingCollection<PeerDetails>();
             InfoHash = torrentFile.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
+            _peerListenCreatorTask = Task.Run(() => PeerListenCreatorTask());
             _peerConnectCreatorTask = Task.Run(() => PeerConnectCreatorTask());
-            _swarmPeerCreatorTask = Task.Run(() => PeerSwarmCreatorTask());
 
         }
         ~Agent()
