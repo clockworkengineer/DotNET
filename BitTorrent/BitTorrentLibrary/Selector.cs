@@ -3,10 +3,11 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Contains code and data ti implement a specific piece
-// selection method for piece download. In this case create a list of all
-// non-local pieces that are available and place them in a queue in a random
-// order.
+// Description: Contains code and data to implement a specific piece
+// selection method for piece download. In this case it just starts
+// at beginning of the missing pieces bitfield and stops when it finds
+// the first piece as flagged missing and returns its ordinal position within
+// the bitfield.
 //
 // Copyright 2020.
 //
@@ -21,10 +22,10 @@ namespace BitTorrentLibrary
 {
     public class Selector
     {
-        private readonly DownloadContext _dc;         // Download context for torrent
-        private readonly Object _pieceMissingLock;
-        private readonly byte[] _piecesMissing;
-        private UInt32 _missingPiecesCount = 0;
+        private readonly DownloadContext _dc;       // Download context for torrent
+        private readonly Object _pieceMissingLock;  // Missing access lock
+        private readonly byte[] _piecesMissing;     // Missing piece bitfield
+        private UInt32 _missingPiecesCount = 0;     // Missing piece cound
 
         /// <summary>
         /// Set piece as missing in bitfield.

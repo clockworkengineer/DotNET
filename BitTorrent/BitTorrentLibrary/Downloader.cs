@@ -6,9 +6,7 @@
 // Description: The Downloader class encapsulates all code and
 // data relating to the readining/writing of the local torrent files
 // to determine which pieces are missing and need downloading and
-// written to the correct positions. NEEDS FUNCTIONALITY TO READ PIECES
-// THAT HAVE BEEN REQUESTED FROM DISK AND BUFFERED FOR REQUESTS FROM
-// PEERS.
+// written to the correct positions.
 //
 // Copyright 2020.
 //
@@ -92,12 +90,12 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Generates the piece map from buffer.
+        /// Update torrent piece information and bitfield from buffer.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="pieceBuffer">Piece buffer.</param>
         /// <param name="numberOfBytes">Number of bytes in piece.</param>
-        private void GeneratePieceMapFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
+        private void UpdateBitfieldFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
             bool pieceThere = Dc.CheckPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
             if (pieceThere)
@@ -109,11 +107,10 @@ namespace BitTorrentLibrary
         }
 
         /// <summary>
-        /// Creates the piece map from the current disc which details the state of the pieces
-        /// within a torrentdownload. This could be whether a piece  is present on a remote peer 
-        /// or has already been downloaded.
+        /// Creates the torrent bitfield and piece information structures from the current disc 
+        /// which details the state of the piece.
         /// </summary>
-        private void CreatePieceMap()
+        private void CreateTorrentBitfield()
         {
             byte[] pieceBuffer = new byte[Dc.PieceLength];
             UInt32 pieceNumber = 0;
@@ -134,7 +131,7 @@ namespace BitTorrentLibrary
 
                         if (bytesInBuffer == Dc.PieceLength)
                         {
-                            GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
+                            UpdateBitfieldFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
                             bytesInBuffer = 0;
                             pieceNumber++;
                         }
@@ -144,7 +141,7 @@ namespace BitTorrentLibrary
 
             if (bytesInBuffer > 0)
             {
-                GeneratePieceMapFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
+                UpdateBitfieldFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
             }
 
             Log.Logger.Debug("Finished generating downloaded map.");
@@ -206,32 +203,12 @@ namespace BitTorrentLibrary
                 PieceBuffer requestBuffer = GetPieceFromTorrent(request.pieceNumber);
                 byte[] requestBlock = new byte[request.blockSize];
 
-                Array.Copy(requestBuffer.Buffer, (Int32) request.blockOffset, requestBlock, 0, (Int32) request.blockSize);
+                Array.Copy(requestBuffer.Buffer, (Int32)request.blockOffset, requestBlock, 0, (Int32)request.blockSize);
 
                 PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
 
                 Dc.TotalBytesUploaded += request.blockSize;
 
-            }
-        }
-
-        /// <summary>
-        /// Build already downloaded pieces map.
-        /// </summary>
-        private void BuildDownloadedPiecesMap()
-        {
-            try
-            {
-                CreateLocalTorrentStructure();
-                CreatePieceMap();
-            }
-            catch (Error)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
             }
         }
         /// <summary>
@@ -250,10 +227,11 @@ namespace BitTorrentLibrary
                 torrentMetaInfo.MetaInfoDict["pieces"]);
 
             _pieceBufferWriterTask = Task.Run(() => PieceBufferDiskWriter());
-            _pieceRequestProcessingTask  =  Task.Run(() => PieceRequestProcessingTask());
-            
-            BuildDownloadedPiecesMap();
-            
+            _pieceRequestProcessingTask = Task.Run(() => PieceRequestProcessingTask());
+
+            CreateLocalTorrentStructure();
+            CreateTorrentBitfield();
+
         }
 
         /// <summary>
