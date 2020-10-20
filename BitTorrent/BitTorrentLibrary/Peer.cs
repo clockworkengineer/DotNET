@@ -91,10 +91,7 @@ namespace BitTorrentLibrary
                 {
                     if (remotePeer._bytesRead == Constants.SizeOfUInt32)
                     {
-                        remotePeer.PacketLength = ((UInt32)remotePeer.ReadBuffer[0]) << 24;
-                        remotePeer.PacketLength |= ((UInt32)remotePeer.ReadBuffer[1]) << 16;
-                        remotePeer.PacketLength |= ((UInt32)remotePeer.ReadBuffer[2]) << 8;
-                        remotePeer.PacketLength |= remotePeer.ReadBuffer[3];
+                        remotePeer.PacketLength = Util.UnPackUInt32(remotePeer.ReadBuffer, 0);
                         remotePeer._lengthRead = true;
                         remotePeer._bytesRead = 0;
                         if (remotePeer.PacketLength > remotePeer.ReadBuffer.Length)
@@ -266,7 +263,8 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            if (!IsPieceOnRemotePeer(pieceNumber)) {
+            if (!IsPieceOnRemotePeer(pieceNumber))
+            {
                 RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
                 NumberOfMissingPieces--;
             }

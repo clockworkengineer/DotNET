@@ -81,14 +81,14 @@ namespace BitTorrent
                     }
 
                     Log.Logger.Info("Loading and parsing metainfo for torrent file ....");
-                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/ipfire.iso.torrent");
+                    MetaInfoFile torrentFile = new MetaInfoFile("/home/robt/torrent/open.torrent");
 
                     torrentFile.Load();
                     torrentFile.Parse();
 
                     Downloader downloader = new Downloader(torrentFile, "/home/robt/utorrent");
                     Selector selector = new Selector(downloader.Dc);
-                    Assembler assembler = new Assembler(downloader, selector);
+                    Assembler assembler = new Assembler(downloader);
                     Agent agent = new Agent(torrentFile, downloader, assembler);
 
                     Tracker tracker = new Tracker(agent, downloader);

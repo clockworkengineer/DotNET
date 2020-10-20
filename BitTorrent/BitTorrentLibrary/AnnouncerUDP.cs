@@ -27,73 +27,6 @@ namespace BitTorrentLibrary
         private IPEndPoint _trackerEndPoint;                        // Tracker enpoint
 
         /// <summary>
-        /// Pack UInt64 MSB first into 8 bytes buffer.
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="value"></param>
-        private static byte[] PackUInt64(UInt64 uInt64value)
-        {
-            byte[] packedUInt64 = new byte[Constants.SizeOfUInt32 * 2];
-
-            packedUInt64[0] = (byte)(uInt64value >> 56);
-            packedUInt64[1] = (byte)(uInt64value >> 48);
-            packedUInt64[2] = (byte)(uInt64value >> 40);
-            packedUInt64[3] = (byte)(uInt64value >> 32);
-            packedUInt64[4] = (byte)(uInt64value >> 24);
-            packedUInt64[5] = (byte)(uInt64value >> 16);
-            packedUInt64[6] = (byte)(uInt64value >> 8);
-            packedUInt64[7] = (byte)(uInt64value);
-
-            return packedUInt64;
-        }
-        /// <summary>
-        /// Pack UInt32 MSB first into 8 bytes buffer.
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="value"></param>
-        private byte[] PackUInt32(UInt64 uInt32value)
-        {
-            byte[] packedUInt32 = new byte[Constants.SizeOfUInt32];
-            packedUInt32[4] = (byte)(uInt32value >> 24);
-            packedUInt32[5] = (byte)(uInt32value >> 16);
-            packedUInt32[6] = (byte)(uInt32value >> 8);
-            packedUInt32[7] = (byte)(uInt32value);
-
-            return packedUInt32;
-        }
-        /// <summary>
-        /// Unpack into a UInt64 MSB from an byte buffer at a given offset.
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        private UInt64 UnPackUInt64(byte[] buffer, UInt32 offset)
-        {
-            UInt64 value = ((UInt64)buffer[offset]) << 56;
-            value |= ((UInt64)buffer[offset + 1]) << 48;
-            value |= ((UInt64)buffer[offset + 2]) << 40;
-            value |= ((UInt64)buffer[offset + 3]) << 32;
-            value |= ((UInt64)buffer[offset + 4]) << 24;
-            value |= ((UInt64)buffer[offset + 5]) << 16;
-            value |= ((UInt64)buffer[offset + 6]) << 8;
-            value |= ((UInt64)buffer[offset + 7]);
-            return value;
-        }
-        /// <summary>
-        /// Unpack into a UInt32 MSB from an byte buffer at a given offset.
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        private UInt32 UnPackUInt32(byte[] buffer, UInt32 offset)
-        {
-            UInt32 value = ((UInt32)buffer[offset]) << 24;
-            value |= ((UInt32)buffer[offset + 1]) << 16;
-            value |= ((UInt32)buffer[offset + 2]) << 8;
-            value |= ((UInt32)buffer[offset + 3]);
-            return value;
-        }
-        /// <summary>
         /// Connect to UDP tracker server.
         /// </summary>
         private void Connect()
@@ -103,20 +36,20 @@ namespace BitTorrentLibrary
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
                 List<byte> connectPacket = new List<byte>();
 
-                connectPacket.AddRange(PackUInt64(0x41727101980));
-                connectPacket.AddRange(PackUInt32(0));
-                connectPacket.AddRange(PackUInt32(transactionID));
+                connectPacket.AddRange(Util.PackUInt64(0x41727101980));
+                connectPacket.AddRange(Util.PackUInt32(0));
+                connectPacket.AddRange(Util.PackUInt32(transactionID));
 
                 _trackerConnection.Connect(_trackerEndPoint);
                 _trackerConnection.Send(connectPacket.ToArray(), connectPacket.Count);
                 byte[] connectReply = _trackerConnection.Receive(ref _trackerEndPoint);
                 if (connectReply.Length == 16)
                 {
-                    if (UnPackUInt32(connectReply, 0) == 0)
+                    if (Util.UnPackUInt32(connectReply, 0) == 0)
                     {
-                        if (transactionID == UnPackUInt32(connectReply, 4))
+                        if (transactionID == Util.UnPackUInt32(connectReply, 4))
                         {
-                            _connectionID = UnPackUInt64(connectReply, 8);
+                            _connectionID = Util.UnPackUInt64(connectReply, 8);
                             _connected = true;
                             Log.Logger.Info("Connected to UDP Tracker.");
                         }
@@ -171,31 +104,31 @@ namespace BitTorrentLibrary
                 List<byte> announcePacket = new List<byte>();
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
 
-                announcePacket.AddRange(PackUInt64(_connectionID));
-                announcePacket.AddRange(PackUInt32(1));
-                announcePacket.AddRange(PackUInt32(transactionID));
+                announcePacket.AddRange(Util.PackUInt64(_connectionID));
+                announcePacket.AddRange(Util.PackUInt32(1));
+                announcePacket.AddRange(Util.PackUInt32(transactionID));
                 announcePacket.AddRange(tracker.InfoHash);
                 announcePacket.AddRange(Encoding.ASCII.GetBytes(tracker.PeerID));
-                announcePacket.AddRange(PackUInt64(tracker.Downloaded));
-                announcePacket.AddRange(PackUInt64(tracker.Left));
-                announcePacket.AddRange(PackUInt64(tracker.Uploaded));
-                announcePacket.AddRange(PackUInt32((UInt32)tracker.Event));      // event
-                announcePacket.AddRange(PackUInt32(0));                          // ip
-                announcePacket.AddRange(PackUInt32(0));                          // key
-                announcePacket.AddRange(PackUInt32((UInt32)tracker.NumWanted));
-                announcePacket.AddRange(PackUInt32(tracker.Port));
-                announcePacket.AddRange(PackUInt32(0));                          // Extensions.
+                announcePacket.AddRange(Util.PackUInt64(tracker.Downloaded));
+                announcePacket.AddRange(Util.PackUInt64(tracker.Left));
+                announcePacket.AddRange(Util.PackUInt64(tracker.Uploaded));
+                announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.Event));      // event
+                announcePacket.AddRange(Util.PackUInt32(0));                          // ip
+                announcePacket.AddRange(Util.PackUInt32(0));                          // key
+                announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.NumWanted));
+                announcePacket.AddRange(Util.PackUInt32(tracker.Port));
+                announcePacket.AddRange(Util.PackUInt32(0));                          // Extensions.
 
                 _trackerConnection.Send(announcePacket.ToArray(), announcePacket.Count);
                 byte[] announceReply = _trackerConnection.Receive(ref _trackerEndPoint);
 
-                if (UnPackUInt32(announceReply, 0) == 1)
+                if (Util.UnPackUInt32(announceReply, 0) == 1)
                 {
-                    if (transactionID == UnPackUInt32(announceReply, 4))
+                    if (transactionID == Util.UnPackUInt32(announceReply, 4))
                     {
-                        response.interval = UnPackUInt32(announceReply, 8);
-                        response.incomplete = UnPackUInt32(announceReply, 12);
-                        response.complete = UnPackUInt32(announceReply, 16);
+                        response.interval = Util.UnPackUInt32(announceReply, 8);
+                        response.incomplete = Util.UnPackUInt32(announceReply, 12);
+                        response.complete = Util.UnPackUInt32(announceReply, 16);
                     }
                     for (var num = 20; num < announceReply.Length; num += 6)
                     {
@@ -213,9 +146,9 @@ namespace BitTorrentLibrary
                     }
 
                 }
-                else if (UnPackUInt32(announceReply, 0) == 2)
+                else if (Util.UnPackUInt32(announceReply, 0) == 2)
                 {
-                    if (transactionID == UnPackUInt32(announceReply, 4))
+                    if (transactionID == Util.UnPackUInt32(announceReply, 4))
                     {
                         byte[] errorMessage = new byte[announceReply.Length - 4];
                         announceReply.CopyTo(errorMessage, 4);

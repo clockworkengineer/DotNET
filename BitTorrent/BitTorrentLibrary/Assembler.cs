@@ -23,7 +23,6 @@ namespace BitTorrentLibrary
 {
     public class Assembler
     {
-        private readonly Selector _pieceSelector;                    // Piece to download selector
         private readonly ProgessCallBack _progressFunction = null;   // Download progress function
         private readonly Object _progressData = null;                // Download progress function data
         private readonly DownloadContext _dc;                        // Download context for torrent
@@ -56,7 +55,7 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
                         Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        _pieceSelector.MarkPieceAsMissing(pieceNumber);
+                        _dc.PieceSelector.MarkPieceAsMissing(pieceNumber);
                         _dc.MarkPieceLocal(pieceNumber, false);
                     }
                 }
@@ -65,7 +64,7 @@ namespace BitTorrentLibrary
                     if (!_dc.IsPieceLocal(pieceNumber))
                     {
                         Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        _pieceSelector.MarkPieceAsMissing(pieceNumber);
+                        _dc.PieceSelector.MarkPieceAsMissing(pieceNumber);
                     }
                 }
 
@@ -157,7 +156,7 @@ namespace BitTorrentLibrary
 
                 while (!remotePeer.Dc.DownloadFinished.WaitOne(0))
                 {
-                    while (_pieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
+                    while (_dc.PieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
                         SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
@@ -214,12 +213,11 @@ namespace BitTorrentLibrary
         /// <param name="torrentDownloader"></param>
         /// <param name="progressFunction"></param>
         /// <param name="progressData"></param>
-        public Assembler(Downloader torrentDownloader, Selector pieceSeclector, ProgessCallBack progressFunction = null, Object progressData = null)
+        public Assembler(Downloader torrentDownloader, ProgessCallBack progressFunction = null, Object progressData = null)
         {
             _dc = torrentDownloader.Dc;
             _progressFunction = progressFunction;
             _progressData = progressData;
-            _pieceSelector = pieceSeclector;
             Paused = new ManualResetEvent(false);
 
         }
