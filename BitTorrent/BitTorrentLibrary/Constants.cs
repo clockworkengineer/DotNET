@@ -13,7 +13,7 @@ using System.IO;
 
 namespace BitTorrentLibrary
 {
-    public static class Constants
+    internal static class Constants
     {
         public static readonly string PathSeparator = $"{Path.DirectorySeparatorChar}";    // Path separator for host
         public const int BlockSize = 1024 * 16;      // Client Block size

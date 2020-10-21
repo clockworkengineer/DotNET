@@ -14,7 +14,7 @@ using System.Text;
 
 namespace BitTorrentLibrary
 {
-    public static class PWP
+    internal static class PWP
     {
         public delegate void PWPHandler(Peer remotePeer);
 

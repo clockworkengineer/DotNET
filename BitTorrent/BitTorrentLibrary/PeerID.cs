@@ -12,7 +12,7 @@ using System;
 
 namespace BitTorrentLibrary
 {
-    public static class PeerID
+    internal static class PeerID
     {
         static public string Get()
         {

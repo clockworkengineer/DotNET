@@ -14,7 +14,7 @@ using System.Net.Sockets;
 
 namespace BitTorrentLibrary
 {
-    public static class Host
+    internal static class Host
     {
         /// <summary>
         /// The default port remote peers connect for uploads.
@@ -26,7 +26,7 @@ namespace BitTorrentLibrary
         /// Gets the local host ip.
         /// </summary>
         /// <returns>The local host ip.</returns>
-        static public string GetIP()
+        public static string GetIP()
         {
             string localHostIP = "127.0.0.1";
             try

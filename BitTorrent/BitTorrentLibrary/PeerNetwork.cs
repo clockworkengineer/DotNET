@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Peer to peer network I/O layer.
+// Description: Peer to peer network I/O layer (WIP).
 //
 // Copyright 2020.
 //
@@ -14,7 +14,7 @@ using System.Text;
 
 namespace BitTorrentLibrary
 {
-    public static class SocketExtensions
+    internal static class SocketExtensions
     {
         /// <summary>
         /// Connects the specified socket with a timeout.
@@ -39,9 +39,9 @@ namespace BitTorrentLibrary
         }
     }
     /// <summary>
-    /// 
+    /// Peer to peer network IO code.
     /// </summary>
-    public class PeerNetwork
+    internal class PeerNetwork
     {
         private Socket _peerSocket;                                      // Socket for I/O
         private UInt32 _bytesRead;                                       // Bytes read in read request
@@ -104,7 +104,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// 
+        ///  Setup data and resources needed by peernetwork.
         /// </summary>
         public PeerNetwork(Socket remotePeerSocket)
         {
@@ -132,7 +132,7 @@ namespace BitTorrentLibrary
             return _peerSocket.Receive(buffer, length, SocketFlags.None);
         }
         /// <summary>
-        /// 
+        /// Start Async reading of network socket.
         /// </summary>
         /// <param name="remotePeer"></param>
         public void StartReads(Peer remotePeer)
@@ -140,7 +140,7 @@ namespace BitTorrentLibrary
             _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, remotePeer);
         }
         /// <summary>
-        /// 
+        /// Connect to remote peer and return connection socket.
         /// </summary>
         /// <param name="remotePeer"></param>
         public void Connect(string ip, uint port)
@@ -154,22 +154,14 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// 
+        /// Close socket connection
         /// </summary>
         public void Close()
         {
             _peerSocket.Close();
         }
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="socket"></param>
-        public void SetSocket(Socket socket)
-        {
-            _peerSocket = socket;
-        }
-        /// <summary>
-        /// 
+        /// Get an local endpoint socket to listen for connections on 
         /// </summary>
         /// <returns></returns>
         public static Socket GetListeningConnection()
@@ -183,10 +175,9 @@ namespace BitTorrentLibrary
 
             return listener;
 
-
         }
         /// <summary>
-        /// 
+        /// Wait for remote connection on socket.
         /// </summary>
         /// <param name="listener"></param>
         /// <returns></returns>
@@ -195,7 +186,7 @@ namespace BitTorrentLibrary
             return (listener.Accept());
         }
         /// <summary>
-        /// 
+        /// Return IP and Port of remote connection.
         /// </summary>
         /// <param name="socket"></param>
         /// <returns></returns>

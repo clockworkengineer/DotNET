@@ -20,7 +20,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// HTTP Announcer
     /// </summary>
-    public class AnnouncerHTTP : IAnnouncer
+    internal class AnnouncerHTTP : IAnnouncer
     {
         /// <summary>
         /// Decodes the announce request response recieved from a tracker.

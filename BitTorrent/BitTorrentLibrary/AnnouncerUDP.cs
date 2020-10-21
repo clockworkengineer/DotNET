@@ -18,7 +18,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// UDP Announcer
     /// </summary>
-    public class AnnouncerUDP : IAnnouncer
+    internal class AnnouncerUDP : IAnnouncer
     {
         private readonly Random _transIDGenerator = new Random();   // Transaction ID generator
         private bool _connected = false;                            // == true connected

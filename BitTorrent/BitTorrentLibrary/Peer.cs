@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
 {
-   
+
     /// <summary>
     /// Peer.
     /// </summary>
@@ -50,7 +50,7 @@ namespace BitTorrentLibrary
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
         /// <param name="dc">Download context.</param>
-        public Peer(string ip, UInt32 port, byte[] infoHash, DownloadContext dc, Socket socket= null)
+        public Peer(string ip, UInt32 port, byte[] infoHash, DownloadContext dc, Socket socket = null)
         {
             Ip = ip;
             _port = port;
@@ -70,7 +70,14 @@ namespace BitTorrentLibrary
         /// <param name="buffer">Buffer.</param>
         public void PeerWrite(byte[] buffer)
         {
-            _network.Write(buffer);
+            try
+            {
+                _network.Write(buffer);
+            }
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
+            }
         }
 
         /// <summary>
@@ -81,7 +88,14 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int PeerRead(byte[] buffer, int length)
         {
-            return _network.Read(buffer, length);
+            try
+            {
+                return _network.Read(buffer, length);
+            }
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
+            }
         }
 
         /// <summary>
@@ -115,7 +129,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-          
+
                 _network.Connect(Ip, _port);
 
                 ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this, _infoHash);
@@ -139,12 +153,19 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Close()
         {
-            if (Connected)
+            try
             {
-                Connected = false;
-                CancelTaskSource.Cancel();
-                _network.Close();
-                Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}.");
+                if (Connected)
+                {
+                    Connected = false;
+                    CancelTaskSource.Cancel();
+                    _network.Close();
+                    Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
 
@@ -155,7 +176,14 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            return (RemotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+            try
+            {
+                return (RemotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
+            }
         }
 
         /// <summary>
@@ -164,10 +192,17 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            if (!IsPieceOnRemotePeer(pieceNumber))
+            try
             {
-                RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                NumberOfMissingPieces--;
+                if (!IsPieceOnRemotePeer(pieceNumber))
+                {
+                    RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                    NumberOfMissingPieces--;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
 
@@ -192,10 +227,7 @@ namespace BitTorrentLibrary
                     WaitForPieceAssembly.Set();
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
+
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);

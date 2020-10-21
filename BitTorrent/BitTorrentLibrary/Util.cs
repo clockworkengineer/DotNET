@@ -12,7 +12,7 @@ using System;
 
 namespace BitTorrentLibrary
 {
-    public static class Util
+    internal static class Util
     {
         /// <summary>
         /// Pack UInt64 MSB first into 8 bytes buffer.
