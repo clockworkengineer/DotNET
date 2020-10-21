@@ -11,12 +11,10 @@
 
 using System;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 
 namespace BitTorrentLibrary
@@ -102,40 +100,34 @@ namespace BitTorrentLibrary
         /// </summary>
         private void PeerListenCreatorTask()
         {
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(Host.GetIP());
-            IPEndPoint localEndPoint = new IPEndPoint(ipHostInfo.AddressList[0], (int)Host.DefaultPort);
-            Socket listener = new Socket(ipHostInfo.AddressList[0].AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            Socket remotePeerSocket;
-
-            listener.Bind(localEndPoint);
-            listener.Listen(100);
+          
+            Socket listener = PeerNetwork.GetListeningConnection();
 
             while (true)
             {
                 Log.Logger.Info("Waiting for remote peer connect...");
 
-                remotePeerSocket = listener.Accept();
+                Socket remotePeerSocket = PeerNetwork.WaitForConnection(listener);
 
                 Log.Logger.Info("Remote peer connected...");
 
-                string remotePeerIP = ((IPEndPoint)(remotePeerSocket.RemoteEndPoint)).Address.ToString();
-                UInt32 remotePeerPort = (UInt32)((IPEndPoint)(remotePeerSocket.RemoteEndPoint)).Port;
+                var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
 
-                if (remotePeerIP == "192.168.1.1")
+                if (endPoint.Item1 == "192.168.1.1")
                 { // NO IDEA WHATS BEHIND THIS AT PRESENT (HANGS IF WE DONT CLOSE THIS)
                     remotePeerSocket.Close();
                     continue;
                 }
 
                 // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                if (_peerSwarm.ContainsKey(remotePeerIP) || _peerSwarm.Count >= MainTracker.MaximumSwarmSize)
+                if (_peerSwarm.ContainsKey(endPoint.Item1) || _peerSwarm.Count >= MainTracker.MaximumSwarmSize)
                 {
                     continue;
                 }
 
-                Log.Logger.Info($"++Remote peer IP = {remotePeerIP}:{remotePeerPort}.");
+                Log.Logger.Info($"++Remote peer IP = {endPoint.Item1}:{endPoint.Item2}.");
 
-                Peer remotePeer = new Peer(remotePeerSocket, remotePeerIP, remotePeerPort, InfoHash, _torrentDownloader.Dc);
+                Peer remotePeer = new Peer(endPoint.Item1, endPoint.Item2, InfoHash, _torrentDownloader.Dc, remotePeerSocket);
                 remotePeer.Accept();
                 if (remotePeer.Connected)
                 {

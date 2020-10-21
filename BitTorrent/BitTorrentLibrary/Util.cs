@@ -42,10 +42,10 @@ namespace BitTorrentLibrary
         public static byte[] PackUInt32(UInt64 uInt32value)
         {
             byte[] packedUInt32 = new byte[Constants.SizeOfUInt32];
-            packedUInt32[4] = (byte)(uInt32value >> 24);
-            packedUInt32[5] = (byte)(uInt32value >> 16);
-            packedUInt32[6] = (byte)(uInt32value >> 8);
-            packedUInt32[7] = (byte)(uInt32value);
+            packedUInt32[0] = (byte)(uInt32value >> 24);
+            packedUInt32[1] = (byte)(uInt32value >> 16);
+            packedUInt32[2] = (byte)(uInt32value >> 8);
+            packedUInt32[3] = (byte)(uInt32value);
 
             return packedUInt32;
         }

@@ -10,53 +10,25 @@
 //
 using System;
 using System.Text;
-using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
 {
-    public static class SocketExtensions
-    {
-        /// <summary>
-        /// Connects the specified socket with a timeout.
-        /// </summary>
-        /// <param name="socket">The socket.</param>
-        /// <param name="endpoint">The IP endpoint.</param>
-        /// <param name="timeout">The timeout.</param>
-        public static void Connect(this Socket socket, EndPoint endpoint, TimeSpan timeout)
-        {
-            var result = socket.BeginConnect(endpoint, null, null);
-
-            bool success = result.AsyncWaitHandle.WaitOne(timeout, true);
-            if (success)
-            {
-                socket.EndConnect(result);
-            }
-            else
-            {
-                socket.Close();
-                throw new Error("BitTorrent (Connect) Error: Peer connect timed out.");
-            }
-        }
-    }
+   
     /// <summary>
     /// Peer.
     /// </summary>
     public class Peer
     {
-        private readonly UInt32 _port;                                   // Port
-        private Socket _peerSocket;                                      // Socket for I/O
-        private readonly byte[] _infoHash;                               // Info Hash of torrent
-        private UInt32 _bytesRead;                                       // Bytes read in read request
-        private bool _lengthRead;                                        // == true packet length has been read
-        public byte[] ReadBuffer { get; set; }                           // Read buffer
+        private readonly PeerNetwork _network;                           // Network layer
+        private readonly byte[] _infoHash;                               // Torrent infohash
+        private readonly UInt32 _port;                                   // Peer Port
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public DownloadContext Dc { get; set; }                          // Torrent download context
         public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
-        public uint PacketLength { get; set; }                           // Current packet length
         public PieceBuffer AssembledPiece { get; set; }                  // Assembled pieces buffer
         public string Ip { get; set; }                                   // Remote peer ip
         public Task AssemblerTask { get; set; }                          // Peer piece assembly task
@@ -68,61 +40,8 @@ namespace BitTorrentLibrary
         public ManualResetEvent WaitForPieceAssembly { get; set; }       // When event set then piece has been fully assembled
         public ManualResetEvent BitfieldReceived { get; set; }           // When event set then peer has recieved bitfield from remote peer
         public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
-
-        /// <summary>
-        /// Peer read packet asynchronous callback.
-        /// </summary>
-        /// <param name="readAsyncState">Read async state.</param>
-        private void ReadPacketAsyncHandler(IAsyncResult readAsyncState)
-        {
-            Peer remotePeer = (Peer)readAsyncState.AsyncState;
-            try
-            {
-                Int32 bytesRead = (Int32)remotePeer._peerSocket.EndReceive(readAsyncState, out SocketError socketError);
-
-                if ((bytesRead <= 0) || (socketError != SocketError.Success))
-                {
-                    remotePeer.Close();
-                    return;
-                }
-
-                remotePeer._bytesRead += (UInt32)bytesRead;
-                if (!remotePeer._lengthRead)
-                {
-                    if (remotePeer._bytesRead == Constants.SizeOfUInt32)
-                    {
-                        remotePeer.PacketLength = Util.UnPackUInt32(remotePeer.ReadBuffer, 0);
-                        remotePeer._lengthRead = true;
-                        remotePeer._bytesRead = 0;
-                        if (remotePeer.PacketLength > remotePeer.ReadBuffer.Length)
-                        {
-                            Log.Logger.Debug("Resizing readBuffer ...");
-                            remotePeer.ReadBuffer = new byte[remotePeer.PacketLength];
-                        }
-                    }
-                }
-                else if (remotePeer._bytesRead == remotePeer.PacketLength)
-                {
-                    PWP.RemotePeerMessageProcess(remotePeer);
-                    remotePeer._lengthRead = false;
-                    remotePeer._bytesRead = 0;
-                    remotePeer.PacketLength = Constants.SizeOfUInt32;
-                }
-
-                remotePeer._peerSocket.BeginReceive(remotePeer.ReadBuffer, (Int32)remotePeer._bytesRead,
-                           (Int32)(remotePeer.PacketLength - remotePeer._bytesRead), 0, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
-            }
-            catch (System.ObjectDisposedException)
-            {
-                Log.Logger.Info($"ReadPacketCallBack()  {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
-                remotePeer.Close();
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex.Message);
-                remotePeer.Close();
-            }
-        }
+        public byte[] ReadBuffer => _network.ReadBuffer;
+        public UInt32 PacketLength => _network.PacketLength;
 
         /// <summary>
         /// Setup data and resources needed by peer.
@@ -131,13 +50,13 @@ namespace BitTorrentLibrary
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
         /// <param name="dc">Download context.</param>
-        public Peer(string ip, UInt32 port, byte[] infoHash, DownloadContext dc)
+        public Peer(string ip, UInt32 port, byte[] infoHash, DownloadContext dc, Socket socket= null)
         {
             Ip = ip;
             _port = port;
             _infoHash = infoHash;
             Dc = dc;
-            ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
+            _network = new PeerNetwork(socket);
             AssembledPiece = new PieceBuffer(Dc.PieceLength);
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(true);
@@ -146,26 +65,12 @@ namespace BitTorrentLibrary
             NumberOfMissingPieces = Dc.NumberOfPieces;
         }
         /// <summary>
-        /// Contructor with socket from remote peer connect provided
-        /// </summary>
-        /// <param name="socket"></param>
-        /// <param name="ip"></param>
-        /// <param name="port"></param>
-        /// <param name="infoHash"></param>
-        /// <param name="dc"></param>
-        /// <returns></returns>
-        public Peer(Socket socket, string ip, UInt32 port, byte[] infoHash, DownloadContext dc) : this(ip, port, infoHash, dc)
-        {
-            _peerSocket = socket;
-        }
-
-        /// <summary>
         /// Send packet to remote peer.
         /// </summary>
         /// <param name="buffer">Buffer.</param>
         public void PeerWrite(byte[] buffer)
         {
-            _peerSocket.Send(buffer);
+            _network.Write(buffer);
         }
 
         /// <summary>
@@ -176,7 +81,7 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int PeerRead(byte[] buffer, int length)
         {
-            return _peerSocket.Receive(buffer, length, SocketFlags.None);
+            return _network.Read(buffer, length);
         }
 
         /// <summary>
@@ -194,7 +99,7 @@ namespace BitTorrentLibrary
                     RemotePeerID = peerResponse.Item2;
                     Connected = true;
                     PWP.Bitfield(this, Dc.Bitfield);
-                    _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, this);
+                    _network.StartReads(this);
                 }
             }
             catch (Exception ex)
@@ -210,12 +115,8 @@ namespace BitTorrentLibrary
         {
             try
             {
-                IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
-                IPAddress remotePeerIP = System.Net.IPAddress.Parse(Ip);
-
-                _peerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-                _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)_port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
+          
+                _network.Connect(Ip, _port);
 
                 ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this, _infoHash);
 
@@ -224,7 +125,7 @@ namespace BitTorrentLibrary
                     RemotePeerID = peerResponse.Item2;
                     PWP.Bitfield(this, Dc.Bitfield);
                     Connected = true;
-                    _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, new AsyncCallback(ReadPacketAsyncHandler), this);
+                    _network.StartReads(this);
                 }
             }
             catch (Exception ex)
@@ -242,7 +143,7 @@ namespace BitTorrentLibrary
             {
                 Connected = false;
                 CancelTaskSource.Cancel();
-                _peerSocket.Close();
+                _network.Close();
                 Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
         }
@@ -281,9 +182,9 @@ namespace BitTorrentLibrary
             {
                 UInt32 blockNumber = blockOffset / Constants.BlockSize;
 
-                Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{PacketLength - 9})");
+                Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
 
-                AssembledPiece.AddBlockFromPacket(ReadBuffer, blockNumber);
+                AssembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
 
                 if (AssembledPiece.AllBlocksThere)
                 {
