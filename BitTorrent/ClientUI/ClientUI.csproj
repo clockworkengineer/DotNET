@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
-    <ProjectReference Include="..\BitTorrentLibrary\BitTorrentLibrary.csproj" />
+    <ProjectReference Include="..\BitTorrentLibrary\BitTorrentLibrary.csproj"/>
   </ItemGroup>
-
+  <ItemGroup>
+    <PackageReference Include="WolfCurses" Version="2018.9.12.1"/>
+    <PackageReference Include="Terminal.Gui" Version="0.90.3"/>
+  </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
-
 </Project>
