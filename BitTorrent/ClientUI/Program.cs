@@ -18,15 +18,15 @@ using Terminal.Gui;
 
 public class Torrent
 {
-    private string _torrentFileName;
-    private MetaInfoFile torrentFile;
-    private Downloader downloader;
-    private Selector selector;
-    private Assembler assembler;
-    private Agent agent;
+    private readonly string _torrentFileName;
+    private MetaInfoFile _torrentFile;
+    private Downloader _downloader;
+    private Selector _selector;
+    private Assembler _assembler;
+    private Agent _agent;
     private ProgressBar _progressBar;
-    private float _currentProgress;
-
+    private double _currentProgress = 0;
+    private bool downloading = false;
     Tracker tracker;
     public Torrent(string torrentFileName)
     {
@@ -36,9 +36,17 @@ public class Torrent
     public void UpdateProgress(Object obj)
     {
         Torrent torrent = (Torrent)obj;
-        double progress = (double)downloader.Dc.TotalBytesDownloaded /
-        (double)downloader.Dc.TotalBytesToDownload;
-        torrent._progressBar.Fraction = (float) progress;
+        double progress = (double)_downloader.Dc.TotalBytesDownloaded /
+        (double)_downloader.Dc.TotalBytesToDownload;
+        if (progress - _currentProgress > 0.05)
+        {
+            Application.MainLoop.Invoke(() =>
+            {
+                torrent._progressBar.Fraction = (float)progress;
+            });
+            torrent._progressBar.Fraction = (float)progress;
+            _currentProgress = progress;
+        }
     }
     public void Download(ProgressBar progressBar)
     {
@@ -46,23 +54,27 @@ public class Torrent
         {
             _progressBar = progressBar;
 
-            torrentFile = new MetaInfoFile(_torrentFileName);
+            _torrentFile = new MetaInfoFile(_torrentFileName);
 
-            torrentFile.Load();
-            torrentFile.Parse();
+            _torrentFile.Load();
+            _torrentFile.Parse();
 
-            downloader = new Downloader(torrentFile, "/home/robt/utorrent");
-            selector = new Selector(downloader.Dc);
-            assembler = new Assembler(downloader, this.UpdateProgress, this);
-            agent = new Agent(torrentFile, downloader, assembler);
+            _downloader = new Downloader(_torrentFile, "/home/robt/utorrent");
+            _selector = new Selector(_downloader.Dc);
+            _assembler = new Assembler(_downloader, this.UpdateProgress, this);
+            _agent = new Agent(_torrentFile, _downloader, _assembler);
 
-            tracker = new Tracker(agent, downloader);
+            tracker = new Tracker(_agent, _downloader);
 
             tracker.StartAnnouncing();
 
-            agent.Start();
+            _agent.Start();
 
-            agent.Download();
+            downloading = true;
+
+            _agent.Download();
+            
+            downloading = false;
         }
         catch (Exception ex)
         {
@@ -87,20 +99,17 @@ public class DownloadButton : Button
 {
 
     private Task _downloadTorrentTask;
-    private TorrentFileNameText _torrentFileName;
-    private ProgressBar _progressBar;
+    private readonly TorrentFileNameText _torrentFileName;
+    private readonly ProgressBar _progressBar;
 
     public DownloadButton(string name, TorrentFileNameText torrentFileName, ProgressBar progressBar) : base(name)
     {
         _torrentFileName = torrentFileName;
-        _progressBar  = progressBar;
+        _progressBar = progressBar;
     }
-
-    public Task DownloadTorrentTask { get => _downloadTorrentTask; set => _downloadTorrentTask = value; }
-
     public void ButtonPressed()
     {
-        DownloadTorrentTask = Task.Run(() => _torrentFileName.Torrent.Download(_progressBar));
+        _downloadTorrentTask = Task.Run(() => _torrentFileName.Torrent.Download(_progressBar));
     }
 }
 
@@ -128,13 +137,23 @@ class MainWindow : Window
             Width = 40,
         };
 
-
-        var torrentDownloadProgress = new ProgressBar()
+        var progressBarBeginText = new Label("Progress : [")
         {
             X = Pos.Left(torrentFileLabel),
             Y = Pos.Bottom(torrentFileLabel) + 1,
-            Width = 80,
+        };
+        var torrentDownloadProgress = new ProgressBar()
+        {
+            X = Pos.Right(progressBarBeginText),
+            Y = Pos.Bottom(torrentFileLabel) + 1,
+            Width = 60,
             Height = 1
+        };
+
+        var progressBarEndText = new Label("]")
+        {
+            X = Pos.Right(torrentDownloadProgress)-2,
+            Y = Pos.Bottom(torrentFileLabel) + 1,
         };
 
         var downloadButton = new DownloadButton("Download", torrentFileText, torrentDownloadProgress)
@@ -146,7 +165,9 @@ class MainWindow : Window
 
         downloadButton.Clicked += downloadButton.ButtonPressed;
 
-        Add(menu, torrentFileLabel, torrentFileText, downloadButton, torrentDownloadProgress);
+        var downloadStatusBar = new StatusBar();
+
+        Add(menu, torrentFileLabel, torrentFileText, downloadButton, progressBarBeginText, torrentDownloadProgress, progressBarEndText, downloadStatusBar);
 
     }
 }
