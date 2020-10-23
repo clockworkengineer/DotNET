@@ -18,10 +18,12 @@ namespace ClientUI
 {
     class Demo
     {
-        static void Main()
+        private void UpdateTimer()
         {
 
-            Torrent torrent;
+        }
+        static void Main()
+        {
 
             Application.Init();
             var top = Application.Top;

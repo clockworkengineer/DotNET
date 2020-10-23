@@ -100,7 +100,7 @@ namespace BitTorrentLibrary
         /// </summary>
         private void PeerListenCreatorTask()
         {
-          
+
             Socket listener = PeerNetwork.GetListeningConnection();
 
             while (true)
@@ -194,7 +194,7 @@ namespace BitTorrentLibrary
             }
 
             DisplayStats();
-            
+
         }
         /// <summary>
         /// Download a torrent using an piece assembler per connected peer.
@@ -310,6 +310,15 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent Error (Agent): " + ex.Message);
             }
+        }
+        public List<PeerDetails> GetPeerSwarm()
+        {
+            return (from peer in _peerSwarm.Values
+                    select new PeerDetails
+                    {
+                        ip = peer.Ip,
+                        port = peer.Port
+                    }).ToList();
         }
     }
 }

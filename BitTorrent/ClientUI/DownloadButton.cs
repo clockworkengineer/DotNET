@@ -20,20 +20,18 @@ namespace ClientUI
     {
 
         private Task _downloadTorrentTask;
-        private readonly TorrentFileNameText _torrentFileName;
-        public ProgressBar ProgressBar { get; }
+        private MainWindow _mainWindow;
         public bool DownloadingTorent { get; set; } = false;
 
-        public DownloadButton(string name, TorrentFileNameText torrentFileName, ProgressBar progressBar) : base(name)
+        public DownloadButton(string name, MainWindow mainWindow) : base(name)
         {
-            _torrentFileName = torrentFileName;
-            ProgressBar = progressBar;
+            _mainWindow = mainWindow;
         }
         public void ButtonPressed()
         {
             if (!DownloadingTorent)
             {
-                _downloadTorrentTask = Task.Run(() => _torrentFileName.Torrent.Download(this));
+                _downloadTorrentTask = Task.Run(() => _mainWindow.torrentFileText.Torrent.Download(_mainWindow));
             }
         }
     }

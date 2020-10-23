@@ -25,14 +25,14 @@ namespace ClientUI
         private Selector _selector;
         private Assembler _assembler;
         private Agent _agent;
-        private DownloadButton _downloadButton;
+        private MainWindow _mainWindow;
         private double _currentProgress = 0;
         Tracker tracker;
+        private ListView peerListView;
         public Torrent(string torrentFileName)
         {
             _torrentFileName = torrentFileName;
         }
-
         public void UpdateProgress(Object obj)
         {
             Torrent torrent = (Torrent)obj;
@@ -42,26 +42,53 @@ namespace ClientUI
             {
                 Application.MainLoop.Invoke(() =>
                 {
-                    torrent._downloadButton.ProgressBar.Fraction = (float)progress;
+                    _mainWindow.torrentDownloadProgress.Fraction = (float)progress;
                 });
-                torrent._downloadButton.ProgressBar.Fraction = (float)progress;
+                _mainWindow.torrentDownloadProgress.Fraction = (float)progress;
                 _currentProgress = progress;
             }
+            List<PeerDetails> peerList = torrent._agent.GetPeerSwarm();
+            List<string> peers = new List<string>();
+            foreach (var peer in peerList)
+            {
+                peers.Add(peer.ip + ":" + peer.port.ToString());
+            }
+            Application.MainLoop.Invoke(() =>
+            {
+                if (peerListView != null)
+                {
+                    _mainWindow.informationWindow.peersWindow.Remove(peerListView);
+                }
+                peerListView = new ListView(peers.ToArray())
+                {
+                    X = 0,
+                    Y = 0,
+                    Width = Dim.Fill(),
+                    Height = Dim.Fill(),
+                    CanFocus = false
+                };
+                _mainWindow.informationWindow.peersWindow.Add(peerListView);
+            });
+
+
+
         }
-        public void Download(DownloadButton downloadButton)
+        public void Download(MainWindow mainWindow)
         {
             try
             {
-                _downloadButton = downloadButton;
+                _mainWindow = mainWindow;
 
                 _torrentFile = new MetaInfoFile(_torrentFileName);
 
                 _torrentFile.Load();
                 _torrentFile.Parse();
 
-                _downloadButton.FocusPrev();
-                _downloadButton.Text = "Working";
-                _downloadButton.CanFocus = false;
+                Application.MainLoop.Invoke(() =>
+                              {
+                                  _mainWindow.downloadButton.Text = "Working";
+                                  _mainWindow.downloadButton.CanFocus = false;
+                              });
 
                 _downloader = new Downloader(_torrentFile, "/home/robt/utorrent");
                 _selector = new Selector(_downloader.Dc);
@@ -76,16 +103,24 @@ namespace ClientUI
 
                 _agent.Download();
 
-                _downloadButton.Text = "Download";
-                _downloadButton.CanFocus = true;
+                Application.MainLoop.Invoke(() =>
+                                {
+                                    _mainWindow.downloadButton.Text = "Download";
+                                    _mainWindow.downloadButton.CanFocus = true;
+                                });
+
+                _agent.Close();
 
             }
             catch (Exception ex)
             {
-
+                Application.MainLoop.Invoke(() =>
+                        {
+                            MessageBox.Query("Error", ex.Message, "Ok");
+                        });
             }
 
-            _downloadButton.DownloadingTorent = false;
+            _mainWindow.downloadButton.DownloadingTorent = false;
         }
     }
 }

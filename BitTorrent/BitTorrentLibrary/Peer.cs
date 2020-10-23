@@ -24,13 +24,14 @@ namespace BitTorrentLibrary
     {
         private readonly PeerNetwork _network;                           // Network layer
         private readonly byte[] _infoHash;                               // Torrent infohash
-        private readonly UInt32 _port;                                   // Peer Port
+
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public DownloadContext Dc { get; set; }                          // Torrent download context
         public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
         public PieceBuffer AssembledPiece { get; set; }                  // Assembled pieces buffer
         public string Ip { get; set; }                                   // Remote peer ip
+         public uint Port { get; }                                        // peer Port
         public Task AssemblerTask { get; set; }                          // Peer piece assembly task
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
         public bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
@@ -43,6 +44,8 @@ namespace BitTorrentLibrary
         public byte[] ReadBuffer => _network.ReadBuffer;
         public UInt32 PacketLength => _network.PacketLength;
 
+       
+
         /// <summary>
         /// Setup data and resources needed by peer.
         /// </summary>
@@ -53,7 +56,7 @@ namespace BitTorrentLibrary
         public Peer(string ip, UInt32 port, byte[] infoHash, DownloadContext dc, Socket socket = null)
         {
             Ip = ip;
-            _port = port;
+            Port = port;
             _infoHash = infoHash;
             Dc = dc;
             _network = new PeerNetwork(socket);
@@ -130,7 +133,7 @@ namespace BitTorrentLibrary
             try
             {
 
-                _network.Connect(Ip, _port);
+                _network.Connect(Ip, Port);
 
                 ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this, _infoHash);
 

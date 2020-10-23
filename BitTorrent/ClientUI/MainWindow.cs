@@ -16,44 +16,48 @@ using Terminal.Gui;
 
 namespace ClientUI
 {
-    class MainWindow : Window
+
+    public class MainWindow : Window
     {
+
+        public MenuBar mainMenuBar;
+        public Label torrentFileLabel;
+        public TorrentFileNameText torrentFileText;
+        public Label progressBarBeginText;
+        public ProgressBar torrentDownloadProgress;
+        public Label progressBarEndText;
+        public DownloadButton downloadButton;
+        public StatusBar downloadStatusBar;
+        public InformationWindow informationWindow;
+
+
         public MainWindow(string name) : base(name)
         {
             List<View> viewables = new List<View>();
 
-            var mainMenuBar = new MenuBar(new MenuBarItem[] {
-            new MenuBarItem ("_File", new MenuItem [] {
-                new MenuItem ("_Quit", "", () => {
-                    Application.RequestStop ();
-                })
-            }),
-        });
-            viewables.Add(mainMenuBar);
-
-            var torrentFileLabel = new Label("Torrent File: ")
+            torrentFileLabel = new Label("Torrent File: ")
             {
-                X = 2,
-                Y = 2
+                X = 1,
+                Y = 1
             };
             viewables.Add(torrentFileLabel);
 
-            var torrentFileText = new TorrentFileNameText()
+            torrentFileText = new TorrentFileNameText()
             {
-                X = 20,
+                X = Pos.Right(torrentFileLabel),
                 Y = Pos.Top(torrentFileLabel),
-                Width = 40,
+                Width = 50,
             };
             viewables.Add(torrentFileText);
 
-            var progressBarBeginText = new Label("Progress : [")
+            progressBarBeginText = new Label("Progress : [")
             {
                 X = Pos.Left(torrentFileLabel),
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
             viewables.Add(progressBarBeginText);
 
-            var torrentDownloadProgress = new ProgressBar()
+            torrentDownloadProgress = new ProgressBar()
             {
                 X = Pos.Right(progressBarBeginText),
                 Y = Pos.Bottom(torrentFileLabel) + 1,
@@ -62,16 +66,16 @@ namespace ClientUI
             };
             viewables.Add(torrentDownloadProgress);
 
-            var progressBarEndText = new Label("]")
+            progressBarEndText = new Label("]")
             {
                 X = Pos.Right(torrentDownloadProgress) - 4,
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
             viewables.Add(progressBarEndText);
 
-            var downloadButton = new DownloadButton("Download", torrentFileText, torrentDownloadProgress)
+            downloadButton = new DownloadButton("Download", this)
             {
-                X = Pos.Right(torrentFileText) + 3,
+                X = Pos.Right(torrentFileText),
                 Y = Pos.Top(torrentFileLabel)
 
             };
@@ -79,9 +83,29 @@ namespace ClientUI
 
             downloadButton.Clicked += downloadButton.ButtonPressed;
 
-            var downloadStatusBar = new StatusBar();
-            viewables.Add(downloadStatusBar);
+            // var statusItems = new StatusItem [2];
 
+            // statusItems[0] = new StatusItem(Key.ControlD, "Download", ()=> { Console.WriteLine("Download");});
+            // statusItems[1] = new StatusItem(Key.ControlI, "Information", ()=> {});
+
+            // downloadStatusBar = new StatusBar(statusItems) 
+            // {
+            //     X = Pos.Left(this),
+            //     Y = Pos.Bottom(progressBarBeginText),
+            //     Width = Dim.Fill(),
+            //     Height = Dim.Fill()
+            // };
+            // viewables.Add(downloadStatusBar);
+
+            informationWindow = new InformationWindow("Information")
+            {
+                X = Pos.Left(this),
+                Y = Pos.Bottom(progressBarBeginText),
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
+            };
+            viewables.Add(informationWindow);
+            
             foreach (var viewable in viewables)
             {
                 Add(viewable);
