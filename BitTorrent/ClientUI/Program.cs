@@ -18,10 +18,7 @@ namespace ClientUI
 {
     class Demo
     {
-        private void UpdateTimer()
-        {
 
-        }
         static void Main()
         {
 

@@ -32,6 +32,7 @@ namespace BitTorrentLibrary
         private readonly Downloader _torrentDownloader;                    // Downloader for torrent
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private readonly ConcurrentDictionary<string, Peer> _peerSwarm;    // Connected remote peers in swarm
+        private Socket _listenerSocket;
         public byte[] InfoHash { get; }                                    // Torrent info hash
         public string TrackerURL { get; }                                  // Main Tracker URL
         public Tracker MainTracker { get; set; }                           // Main torrent tracker
@@ -101,41 +102,49 @@ namespace BitTorrentLibrary
         private void PeerListenCreatorTask()
         {
 
-            Socket listener = PeerNetwork.GetListeningConnection();
-
-            while (true)
+            try
             {
-                Log.Logger.Info("Waiting for remote peer connect...");
 
-                Socket remotePeerSocket = PeerNetwork.WaitForConnection(listener);
+                _listenerSocket = PeerNetwork.GetListeningConnection();
 
-                Log.Logger.Info("Remote peer connected...");
-
-                var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
-
-                if (endPoint.Item1 == "192.168.1.1")
-                { // NO IDEA WHATS BEHIND THIS AT PRESENT (HANGS IF WE DONT CLOSE THIS)
-                    remotePeerSocket.Close();
-                    continue;
-                }
-
-                // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                if (_peerSwarm.ContainsKey(endPoint.Item1) || _peerSwarm.Count >= MainTracker.MaximumSwarmSize)
+                while (true)
                 {
-                    continue;
+                    Log.Logger.Info("Waiting for remote peer connect...");
+
+                    Socket remotePeerSocket = PeerNetwork.WaitForConnection(_listenerSocket);
+
+                    Log.Logger.Info("Remote peer connected...");
+
+                    var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
+
+                    if (endPoint.Item1 == "192.168.1.1")
+                    { // NO IDEA WHATS BEHIND THIS AT PRESENT (HANGS IF WE DONT CLOSE THIS)
+                        remotePeerSocket.Close();
+                        continue;
+                    }
+
+                    // Only add peers that are not already there and is maximum swarm size hasnt been reached
+                    if (_peerSwarm.ContainsKey(endPoint.Item1) || _peerSwarm.Count >= MainTracker.MaximumSwarmSize)
+                    {
+                        continue;
+                    }
+
+                    Log.Logger.Info($"++Remote peer IP = {endPoint.Item1}:{endPoint.Item2}.");
+
+                    Peer remotePeer = new Peer(endPoint.Item1, endPoint.Item2, InfoHash, _torrentDownloader.Dc, remotePeerSocket);
+                    remotePeer.Accept();
+                    if (remotePeer.Connected)
+                    {
+                        _peerSwarm.TryAdd(remotePeer.Ip, remotePeer);
+                        Log.Logger.Info($"++BTP: Local Peer [{ PeerID.Get()}] from remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                        remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
+                    }
+
                 }
-
-                Log.Logger.Info($"++Remote peer IP = {endPoint.Item1}:{endPoint.Item2}.");
-
-                Peer remotePeer = new Peer(endPoint.Item1, endPoint.Item2, InfoHash, _torrentDownloader.Dc, remotePeerSocket);
-                remotePeer.Accept();
-                if (remotePeer.Connected)
-                {
-                    _peerSwarm.TryAdd(remotePeer.Ip, remotePeer);
-                    Log.Logger.Info($"++BTP: Local Peer [{ PeerID.Get()}] from remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                    remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
-                }
-
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Info("Remote Peer connect listener terminated.");
             }
 
         }
@@ -262,6 +271,9 @@ namespace BitTorrentLibrary
                     }
                 }
                 MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+
+                _listenerSocket.Close();
+
             }
             catch (Error)
             {

@@ -70,8 +70,6 @@ namespace ClientUI
                 _mainWindow.informationWindow.peersWindow.Add(peerListView);
             });
 
-
-
         }
         public void Download(MainWindow mainWindow)
         {

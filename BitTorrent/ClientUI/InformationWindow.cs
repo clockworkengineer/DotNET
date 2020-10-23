@@ -19,8 +19,8 @@ namespace ClientUI
 {
     public class InformationWindow : Window
     {
-        public Label trackerLabel;
-        public TextField trackerText;
+        private readonly Label _trackerLabel;
+        private readonly TextField _trackerText;
         public Window peersWindow;
         public ListView peersListView;
 
@@ -28,38 +28,30 @@ namespace ClientUI
         {
             List<View> viewables = new List<View>();
 
-             trackerLabel = new Label("Tracker : ")
+             _trackerLabel = new Label("Tracker : ")
             {
                 X = 1,
                 Y = 1
             };
-            viewables.Add(trackerLabel);
+            viewables.Add(_trackerLabel);
 
-             trackerText = new TextField()
+             _trackerText = new TextField()
             {
-                X = Pos.Right(trackerLabel),
-                Y = Pos.Top(trackerLabel),
+                X = Pos.Right(_trackerLabel),
+                Y = Pos.Top(_trackerLabel),
                 Width = 70,
+                CanFocus = false
             };
-            viewables.Add(trackerText);
+            viewables.Add(_trackerText);
 
              peersWindow = new Window("Peers")
             {
-                X = Pos.Left(trackerLabel),
-                Y = Pos.Bottom(trackerLabel),
+                X = Pos.Left(_trackerLabel),
+                Y = Pos.Bottom(_trackerLabel)+1,
                 Width = 20,
                 Height = Dim.Fill(),
             };
             viewables.Add(peersWindow);
-
-            //  peersListView = new ListView()
-            // {
-            //     X = 0,
-            //     Y = 0,
-            //     Width = Dim.Fill(),
-            //     Height = Dim.Fill()
-            // };
-            // peersWindow.Add(peersListView);
 
             foreach (var viewable in viewables)
             {
