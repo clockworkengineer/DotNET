@@ -176,6 +176,19 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="socket"></param>
+        public static void ShutdownListener(Socket socket)
+        {
+
+            IPAddress localPeerIP = Dns.GetHostEntry(Host.GetIP()).AddressList[0];
+            socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(new IPEndPoint(localPeerIP, (Int32)Host.DefaultPort));
+
+        }
+
+        /// <summary>
         /// Wait for remote connection on socket.
         /// </summary>
         /// <param name="listener"></param>
@@ -196,7 +209,7 @@ namespace BitTorrentLibrary
 
             return (remotePeerIP, remotePeerPort);
         }
-        
+
 
     }
 }

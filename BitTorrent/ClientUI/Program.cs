@@ -33,7 +33,12 @@ namespace ClientUI
                 Height = Dim.Fill()
             };
 
-            top.Add(mainApplicationWindow);
+            var downloadStatusBar = new StatusBar(new StatusItem[] {
+            new StatusItem(Key.ControlD, "~^D~ Download", () => {}),
+            new StatusItem(Key.ControlQ, "~^Q~ Quit", () => {  top.Running = false;  })
+            });
+
+            top.Add(mainApplicationWindow, downloadStatusBar);
 
             Application.Run();
 

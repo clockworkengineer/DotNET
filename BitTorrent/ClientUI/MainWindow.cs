@@ -24,10 +24,9 @@ namespace ClientUI
         public Label torrentFileLabel;
         public TorrentFileNameText torrentFileText;
         public Label progressBarBeginText;
-        public ProgressBar torrentDownloadProgress;
+        public ProgressBar downloadProgress;
         public Label progressBarEndText;
         public DownloadButton downloadButton;
-        public StatusBar downloadStatusBar;
         public InformationWindow informationWindow;
 
 
@@ -57,18 +56,18 @@ namespace ClientUI
             };
             viewables.Add(progressBarBeginText);
 
-            torrentDownloadProgress = new ProgressBar()
+            downloadProgress = new ProgressBar()
             {
                 X = Pos.Right(progressBarBeginText),
                 Y = Pos.Bottom(torrentFileLabel) + 1,
-                Width = 66,
+                Width = 60,
                 Height = 1
             };
-            viewables.Add(torrentDownloadProgress);
+            viewables.Add(downloadProgress);
 
             progressBarEndText = new Label("]")
             {
-                X = Pos.Right(torrentDownloadProgress) - 4,
+                X = Pos.Right(downloadProgress) - 1,
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
             viewables.Add(progressBarEndText);
@@ -83,26 +82,13 @@ namespace ClientUI
 
             downloadButton.Clicked += downloadButton.ButtonPressed;
 
-            // var statusItems = new StatusItem [2];
-
-            // statusItems[0] = new StatusItem(Key.ControlD, "Download", ()=> { Console.WriteLine("Download");});
-            // statusItems[1] = new StatusItem(Key.ControlI, "Information", ()=> {});
-
-            // downloadStatusBar = new StatusBar(statusItems) 
-            // {
-            //     X = Pos.Left(this),
-            //     Y = Pos.Bottom(progressBarBeginText),
-            //     Width = Dim.Fill(),
-            //     Height = Dim.Fill()
-            // };
-            // viewables.Add(downloadStatusBar);
-
             informationWindow = new InformationWindow("Information")
             {
                 X = Pos.Left(this),
-                Y = Pos.Bottom(progressBarBeginText),
+                Y = Pos.Bottom(progressBarBeginText)+1,
                 Width = Dim.Fill(),
-                Height = Dim.Fill()
+                Height = Dim.Fill(),
+                CanFocus=false
             };
             viewables.Add(informationWindow);
             

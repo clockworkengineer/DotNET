@@ -20,34 +20,34 @@ namespace ClientUI
     public class InformationWindow : Window
     {
         private readonly Label _trackerLabel;
-        private readonly TextField _trackerText;
         public Window peersWindow;
         public ListView peersListView;
+        public TextField TrackerText { get; }
 
         public InformationWindow(string name) : base(name)
         {
             List<View> viewables = new List<View>();
 
-             _trackerLabel = new Label("Tracker : ")
+            _trackerLabel = new Label("Tracker : ")
             {
                 X = 1,
                 Y = 1
             };
             viewables.Add(_trackerLabel);
 
-             _trackerText = new TextField()
+            TrackerText = new TextField()
             {
                 X = Pos.Right(_trackerLabel),
                 Y = Pos.Top(_trackerLabel),
                 Width = 70,
                 CanFocus = false
             };
-            viewables.Add(_trackerText);
+            viewables.Add(TrackerText);
 
-             peersWindow = new Window("Peers")
+            peersWindow = new Window("Peers")
             {
                 X = Pos.Left(_trackerLabel),
-                Y = Pos.Bottom(_trackerLabel)+1,
+                Y = Pos.Bottom(_trackerLabel) + 1,
                 Width = 20,
                 Height = Dim.Fill(),
             };
@@ -58,6 +58,7 @@ namespace ClientUI
                 Add(viewable);
             }
         }
+
 
     }
 }

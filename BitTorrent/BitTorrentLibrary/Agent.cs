@@ -26,6 +26,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent
     {
+        private bool _agentRunning = false;                                // true thile agent is up and running.
         private readonly BlockingCollection<PeerDetails> _peersTooSwarm;   // Peers to add to swarm queue
         private readonly Task _peerConnectCreatorTask;                     // Peer swarm creator task
         private readonly Task _peerListenCreatorTask;                      // Peer swarm peer connect creator task
@@ -62,7 +63,7 @@ namespace BitTorrentLibrary
         private void PeerConnectCreatorTask()
         {
 
-            while (!_peersTooSwarm.IsCompleted)
+            while (!_peersTooSwarm.IsCompleted && _agentRunning)
             {
                 PeerDetails peer = _peersTooSwarm.Take();
                 try
@@ -113,6 +114,10 @@ namespace BitTorrentLibrary
 
                     Socket remotePeerSocket = PeerNetwork.WaitForConnection(_listenerSocket);
 
+                    if (!_agentRunning) {
+                        break;
+                    }
+
                     Log.Logger.Info("Remote peer connected...");
 
                     var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
@@ -144,8 +149,13 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Info("Remote Peer connect listener terminated.");
+                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
             }
+
+            _listenerSocket.Close();
+            //_listenerSocket.Dispose();
+
+            Log.Logger.Info("Remote Peer connect listener terminated.");
 
         }
         /// <summary>
@@ -163,6 +173,7 @@ namespace BitTorrentLibrary
             TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _peerListenCreatorTask = Task.Run(() => PeerListenCreatorTask());
             _peerConnectCreatorTask = Task.Run(() => PeerConnectCreatorTask());
+            _agentRunning = true;
 
         }
         ~Agent()
@@ -261,19 +272,23 @@ namespace BitTorrentLibrary
         {
             try
             {
-                MainTracker.StopAnnouncing();
-                if (_peerSwarm != null)
+                if (_agentRunning)
                 {
-                    Log.Logger.Info("Closing peer sockets.");
-                    foreach (var remotePeer in _peerSwarm.Values)
+                    _agentRunning = false;
+
+                    MainTracker.StopAnnouncing();
+                    if (_peerSwarm != null)
                     {
-                        remotePeer.Close();
+                        Log.Logger.Info("Closing peer sockets.");
+                        foreach (var remotePeer in _peerSwarm.Values)
+                        {
+                            remotePeer.Close();
+                        }
                     }
+                    MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+
+                    PeerNetwork.ShutdownListener(_listenerSocket);
                 }
-                MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
-
-                _listenerSocket.Close();
-
             }
             catch (Error)
             {
@@ -323,6 +338,10 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent Error (Agent): " + ex.Message);
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public List<PeerDetails> GetPeerSwarm()
         {
             return (from peer in _peerSwarm.Values

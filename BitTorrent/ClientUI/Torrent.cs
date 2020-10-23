@@ -42,9 +42,9 @@ namespace ClientUI
             {
                 Application.MainLoop.Invoke(() =>
                 {
-                    _mainWindow.torrentDownloadProgress.Fraction = (float)progress;
+                    _mainWindow.downloadProgress.Fraction = (float)progress;
                 });
-                _mainWindow.torrentDownloadProgress.Fraction = (float)progress;
+                _mainWindow.downloadProgress.Fraction = (float)progress;
                 _currentProgress = progress;
             }
             List<PeerDetails> peerList = torrent._agent.GetPeerSwarm();
@@ -86,6 +86,8 @@ namespace ClientUI
                               {
                                   _mainWindow.downloadButton.Text = "Working";
                                   _mainWindow.downloadButton.CanFocus = false;
+                                  _mainWindow.downloadProgress.Fraction = 0;
+                                  _mainWindow.informationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                               });
 
                 _downloader = new Downloader(_torrentFile, "/home/robt/utorrent");
@@ -105,6 +107,7 @@ namespace ClientUI
                                 {
                                     _mainWindow.downloadButton.Text = "Download";
                                     _mainWindow.downloadButton.CanFocus = true;
+                                    _mainWindow.downloadProgress.Fraction = 1.0F;
                                 });
 
                 _agent.Close();
