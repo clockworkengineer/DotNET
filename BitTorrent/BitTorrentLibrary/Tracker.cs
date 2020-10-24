@@ -86,7 +86,7 @@ namespace BitTorrentLibrary
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(Agent agent, Downloader downloader, int maximumSwarmSize = 10)
+        public Tracker(Agent agent, DownloadContext dc, int maximumSwarmSize = 10)
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
@@ -94,7 +94,7 @@ namespace BitTorrentLibrary
             TrackerURL = agent.TrackerURL;
             MaximumSwarmSize = maximumSwarmSize;
             _updatePeerSwarm = agent.UpdatePeerSwarmQueue;
-            _dc = downloader.Dc;
+            _dc = dc;
             agent.MainTracker = this;
             _announcerExceptions = new List<Exception>();
 

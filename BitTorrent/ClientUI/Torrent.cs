@@ -38,8 +38,8 @@ namespace ClientUI
         public void UpdateProgress(Object obj)
         {
             Torrent torrent = (Torrent)obj;
-            double progress = (double)_downloader.Dc.TotalBytesDownloaded /
-            (double)_downloader.Dc.TotalBytesToDownload;
+            double progress = (double)_dc.TotalBytesDownloaded /
+            (double)_dc.TotalBytesToDownload;
             if (progress - _currentProgress > 0.05)
             {
                 Application.MainLoop.Invoke(() =>
@@ -95,10 +95,10 @@ namespace ClientUI
                 _dc = new DownloadContext(_torrentFile, "/home/robt/utorrent");
                 _downloader = new Downloader(_dc);
                 _selector = new Selector(_dc);
-                _assembler = new Assembler(_downloader, this.UpdateProgress, this);
-                _agent = new Agent(_torrentFile, _downloader, _assembler);
+                _assembler = new Assembler(_dc, this.UpdateProgress, this);
+                _agent = new Agent(_torrentFile, _dc, _assembler);
 
-                tracker = new Tracker(_agent, _downloader);
+                tracker = new Tracker(_agent, _dc);
 
                 tracker.StartAnnouncing();
 

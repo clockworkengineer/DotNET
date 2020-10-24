@@ -27,6 +27,7 @@ namespace BitTorrentLibrary
     public class Agent
     {
         private bool _agentRunning = false;                                // true thile agent is up and running.
+        private DownloadContext _dc;
         private readonly BlockingCollection<PeerDetails> _peersTooSwarm;   // Peers to add to swarm queue
         private readonly Task _peerConnectCreatorTask;                     // Peer swarm creator task
         private readonly Task _peerListenCreatorTask;                      // Peer swarm peer connect creator task
@@ -37,7 +38,7 @@ namespace BitTorrentLibrary
         public byte[] InfoHash { get; }                                    // Torrent info hash
         public string TrackerURL { get; }                                  // Main Tracker URL
         public Tracker MainTracker { get; set; }                           // Main torrent tracker
-        public UInt64 Left => _torrentDownloader.Dc.BytesLeftToDownload(); // Number of bytes left to download; 
+        public UInt64 Left => _dc.BytesLeftToDownload();                   // Number of bytes left to download; 
 
         /// <summary>
         /// Display peer task statistics.
@@ -53,7 +54,7 @@ namespace BitTorrentLibrary
                     peersChoking++;
                 }
             }
-            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {_torrentDownloader.Dc.PieceSelector.MissingPiecesCount()}] " +
+            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {_dc.PieceSelector.MissingPiecesCount()}] " +
             $"[Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}] [Active Downloaders {_pieceAssembler?.ActiveDownloaders}] " +
             $"[Active Uploaders {_pieceAssembler?.ActiveUploaders}]");
         }
@@ -73,7 +74,7 @@ namespace BitTorrentLibrary
                     {
                         continue;
                     }
-                    Peer remotePeer = new Peer(peer.ip, peer.port, InfoHash, _torrentDownloader.Dc);
+                    Peer remotePeer = new Peer(peer.ip, peer.port, InfoHash, _dc);
                     remotePeer.Connect();
                     if (remotePeer.Connected)
                     {
@@ -136,7 +137,7 @@ namespace BitTorrentLibrary
 
                     Log.Logger.Info($"++Remote peer IP = {endPoint.Item1}:{endPoint.Item2}.");
 
-                    Peer remotePeer = new Peer(endPoint.Item1, endPoint.Item2, InfoHash, _torrentDownloader.Dc, remotePeerSocket);
+                    Peer remotePeer = new Peer(endPoint.Item1, endPoint.Item2, InfoHash, _dc, remotePeerSocket);
                     remotePeer.Accept();
                     if (remotePeer.Connected)
                     {
@@ -163,9 +164,9 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(MetaInfoFile torrentFile, Downloader downloader, Assembler pieceAssembler = null)
+        public Agent(MetaInfoFile torrentFile, DownloadContext dc, Assembler pieceAssembler = null)
         {
-            _torrentDownloader = downloader;
+            _dc = dc;
             _pieceAssembler = pieceAssembler;
             _peerSwarm = new ConcurrentDictionary<string, Peer>();
             _peersTooSwarm = new BlockingCollection<PeerDetails>();
@@ -228,7 +229,7 @@ namespace BitTorrentLibrary
 
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
-                    _torrentDownloader.Dc.DownloadFinished.WaitOne();
+                    _dc.DownloadFinished.WaitOne();
 
                     MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
 

@@ -213,9 +213,9 @@ namespace BitTorrentLibrary
         /// <param name="torrentDownloader"></param>
         /// <param name="progressFunction"></param>
         /// <param name="progressData"></param>
-        public Assembler(Downloader torrentDownloader, ProgessCallBack progressFunction = null, Object progressData = null)
-        {
-            _dc = torrentDownloader.Dc;
+        public Assembler(DownloadContext dc, ProgessCallBack progressFunction = null, Object progressData = null)
+        {   
+            _dc = dc;
             _progressFunction = progressFunction;
             _progressData = progressData;
             Paused = new ManualResetEvent(false);

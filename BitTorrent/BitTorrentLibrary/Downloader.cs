@@ -25,9 +25,9 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Downloader
     {
+        private readonly DownloadContext _dc;                 // Torrent download context
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
-        private readonly Task _pieceRequestProcessingTask;   // Task for processing piece requests from remote peers
-        public DownloadContext Dc { get; set; }              // Torrent download context
+        private readonly Task _pieceRequestProcessingTask;   // Task for processing piece requests from remote peersxt
 
         /// <summary>
         /// Read/Write piece buffers to/from torrent on disk.
@@ -37,10 +37,10 @@ namespace BitTorrentLibrary
         private void TransferPiece(ref PieceBuffer transferBuffer, bool read)
         {
             int bytesTransferred = 0;
-            UInt64 startOffset = transferBuffer.Number * Dc.PieceLength;
-            UInt64 endOffset = startOffset + Dc.PieceLength;
+            UInt64 startOffset = transferBuffer.Number * _dc.PieceLength;
+            UInt64 endOffset = startOffset + _dc.PieceLength;
 
-            foreach (var file in Dc.FilesToDownload)
+            foreach (var file in _dc.FilesToDownload)
             {
                 if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
                 {
@@ -51,14 +51,14 @@ namespace BitTorrentLibrary
                         stream.Seek((Int64)(startTransfer - file.offset), SeekOrigin.Begin);
                         if (read)
                         {
-                            stream.Read(transferBuffer.Buffer, (Int32)(startTransfer % Dc.PieceLength), (Int32)(endTransfer - startTransfer));
+                            stream.Read(transferBuffer.Buffer, (Int32)(startTransfer % _dc.PieceLength), (Int32)(endTransfer - startTransfer));
                         }
                         else
                         {
-                            stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % Dc.PieceLength), (Int32)(endTransfer - startTransfer));
+                            stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % _dc.PieceLength), (Int32)(endTransfer - startTransfer));
                         }
                         bytesTransferred += (Int32)(endTransfer - startTransfer);
-                        if (bytesTransferred == Dc.PieceData[transferBuffer.Number].pieceLength)
+                        if (bytesTransferred == _dc.PieceData[transferBuffer.Number].pieceLength)
                         {
                             break;
                         }
@@ -74,7 +74,7 @@ namespace BitTorrentLibrary
         {
             Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
 
-            foreach (var file in Dc.FilesToDownload)
+            foreach (var file in _dc.FilesToDownload)
             {
                 if (!System.IO.File.Exists(file.name))
                 {
@@ -96,13 +96,13 @@ namespace BitTorrentLibrary
         /// <param name="numberOfBytes">Number of bytes in piece.</param>
         private void UpdateBitfieldFromBuffer(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
-            bool pieceThere = Dc.CheckPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
+            bool pieceThere = _dc.CheckPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
             if (pieceThere)
             {
-                Dc.TotalBytesDownloaded += numberOfBytes;
+                _dc.TotalBytesDownloaded += numberOfBytes;
             }
-            Dc.PieceData[pieceNumber].pieceLength = numberOfBytes;
-            Dc.MarkPieceLocal(pieceNumber, pieceThere);
+            _dc.PieceData[pieceNumber].pieceLength = numberOfBytes;
+            _dc.MarkPieceLocal(pieceNumber, pieceThere);
         }
 
         /// <summary>
@@ -111,14 +111,14 @@ namespace BitTorrentLibrary
         /// </summary>
         private void CreateTorrentBitfield()
         {
-            byte[] pieceBuffer = new byte[Dc.PieceLength];
+            byte[] pieceBuffer = new byte[_dc.PieceLength];
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
             int bytesRead = 0;
 
             Log.Logger.Debug("Generate pieces downloaded map from local files ...");
 
-            foreach (var file in Dc.FilesToDownload)
+            foreach (var file in _dc.FilesToDownload)
             {
                 Log.Logger.Debug($"File: {file.name}");
 
@@ -128,7 +128,7 @@ namespace BitTorrentLibrary
                     {
                         bytesInBuffer += (UInt32)bytesRead;
 
-                        if (bytesInBuffer == Dc.PieceLength)
+                        if (bytesInBuffer == _dc.PieceLength)
                         {
                             UpdateBitfieldFromBuffer(pieceNumber, pieceBuffer, bytesInBuffer);
                             bytesInBuffer = 0;
@@ -151,7 +151,7 @@ namespace BitTorrentLibrary
         private PieceBuffer GetPieceFromTorrent(UInt32 pieceNumber)
         {
 
-            PieceBuffer pieceBuffer = new PieceBuffer(pieceNumber, Dc.PieceData[pieceNumber].pieceLength);
+            PieceBuffer pieceBuffer = new PieceBuffer(pieceNumber, _dc.PieceData[pieceNumber].pieceLength);
 
             Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
 
@@ -169,21 +169,21 @@ namespace BitTorrentLibrary
         /// </summary>
         private void PieceBufferDiskWriter()
         {
-            while (!Dc.PieceWriteQueue.IsCompleted)
+            while (!_dc.PieceWriteQueue.IsCompleted)
             {
-                PieceBuffer pieceBuffer = Dc.PieceWriteQueue.Take();
+                PieceBuffer pieceBuffer = _dc.PieceWriteQueue.Take();
 
                 Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
                 TransferPiece(ref pieceBuffer, false);
 
-                Dc.TotalBytesDownloaded += Dc.PieceData[pieceBuffer.Number].pieceLength;
-                Log.Logger.Info((Dc.TotalBytesDownloaded / (double)Dc.TotalBytesToDownload).ToString("0.00%"));
+                _dc.TotalBytesDownloaded += _dc.PieceData[pieceBuffer.Number].pieceLength;
+                Log.Logger.Info((_dc.TotalBytesDownloaded / (double)_dc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
-                if (Dc.BytesLeftToDownload() == 0)
+                if (_dc.BytesLeftToDownload() == 0)
                 {
-                    Dc.PieceSelector.DownloadComplete();
+                    _dc.PieceSelector.DownloadComplete();
                 }
 
             }
@@ -193,9 +193,9 @@ namespace BitTorrentLibrary
         /// </summary>
         private void PieceRequestProcessingTask()
         {
-            while (!Dc.PieceRequestQueue.IsCompleted)
+            while (!_dc.PieceRequestQueue.IsCompleted)
             {
-                PieceRequest request = Dc.PieceRequestQueue.Take();
+                PieceRequest request = _dc.PieceRequestQueue.Take();
 
                 Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
 
@@ -206,7 +206,7 @@ namespace BitTorrentLibrary
 
                 PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
 
-                Dc.TotalBytesUploaded += request.blockSize;
+                _dc.TotalBytesUploaded += request.blockSize;
 
             }
         }
@@ -218,7 +218,7 @@ namespace BitTorrentLibrary
         /// <param name="pieces">Pieces.</param>
         public Downloader(DownloadContext dc)
         {
-            Dc = dc;
+            _dc = dc;
             _pieceBufferWriterTask = Task.Run(() => PieceBufferDiskWriter());
             _pieceRequestProcessingTask = Task.Run(() => PieceRequestProcessingTask());
 
@@ -233,7 +233,7 @@ namespace BitTorrentLibrary
         /// </summary>
         ~Downloader()
         {
-            Dc.PieceWriteQueue.CompleteAdding();
+            _dc.PieceWriteQueue.CompleteAdding();
         }
 
     }
