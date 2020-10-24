@@ -27,16 +27,13 @@ namespace BitTorrentLibrary
     public class Agent
     {
         private bool _agentRunning = false;                                // true thile agent is up and running.
-        private DownloadContext _dc;
+        private DownloadContext _dc;                                       // Torrent download context
         private readonly BlockingCollection<PeerDetails> _peersTooSwarm;   // Peers to add to swarm queue
         private readonly Task _peerConnectCreatorTask;                     // Peer swarm creator task
         private readonly Task _peerListenCreatorTask;                      // Peer swarm peer connect creator task
-        private readonly Downloader _torrentDownloader;                    // Downloader for torrent
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private readonly ConcurrentDictionary<string, Peer> _peerSwarm;    // Connected remote peers in swarm
-        private Socket _listenerSocket;
-        // public byte[] InfoHash { get; }                                    // Torrent info hash
-        // public string TrackerURL { get; }                                  // Main Tracker URL
+        private Socket _listenerSocket;                                    // Connection listener socket
         public Tracker MainTracker { get; set; }                           // Main torrent tracker
         public UInt64 Left => _dc.BytesLeftToDownload();                   // Number of bytes left to download; 
 
@@ -115,7 +112,8 @@ namespace BitTorrentLibrary
 
                     Socket remotePeerSocket = PeerNetwork.WaitForConnection(_listenerSocket);
 
-                    if (!_agentRunning) {
+                    if (!_agentRunning)
+                    {
                         break;
                     }
 
@@ -170,8 +168,8 @@ namespace BitTorrentLibrary
             _pieceAssembler = pieceAssembler;
             _peerSwarm = new ConcurrentDictionary<string, Peer>();
             _peersTooSwarm = new BlockingCollection<PeerDetails>();
-           // InfoHash = torrentFile.MetaInfoDict["info hash"];
-//TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
+            // InfoHash = torrentFile.MetaInfoDict["info hash"];
+            //TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _peerListenCreatorTask = Task.Run(() => PeerListenCreatorTask());
             _peerConnectCreatorTask = Task.Run(() => PeerConnectCreatorTask());
             _agentRunning = true;
@@ -343,14 +341,22 @@ namespace BitTorrentLibrary
         /// 
         /// </summary>
         /// <returns></returns>
-        public List<PeerDetails> GetPeerSwarm()
+        public TorrentDetails GetTorrentDetails()
         {
-            return (from peer in _peerSwarm.Values
-                    select new PeerDetails
-                    {
-                        ip = peer.Ip,
-                        port = peer.Port
-                    }).ToList();
+            TorrentDetails torrentDetails = new TorrentDetails();
+
+            torrentDetails.peers = (from peer in _peerSwarm.Values
+                                    select new PeerDetails
+                                    {
+                                        ip = peer.Ip,
+                                        port = peer.Port
+                                    }).ToList();
+
+            torrentDetails.downloadedBytes = _dc.TotalBytesDownloaded;
+            torrentDetails.uploadedBytes = _dc.TotalBytesUploaded;
+            torrentDetails.InfoHash = _dc.InfoHash;
+
+            return torrentDetails;
         }
     }
 }

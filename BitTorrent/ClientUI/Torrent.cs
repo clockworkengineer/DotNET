@@ -10,6 +10,7 @@
 
 
 using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BitTorrentLibrary;
@@ -31,6 +32,17 @@ namespace ClientUI
         private double _currentProgress = 0;
         Tracker tracker;
         private ListView peerListView;
+
+        public static string InfoHashToString(byte[] infoHash)
+        {
+            StringBuilder hex = new StringBuilder(infoHash.Length * 2);
+            foreach (byte b in infoHash)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+            return hex.ToString().ToLower();
+        }
+
         public Torrent(string torrentFileName)
         {
             _torrentFileName = torrentFileName;
@@ -49,9 +61,9 @@ namespace ClientUI
                 _mainWindow.downloadProgress.Fraction = (float)progress;
                 _currentProgress = progress;
             }
-            List<PeerDetails> peerList = torrent._agent.GetPeerSwarm();
+            TorrentDetails torrentDetails = torrent._agent.GetTorrentDetails();
             List<string> peers = new List<string>();
-            foreach (var peer in peerList)
+            foreach (var peer in torrentDetails.peers)
             {
                 peers.Add(peer.ip + ":" + peer.port.ToString());
             }
@@ -70,6 +82,11 @@ namespace ClientUI
                     CanFocus = false
                 };
                 _mainWindow.informationWindow.peersWindow.Add(peerListView);
+                _mainWindow.informationWindow._infoHashText.Text = InfoHashToString(torrentDetails.InfoHash);
+                _mainWindow.informationWindow._bytesDownloadedText.Text =
+                torrentDetails.downloadedBytes.ToString().PadLeft(_mainWindow.informationWindow._bytesDownloadedText.Text.Length);
+                _mainWindow.informationWindow._bytesUploadedText.Text =
+                torrentDetails.uploadedBytes.ToString().PadLeft(_mainWindow.informationWindow._bytesUploadedText.Text.Length);
             });
 
         }
@@ -86,7 +103,6 @@ namespace ClientUI
 
                 Application.MainLoop.Invoke(() =>
                               {
-                                  _mainWindow.downloadButton.FocusPrev();
                                   _mainWindow.downloadButton.Text = "Working";
                                   _mainWindow.downloadButton.CanFocus = false;
                                   _mainWindow.downloadProgress.Fraction = 0;

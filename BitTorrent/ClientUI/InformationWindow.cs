@@ -20,6 +20,12 @@ namespace ClientUI
     public class InformationWindow : Window
     {
         private readonly Label _trackerLabel;
+        private Label _infoHashLabel;
+        private Label _bytesDownloadedLabel;
+        private Label _bytesUploadedLabel;
+        public TextField _infoHashText;
+        public TextField _bytesDownloadedText;
+        public TextField _bytesUploadedText;
         public Window peersWindow;
         public ListView peersListView;
         public TextField TrackerText { get; }
@@ -52,6 +58,54 @@ namespace ClientUI
                 Height = Dim.Fill(),
             };
             viewables.Add(peersWindow);
+
+            _infoHashLabel = new Label("InfoHash:")
+            {
+                X = Pos.Right(peersWindow) + 1,
+                Y = Pos.Top(peersWindow)
+            };
+            viewables.Add(_infoHashLabel);
+
+            _infoHashText = new TextField()
+            {
+                X = Pos.Right(_infoHashLabel) + 3,
+                Y = Pos.Top(_infoHashLabel),
+                Width = 20,
+                CanFocus = false
+            };
+            viewables.Add(_infoHashText);
+
+            _bytesDownloadedLabel = new Label("Downloaded:")
+            {
+                X = Pos.Right(peersWindow) + 1,
+                Y = Pos.Bottom(_infoHashLabel)
+            };
+            viewables.Add(_bytesDownloadedLabel);
+
+            _bytesDownloadedText = new TextField()
+            {
+                X = Pos.Right(_bytesDownloadedLabel) + 1,
+                Y = Pos.Bottom(_infoHashLabel),
+                Width = 20,
+                CanFocus = false
+            };
+            viewables.Add(_bytesDownloadedText);
+
+            _bytesUploadedLabel = new Label("Uploaded:")
+            {
+                X = Pos.Left(_infoHashLabel),
+                Y = Pos.Bottom(_bytesDownloadedLabel)
+            };
+            viewables.Add(_bytesUploadedLabel);
+
+            _bytesUploadedText = new TextField()
+            {
+                X = Pos.Right(_bytesDownloadedLabel) + 1,
+                Y = Pos.Bottom(_bytesDownloadedLabel),
+                Width = 20,
+                CanFocus = false
+            };
+            viewables.Add(_bytesUploadedText);
 
             foreach (var viewable in viewables)
             {
