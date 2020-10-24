@@ -13,7 +13,7 @@
 
 using System;
 using System.IO;
-Finalusing System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
