@@ -22,7 +22,7 @@ namespace BitTorrentLibrary
 {
     public class Selector
     {
-        private readonly DownloadContext _dc;       // Download context for torrent
+       // private readonly DownloadContext _dc;       // Download context for torrent
         private readonly Object _nextPieceLock;     // Missing access lock
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
             UInt32 currentPiece = startPiece;
             do
             {
-                if (_dc.IsPieceMissing(currentPiece) && remotePeer.IsPieceOnRemotePeer(currentPiece))
+                if (remotePeer.Dc.IsPieceMissing(currentPiece) && remotePeer.IsPieceOnRemotePeer(currentPiece))
                 {
                     return currentPiece;
                 }
@@ -52,10 +52,8 @@ namespace BitTorrentLibrary
         /// Setup data and resources needed by selector.
         /// </summary>
         /// <param name="dc"></param>
-        public Selector(DownloadContext dc)
+        public Selector()
         {
-            _dc = dc;
-            _dc.PieceSelector = this;
             _nextPieceLock = new Object();
         }
         /// <summary>
@@ -75,7 +73,7 @@ namespace BitTorrentLibrary
                     if (suggestedPiece != -1)
                     {
                         nextPiece = (UInt32)suggestedPiece;
-                        _dc.MarkPieceMissing(nextPiece, false);
+                        remotePeer.Dc.MarkPieceMissing(nextPiece, false);
                         return true;
                     }
                     return false;
@@ -89,13 +87,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (Selector) Error: " + ex.Message);
             }
 
-        }
-        /// <summary>
-        /// Set download finished flag.
-        /// </summary>
-        public void DownloadComplete()
-        {
-            _dc.DownloadFinished.Set();
         }
         /// <summary>
         /// Generate an array of pieces that are local but missing from the remote peer for input

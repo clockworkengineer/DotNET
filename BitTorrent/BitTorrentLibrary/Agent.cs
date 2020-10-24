@@ -351,7 +351,8 @@ namespace BitTorrentLibrary
 
                 downloadedBytes = _dc.TotalBytesDownloaded,
                 uploadedBytes = _dc.TotalBytesUploaded,
-                InfoHash = _dc.InfoHash,
+                infoHash = _dc.InfoHash,
+                missingPiecesCount = _dc.MissingPiecesCount
             
             };
         }

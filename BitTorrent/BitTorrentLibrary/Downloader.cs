@@ -184,7 +184,7 @@ namespace BitTorrentLibrary
 
                 if (_dc.BytesLeftToDownload() == 0)
                 {
-                    _dc.PieceSelector.DownloadComplete();
+                    _dc.DownloadFinished.Set();
                 }
 
             }

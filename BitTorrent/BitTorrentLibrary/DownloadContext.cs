@@ -60,7 +60,7 @@ namespace BitTorrentLibrary
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
         /// <param name="pieces">Pieces.</param>
-        public DownloadContext(MetaInfoFile torrentMetaInfo, string downloadPath)
+        public DownloadContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, string downloadPath)
         {
             InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
@@ -78,6 +78,7 @@ namespace BitTorrentLibrary
             DownloadFinished = new ManualResetEvent(false);
             Bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
             _piecesMissing = new byte[Bitfield.Length];
+            PieceSelector = pieceSelector;
         }
         /// <summary>
         /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.

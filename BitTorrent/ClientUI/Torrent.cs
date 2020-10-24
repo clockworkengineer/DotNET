@@ -25,7 +25,6 @@ namespace ClientUI
 
         private DownloadContext _dc;
         private Downloader _downloader;
-        private Selector _selector;
         private Assembler _assembler;
         private Agent _agent;
         private MainWindow _mainWindow;
@@ -82,7 +81,7 @@ namespace ClientUI
                     CanFocus = false
                 };
                 _mainWindow.informationWindow.peersWindow.Add(peerListView);
-                _mainWindow.informationWindow._infoHashText.Text = InfoHashToString(torrentDetails.InfoHash);
+                _mainWindow.informationWindow._infoHashText.Text = InfoHashToString(torrentDetails.infoHash);
                 _mainWindow.informationWindow._bytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
                 _mainWindow.informationWindow._bytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
             });
@@ -106,10 +105,9 @@ namespace ClientUI
                                   _mainWindow.downloadProgress.Fraction = 0;
                                   _mainWindow.informationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                               });
-
-                _dc = new DownloadContext(_torrentFile, "/home/robt/utorrent");
+                              
+                _dc = new DownloadContext(_torrentFile, new Selector(), "/home/robt/utorrent");
                 _downloader = new Downloader(_dc);
-                _selector = new Selector(_dc);
                 _assembler = new Assembler(_dc, this.UpdateProgress, this);
                 _agent = new Agent(_dc, _assembler);
 
