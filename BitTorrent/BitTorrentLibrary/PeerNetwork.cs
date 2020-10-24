@@ -42,11 +42,11 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class PeerNetwork
     {
-        private Socket _peerSocket;                                      // Socket for I/O
-        private UInt32 _bytesRead;                                       // Bytes read in read request
-        private bool _lengthRead;                                        // == true packet length has been read
-        public byte[] ReadBuffer { get; set; }                           // Read buffer
-        public uint PacketLength { get; set; }                           // Current packet length
+        private Socket _peerSocket;             // Socket for I/O
+        private UInt32 _bytesRead;              // Bytes read in read request
+        private bool _lengthRead;               // == true packet length has been read
+        public byte[] ReadBuffer { get; set; }  // Read buffer
+        public uint PacketLength { get; set; }  // Current packet length
 
         /// <summary>
         /// Peer read packet asynchronous callback.
@@ -110,7 +110,6 @@ namespace BitTorrentLibrary
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
             _peerSocket = remotePeerSocket;
         }
-
         /// <summary>
         /// Send packet to remote peer.
         /// </summary>
@@ -119,7 +118,6 @@ namespace BitTorrentLibrary
         {
             _peerSocket.Send(buffer);
         }
-
         /// <summary>
         /// Read packet from remote peer.
         /// </summary>
@@ -176,7 +174,7 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// 
+        /// Connect to listen port to shutdown listener task.
         /// </summary>
         /// <param name="socket"></param>
         public static void ShutdownListener(Socket socket)
@@ -187,7 +185,6 @@ namespace BitTorrentLibrary
             socket.Connect(new IPEndPoint(localPeerIP, (Int32)Host.DefaultPort));
 
         }
-
         /// <summary>
         /// Wait for remote connection on socket.
         /// </summary>
