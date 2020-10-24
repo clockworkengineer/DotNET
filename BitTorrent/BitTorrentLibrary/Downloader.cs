@@ -6,7 +6,8 @@
 // Description: The Downloader class encapsulates all code and
 // data relating to the readining/writing of the local torrent files
 // to determine which pieces are missing and need downloading and
-// written to the correct positions.
+// written to the correct positions.It also handles requests from
+// remote peers for pieces to be sent to them.
 //
 // Copyright 2020.
 //
@@ -18,10 +19,18 @@ using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
 {
+    public interface IDownloader
+    {
+        BlockingCollection<PieceBuffer> PieceWriteQueue { get; set; }
+        BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
+        void CreateLocalTorrentStructure(DownloadContext dc);
+        void CreateTorrentBitfield(DownloadContext dc);
+    }
+
     /// <summary>
     /// File downloader.
     /// </summary>
-    public class Downloader
+    public class Downloader : IDownloader
     {
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
         private readonly Task _pieceRequestProcessingTask;   // Task for processing piece requests from remote peersxt
@@ -151,9 +160,6 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by downloader.
         /// </summary>
-        /// <param name="filesToDownload">Files to download.</param>
-        /// <param name="pieceLength">Piece length.</param>
-        /// <param name="pieces">Pieces.</param>
         public Downloader()
         {
             PieceWriteQueue = new BlockingCollection<PieceBuffer>();

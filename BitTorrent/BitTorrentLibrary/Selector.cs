@@ -18,9 +18,14 @@ using System.Threading;
 
 namespace BitTorrentLibrary
 {
-    public class Selector
+    public interface ISelector
     {
-       // private readonly DownloadContext _dc;       // Download context for torrent
+        uint[] LocalPieceSuggestions(Peer remotePeer, uint numberOfSuggestions, uint startPiece = 0);
+        bool NextPiece(Peer remotePeer, ref uint nextPiece, CancellationToken cancelTask);
+    }
+
+    public class Selector : ISelector
+    {
         private readonly Object _nextPieceLock;     // Missing access lock
 
         /// <summary>
