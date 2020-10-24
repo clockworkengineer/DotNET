@@ -55,12 +55,12 @@ namespace BitTorrentLibrary
         public uint MissingPiecesCount { get; set; } = 0;
 
         /// <summary>
-        ///Setup data and resources needed by download context.
+        /// Setup data and resources needed by download context.
         /// </summary>
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
         /// <param name="pieces">Pieces.</param>
-        public DownloadContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, string downloadPath)
+        public DownloadContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath)
         {
             InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
@@ -72,13 +72,15 @@ namespace BitTorrentLibrary
             NumberOfPieces = ((UInt32)(PiecesInfoHash.Length / Constants.HashLength));
             BlocksPerPiece = PieceLength / Constants.BlockSize;
             PieceData = new PieceInfo[NumberOfPieces];
-            PieceWriteQueue = new BlockingCollection<PieceBuffer>();
-            PieceRequestQueue = new BlockingCollection<PieceRequest>();
+            PieceWriteQueue = downloader.PieceWriteQueue;
+            PieceRequestQueue = downloader.PieceRequestQueue;
             _SHA1 = new SHA1CryptoServiceProvider();
             DownloadFinished = new ManualResetEvent(false);
             Bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
             _piecesMissing = new byte[Bitfield.Length];
             PieceSelector = pieceSelector;
+            downloader.CreateLocalTorrentStructure(this);
+            downloader.CreateTorrentBitfield(this);
         }
         /// <summary>
         /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.

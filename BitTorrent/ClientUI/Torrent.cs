@@ -105,9 +105,8 @@ namespace ClientUI
                                   _mainWindow.downloadProgress.Fraction = 0;
                                   _mainWindow.informationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                               });
-                              
-                _dc = new DownloadContext(_torrentFile, new Selector(), "/home/robt/utorrent");
-                _downloader = new Downloader(_dc);
+
+                _dc = new DownloadContext(_torrentFile, new Selector(),new Downloader(),"/home/robt/utorrent");
                 _assembler = new Assembler(_dc, this.UpdateProgress, this);
                 _agent = new Agent(_dc, _assembler);
 
