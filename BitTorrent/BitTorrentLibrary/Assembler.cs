@@ -55,7 +55,7 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
                         Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        _dc.MarkPieceAsMissing(pieceNumber);
+                        _dc.MarkPieceMissing(pieceNumber, true);
                         _dc.MarkPieceLocal(pieceNumber, false);
                     }
                 }
@@ -64,7 +64,7 @@ namespace BitTorrentLibrary
                     if (!_dc.IsPieceLocal(pieceNumber))
                     {
                         Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        _dc.MarkPieceAsMissing(pieceNumber);
+                        _dc.MarkPieceMissing(pieceNumber, true);
                     }
                 }
 

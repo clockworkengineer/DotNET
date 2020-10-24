@@ -75,7 +75,7 @@ namespace BitTorrentLibrary
                     if (suggestedPiece != -1)
                     {
                         nextPiece = (UInt32)suggestedPiece;
-                        _dc.SetPieceMissing(nextPiece, false);
+                        _dc.MarkPieceMissing(nextPiece, false);
                         return true;
                     }
                     return false;

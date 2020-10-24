@@ -55,7 +55,7 @@ namespace BitTorrentLibrary
         {
             return "[" + Encoding.ASCII.GetString(remotePeer.RemotePeerID) + "] ";
         }
- 
+
         /// <summary>
         /// Dump bitfield to log.
         /// </summary>
@@ -188,8 +188,9 @@ namespace BitTorrentLibrary
 
             remotePeer.SetPieceOnRemotePeer(pieceNumber);
 
-            if (!remotePeer.Dc.IsPieceLocal(pieceNumber)) {
-                remotePeer.Dc.MarkPieceAsMissing(pieceNumber);
+            if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
+            {
+                remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
             }
 
         }

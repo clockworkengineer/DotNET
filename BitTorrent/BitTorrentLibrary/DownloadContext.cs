@@ -36,7 +36,6 @@ namespace BitTorrentLibrary
         private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
         private readonly Object _dcLock = new object();
         private readonly byte[] _piecesMissing;     // Missing piece bitfield
-        private UInt32 _missingPiecesCount = 0;     // Missing piece cound
         public PieceInfo[] PieceData { get; set; }
         public BlockingCollection<PieceBuffer> PieceWriteQueue { get; set; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
@@ -53,6 +52,7 @@ namespace BitTorrentLibrary
         public List<FileDetails> FilesToDownload { get; }
         public byte[] InfoHash { get; }                                    // Torrent info hash
         public string TrackerURL { get; }                                  // Main Tracker URL
+        public uint MissingPiecesCount { get; set; } = 0;
 
         /// <summary>
         ///Setup data and resources needed by download context.
@@ -164,20 +164,25 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber"></param>
         /// <param name="missing"></param>
-        public void SetPieceMissing(UInt32 pieceNumber, bool missing)
+        public void MarkPieceMissing(UInt32 pieceNumber, bool missing)
         {
 
             if (missing)
             {
-                _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                _missingPiecesCount++;
+                if (!IsPieceMissing(pieceNumber))
+                {
+                    _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                    MissingPiecesCount++;
+                }
             }
             else
             {
-                _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                _missingPiecesCount--;
+                if (IsPieceMissing(pieceNumber))
+                {
+                    _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
+                    MissingPiecesCount--;
+                }
             }
-
 
         }
         /// <summary>
@@ -190,24 +195,13 @@ namespace BitTorrentLibrary
             return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
         }
         /// <summary>
-        /// Mark piece as missing from local peer.
-        /// </summary>
-        /// <param name="pieceNumber"></param>
-        public void MarkPieceAsMissing(UInt32 pieceNumber)
-        {
-            if (!IsPieceMissing(pieceNumber))
-            {
-                SetPieceMissing(pieceNumber, true);
-            }
-        }
-        /// <summary>
         /// Return number of missing peices left.
         /// </summary>
-        /// <returns></returns>
-        public int MissingPiecesCount()
-        {
-            return (int)_missingPiecesCount;
-        }
+        // /// <returns></returns>
+        // public int MissingPiecesCount()
+        // {
+        //     return (int)_missingPiecesCount;
+        // }
         /// <summary>
         /// Merges the piece bitfield of a remote peer with the torrents local piece map data.
         /// </summary>

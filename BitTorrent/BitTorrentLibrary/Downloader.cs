@@ -102,7 +102,7 @@ namespace BitTorrentLibrary
             _dc.MarkPieceLocal(pieceNumber, pieceThere);
             if (!pieceThere)
             {
-                _dc.MarkPieceAsMissing(pieceNumber);
+                        _dc.MarkPieceMissing(pieceNumber, true);
             }
         }
 
