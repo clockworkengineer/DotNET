@@ -176,12 +176,10 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Connect to listen port to shutdown listener task.
         /// </summary>
-        /// <param name="socket"></param>
-        public static void ShutdownListener(Socket socket)
+        public static void ShutdownListener()
         {
-
             IPAddress localPeerIP = Dns.GetHostEntry(Host.GetIP()).AddressList[0];
-            socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             socket.Connect(new IPEndPoint(localPeerIP, (Int32)Host.DefaultPort));
 
         }

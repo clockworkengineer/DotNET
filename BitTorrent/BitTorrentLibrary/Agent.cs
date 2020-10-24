@@ -27,7 +27,7 @@ namespace BitTorrentLibrary
     public class Agent
     {
         private bool _agentRunning = false;                                // true thile agent is up and running.
-        private DownloadContext _dc;                                       // Torrent download context
+        private readonly DownloadContext _dc;                              // Torrent download context
         private readonly BlockingCollection<PeerDetails> _peersTooSwarm;   // Peers to add to swarm queue
         private readonly Task _peerConnectCreatorTask;                     // Peer swarm creator task
         private readonly Task _peerListenCreatorTask;                      // Peer swarm peer connect creator task
@@ -35,7 +35,6 @@ namespace BitTorrentLibrary
         private readonly ConcurrentDictionary<string, Peer> _peerSwarm;    // Connected remote peers in swarm
         private Socket _listenerSocket;                                    // Connection listener socket
         public Tracker MainTracker { get; set; }                           // Main torrent tracker
-        public UInt64 Left => _dc.BytesLeftToDownload();                   // Number of bytes left to download; 
 
         /// <summary>
         /// Display peer task statistics.
@@ -51,7 +50,7 @@ namespace BitTorrentLibrary
                     peersChoking++;
                 }
             }
-            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {_dc.PieceSelector.MissingPiecesCount()}] " +
+            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {_dc.MissingPiecesCount()}] " +
             $"[Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}] [Active Downloaders {_pieceAssembler?.ActiveDownloaders}] " +
             $"[Active Uploaders {_pieceAssembler?.ActiveUploaders}]");
         }
@@ -152,7 +151,6 @@ namespace BitTorrentLibrary
             }
 
             _listenerSocket.Close();
-            //_listenerSocket.Dispose();
 
             Log.Logger.Info("Remote Peer connect listener terminated.");
 
@@ -168,8 +166,6 @@ namespace BitTorrentLibrary
             _pieceAssembler = pieceAssembler;
             _peerSwarm = new ConcurrentDictionary<string, Peer>();
             _peersTooSwarm = new BlockingCollection<PeerDetails>();
-            // InfoHash = torrentFile.MetaInfoDict["info hash"];
-            //TrackerURL = Encoding.ASCII.GetString(torrentFile.MetaInfoDict["announce"]);
             _peerListenCreatorTask = Task.Run(() => PeerListenCreatorTask());
             _peerConnectCreatorTask = Task.Run(() => PeerConnectCreatorTask());
             _agentRunning = true;
@@ -286,7 +282,7 @@ namespace BitTorrentLibrary
                     }
                     MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
 
-                    PeerNetwork.ShutdownListener(_listenerSocket);
+                    PeerNetwork.ShutdownListener();
                 }
             }
             catch (Error)
@@ -343,20 +339,21 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         public TorrentDetails GetTorrentDetails()
         {
-            TorrentDetails torrentDetails = new TorrentDetails();
 
-            torrentDetails.peers = (from peer in _peerSwarm.Values
-                                    select new PeerDetails
-                                    {
-                                        ip = peer.Ip,
-                                        port = peer.Port
-                                    }).ToList();
+            return new TorrentDetails
+            {
+                peers = (from peer in _peerSwarm.Values
+                         select new PeerDetails
+                         {
+                             ip = peer.Ip,
+                             port = peer.Port
+                         }).ToList(),
 
-            torrentDetails.downloadedBytes = _dc.TotalBytesDownloaded;
-            torrentDetails.uploadedBytes = _dc.TotalBytesUploaded;
-            torrentDetails.InfoHash = _dc.InfoHash;
-
-            return torrentDetails;
+                downloadedBytes = _dc.TotalBytesDownloaded,
+                uploadedBytes = _dc.TotalBytesUploaded,
+                InfoHash = _dc.InfoHash,
+            
+            };
         }
     }
 }

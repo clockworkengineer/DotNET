@@ -12,10 +12,7 @@
 //
 
 using System;
-using System.Text;
 using System.IO;
-using System.Linq;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
@@ -103,6 +100,10 @@ namespace BitTorrentLibrary
             }
             _dc.PieceData[pieceNumber].pieceLength = numberOfBytes;
             _dc.MarkPieceLocal(pieceNumber, pieceThere);
+            if (!pieceThere)
+            {
+                _dc.MarkPieceAsMissing(pieceNumber);
+            }
         }
 
         /// <summary>

@@ -189,7 +189,7 @@ namespace BitTorrentLibrary
             remotePeer.SetPieceOnRemotePeer(pieceNumber);
 
             if (!remotePeer.Dc.IsPieceLocal(pieceNumber)) {
-                remotePeer.Dc.PieceSelector.MarkPieceAsMissing(pieceNumber);
+                remotePeer.Dc.MarkPieceAsMissing(pieceNumber);
             }
 
         }

@@ -83,10 +83,8 @@ namespace ClientUI
                 };
                 _mainWindow.informationWindow.peersWindow.Add(peerListView);
                 _mainWindow.informationWindow._infoHashText.Text = InfoHashToString(torrentDetails.InfoHash);
-                _mainWindow.informationWindow._bytesDownloadedText.Text =
-                torrentDetails.downloadedBytes.ToString().PadLeft(_mainWindow.informationWindow._bytesDownloadedText.Text.Length);
-                _mainWindow.informationWindow._bytesUploadedText.Text =
-                torrentDetails.uploadedBytes.ToString().PadLeft(_mainWindow.informationWindow._bytesUploadedText.Text.Length);
+                _mainWindow.informationWindow._bytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
+                _mainWindow.informationWindow._bytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
             });
 
         }
