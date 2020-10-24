@@ -86,6 +86,7 @@ namespace ClientUI
 
                 Application.MainLoop.Invoke(() =>
                               {
+                                  _mainWindow.downloadButton.FocusPrev();
                                   _mainWindow.downloadButton.Text = "Working";
                                   _mainWindow.downloadButton.CanFocus = false;
                                   _mainWindow.downloadProgress.Fraction = 0;
@@ -96,7 +97,7 @@ namespace ClientUI
                 _downloader = new Downloader(_dc);
                 _selector = new Selector(_dc);
                 _assembler = new Assembler(_dc, this.UpdateProgress, this);
-                _agent = new Agent(_torrentFile, _dc, _assembler);
+                _agent = new Agent(_dc, _assembler);
 
                 tracker = new Tracker(_agent, _dc);
 

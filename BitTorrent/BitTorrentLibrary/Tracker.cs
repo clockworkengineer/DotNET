@@ -90,8 +90,8 @@ namespace BitTorrentLibrary
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
-            InfoHash = agent.InfoHash;
-            TrackerURL = agent.TrackerURL;
+            InfoHash = dc.InfoHash;
+            TrackerURL = dc.TrackerURL;
             MaximumSwarmSize = maximumSwarmSize;
             _updatePeerSwarm = agent.UpdatePeerSwarmQueue;
             _dc = dc;

@@ -49,6 +49,8 @@ namespace BitTorrentLibrary
         public ManualResetEvent DownloadFinished { get; }
         public byte[] Bitfield { get; }
         public List<FileDetails> FilesToDownload { get; }
+        public byte[] InfoHash { get; }                                    // Torrent info hash
+        public string TrackerURL { get; }                                  // Main Tracker URL
 
         /// <summary>
         ///Setup data and resources needed by download context.
@@ -58,6 +60,8 @@ namespace BitTorrentLibrary
         /// <param name="pieces">Pieces.</param>
         public DownloadContext(MetaInfoFile torrentMetaInfo, string downloadPath)
         {
+            InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];
+            TrackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
             (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
             FilesToDownload = filesToDownload;
             TotalBytesToDownload = totalDownloadLength;

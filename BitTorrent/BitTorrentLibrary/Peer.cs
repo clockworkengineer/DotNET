@@ -23,7 +23,6 @@ namespace BitTorrentLibrary
     public class Peer
     {
         private readonly PeerNetwork _network;                           // Network layer
-        private readonly byte[] _infoHash;                               // Torrent infohash
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public DownloadContext Dc { get; set; }                          // Torrent download context
@@ -52,11 +51,10 @@ namespace BitTorrentLibrary
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
         /// <param name="dc">Download context.</param>
-        public Peer(string ip, UInt32 port, byte[] infoHash, DownloadContext dc, Socket socket = null)
+        public Peer(string ip, UInt32 port, DownloadContext dc, Socket socket = null)
         {
             Ip = ip;
             Port = port;
-            _infoHash = infoHash;
             Dc = dc;
             _network = new PeerNetwork(socket);
             AssembledPiece = new PieceBuffer(Dc.PieceLength);
@@ -108,7 +106,7 @@ namespace BitTorrentLibrary
             try
             {
 
-                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectFromIntialHandshake(this, _infoHash);
+                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectFromIntialHandshake(this, Dc.InfoHash);
 
                 if (peerResponse.Item1)
                 {
@@ -134,7 +132,7 @@ namespace BitTorrentLibrary
 
                 _network.Connect(Ip, Port);
 
-                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this, _infoHash);
+                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this, Dc.InfoHash);
 
                 if (peerResponse.Item1)
                 {
