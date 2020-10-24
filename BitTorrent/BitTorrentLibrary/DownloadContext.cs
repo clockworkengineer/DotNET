@@ -11,6 +11,8 @@
 //
 
 using System;
+using System.Text;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Threading;
@@ -46,6 +48,7 @@ namespace BitTorrentLibrary
         public Selector PieceSelector { get; set; }
         public ManualResetEvent DownloadFinished { get; }
         public byte[] Bitfield { get; }
+        public List<FileDetails> FilesToDownload { get; }
 
         /// <summary>
         ///Setup data and resources needed by download context.
@@ -53,13 +56,15 @@ namespace BitTorrentLibrary
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
         /// <param name="pieces">Pieces.</param>
-        public DownloadContext(UInt64 totalDownloadLength, UInt32 pieceLength, byte[] pieces)
+        public DownloadContext(MetaInfoFile torrentMetaInfo, string downloadPath)
         {
+            (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
+            FilesToDownload = filesToDownload;
             TotalBytesToDownload = totalDownloadLength;
-            PieceLength = pieceLength;
-            PiecesInfoHash = pieces;
-            NumberOfPieces = ((UInt32)(pieces.Length / Constants.HashLength));
-            BlocksPerPiece = pieceLength / Constants.BlockSize;
+            PieceLength = uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
+            PiecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
+            NumberOfPieces = ((UInt32)(PiecesInfoHash.Length / Constants.HashLength));
+            BlocksPerPiece = PieceLength / Constants.BlockSize;
             PieceData = new PieceInfo[NumberOfPieces];
             PieceWriteQueue = new BlockingCollection<PieceBuffer>();
             PieceRequestQueue = new BlockingCollection<PieceRequest>();

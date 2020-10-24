@@ -25,7 +25,6 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Downloader
     {
-        private readonly List<FileDetails> _filesToDownload; // Files in torrent to be downloaded
         private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
         private readonly Task _pieceRequestProcessingTask;   // Task for processing piece requests from remote peers
         public DownloadContext Dc { get; set; }              // Torrent download context
@@ -41,7 +40,7 @@ namespace BitTorrentLibrary
             UInt64 startOffset = transferBuffer.Number * Dc.PieceLength;
             UInt64 endOffset = startOffset + Dc.PieceLength;
 
-            foreach (var file in _filesToDownload)
+            foreach (var file in Dc.FilesToDownload)
             {
                 if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
                 {
@@ -75,7 +74,7 @@ namespace BitTorrentLibrary
         {
             Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
 
-            foreach (var file in _filesToDownload)
+            foreach (var file in Dc.FilesToDownload)
             {
                 if (!System.IO.File.Exists(file.name))
                 {
@@ -119,7 +118,7 @@ namespace BitTorrentLibrary
 
             Log.Logger.Debug("Generate pieces downloaded map from local files ...");
 
-            foreach (var file in _filesToDownload)
+            foreach (var file in Dc.FilesToDownload)
             {
                 Log.Logger.Debug($"File: {file.name}");
 
@@ -149,7 +148,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Read piece from torrent
         /// </summary>
-        public PieceBuffer GetPieceFromTorrent(UInt32 pieceNumber)
+        private PieceBuffer GetPieceFromTorrent(UInt32 pieceNumber)
         {
 
             PieceBuffer pieceBuffer = new PieceBuffer(pieceNumber, Dc.PieceData[pieceNumber].pieceLength);
@@ -217,15 +216,9 @@ namespace BitTorrentLibrary
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
         /// <param name="pieces">Pieces.</param>
-        public Downloader(MetaInfoFile torrentMetaInfo, string downloadPath)
+        public Downloader(DownloadContext dc)
         {
-            (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
-            _filesToDownload = filesToDownload;
-
-            Dc = new DownloadContext(totalDownloadLength,
-                uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"])),
-                torrentMetaInfo.MetaInfoDict["pieces"]);
-
+            Dc = dc;
             _pieceBufferWriterTask = Task.Run(() => PieceBufferDiskWriter());
             _pieceRequestProcessingTask = Task.Run(() => PieceRequestProcessingTask());
 

@@ -21,6 +21,8 @@ namespace ClientUI
     {
         private readonly string _torrentFileName;
         private MetaInfoFile _torrentFile;
+
+        private DownloadContext _dc;
         private Downloader _downloader;
         private Selector _selector;
         private Assembler _assembler;
@@ -90,8 +92,9 @@ namespace ClientUI
                                   _mainWindow.informationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                               });
 
-                _downloader = new Downloader(_torrentFile, "/home/robt/utorrent");
-                _selector = new Selector(_downloader.Dc);
+                _dc = new DownloadContext(_torrentFile, "/home/robt/utorrent");
+                _downloader = new Downloader(_dc);
+                _selector = new Selector(_dc);
                 _assembler = new Assembler(_downloader, this.UpdateProgress, this);
                 _agent = new Agent(_torrentFile, _downloader, _assembler);
 

@@ -24,7 +24,6 @@ namespace BitTorrentLibrary
     {
         private readonly PeerNetwork _network;                           // Network layer
         private readonly byte[] _infoHash;                               // Torrent infohash
-
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public DownloadContext Dc { get; set; }                          // Torrent download context
