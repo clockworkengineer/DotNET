@@ -149,10 +149,10 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Read piece from torrent
         /// </summary>
-        private PieceBuffer GetPieceFromTorrent(UInt32 pieceNumber)
+        private PieceBuffer GetPieceFromTorrent(Peer remotePeer, UInt32 pieceNumber)
         {
 
-            PieceBuffer pieceBuffer = new PieceBuffer(pieceNumber, _dc.PieceData[pieceNumber].pieceLength);
+            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer, pieceNumber, _dc.PieceData[pieceNumber].pieceLength);
 
             Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
 
@@ -200,7 +200,7 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
 
-                PieceBuffer requestBuffer = GetPieceFromTorrent(request.pieceNumber);
+                PieceBuffer requestBuffer = GetPieceFromTorrent(request.remotePeer, request.pieceNumber);
                 byte[] requestBlock = new byte[request.blockSize];
 
                 Array.Copy(requestBuffer.Buffer, (Int32)request.blockOffset, requestBlock, 0, (Int32)request.blockSize);
