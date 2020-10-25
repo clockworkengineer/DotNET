@@ -131,6 +131,7 @@ namespace BitTorrentLibrary
                 if (pieceBuffer.RemotePeer.Dc.BytesLeftToDownload() == 0)
                 {
                     pieceBuffer.RemotePeer.Dc.DownloadFinished.Set();
+                    pieceBuffer.RemotePeer.Dc.DownloadCompleteCallBack?.Invoke(pieceBuffer.RemotePeer.Dc.DownloadCompleteCallBackData);
                 }
 
             }

@@ -19,6 +19,8 @@ using System.Threading;
 
 namespace BitTorrentLibrary
 {
+    public delegate void DownloadCompleteCallBack(Object callbackData);  // Download completed callback
+
     /// <summary>
     /// Piece Information.
     /// </summary>
@@ -53,6 +55,8 @@ namespace BitTorrentLibrary
         public byte[] InfoHash { get; }                                    // Torrent info hash
         public string TrackerURL { get; }                                  // Main Tracker URL
         public uint MissingPiecesCount { get; set; } = 0;
+        public DownloadCompleteCallBack DownloadCompleteCallBack { get; set; }
+        public object DownloadCompleteCallBackData { get; set; }
 
         /// <summary>
         /// Setup data and resources needed by download context.
@@ -198,14 +202,6 @@ namespace BitTorrentLibrary
             return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
         }
         /// <summary>
-        /// Return number of missing peices left.
-        /// </summary>
-        // /// <returns></returns>
-        // public int MissingPiecesCount()
-        // {
-        //     return (int)_missingPiecesCount;
-        // }
-        /// <summary>
         /// Merges the piece bitfield of a remote peer with the torrents local piece map data.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
@@ -232,6 +228,11 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
+        }
+        void SetDownloadCompleteCallBack(DownloadCompleteCallBack callback, Object callBackData)
+        {
+            DownloadCompleteCallBack = callback;
+            DownloadCompleteCallBackData = callBackData;
         }
 
     }

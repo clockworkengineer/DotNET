@@ -20,7 +20,6 @@ using System.Net.Sockets;
 namespace BitTorrentLibrary
 {
     public delegate void ProgessCallBack(Object progressData);            // Download progress callback
-
     /// <summary>
     /// Agent class definition.
     /// </summary>
@@ -220,7 +219,6 @@ namespace BitTorrentLibrary
             {
                 if (MainTracker.Left != 0)
                 {
-
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
                     _dc.DownloadFinished.WaitOne();
