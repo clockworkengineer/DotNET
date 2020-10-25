@@ -81,42 +81,6 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Initialise BitTorrent Tracker.
-        /// </summary>
-        /// <param name="trackerURL"></param>
-        /// <param name="infoHash"></param>
-        /// <param name="updatePeerSwarm"></param>
-        public Tracker(Agent agent, DownloadContext dc, int maximumSwarmSize = 10)
-        {
-            PeerID = BitTorrentLibrary.PeerID.Get();
-            Ip = Host.GetIP();
-            InfoHash = dc.InfoHash;
-            TrackerURL = dc.TrackerURL;
-            MaximumSwarmSize = maximumSwarmSize;
-            _updatePeerSwarm = agent.UpdatePeerSwarmQueue;
-            _dc = dc;
-            agent.MainTracker = this;
-            _announcerExceptions = new List<Exception>();
-
-            if (!TrackerURL.StartsWith("http://"))
-            {
-                if (TrackerURL.StartsWith("udp://"))
-                {
-                    Log.Logger.Info("Main tracker is UDP...");
-                    _announcer = new AnnouncerUDP(TrackerURL);
-                }
-                else
-                {
-                    throw new Error("BitTorrent (Tracker) Error: Invalid tracker URL.");
-                }
-            }
-            else
-            {
-                Log.Logger.Info("Main tracker is HTTP...");
-                _announcer = new AnnouncerHTTP(TrackerURL);
-            }
-        }
-        /// <summary>
         /// Restart announce on interval changing and save minimum interval and tracker ID.
         /// </summary>
         /// <param name="response"></param>
@@ -150,6 +114,42 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent Error (Tracker): " + ex.Message);
+            }
+        }
+        /// <summary>
+        /// Initialise BitTorrent Tracker.
+        /// </summary>
+        /// <param name="trackerURL"></param>
+        /// <param name="infoHash"></param>
+        /// <param name="updatePeerSwarm"></param>
+        public Tracker(Agent agent, DownloadContext dc, int maximumSwarmSize = 10)
+        {
+            PeerID = BitTorrentLibrary.PeerID.Get();
+            Ip = Host.GetIP();
+            InfoHash = dc.InfoHash;
+            TrackerURL = dc.TrackerURL;
+            MaximumSwarmSize = maximumSwarmSize;
+            _updatePeerSwarm = agent.UpdatePeerSwarmQueue;
+            _dc = dc;
+            agent.SetMainTracker(this);
+            _announcerExceptions = new List<Exception>();
+
+            if (!TrackerURL.StartsWith("http://"))
+            {
+                if (TrackerURL.StartsWith("udp://"))
+                {
+                    Log.Logger.Info("Main tracker is UDP...");
+                    _announcer = new AnnouncerUDP(TrackerURL);
+                }
+                else
+                {
+                    throw new Error("BitTorrent (Tracker) Error: Invalid tracker URL.");
+                }
+            }
+            else
+            {
+                Log.Logger.Info("Main tracker is HTTP...");
+                _announcer = new AnnouncerHTTP(TrackerURL);
             }
         }
         /// <summary>

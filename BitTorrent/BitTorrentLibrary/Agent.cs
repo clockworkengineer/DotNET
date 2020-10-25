@@ -33,7 +33,7 @@ namespace BitTorrentLibrary
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private readonly ConcurrentDictionary<string, Peer> _peerSwarm;    // Connected remote peers in swarm
         private Socket _listenerSocket;                                    // Connection listener socket
-        public Tracker MainTracker { get; set; }                           // Main torrent tracker
+        private Tracker _mainTracker;                                     // Main torrent tracker
 
         /// <summary>
         /// Display peer task statistics.
@@ -50,7 +50,7 @@ namespace BitTorrentLibrary
                 }
             }
             Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {_dc.MissingPiecesCount}] " +
-            $"[Number of peers in swarm  {_peerSwarm.Count}/{MainTracker.MaximumSwarmSize}] [Active Downloaders {_pieceAssembler?.ActiveDownloaders}] " +
+            $"[Number of peers in swarm  {_peerSwarm.Count}/{_mainTracker.MaximumSwarmSize}] [Active Downloaders {_pieceAssembler?.ActiveDownloaders}] " +
             $"[Active Uploaders {_pieceAssembler?.ActiveUploaders}]");
         }
         /// <summary>
@@ -65,7 +65,7 @@ namespace BitTorrentLibrary
                 try
                 {
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (_peerSwarm.ContainsKey(peer.ip) || _peerSwarm.Count >= MainTracker.MaximumSwarmSize)
+                    if (_peerSwarm.ContainsKey(peer.ip) || _peerSwarm.Count >= _mainTracker.MaximumSwarmSize)
                     {
                         continue;
                     }
@@ -126,7 +126,7 @@ namespace BitTorrentLibrary
                     }
 
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (_peerSwarm.ContainsKey(endPoint.Item1) || _peerSwarm.Count >= MainTracker.MaximumSwarmSize)
+                    if (_peerSwarm.ContainsKey(endPoint.Item1) || _peerSwarm.Count >= _mainTracker.MaximumSwarmSize)
                     {
                         continue;
                     }
@@ -175,6 +175,14 @@ namespace BitTorrentLibrary
             _peersTooSwarm.CompleteAdding();
         }
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tracker"></param>
+        public void SetMainTracker(Tracker tracker)
+        {
+            _mainTracker = tracker;
+        }
+        /// <summary>
         /// Add peers to swarm creation queue.
         /// </summary>
         /// <param name="peers"></param>
@@ -203,7 +211,7 @@ namespace BitTorrentLibrary
                     _peersTooSwarm.Add(peerDetails);
                 }
 
-                MainTracker.NumWanted = Math.Max(MainTracker.MaximumSwarmSize - _peerSwarm.Count, 0);
+                _mainTracker.NumWanted = Math.Max(_mainTracker.MaximumSwarmSize - _peerSwarm.Count, 0);
 
             }
 
@@ -217,13 +225,13 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (MainTracker.Left != 0)
+                if (_mainTracker.Left != 0)
                 {
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
                     _dc.DownloadFinished.WaitOne();
 
-                    MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
+                    _mainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
 
                     Log.Logger.Info("Whole Torrent finished downloading.");
                 }
@@ -269,7 +277,7 @@ namespace BitTorrentLibrary
                 {
                     _agentRunning = false;
 
-                    MainTracker.StopAnnouncing();
+                    _mainTracker.StopAnnouncing();
                     if (_peerSwarm != null)
                     {
                         Log.Logger.Info("Closing peer sockets.");
@@ -278,7 +286,7 @@ namespace BitTorrentLibrary
                             remotePeer.Close();
                         }
                     }
-                    MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+                    _mainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
 
                     PeerNetwork.ShutdownListener();
                 }
@@ -351,7 +359,7 @@ namespace BitTorrentLibrary
                 uploadedBytes = _dc.TotalBytesUploaded,
                 infoHash = _dc.InfoHash,
                 missingPiecesCount = _dc.MissingPiecesCount
-            
+
             };
         }
     }
