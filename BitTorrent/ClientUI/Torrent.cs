@@ -26,9 +26,9 @@ namespace ClientUI
         private readonly string _torrentFileName;
         private MetaInfoFile _torrentFile;
         private DownloadContext _dc;
-        private Assembler _assembler;
         private MainWindow _mainWindow;
         private double _currentProgress = 0;
+        private Assembler _assembler;
         private Tracker _tracker;
         private ListView _peerListView;
         public Agent DownloadAgent { get; set; }
@@ -138,14 +138,17 @@ namespace ClientUI
                               });
 
                 _dc = new DownloadContext(_torrentFile, new Selector(), new Downloader(), "/home/robt/utorrent");
-                _assembler = new Assembler(_dc, this.UpdateProgress, this);
-                DownloadAgent = new Agent(_dc, _assembler);
+
+                _assembler =  new Assembler();
+                
+                DownloadAgent = new Agent(_dc,_assembler);
 
                 _tracker = new Tracker(DownloadAgent, _dc);
 
                 _tracker.StartAnnouncing();
 
                 _dc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
+                _assembler.SetDownloadProgressCallBack(UpdateProgress,  this);
                 _tracker.SetTrackerCallBack(UpdateInformation, this);
 
                 DownloadAgent.Start();

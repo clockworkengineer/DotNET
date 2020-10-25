@@ -22,10 +22,9 @@ namespace BitTorrentLibrary
     public delegate void ProgessCallBack(Object callBackData);            // Download progress callback
     public class Assembler
     {
-        private readonly ProgessCallBack _progressCallBack;          // Download progress function
-        private readonly Object _progressCallBackDta;                // Download progress function data
-        private readonly DownloadContext _dc;                        // Download context for torrent
-        public ManualResetEvent Paused { get; set; }                 // == true (set) pause downloading from peer
+        private  ProgessCallBack _progressCallBack;          // Download progress function
+        private  Object _progressCallBackDta;                // Download progress function data
+        public ManualResetEvent Paused { get; set; }         // == true (set) pause downloading from peer
 
         /// <summary>
         /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.
@@ -40,28 +39,28 @@ namespace BitTorrentLibrary
             {
                 if (pieceAssembled)
                 {
-                    bool pieceValid = _dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, _dc.PieceData[pieceNumber].pieceLength);
+                    bool pieceValid = remotePeer.Dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, remotePeer.Dc.PieceData[pieceNumber].pieceLength);
                     if (pieceValid)
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
-                        _dc.PieceWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
+                        remotePeer.Dc.PieceWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
                         _progressCallBack?.Invoke(_progressCallBackDta);
-                        _dc.MarkPieceLocal(pieceNumber, true);
+                        remotePeer.Dc.MarkPieceLocal(pieceNumber, true);
                     }
                     else
                     {
                         Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
                         Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        _dc.MarkPieceMissing(pieceNumber, true);
-                        _dc.MarkPieceLocal(pieceNumber, false);
+                        remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
+                        remotePeer.Dc.MarkPieceLocal(pieceNumber, false);
                     }
                 }
                 else
                 {
-                    if (!_dc.IsPieceLocal(pieceNumber))
+                    if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
                     {
                         Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        _dc.MarkPieceMissing(pieceNumber, true);
+                        remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
                     }
                 }
 
@@ -153,7 +152,7 @@ namespace BitTorrentLibrary
 
                 while (!remotePeer.Dc.DownloadFinished.WaitOne(0))
                 {
-                    while (_dc.PieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
+                    while (remotePeer.Dc.PieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
                         SavePieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
@@ -207,13 +206,9 @@ namespace BitTorrentLibrary
         /// <param name="torrentDownloader"></param>
         /// <param name="progressFunction"></param>
         /// <param name="progressData"></param>
-        public Assembler(DownloadContext dc, ProgessCallBack progressFunction = null, Object progressData = null)
+        public Assembler()
         {
-            _dc = dc;
-            _progressCallBack = progressFunction;
-            _progressCallBackDta = progressData;
             Paused = new ManualResetEvent(false);
-
         }
         /// <summary>
         /// Task method to download any missing pieces of torrent and when that is done to simply
@@ -236,7 +231,7 @@ namespace BitTorrentLibrary
                     PWP.Have(remotePeer, pieceNumber);
                 }
 
-                if (_dc.BytesLeftToDownload() > 0)
+                if (remotePeer.Dc.BytesLeftToDownload() > 0)
                 {
                     AssembleMissingPieces(remotePeer, cancelTask);
                 }
@@ -251,6 +246,10 @@ namespace BitTorrentLibrary
 
             Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
+        }
+        public void SetDownloadProgressCallBack(ProgessCallBack callBack, Object callBackData) {
+            _progressCallBack = callBack;
+            _progressCallBackDta = callBackData;
         }
     }
 }
