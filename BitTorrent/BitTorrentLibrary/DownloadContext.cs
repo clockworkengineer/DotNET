@@ -57,6 +57,7 @@ namespace BitTorrentLibrary
         public uint MissingPiecesCount { get; set; } = 0;
         public DownloadCompleteCallBack DownloadCompleteCallBack { get; set; }
         public object DownloadCompleteCallBackData { get; set; }
+        public ConcurrentDictionary<string, Peer> PeerSwarm { get; }
 
         /// <summary>
         /// Setup data and resources needed by download context.
@@ -83,6 +84,7 @@ namespace BitTorrentLibrary
             Bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
             _piecesMissing = new byte[Bitfield.Length];
             PieceSelector = pieceSelector;
+            PeerSwarm = new ConcurrentDictionary<string, Peer>();
             downloader.CreateLocalTorrentStructure(this);
             downloader.CreateTorrentBitfield(this);
         }

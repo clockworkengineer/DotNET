@@ -159,9 +159,19 @@ namespace BitTorrentLibrary
                     Connected = false;
                     CancelTaskSource.Cancel();
                     _network.Close();
+                    if (Dc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
+                    {
+                        Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
+                    }
+                    else
+                    {
+                        throw new Exception($"Could not remove peer {Ip} from swarm.");
+                    }
                     Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}.");
                 }
+
             }
+ 
             catch (Exception ex)
             {
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
