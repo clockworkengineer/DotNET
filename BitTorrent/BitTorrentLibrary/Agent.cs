@@ -19,12 +19,25 @@ using System.Net.Sockets;
 
 namespace BitTorrentLibrary
 {
-    public delegate void ProgessCallBack(Object progressData);            // Download progress callback
+
+    public interface IAgent
+    {
+        void Close();
+        void Download();
+        Task DownloadAsync();
+        TorrentDetails GetTorrentDetails();
+        void Pause();
+        void SetMainTracker(Tracker tracker);
+        void Start();
+        void UpdatePeerSwarmQueue(List<PeerDetails> peers);
+    }
+
     /// <summary>
     /// Agent class definition.
     /// </summary>
-    public class Agent
+    public class Agent : IAgent
     {
+        private TorrentStatus _status;                                      // Current torrent status
         private bool _agentRunning = false;                                // true thile agent is up and running.
         private readonly DownloadContext _dc;                              // Torrent download context
         private readonly BlockingCollection<PeerDetails> _peersTooSwarm;   // Peers to add to swarm queue
@@ -33,7 +46,7 @@ namespace BitTorrentLibrary
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private readonly ConcurrentDictionary<string, Peer> _peerSwarm;    // Connected remote peers in swarm
         private Socket _listenerSocket;                                    // Connection listener socket
-        private Tracker _mainTracker;                                     // Main torrent tracker
+        private Tracker _mainTracker;                                      // Main torrent tracker
 
         /// <summary>
         /// Display peer task statistics.
@@ -227,6 +240,8 @@ namespace BitTorrentLibrary
             {
                 if (_mainTracker.Left != 0)
                 {
+                     _status = TorrentStatus.Downloading;
+        
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
                     _dc.DownloadFinished.WaitOne();
@@ -234,6 +249,8 @@ namespace BitTorrentLibrary
                     _mainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
 
                     Log.Logger.Info("Whole Torrent finished downloading.");
+
+                    _status = TorrentStatus.Uploading;
                 }
 
             }
@@ -289,6 +306,9 @@ namespace BitTorrentLibrary
                     _mainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
 
                     PeerNetwork.ShutdownListener();
+
+                     _status = TorrentStatus.Stopped;
+
                 }
             }
             catch (Error)
@@ -309,6 +329,7 @@ namespace BitTorrentLibrary
             try
             {
                 _pieceAssembler?.Paused.Set();
+                _status = TorrentStatus.Started;
             }
             catch (Error)
             {
@@ -328,6 +349,8 @@ namespace BitTorrentLibrary
             try
             {
                 _pieceAssembler?.Paused.Reset();
+                 _status = TorrentStatus.Paused;
+
             }
             catch (Error)
             {
@@ -340,7 +363,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// 
+        /// Return details about the currently torrents status.
         /// </summary>
         /// <returns></returns>
         public TorrentDetails GetTorrentDetails()
@@ -348,6 +371,8 @@ namespace BitTorrentLibrary
 
             return new TorrentDetails
             {
+                status = _status,
+
                 peers = (from peer in _peerSwarm.Values
                          select new PeerDetails
                          {

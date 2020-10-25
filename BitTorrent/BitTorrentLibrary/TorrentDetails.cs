@@ -13,8 +13,17 @@ using System.Collections.Generic;
 
 namespace BitTorrentLibrary
 {
+    public enum TorrentStatus
+    {
+        Started,
+        Uploading,
+        Downloading,
+        Paused,
+        Stopped
+    }
     public struct TorrentDetails
     {
+        public TorrentStatus status;
         public List<PeerDetails> peers;
         public UInt64 uploadedBytes;
         public UInt64 downloadedBytes;

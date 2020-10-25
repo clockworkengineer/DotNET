@@ -16,6 +16,8 @@ using System.Timers;
 
 namespace BitTorrentLibrary
 {
+    public delegate void TrackerCallBack(Object callBackData);            // Tracker callback
+
     public class Tracker
     {
         /// <summary>
@@ -33,10 +35,11 @@ namespace BitTorrentLibrary
             stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
             completed = 3   // Must be sent to the tracker when the download completes
         };
-
         private readonly DownloadContext _dc;                   // Download context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
+        private TrackerCallBack _callBack;                     // Tracker ping callback function
+        private Object _callBackData;                          // Tracker ping callback function data
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
         protected UpdatePeers _updatePeerSwarm;                 // Update peer swarm with connected peers
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
@@ -68,6 +71,7 @@ namespace BitTorrentLibrary
             {
                 AnnounceResponse response = tracker._announcer.Announce(tracker);
                 tracker._updatePeerSwarm?.Invoke(response.peers);
+                tracker._callBack?.Invoke(tracker._callBackData);
                 tracker.UpdateRunningStatusFromAnnounce(response);
             }
             catch (Exception ex)
@@ -151,6 +155,16 @@ namespace BitTorrentLibrary
                 Log.Logger.Info("Main tracker is HTTP...");
                 _announcer = new AnnouncerHTTP(TrackerURL);
             }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="callBack"></param>
+        /// <param name="callBackData"></param>
+        public void SetTrackerCallBack(TrackerCallBack callBack, Object callBackData)
+        {
+            _callBack = callBack;
+            _callBackData = callBackData;
         }
         /// <summary>
         /// Change tracker event status and send to server.

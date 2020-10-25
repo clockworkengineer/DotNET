@@ -26,9 +26,13 @@ namespace ClientUI
         private readonly Label _infoHashLabel;
         private readonly Label _bytesDownloadedLabel;
         private readonly Label _bytesUploadedLabel;
+        private readonly Label _statuslabel;
+        private readonly Label _missingPiecesLabel;
         public TextField _infoHashText;
         public TextField _bytesDownloadedText;
         public TextField _bytesUploadedText;
+        public TextField _statusText;
+        public TextField _missingPiecesText;
         public Window peersWindow;
         public ListView peersListView;
         public TextField TrackerText { get; }
@@ -113,6 +117,40 @@ namespace ClientUI
                 CanFocus = false
             };
             viewables.Add(_bytesUploadedText);
+
+            _missingPiecesLabel = new Label("Missing:")
+            {
+                X = Pos.Left(_infoHashLabel),
+                Y = Pos.Bottom(_bytesUploadedLabel)
+            };
+            viewables.Add(_missingPiecesLabel);
+
+            _missingPiecesText = new TextField()
+            {
+                X = Pos.Right(_bytesDownloadedLabel) + 1,
+                Y = Pos.Bottom(_bytesUploadedLabel),
+                Width = 20,
+                CanFocus = false
+            };
+            viewables.Add(_missingPiecesText);
+
+            _statuslabel = new Label("Status:")
+            {
+                X = Pos.Left(_infoHashLabel),
+                Y = Pos.Bottom(_missingPiecesLabel)
+            };
+            viewables.Add(_statuslabel);
+
+            _statusText = new TextField()
+            {
+                X = Pos.Right(_bytesDownloadedLabel) + 1,
+                Y = Pos.Bottom(_missingPiecesLabel),
+                Width = 20,
+                CanFocus = false
+            };
+            viewables.Add(_statusText);
+
+
 
             foreach (var viewable in viewables)
             {

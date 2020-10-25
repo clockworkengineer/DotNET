@@ -229,7 +229,12 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
         }
-        void SetDownloadCompleteCallBack(DownloadCompleteCallBack callback, Object callBackData)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="callBackData"></param>
+        public void SetDownloadCompleteCallBack(DownloadCompleteCallBack callback, Object callBackData)
         {
             DownloadCompleteCallBack = callback;
             DownloadCompleteCallBackData = callBackData;
