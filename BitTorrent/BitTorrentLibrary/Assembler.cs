@@ -26,8 +26,6 @@ namespace BitTorrentLibrary
         private readonly Object _progressCallBackDta;                // Download progress function data
         private readonly DownloadContext _dc;                        // Download context for torrent
         public ManualResetEvent Paused { get; set; }                 // == true (set) pause downloading from peer
-        public int ActiveDownloaders { get; set; } = 0;              // Active Downloaders
-        public int ActiveUploaders { get; set; } = 0;                // Active Uploaders
 
         /// <summary>
         /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.
@@ -141,7 +139,7 @@ namespace BitTorrentLibrary
         private void AssembleMissingPieces(Peer remotePeer, CancellationToken cancelTask)
         {
             UInt32 nextPiece = 0;
-            ActiveDownloaders++;
+
             try
             {
 
@@ -169,10 +167,10 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Error(ex.Message);
                 SavePieceToDisk(remotePeer, nextPiece, remotePeer.AssembledPiece.AllBlocksThere);
-                ActiveDownloaders--;
+
                 throw;
             }
-            ActiveDownloaders--;
+;
         }
         /// <summary>
         /// Loop dealing with piece requests until peer connection closed.
@@ -181,15 +179,13 @@ namespace BitTorrentLibrary
         /// <param name="cancelTask"></param>
         private void ProcessRemotePeerRequests(Peer remotePeer, CancellationToken cancelTask)
         {
-            ActiveUploaders++;
 
             try
             {
                 if (remotePeer.Connected)
                 {
                     WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
-                    
-                
+
                     PWP.Uninterested(remotePeer);
 
                     PWP.Unchoke(remotePeer);
@@ -201,11 +197,8 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Error(ex.Message);
-                ActiveUploaders--;
                 throw;
             }
-
-            ActiveUploaders--;
 
         }
         /// <summary>
@@ -215,7 +208,7 @@ namespace BitTorrentLibrary
         /// <param name="progressFunction"></param>
         /// <param name="progressData"></param>
         public Assembler(DownloadContext dc, ProgessCallBack progressFunction = null, Object progressData = null)
-        {   
+        {
             _dc = dc;
             _progressCallBack = progressFunction;
             _progressCallBackDta = progressData;

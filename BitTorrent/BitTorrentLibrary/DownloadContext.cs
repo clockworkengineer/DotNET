@@ -173,21 +173,23 @@ namespace BitTorrentLibrary
         /// <param name="missing"></param>
         public void MarkPieceMissing(UInt32 pieceNumber, bool missing)
         {
-
-            if (missing)
+            lock (_dcLock)
             {
-                if (!IsPieceMissing(pieceNumber))
+                if (missing)
                 {
-                    _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                    MissingPiecesCount++;
+                    if (!IsPieceMissing(pieceNumber))
+                    {
+                        _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                        MissingPiecesCount++;
+                    }
                 }
-            }
-            else
-            {
-                if (IsPieceMissing(pieceNumber))
+                else
                 {
-                    _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                    MissingPiecesCount--;
+                    if (IsPieceMissing(pieceNumber))
+                    {
+                        _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
+                        MissingPiecesCount--;
+                    }
                 }
             }
 

@@ -82,33 +82,6 @@ namespace ClientUI
                 _mainWindow.DownloadProgress.Fraction = (float)progress;
                 _currentProgress = progress;
             }
-            // TorrentDetails torrentDetails = torrent.DownloadAgent.GetTorrentDetails();
-            // List<string> peers = new List<string>();
-            // foreach (var peer in torrentDetails.peers)
-            // {
-            //     peers.Add(peer.ip + ":" + peer.port.ToString());
-            // }
-            // Application.MainLoop.Invoke(() =>
-            // {
-            //     if (_peerListView != null)
-            //     {
-            //         _mainWindow.InformationWindow.peersWindow.Remove(_peerListView);
-            //     }
-            //     _peerListView = new ListView(peers.ToArray())
-            //     {
-            //         X = 0,
-            //         Y = 0,
-            //         Width = Dim.Fill(),
-            //         Height = Dim.Fill(),
-            //         CanFocus = false
-            //     };
-            //     _mainWindow.InformationWindow.peersWindow.Add(_peerListView);
-            //     _mainWindow.InformationWindow._infoHashText.Text = InfoHashToString(torrentDetails.infoHash);
-            //     _mainWindow.InformationWindow._bytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
-            //     _mainWindow.InformationWindow._bytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
-            //     _mainWindow.InformationWindow._missingPiecesText.Text = torrentDetails.missingPiecesCount.ToString();
-            //     _mainWindow.InformationWindow._statusText.Text = torrentDetails.status.ToString();
-            // });
 
         }
 
@@ -181,6 +154,7 @@ namespace ClientUI
                 DownloadAgent.Start();
 
                 DownloadAgent.Download();
+
             }
             catch (Exception ex)
             {

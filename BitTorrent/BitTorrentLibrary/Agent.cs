@@ -63,8 +63,7 @@ namespace BitTorrentLibrary
                 }
             }
             Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {_dc.MissingPiecesCount}] " +
-            $"[Number of peers in swarm  {_peerSwarm.Count}/{_mainTracker.MaximumSwarmSize}] [Active Downloaders {_pieceAssembler?.ActiveDownloaders}] " +
-            $"[Active Uploaders {_pieceAssembler?.ActiveUploaders}]");
+            $"[Number of peers in swarm  {_peerSwarm.Count}/{_mainTracker.MaximumSwarmSize}]");
         }
         /// <summary>
         /// Inspects  peer queue, connects to the peer and creates piece assembler task before adding to swarm.
@@ -177,7 +176,7 @@ namespace BitTorrentLibrary
             _dc = dc;
             _pieceAssembler = pieceAssembler;
             _peerSwarm = new ConcurrentDictionary<string, Peer>();
-            _peersTooSwarm = new BlockingCollection<PeerDetails>();
+            _peersTooSwarm = new BlockingCollection<PeerDetails>(20);
             _peerListenCreatorTask = Task.Run(() => PeerListenCreatorTask());
             _peerConnectCreatorTask = Task.Run(() => PeerConnectCreatorTask());
             _agentRunning = true;
