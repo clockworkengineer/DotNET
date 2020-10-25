@@ -26,10 +26,14 @@ namespace ClientUI
         private readonly Label _progressBarBeginText;
         private readonly Label _progressBarEndText;
         public MenuBar MainMenuBar { get => _mainMenuBar; set => _mainMenuBar = value; }
-        public TorrentFileNameText TorrentFileText { get; set; }
+        public TextField TorrentFileText { get; set; }
         public ProgressBar DownloadProgress { get; set; }
-        public DownloadButton DownloadButton { get; set; }
+
         public InformationWindow InformationWindow { get; set; }
+        public bool DownloadingTorrent { get; set; } = false;
+        public Task DownloadTorrentTask { get; set; }
+        public Torrent Torrent { get; set;}
+
         /// <summary>
         /// 
         /// </summary>
@@ -46,7 +50,7 @@ namespace ClientUI
             };
             viewables.Add(torrentFileLabel);
 
-            TorrentFileText = new TorrentFileNameText()
+            TorrentFileText = new TextField()
             {
                 X = Pos.Right(torrentFileLabel),
                 Y = Pos.Top(torrentFileLabel),
@@ -76,16 +80,6 @@ namespace ClientUI
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
             viewables.Add(_progressBarEndText);
-
-            DownloadButton = new DownloadButton("Download", this)
-            {
-                X = Pos.Right(TorrentFileText),
-                Y = Pos.Top(torrentFileLabel)
-
-            };
-            viewables.Add(DownloadButton);
-
-            DownloadButton.Clicked += DownloadButton.ButtonPressed;
 
             InformationWindow = new InformationWindow("Information")
             {

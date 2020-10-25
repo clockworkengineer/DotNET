@@ -91,7 +91,6 @@ namespace ClientUI
 
             Application.MainLoop.Invoke(() =>
                 {
-                    mainWindow.DownloadButton.Text = "Uploading";
                     mainWindow.DownloadProgress.Fraction = 1.0F;
                 });
         }
@@ -134,8 +133,6 @@ namespace ClientUI
 
                 Application.MainLoop.Invoke(() =>
                               {
-                                  _mainWindow.DownloadButton.Text = "Working";
-                                  _mainWindow.DownloadButton.CanFocus = false;
                                   _mainWindow.DownloadProgress.Fraction = 0;
                                   _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                               });
@@ -164,7 +161,7 @@ namespace ClientUI
                         });
             }
 
-            _mainWindow.DownloadButton.DownloadingTorent = false;
+            _mainWindow.DownloadingTorrent = false;
         }
     }
 }

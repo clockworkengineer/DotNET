@@ -8,6 +8,7 @@
 // Copyright 2020.
 //
 
+using System.Threading.Tasks;
 using Terminal.Gui;
 
 namespace ClientUI
@@ -35,8 +36,17 @@ namespace ClientUI
             };
 
             var downloadStatusBar = new StatusBar(new StatusItem[] {
-            new StatusItem(Key.ControlD, "~^D~ Download", () => {}),
-            new StatusItem(Key.ControlS, "~^S~ shutdown", () => { mainApplicationWindow.TorrentFileText.Torrent.DownloadAgent.Close();}),
+            new StatusItem(Key.ControlD, "~^D~ Download", () => {  if (!mainApplicationWindow.DownloadingTorrent)
+            {
+                mainApplicationWindow.Torrent = new Torrent(mainApplicationWindow.TorrentFileText.Text.ToString());
+                mainApplicationWindow.DownloadTorrentTask = Task.Run(() => mainApplicationWindow.Torrent.Download(mainApplicationWindow));
+                mainApplicationWindow.DownloadingTorrent = true;
+            }}),
+            new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
+            {
+                mainApplicationWindow.Torrent.DownloadAgent.Close();
+
+            }),
             new StatusItem(Key.ControlQ, "~^Q~ Quit", () => {  top.Running = false;  })
             });
 
