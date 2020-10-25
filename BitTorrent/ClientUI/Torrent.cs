@@ -159,9 +159,9 @@ namespace ClientUI
                         {
                             MessageBox.Query("Error", ex.Message, "Ok");
                         });
+                _mainWindow.DownloadingTorrent = false;
             }
 
-            _mainWindow.DownloadingTorrent = false;
         }
     }
 }

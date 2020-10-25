@@ -241,8 +241,9 @@ namespace BitTorrentLibrary
 
                     Log.Logger.Info("Whole Torrent finished downloading.");
 
-                    _status = TorrentStatus.Uploading;
                 }
+
+                _status = TorrentStatus.Uploading;
 
             }
             catch (Error)

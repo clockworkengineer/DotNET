@@ -36,16 +36,20 @@ namespace ClientUI
             };
 
             var downloadStatusBar = new StatusBar(new StatusItem[] {
-            new StatusItem(Key.ControlD, "~^D~ Download", () => {  if (!mainApplicationWindow.DownloadingTorrent)
-            {
-                mainApplicationWindow.Torrent = new Torrent(mainApplicationWindow.TorrentFileText.Text.ToString());
-                mainApplicationWindow.DownloadTorrentTask = Task.Run(() => mainApplicationWindow.Torrent.Download(mainApplicationWindow));
-                mainApplicationWindow.DownloadingTorrent = true;
-            }}),
+            new StatusItem(Key.ControlD, "~^D~ Download", () => {
+                if (!mainApplicationWindow.DownloadingTorrent)
+                {
+                    mainApplicationWindow.Torrent = new Torrent(mainApplicationWindow.TorrentFileText.Text.ToString());
+                    mainApplicationWindow.DownloadTorrentTask = Task.Run(() => mainApplicationWindow.Torrent.Download(mainApplicationWindow));
+                    mainApplicationWindow.DownloadingTorrent = true;
+                } else {
+                    MessageBox.Query("Information", "Already downloading torrent. You need to shut it down.", "Ok");
+                }
+            }),
             new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
             {
                 mainApplicationWindow.Torrent.DownloadAgent.Close();
-
+                mainApplicationWindow.DownloadingTorrent = false;
             }),
             new StatusItem(Key.ControlQ, "~^Q~ Quit", () => {  top.Running = false;  })
             });
