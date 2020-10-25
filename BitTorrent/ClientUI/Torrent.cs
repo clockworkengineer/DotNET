@@ -18,20 +18,35 @@ using Terminal.Gui;
 
 namespace ClientUI
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class Torrent
     {
         private readonly string _torrentFileName;
         private MetaInfoFile _torrentFile;
-
         private DownloadContext _dc;
-        private Downloader _downloader;
         private Assembler _assembler;
-        private Agent _agent;
         private MainWindow _mainWindow;
         private double _currentProgress = 0;
-        Tracker tracker;
-        private ListView peerListView;
+        private Tracker tracker;
+        private ListView _peerListView;
+        public Agent DownloadAgent { get; set; }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="torrentFileName"></param>
+        public Torrent(string torrentFileName)
+        {
+            _torrentFileName = torrentFileName;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="infoHash"></param>
+        /// <returns></returns>
         public static string InfoHashToString(byte[] infoHash)
         {
             StringBuilder hex = new StringBuilder(infoHash.Length * 2);
@@ -41,11 +56,10 @@ namespace ClientUI
             }
             return hex.ToString().ToLower();
         }
-
-        public Torrent(string torrentFileName)
-        {
-            _torrentFileName = torrentFileName;
-        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
         public void UpdateProgress(Object obj)
         {
             Torrent torrent = (Torrent)obj;
@@ -55,12 +69,12 @@ namespace ClientUI
             {
                 Application.MainLoop.Invoke(() =>
                 {
-                    _mainWindow.downloadProgress.Fraction = (float)progress;
+                    _mainWindow.DownloadProgress.Fraction = (float)progress;
                 });
-                _mainWindow.downloadProgress.Fraction = (float)progress;
+                _mainWindow.DownloadProgress.Fraction = (float)progress;
                 _currentProgress = progress;
             }
-            TorrentDetails torrentDetails = torrent._agent.GetTorrentDetails();
+            TorrentDetails torrentDetails = torrent.DownloadAgent.GetTorrentDetails();
             List<string> peers = new List<string>();
             foreach (var peer in torrentDetails.peers)
             {
@@ -68,11 +82,11 @@ namespace ClientUI
             }
             Application.MainLoop.Invoke(() =>
             {
-                if (peerListView != null)
+                if (_peerListView != null)
                 {
-                    _mainWindow.informationWindow.peersWindow.Remove(peerListView);
+                    _mainWindow.InformationWindow.peersWindow.Remove(_peerListView);
                 }
-                peerListView = new ListView(peers.ToArray())
+                _peerListView = new ListView(peers.ToArray())
                 {
                     X = 0,
                     Y = 0,
@@ -80,13 +94,17 @@ namespace ClientUI
                     Height = Dim.Fill(),
                     CanFocus = false
                 };
-                _mainWindow.informationWindow.peersWindow.Add(peerListView);
-                _mainWindow.informationWindow._infoHashText.Text = InfoHashToString(torrentDetails.infoHash);
-                _mainWindow.informationWindow._bytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
-                _mainWindow.informationWindow._bytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
+                _mainWindow.InformationWindow.peersWindow.Add(_peerListView);
+                _mainWindow.InformationWindow._infoHashText.Text = InfoHashToString(torrentDetails.infoHash);
+                _mainWindow.InformationWindow._bytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
+                _mainWindow.InformationWindow._bytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
             });
 
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mainWindow"></param>
         public void Download(MainWindow mainWindow)
         {
             try
@@ -100,32 +118,32 @@ namespace ClientUI
 
                 Application.MainLoop.Invoke(() =>
                               {
-                                  _mainWindow.downloadButton.Text = "Working";
-                                  _mainWindow.downloadButton.CanFocus = false;
-                                  _mainWindow.downloadProgress.Fraction = 0;
-                                  _mainWindow.informationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
+                                  _mainWindow.DownloadButton.Text = "Working";
+                                  _mainWindow.DownloadButton.CanFocus = false;
+                                  _mainWindow.DownloadProgress.Fraction = 0;
+                                  _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                               });
 
-                _dc = new DownloadContext(_torrentFile, new Selector(),new Downloader(),"/home/robt/utorrent");
+                _dc = new DownloadContext(_torrentFile, new Selector(), new Downloader(), "/home/robt/utorrent");
                 _assembler = new Assembler(_dc, this.UpdateProgress, this);
-                _agent = new Agent(_dc, _assembler);
+                DownloadAgent = new Agent(_dc, _assembler);
 
-                tracker = new Tracker(_agent, _dc);
+                tracker = new Tracker(DownloadAgent, _dc);
 
                 tracker.StartAnnouncing();
 
-                _agent.Start();
+                DownloadAgent.Start();
 
-                _agent.Download();
+                DownloadAgent.Download();
 
                 Application.MainLoop.Invoke(() =>
                                 {
-                                    _mainWindow.downloadButton.Text = "Download";
-                                    _mainWindow.downloadButton.CanFocus = true;
-                                    _mainWindow.downloadProgress.Fraction = 1.0F;
+                                    _mainWindow.DownloadButton.Text = "Download";
+                                    _mainWindow.DownloadButton.CanFocus = true;
+                                    _mainWindow.DownloadProgress.Fraction = 1.0F;
                                 });
 
-                _agent.Close();
+                DownloadAgent.Close();
 
             }
             catch (Exception ex)
@@ -136,7 +154,7 @@ namespace ClientUI
                         });
             }
 
-            _mainWindow.downloadButton.DownloadingTorent = false;
+            _mainWindow.DownloadButton.DownloadingTorent = false;
         }
     }
 }

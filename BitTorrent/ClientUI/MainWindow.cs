@@ -16,20 +16,25 @@ using Terminal.Gui;
 
 namespace ClientUI
 {
-
+    /// <summary>
+    /// 
+    /// </summary>
     public class MainWindow : Window
     {
-
-        public MenuBar mainMenuBar;
-        public Label torrentFileLabel;
-        public TorrentFileNameText torrentFileText;
-        public Label progressBarBeginText;
-        public ProgressBar downloadProgress;
-        public Label progressBarEndText;
-        public DownloadButton downloadButton;
-        public InformationWindow informationWindow;
-
-
+        private MenuBar _mainMenuBar;
+        private readonly Label torrentFileLabel;
+        private readonly Label _progressBarBeginText;
+        private readonly Label _progressBarEndText;
+        public MenuBar MainMenuBar { get => _mainMenuBar; set => _mainMenuBar = value; }
+        public TorrentFileNameText TorrentFileText { get; set; }
+        public ProgressBar DownloadProgress { get; set; }
+        public DownloadButton DownloadButton { get; set; }
+        public InformationWindow InformationWindow { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public MainWindow(string name) : base(name)
         {
             List<View> viewables = new List<View>();
@@ -41,57 +46,57 @@ namespace ClientUI
             };
             viewables.Add(torrentFileLabel);
 
-            torrentFileText = new TorrentFileNameText()
+            TorrentFileText = new TorrentFileNameText()
             {
                 X = Pos.Right(torrentFileLabel),
                 Y = Pos.Top(torrentFileLabel),
                 Width = 50,
             };
-            viewables.Add(torrentFileText);
+            viewables.Add(TorrentFileText);
 
-            progressBarBeginText = new Label("Progress : [")
+            _progressBarBeginText = new Label("Progress : [")
             {
                 X = Pos.Left(torrentFileLabel),
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
-            viewables.Add(progressBarBeginText);
+            viewables.Add(_progressBarBeginText);
 
-            downloadProgress = new ProgressBar()
+            DownloadProgress = new ProgressBar()
             {
-                X = Pos.Right(progressBarBeginText),
+                X = Pos.Right(_progressBarBeginText),
                 Y = Pos.Bottom(torrentFileLabel) + 1,
                 Width = 60,
                 Height = 1
             };
-            viewables.Add(downloadProgress);
+            viewables.Add(DownloadProgress);
 
-            progressBarEndText = new Label("]")
+            _progressBarEndText = new Label("]")
             {
-                X = Pos.Right(downloadProgress) - 1,
+                X = Pos.Right(DownloadProgress) - 1,
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
-            viewables.Add(progressBarEndText);
+            viewables.Add(_progressBarEndText);
 
-            downloadButton = new DownloadButton("Download", this)
+            DownloadButton = new DownloadButton("Download", this)
             {
-                X = Pos.Right(torrentFileText),
+                X = Pos.Right(TorrentFileText),
                 Y = Pos.Top(torrentFileLabel)
 
             };
-            viewables.Add(downloadButton);
+            viewables.Add(DownloadButton);
 
-            downloadButton.Clicked += downloadButton.ButtonPressed;
+            DownloadButton.Clicked += DownloadButton.ButtonPressed;
 
-            informationWindow = new InformationWindow("Information")
+            InformationWindow = new InformationWindow("Information")
             {
                 X = Pos.Left(this),
-                Y = Pos.Bottom(progressBarBeginText)+1,
+                Y = Pos.Bottom(_progressBarBeginText) + 1,
                 Width = Dim.Fill(),
                 Height = Dim.Fill(),
-                CanFocus=false
+                CanFocus = false
             };
-            viewables.Add(informationWindow);
-            
+            viewables.Add(InformationWindow);
+
             foreach (var viewable in viewables)
             {
                 Add(viewable);

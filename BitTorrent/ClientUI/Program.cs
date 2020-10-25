@@ -8,17 +8,18 @@
 // Copyright 2020.
 //
 
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using BitTorrentLibrary;
 using Terminal.Gui;
+
 namespace ClientUI
 {
-    class Demo
+    /// <summary>
+    /// 
+    /// </summary>
+    class DemoTorrentApplication
     {
-
+        /// <summary>
+        /// 
+        /// </summary>
         static void Main()
         {
 
@@ -35,6 +36,7 @@ namespace ClientUI
 
             var downloadStatusBar = new StatusBar(new StatusItem[] {
             new StatusItem(Key.ControlD, "~^D~ Download", () => {}),
+            new StatusItem(Key.ControlS, "~^S~ shutdown", () => { mainApplicationWindow.TorrentFileText.Torrent.DownloadAgent.Close();}),
             new StatusItem(Key.ControlQ, "~^Q~ Quit", () => {  top.Running = false;  })
             });
 

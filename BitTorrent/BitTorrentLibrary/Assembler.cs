@@ -184,17 +184,15 @@ namespace BitTorrentLibrary
             {
                 if (remotePeer.Connected)
                 {
+                    WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
+                    
                     ActiveUploaders++;
 
                     PWP.Uninterested(remotePeer);
 
                     PWP.Unchoke(remotePeer);
 
-                    while (true)
-                    {
-                        Thread.Sleep(100);
-                        cancelTask.ThrowIfCancellationRequested();
-                    }
+                    WaitHandle.WaitAll(waitHandles);
 
                 }
             }

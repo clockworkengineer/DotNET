@@ -17,19 +17,26 @@ using Terminal.Gui;
 
 namespace ClientUI
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class InformationWindow : Window
     {
         private readonly Label _trackerLabel;
-        private Label _infoHashLabel;
-        private Label _bytesDownloadedLabel;
-        private Label _bytesUploadedLabel;
+        private readonly Label _infoHashLabel;
+        private readonly Label _bytesDownloadedLabel;
+        private readonly Label _bytesUploadedLabel;
         public TextField _infoHashText;
         public TextField _bytesDownloadedText;
         public TextField _bytesUploadedText;
         public Window peersWindow;
         public ListView peersListView;
         public TextField TrackerText { get; }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public InformationWindow(string name) : base(name)
         {
             List<View> viewables = new List<View>();
