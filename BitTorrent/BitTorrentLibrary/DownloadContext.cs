@@ -57,7 +57,10 @@ namespace BitTorrentLibrary
         public uint MissingPiecesCount { get; set; } = 0;
         public DownloadCompleteCallBack DownloadCompleteCallBack { get; set; }
         public object DownloadCompleteCallBackData { get; set; }
+        public int MaximumSwarmSize { get; set; } = 50;               // Maximim swarm size
         public ConcurrentDictionary<string, Peer> PeerSwarm { get; }
+        public TorrentStatus Status { get; set; }                           // Torrent status
+
 
         /// <summary>
         /// Setup data and resources needed by download context.
@@ -67,6 +70,7 @@ namespace BitTorrentLibrary
         /// <param name="pieces">Pieces.</param>
         public DownloadContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath)
         {
+            Status = TorrentStatus.Stopped;
             InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
             (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);

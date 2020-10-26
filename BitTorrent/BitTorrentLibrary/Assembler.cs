@@ -23,7 +23,7 @@ namespace BitTorrentLibrary
     public class Assembler
     {
         private  ProgessCallBack _progressCallBack;          // Download progress function
-        private  Object _progressCallBackDta;                // Download progress function data
+        private  Object _progressCallBackData;                // Download progress function data
         public ManualResetEvent Paused { get; set; }         // == true (set) pause downloading from peer
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
                         remotePeer.Dc.PieceWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
-                        _progressCallBack?.Invoke(_progressCallBackDta);
+                        _progressCallBack?.Invoke(_progressCallBackData);
                         remotePeer.Dc.MarkPieceLocal(pieceNumber, true);
                     }
                     else
@@ -249,7 +249,7 @@ namespace BitTorrentLibrary
         }
         public void SetDownloadProgressCallBack(ProgessCallBack callBack, Object callBackData) {
             _progressCallBack = callBack;
-            _progressCallBackDta = callBackData;
+            _progressCallBackData = callBackData;
         }
     }
 }

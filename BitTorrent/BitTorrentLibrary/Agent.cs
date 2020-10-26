@@ -29,7 +29,6 @@ namespace BitTorrentLibrary
         void Pause();
         void SetMainTracker(Tracker tracker);
         void Start();
-        void UpdatePeerSwarmQueue(List<PeerDetails> peers);
     }
 
     /// <summary>
@@ -37,33 +36,32 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent : IAgent
     {
-        private TorrentStatus _status;                                     // Current torrent status
         private bool _agentRunning = false;                                // true thile agent is up and running.
         private readonly DownloadContext _dc;                              // Torrent download context
-        private readonly BlockingCollection<PeerDetails> _peersTooSwarm;   // Peers to add to swarm queue
         private HashSet<string> _deadPeers;                                // Dead peers
         private readonly Task _peerConnectCreatorTask;                     // Peer swarm creator task
         private readonly Task _peerListenCreatorTask;                      // Peer swarm peer connect creator task
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private Socket _listenerSocket;                                    // Connection listener socket
         private Tracker _mainTracker;                                      // Main torrent tracker
+        public BlockingCollection<PeerDetails> PeerSwarmQueue { get; }     // Queue of peers to add to dwarm
 
         /// <summary>
         /// Display peer task statistics.
         /// </summary>
-        private void DisplayStats()
+        private void DisplayStats(DownloadContext dc)
         {
             int peersChoking = 0;
 
-            foreach (var peer in _dc.PeerSwarm.Values)
+            foreach (var peer in dc.PeerSwarm.Values)
             {
                 if (!peer.PeerChoking.WaitOne(0))
                 {
                     peersChoking++;
                 }
             }
-            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {_dc.MissingPiecesCount}] " +
-            $"[Number of peers in swarm  {_dc.PeerSwarm.Count}/{_mainTracker.MaximumSwarmSize}]");
+            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {dc.MissingPiecesCount}] " +
+            $"[Number of peers in swarm  {dc.PeerSwarm.Count}/{dc.MaximumSwarmSize}]");
         }
         /// <summary>
         /// Inspects  peer queue, connects to the peer and creates piece assembler task before adding to swarm.
@@ -71,13 +69,13 @@ namespace BitTorrentLibrary
         private void PeerConnectCreatorTask()
         {
 
-            while (!_peersTooSwarm.IsCompleted && _agentRunning)
+            while (!PeerSwarmQueue.IsCompleted && _agentRunning)
             {
-                PeerDetails peer = _peersTooSwarm.Take();
+                PeerDetails peer = PeerSwarmQueue.Take();
                 try
                 {
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (_deadPeers.Contains(peer.ip) || _dc.PeerSwarm.ContainsKey(peer.ip) || _dc.PeerSwarm.Count >= _mainTracker.MaximumSwarmSize)
+                    if (_deadPeers.Contains(peer.ip) || _dc.PeerSwarm.ContainsKey(peer.ip) || _dc.PeerSwarm.Count >= _dc.MaximumSwarmSize)
                     {
                         continue;
                     }
@@ -143,7 +141,7 @@ namespace BitTorrentLibrary
                     }
 
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (_dc.PeerSwarm.ContainsKey(endPoint.Item1) || _dc.PeerSwarm.Count >= _mainTracker.MaximumSwarmSize)
+                    if (_dc.PeerSwarm.ContainsKey(endPoint.Item1) || _dc.PeerSwarm.Count >= _dc.MaximumSwarmSize)
                     {
                         continue;
                     }
@@ -179,8 +177,8 @@ namespace BitTorrentLibrary
         public Agent(DownloadContext dc, Assembler pieceAssembler = null)
         {
             _dc = dc;
-            _pieceAssembler = pieceAssembler; ;
-            _peersTooSwarm = new BlockingCollection<PeerDetails>();
+            _pieceAssembler = pieceAssembler;
+            PeerSwarmQueue = new BlockingCollection<PeerDetails>();
             _deadPeers = new HashSet<string>();
             _peerListenCreatorTask = Task.Run(() => PeerListenCreatorTask());
             _peerConnectCreatorTask = Task.Run(() => PeerConnectCreatorTask());
@@ -189,7 +187,7 @@ namespace BitTorrentLibrary
         }
         ~Agent()
         {
-            _peersTooSwarm.CompleteAdding();
+            PeerSwarmQueue.CompleteAdding();
         }
         /// <summary>
         /// 
@@ -200,29 +198,6 @@ namespace BitTorrentLibrary
             _mainTracker = tracker;
         }
         /// <summary>
-        /// Add peers to swarm creation queue.
-        /// </summary>
-        /// <param name="peers"></param>
-        public void UpdatePeerSwarmQueue(List<PeerDetails> peers)
-        {
-            if (peers != null)
-            {
-
-                Log.Logger.Info("Queuing new peers for swarm ....");
-
-                foreach (var peerDetails in peers)
-                {
-                    _peersTooSwarm.Add(peerDetails);
-                }
-
-                _mainTracker.NumWanted = Math.Max(_mainTracker.MaximumSwarmSize - _dc.PeerSwarm.Count, 0);
-
-            }
-
-            DisplayStats();
-
-        }
-        /// <summary>
         /// Download a torrent using an piece assembler per connected peer.
         /// </summary>
         public void Download()
@@ -231,7 +206,7 @@ namespace BitTorrentLibrary
             {
                 if (_mainTracker.Left != 0)
                 {
-                    _status = TorrentStatus.Downloading;
+                    _dc.Status = TorrentStatus.Downloading;
 
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
 
@@ -244,7 +219,7 @@ namespace BitTorrentLibrary
                     
                 }
 
-                _status = TorrentStatus.Uploading;
+                _dc.Status = TorrentStatus.Uploading;
 
             }
             catch (Error)
@@ -300,7 +275,7 @@ namespace BitTorrentLibrary
 
                     PeerNetwork.ShutdownListener();
 
-                    _status = TorrentStatus.Stopped;
+                    _dc.Status = TorrentStatus.Stopped;
 
                 }
             }
@@ -322,7 +297,7 @@ namespace BitTorrentLibrary
             try
             {
                 _pieceAssembler?.Paused.Set();
-                _status = TorrentStatus.Started;
+                _dc.Status = TorrentStatus.Started;
             }
             catch (Error)
             {
@@ -342,7 +317,7 @@ namespace BitTorrentLibrary
             try
             {
                 _pieceAssembler?.Paused.Reset();
-                _status = TorrentStatus.Paused;
+                _dc.Status = TorrentStatus.Paused;
 
             }
             catch (Error)
@@ -364,7 +339,7 @@ namespace BitTorrentLibrary
 
             return new TorrentDetails
             {
-                status = _status,
+                status =    _dc.Status,
 
                 peers = (from peer in _dc.PeerSwarm.Values
                          select new PeerDetails
