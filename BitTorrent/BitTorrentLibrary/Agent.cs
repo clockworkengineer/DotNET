@@ -4,7 +4,7 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: All the high level torrent processing including download/upload
-// of torrent pieces and updating the peers in the current swarm. 
+// of torrent pieces and updating the peers in the current swarm.
 //
 // Copyright 2020.
 //
@@ -35,12 +35,43 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent : IAgent
     {
-        private bool _agentRunning = false;                                // true thile agent is up and running.
-        private readonly DownloadContext _dc;                              // Torrent download context
-        private readonly HashSet<string> _deadPeers;                       // Dead peers
-        private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
-        private Socket _listenerSocket;                                    // Connection listener socket
-        public BlockingCollection<PeerDetails> PeerSwarmQueue { get; }     // Queue of peers to add to swarm
+        private bool _agentRunning = false;                             // == true while agent is up and running.
+        private readonly DownloadContext _dc;                           // Torrent download context
+        private readonly HashSet<string> _deadPeers;                    // Dead peers list
+        private readonly Assembler _pieceAssembler;                     // Piece assembler for agent
+        private Socket _listenerSocket;                                 // Connection listener socket
+        public BlockingCollection<PeerDetails> PeerSwarmQueue { get; }  // Queue of peers to add to swarm
+
+        /// <summary>
+        /// Start assembly task for connection with remote peer. If for any reason
+        /// the connection fails then the peers ip is put into an dead peer list (set)
+        /// so that no further connections are attempted.
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        private void StartPieceAssemblyTask(Peer remotePeer)
+        {
+
+            remotePeer.SetupConnection();
+
+            if (remotePeer.Connected)
+            {
+                if (_dc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
+                {
+                    Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                    remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
+                }
+                else
+                {
+                    remotePeer.Close();
+                }
+            }
+
+            if (!remotePeer.Connected)
+            {
+                _deadPeers.Add(remotePeer.Ip);
+                Log.Logger.Info($"Peer {remotePeer.Ip} added to dead peer list.");
+            }
+        }
 
         /// <summary>
         /// Inspects  peer queue, connects to the peer and creates piece assembler task before adding to swarm.
@@ -54,41 +85,21 @@ namespace BitTorrentLibrary
                 try
                 {
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (_deadPeers.Contains(peer.ip) || _dc.PeerSwarm.ContainsKey(peer.ip) || _dc.PeerSwarm.Count >= _dc.MaximumSwarmSize)
+                    if (!_deadPeers.Contains(peer.ip) && !_dc.PeerSwarm.ContainsKey(peer.ip) && _dc.PeerSwarm.Count < _dc.MaximumSwarmSize)
                     {
-                        continue;
+                        StartPieceAssemblyTask(new Peer(peer.ip, peer.port, _dc));
                     }
-                    Peer remotePeer = new Peer(peer.ip, peer.port, _dc);
-                    remotePeer.Connect();
-                    if (remotePeer.Connected)
-                    {
-
-                        if (_dc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
-                        {
-                            Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                            remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
-                        }
-                        else
-                        {
-                            remotePeer.Close();
-                        }
-                    }
-                    else
-                    {
-                        _deadPeers.Add(peer.ip);
-                    }
-
                 }
                 catch (Exception)
                 {
-                    Log.Logger.Info($"Failed to connect to {peer.ip}");
+                    Log.Logger.Info($"Failed to connect to {peer.ip}.Added to dead per list.");
                     _deadPeers.Add(peer.ip);
                 }
             }
 
         }
         /// <summary>
-        /// Listen for remote peer connects and on success start peer task then add it o swarm.
+        /// Listen for remote peer connects and on success start peer task then add it to swarm.
         /// </summary>
         private void PeerListenCreatorTask()
         {
@@ -120,22 +131,10 @@ namespace BitTorrentLibrary
                     }
 
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (_dc.PeerSwarm.ContainsKey(endPoint.Item1) || _dc.PeerSwarm.Count >= _dc.MaximumSwarmSize)
+                    if (!_dc.PeerSwarm.ContainsKey(endPoint.Item1) && _dc.PeerSwarm.Count < _dc.MaximumSwarmSize)
                     {
-                        continue;
+                        StartPieceAssemblyTask(new Peer(endPoint.Item1, endPoint.Item2, _dc, remotePeerSocket));
                     }
-
-                    Log.Logger.Info($"++Remote peer IP = {endPoint.Item1}:{endPoint.Item2}.");
-
-                    Peer remotePeer = new Peer(endPoint.Item1, endPoint.Item2, _dc, remotePeerSocket);
-                    remotePeer.Accept();
-                    if (remotePeer.Connected)
-                    {
-                        _dc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer);
-                        Log.Logger.Info($"++BTP: Local Peer [{ PeerID.Get()}] from remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                        remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
-                    }
-
                 }
             }
             catch (Exception ex)
@@ -187,7 +186,6 @@ namespace BitTorrentLibrary
 
                     Log.Logger.Info("Whole Torrent finished downloading.");
 
-                    
                 }
 
                 _dc.Status = TorrentStatus.Seeding;
@@ -310,7 +308,7 @@ namespace BitTorrentLibrary
 
             return new TorrentDetails
             {
-                status =    _dc.Status,
+                status = _dc.Status,
 
                 peers = (from peer in _dc.PeerSwarm.Values
                          select new PeerDetails

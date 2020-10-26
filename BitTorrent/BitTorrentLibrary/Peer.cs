@@ -42,7 +42,6 @@ namespace BitTorrentLibrary
         public byte[] ReadBuffer => _network.ReadBuffer;
         public UInt32 PacketLength => _network.PacketLength;
 
-
         /// <summary>
         /// Setup data and resources needed by peer.
         /// </summary>
@@ -96,43 +95,25 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
-
         /// <summary>
-        /// Perform initial handshake with peer that has connected to host.
+        ///  Setup connection to remote peer.
         /// </summary>
-        public void Accept()
+        public void SetupConnection()
         {
+            ValueTuple<bool, byte[]> peerResponse;
+
             try
             {
-
-                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectFromIntialHandshake(this);
-
-                if (peerResponse.Item1)
+                // No socket passed to constructor so need to connect to get it
+                if (_network.PeerSocket==null)
                 {
-                    RemotePeerID = peerResponse.Item2;
-                    Connected = true;
-                    PWP.Bitfield(this, Dc.Bitfield);
-                    _network.StartReads(this);
+                    _network.Connect(Ip, Port);
+                    peerResponse = PWP.ConnectToIntialHandshake(this);
                 }
-            }
-            catch (Exception ex)
-            {
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Connect to a remote peer and perform initial Peer to Peer handshake.
-        /// </summary>
-        public void Connect()
-        {
-            try
-            {
-
-                _network.Connect(Ip, Port);
-
-                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this);
-
+                else
+                {
+                    peerResponse = PWP.ConnectFromIntialHandshake(this);
+                }
                 if (peerResponse.Item1)
                 {
                     RemotePeerID = peerResponse.Item2;
@@ -146,7 +127,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Release  any peer class resources.
         /// </summary>
@@ -171,7 +151,7 @@ namespace BitTorrentLibrary
                 }
 
             }
- 
+
             catch (Exception ex)
             {
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);

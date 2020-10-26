@@ -42,11 +42,11 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class PeerNetwork
     {
-        private Socket _peerSocket;             // Socket for I/O
         private UInt32 _bytesRead;              // Bytes read in read request
         private bool _lengthRead;               // == true packet length has been read
         public byte[] ReadBuffer { get; set; }  // Read buffer
         public uint PacketLength { get; set; }  // Current packet length
+        public Socket PeerSocket { get; set; }  // Socket for I/O
 
         /// <summary>
         /// Peer read packet asynchronous callback.
@@ -57,7 +57,7 @@ namespace BitTorrentLibrary
             Peer remotePeer = (Peer)readAsyncState.AsyncState;
             try
             {
-                Int32 bytesRead = (Int32)_peerSocket.EndReceive(readAsyncState, out SocketError socketError);
+                Int32 bytesRead = (Int32)PeerSocket.EndReceive(readAsyncState, out SocketError socketError);
 
                 if ((bytesRead <= 0) || (socketError != SocketError.Success))
                 {
@@ -88,7 +88,7 @@ namespace BitTorrentLibrary
                     PacketLength = Constants.SizeOfUInt32;
                 }
 
-                _peerSocket.BeginReceive(ReadBuffer, (Int32)_bytesRead,
+                PeerSocket.BeginReceive(ReadBuffer, (Int32)_bytesRead,
                                (Int32)(PacketLength - _bytesRead), 0, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
             }
             catch (System.ObjectDisposedException)
@@ -108,7 +108,7 @@ namespace BitTorrentLibrary
         public PeerNetwork(Socket remotePeerSocket)
         {
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
-            _peerSocket = remotePeerSocket;
+            PeerSocket = remotePeerSocket;
         }
         /// <summary>
         /// Send packet to remote peer.
@@ -116,7 +116,7 @@ namespace BitTorrentLibrary
         /// <param name="buffer">Buffer.</param>
         public void Write(byte[] buffer)
         {
-            _peerSocket.Send(buffer);
+            PeerSocket.Send(buffer);
         }
         /// <summary>
         /// Read packet from remote peer.
@@ -126,7 +126,7 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int Read(byte[] buffer, int length)
         {
-            return _peerSocket.Receive(buffer, length, SocketFlags.None);
+            return PeerSocket.Receive(buffer, length, SocketFlags.None);
         }
         /// <summary>
         /// Start Async reading of network socket.
@@ -134,7 +134,7 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         public void StartReads(Peer remotePeer)
         {
-            _peerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, remotePeer);
+            PeerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, remotePeer);
         }
         /// <summary>
         /// Connect to remote peer and return connection socket.
@@ -145,9 +145,9 @@ namespace BitTorrentLibrary
             IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
             IPAddress remotePeerIP = System.Net.IPAddress.Parse(ip);
 
-            _peerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            PeerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            _peerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
+            PeerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
 
         }
         /// <summary>
@@ -155,7 +155,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Close()
         {
-            _peerSocket.Close();
+            PeerSocket.Close();
         }
         /// <summary>
         /// Get an local endpoint socket to listen for connections on 
