@@ -37,9 +37,7 @@ namespace BitTorrentLibrary
     {
         private bool _agentRunning = false;                                // true thile agent is up and running.
         private readonly DownloadContext _dc;                              // Torrent download context
-        private HashSet<string> _deadPeers;                                // Dead peers
-        private readonly Task _peerConnectCreatorTask;                     // Peer swarm creator task
-        private readonly Task _peerListenCreatorTask;                      // Peer swarm peer connect creator task
+        private readonly HashSet<string> _deadPeers;                       // Dead peers
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private Socket _listenerSocket;                                    // Connection listener socket
         public BlockingCollection<PeerDetails> PeerSwarmQueue { get; }     // Queue of peers to add to swarm
@@ -161,8 +159,8 @@ namespace BitTorrentLibrary
             _pieceAssembler = pieceAssembler;
             PeerSwarmQueue = new BlockingCollection<PeerDetails>();
             _deadPeers = new HashSet<string>();
-            _peerListenCreatorTask = Task.Run(() => PeerListenCreatorTask());
-            _peerConnectCreatorTask = Task.Run(() => PeerConnectCreatorTask());
+            Task.Run(() => PeerListenCreatorTask());
+            Task.Run(() => PeerConnectCreatorTask());
             _agentRunning = true;
 
         }

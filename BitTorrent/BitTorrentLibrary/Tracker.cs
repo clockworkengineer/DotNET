@@ -39,28 +39,26 @@ namespace BitTorrentLibrary
         private readonly DownloadContext _dc;                   // Download context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
-        private TrackerCallBack _callBack;                     // Tracker ping callback function
-        private Object _callBackData;                          // Tracker ping callback function data
+        private TrackerCallBack _callBack;                      // Tracker ping callback function
+        private Object _callBackData;                           // Tracker ping callback function data
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
         private BlockingCollection<PeerDetails> _peerSwarmQueue;// Peers to add to swarm queue
-        protected UpdatePeers _updatePeerSwarm;                 // Update peer swarm with connected peers
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
-        public string PeerID { get; set; } = String.Empty;      // Peers unique ID
+        public string PeerID { get; set; }                      // Peers unique ID
         public uint Port { get; set; } = Host.DefaultPort;      // Port that client s listening on 
-        public string Ip { get; set; } = String.Empty;          // IP of host performing announce
+        public string Ip { get; set; }                          // IP of host performing announce
         public uint Compact { get; set; } = 1;                  // Is the returned peer list compressed (1=yes,0=no)
         public uint NoPeerID { get; set; }                      // Unique peer ID for downloader
-        public string Key { get; set; } = String.Empty;         // An additional identification that is not shared with any other peers (optional)
-        public string TrackerID { get; set; } = String.Empty;   // String that the client should send back on its next announcements. (optional).
+        public string Key { get; set; }                         // An additional identification that is not shared with any other peers (optional)
+        public string TrackerID { get; set; }                   // String that the client should send back on its next announcements. (optional).
         public int NumWanted { get; set; } = 5;                 // Number of required download clients
         public byte[] InfoHash { get; set; }                    // Encoded info hash for URI
-        public string TrackerURL { get; set; } = String.Empty;  // Tracker URL
+        public string TrackerURL { get; set; }                  // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
         public UInt64 Downloaded => _dc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _dc.BytesLeftToDownload();        // Bytes left in torrent to download
         public UInt64 Uploaded => _dc.TotalBytesUploaded;       // Total bytes uploaded
-
 
         /// <summary>
         /// Perform announce request on timer tick
@@ -73,9 +71,10 @@ namespace BitTorrentLibrary
                 AnnounceResponse response = tracker._announcer.Announce(tracker);
 
                 Log.Logger.Info("Queuing new peers for swarm ....");
+
                 foreach (var peerDetails in response.peers)
                 {
-                    tracker._peerSwarmQueue.Add(peerDetails);
+                    tracker._peerSwarmQueue?.Add(peerDetails);
                 }
                 tracker.NumWanted = Math.Max(tracker._dc.MaximumSwarmSize - tracker._dc.PeerSwarm.Count, 0);
 
@@ -125,7 +124,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
+                throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
         /// <summary>
@@ -203,7 +202,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
+                throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
         /// <summary>
@@ -213,6 +212,12 @@ namespace BitTorrentLibrary
         {
             try
             {
+                //  Swarm queue needs to be initialised
+                if (_peerSwarmQueue == null)
+                {
+                    throw new Error("BitTorrent (Tracker) Error: Peer swarm queue has not been set.");
+                }
+
                 // If all of torrent downloaded reset total bytes downloaded
                 if (Left == 0)
                 {
@@ -232,7 +237,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
+                throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
 
@@ -257,7 +262,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Tracker): " + ex.Message);
+                throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
     }

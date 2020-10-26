@@ -21,7 +21,7 @@ namespace BitTorrentLibrary
     {
         private bool[] _blockPresent;                   // == true then block present
         private uint _blockCount;                       // Unfilled block spaces in buffer
-        public Peer RemotePeer { get; set; }
+        public Peer RemotePeer { get; }                 // Remote peer (source of buffer data)
         public uint Length { get; set; }                // Piece Length
         public byte[] Buffer { get; set; }              // Piece Buffer
         public uint Number { get; set; }                // Piece Number

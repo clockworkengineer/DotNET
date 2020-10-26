@@ -79,9 +79,8 @@ namespace BitTorrentLibrary
         /// Create intial handshake to send to remote peer.
         /// </summary>
         /// <param name="remotePeer"></param>
-        /// <param name="infoHash"></param>
         /// <returns></returns>
-        private static List<byte> BuildInitialHandshake(Peer remotePeer, byte[] infoHash)
+        private static List<byte> BuildInitialHandshake(Peer remotePeer)
         {
             List<byte> handshakePacket = new List<byte>
                 {
@@ -89,7 +88,7 @@ namespace BitTorrentLibrary
                 };
             handshakePacket.AddRange(_protocolName);
             handshakePacket.AddRange(new byte[8]);
-            handshakePacket.AddRange(infoHash);
+            handshakePacket.AddRange(remotePeer.Dc.InfoHash);
             handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.Get()));
 
             return handshakePacket;
@@ -264,11 +263,11 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         /// <param name="infoHash"></param>
         /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
-        public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer, byte[] infoHash)
+        public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer)
         {
             try
             {
-                List<byte> handshakePacket = BuildInitialHandshake(remotePeer, infoHash);
+                List<byte> handshakePacket = BuildInitialHandshake(remotePeer);
 
                 byte[] handshakeResponse = new byte[handshakePacket.Count];
 
@@ -298,15 +297,14 @@ namespace BitTorrentLibrary
         /// Perform initial handshake with remote peer that the local client connected to.
         /// </summary>
         /// <param name="remotePeer"></param>
-        /// <param name="infoHash"></param>
         /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
-        public static ValueTuple<bool, byte[]> ConnectToIntialHandshake(Peer remotePeer, byte[] infoHash)
+        public static ValueTuple<bool, byte[]> ConnectToIntialHandshake(Peer remotePeer)
         {
             bool connected;
             byte[] remotePeerID;
             try
             {
-                List<byte> handshakePacket = BuildInitialHandshake(remotePeer, infoHash);
+                List<byte> handshakePacket = BuildInitialHandshake(remotePeer);
 
                 remotePeer.PeerWrite(handshakePacket.ToArray());
 

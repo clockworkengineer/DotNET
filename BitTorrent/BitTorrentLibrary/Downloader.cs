@@ -32,8 +32,6 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Downloader : IDownloader
     {
-        private readonly Task _pieceBufferWriterTask;        // Task for piece buffer writer 
-        private readonly Task _pieceRequestProcessingTask;   // Task for processing piece requests from remote peersxt
         public BlockingCollection<PieceBuffer> PieceWriteQueue { get; set; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
 
@@ -165,8 +163,8 @@ namespace BitTorrentLibrary
         {
             PieceWriteQueue = new BlockingCollection<PieceBuffer>();
             PieceRequestQueue = new BlockingCollection<PieceRequest>();
-            _pieceBufferWriterTask = Task.Run(() => PieceBufferDiskWriter());
-            _pieceRequestProcessingTask = Task.Run(() => PieceRequestProcessingTask());
+            Task.Run(() => PieceBufferDiskWriter());
+            Task.Run(() => PieceRequestProcessingTask());
         }
         /// <summary>
         /// Creates the empty files on disk as place holders of files to be downloaded.

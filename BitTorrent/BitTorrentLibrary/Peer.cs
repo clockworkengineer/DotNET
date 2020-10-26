@@ -105,7 +105,7 @@ namespace BitTorrentLibrary
             try
             {
 
-                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectFromIntialHandshake(this, Dc.InfoHash);
+                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectFromIntialHandshake(this);
 
                 if (peerResponse.Item1)
                 {
@@ -131,7 +131,7 @@ namespace BitTorrentLibrary
 
                 _network.Connect(Ip, Port);
 
-                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this, Dc.InfoHash);
+                ValueTuple<bool, byte[]> peerResponse = PWP.ConnectToIntialHandshake(this);
 
                 if (peerResponse.Item1)
                 {
