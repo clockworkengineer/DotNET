@@ -25,8 +25,8 @@ namespace BitTorrentLibrary
     public class MetaInfoFile
     {
         private byte[] _metaInfoData;
-        public Dictionary<string, byte[]> MetaInfoDict { get; set; }
-        public string TorrentFileName { get; set; } = string.Empty;
+        public Dictionary<string, byte[]> MetaInfoDict { get; }
+        public string TorrentFileName { get; }
 
         /// <summary>
         /// Get a list of dictionaries from metainfo file that have been come under the main level dictionary

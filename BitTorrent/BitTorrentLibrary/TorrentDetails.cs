@@ -16,7 +16,7 @@ namespace BitTorrentLibrary
     public enum TorrentStatus
     {
         Started,
-        Uploading,
+        Seeding,
         Downloading,
         Paused,
         Stopped

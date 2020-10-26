@@ -44,16 +44,16 @@ namespace BitTorrentLibrary
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
         private BlockingCollection<PeerDetails> _peerSwarmQueue;// Peers to add to swarm queue
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
-        public string PeerID { get; set; }                      // Peers unique ID
-        public uint Port { get; set; } = Host.DefaultPort;      // Port that client s listening on 
+        public string PeerID { get; }                           // Peers unique ID
+        public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
         public string Ip { get; set; }                          // IP of host performing announce
-        public uint Compact { get; set; } = 1;                  // Is the returned peer list compressed (1=yes,0=no)
-        public uint NoPeerID { get; set; }                      // Unique peer ID for downloader
-        public string Key { get; set; }                         // An additional identification that is not shared with any other peers (optional)
+        public uint Compact { get;  } = 1;                      // Is the returned peer list compressed (1=yes,0=no)
+        public uint NoPeerID { get;  }                          // Unique peer ID for downloader
+        public string Key { get;  }                             // An additional identification that is not shared with any other peers (optional)
         public string TrackerID { get; set; }                   // String that the client should send back on its next announcements. (optional).
         public int NumWanted { get; set; } = 5;                 // Number of required download clients
-        public byte[] InfoHash { get; set; }                    // Encoded info hash for URI
-        public string TrackerURL { get; set; }                  // Tracker URL
+        public byte[] InfoHash { get; }                         // Encoded info hash for URI
+        public string TrackerURL { get;  }                      // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
         public UInt64 Downloaded => _dc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client

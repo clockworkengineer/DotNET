@@ -21,8 +21,8 @@ namespace BitTorrentLibrary
 {
     public interface IDownloader
     {
-        BlockingCollection<PieceBuffer> PieceWriteQueue { get; set; }
-        BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
+        BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
+        BlockingCollection<PieceRequest> PieceRequestQueue { get; }
         void CreateLocalTorrentStructure(DownloadContext dc);
         void CreateTorrentBitfield(DownloadContext dc);
     }
@@ -32,8 +32,8 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Downloader : IDownloader
     {
-        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; set; }
-        public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
+        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
+        public BlockingCollection<PieceRequest> PieceRequestQueue { get; }
 
         /// <summary>
         /// Read/Write piece buffers to/from torrent on disk.

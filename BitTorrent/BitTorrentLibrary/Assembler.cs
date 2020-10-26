@@ -19,12 +19,12 @@ using System.Threading;
 
 namespace BitTorrentLibrary
 {
-    public delegate void ProgessCallBack(Object callBackData);            // Download progress callback
+    public delegate void ProgessCallBack(Object callBackData); // Download progress callback
     public class Assembler
     {
-        private  ProgessCallBack _progressCallBack;          // Download progress function
-        private  Object _progressCallBackData;                // Download progress function data
-        public ManualResetEvent Paused { get; set; }         // == true (set) pause downloading from peer
+        private  ProgessCallBack _progressCallBack;   // Download progress function
+        private  Object _progressCallBackData;        // Download progress function data
+        public ManualResetEvent Paused { get; }       // == true (set) pause downloading from peer
 
         /// <summary>
         /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.
@@ -166,10 +166,9 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Error(ex.Message);
                 SavePieceToDisk(remotePeer, nextPiece, remotePeer.AssembledPiece.AllBlocksThere);
-
                 throw;
             }
-;
+
         }
         /// <summary>
         /// Loop dealing with piece requests until peer connection closed.

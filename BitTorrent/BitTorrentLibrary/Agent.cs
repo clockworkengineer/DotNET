@@ -190,7 +190,7 @@ namespace BitTorrentLibrary
                     
                 }
 
-                _dc.Status = TorrentStatus.Uploading;
+                _dc.Status = TorrentStatus.Seeding;
 
             }
             catch (Error)

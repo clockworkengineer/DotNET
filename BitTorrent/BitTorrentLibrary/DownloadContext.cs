@@ -44,11 +44,11 @@ namespace BitTorrentLibrary
         public UInt64 TotalBytesDownloaded { get; set; }
         public UInt64 TotalBytesToDownload { get; set; }
         public UInt64 TotalBytesUploaded { get; set; }
-        public uint PieceLength { get; set; }
-        public uint BlocksPerPiece { get; set; }
-        public byte[] PiecesInfoHash { get; set; }
-        public uint NumberOfPieces { get; set; }
-        public Selector PieceSelector { get; set; }
+        public uint PieceLength { get;  }
+        public uint BlocksPerPiece { get;  }
+        public byte[] PiecesInfoHash { get; }
+        public uint NumberOfPieces { get; }
+        public Selector PieceSelector { get; }
         public ManualResetEvent DownloadFinished { get; }
         public byte[] Bitfield { get; }
         public List<FileDetails> FilesToDownload { get; }
@@ -57,7 +57,7 @@ namespace BitTorrentLibrary
         public uint MissingPiecesCount { get; set; } = 0;
         public DownloadCompleteCallBack DownloadCompleteCallBack { get; set; }
         public object DownloadCompleteCallBackData { get; set; }
-        public int MaximumSwarmSize { get; set; } = Constants.MaximumSwarmSize;  // Maximim swarm size
+        public int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize;  // Maximim swarm size
         public ConcurrentDictionary<string, Peer> PeerSwarm { get; }
         public TorrentStatus Status { get; set; }                                // Torrent status
         public Tracker MainTracker { get; set; }
