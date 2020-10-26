@@ -27,7 +27,6 @@ namespace BitTorrentLibrary
         Task DownloadAsync();
         TorrentDetails GetTorrentDetails();
         void Pause();
-        void SetMainTracker(Tracker tracker);
         void Start();
     }
 
@@ -43,26 +42,8 @@ namespace BitTorrentLibrary
         private readonly Task _peerListenCreatorTask;                      // Peer swarm peer connect creator task
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private Socket _listenerSocket;                                    // Connection listener socket
-        private Tracker _mainTracker;                                      // Main torrent tracker
-        public BlockingCollection<PeerDetails> PeerSwarmQueue { get; }     // Queue of peers to add to dwarm
+        public BlockingCollection<PeerDetails> PeerSwarmQueue { get; }     // Queue of peers to add to swarm
 
-        /// <summary>
-        /// Display peer task statistics.
-        /// </summary>
-        private void DisplayStats(DownloadContext dc)
-        {
-            int peersChoking = 0;
-
-            foreach (var peer in dc.PeerSwarm.Values)
-            {
-                if (!peer.PeerChoking.WaitOne(0))
-                {
-                    peersChoking++;
-                }
-            }
-            Log.Logger.Info($"%[Peers Choking {peersChoking}] [Missing Piece Count {dc.MissingPiecesCount}] " +
-            $"[Number of peers in swarm  {dc.PeerSwarm.Count}/{dc.MaximumSwarmSize}]");
-        }
         /// <summary>
         /// Inspects  peer queue, connects to the peer and creates piece assembler task before adding to swarm.
         /// </summary>
@@ -174,7 +155,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(DownloadContext dc, Assembler pieceAssembler = null)
+        public Agent(DownloadContext dc, Assembler pieceAssembler)
         {
             _dc = dc;
             _pieceAssembler = pieceAssembler;
@@ -190,21 +171,13 @@ namespace BitTorrentLibrary
             PeerSwarmQueue.CompleteAdding();
         }
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="tracker"></param>
-        public void SetMainTracker(Tracker tracker)
-        {
-            _mainTracker = tracker;
-        }
-        /// <summary>
         /// Download a torrent using an piece assembler per connected peer.
         /// </summary>
         public void Download()
         {
             try
             {
-                if (_mainTracker.Left != 0)
+                if (_dc.MainTracker.Left != 0)
                 {
                     _dc.Status = TorrentStatus.Downloading;
 
@@ -212,7 +185,7 @@ namespace BitTorrentLibrary
 
                     _dc.DownloadFinished.WaitOne();
 
-                    _mainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
+                    _dc.MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
 
                     Log.Logger.Info("Whole Torrent finished downloading.");
 
@@ -262,7 +235,7 @@ namespace BitTorrentLibrary
                 {
                     _agentRunning = false;
 
-                    _mainTracker.StopAnnouncing();
+                    _dc.MainTracker.StopAnnouncing();
                     if (_dc.PeerSwarm != null)
                     {
                         Log.Logger.Info("Closing peer sockets.");
@@ -271,7 +244,7 @@ namespace BitTorrentLibrary
                             remotePeer.Close();
                         }
                     }
-                    _mainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+                    _dc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
 
                     PeerNetwork.ShutdownListener();
 

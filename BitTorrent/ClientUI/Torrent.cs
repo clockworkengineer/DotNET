@@ -143,7 +143,8 @@ namespace ClientUI
                 
                 DownloadAgent = new Agent(_dc,_assembler);
 
-                _tracker = new Tracker(DownloadAgent, _dc);
+                _tracker = new Tracker(_dc);
+                _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
 
                 _tracker.StartAnnouncing();
 

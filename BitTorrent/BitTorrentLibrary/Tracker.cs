@@ -42,7 +42,7 @@ namespace BitTorrentLibrary
         private TrackerCallBack _callBack;                     // Tracker ping callback function
         private Object _callBackData;                          // Tracker ping callback function data
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
-        private BlockingCollection<PeerDetails> _peerSwarmQueue; // Peers to add to swarm queue
+        private BlockingCollection<PeerDetails> _peerSwarmQueue;// Peers to add to swarm queue
         protected UpdatePeers _updatePeerSwarm;                 // Update peer swarm with connected peers
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; set; } = String.Empty;      // Peers unique ID
@@ -57,7 +57,6 @@ namespace BitTorrentLibrary
         public string TrackerURL { get; set; } = String.Empty;  // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
-        //public int MaximumSwarmSize { get; set; }               // Maximim swarm size
         public UInt64 Downloaded => _dc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _dc.BytesLeftToDownload();        // Bytes left in torrent to download
         public UInt64 Uploaded => _dc.TotalBytesUploaded;       // Total bytes uploaded
@@ -135,15 +134,14 @@ namespace BitTorrentLibrary
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(Agent agent, DownloadContext dc)
+        public Tracker(DownloadContext dc)
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
             InfoHash = dc.InfoHash;
             TrackerURL = dc.TrackerURL;
             _dc = dc;
-            _peerSwarmQueue = agent.PeerSwarmQueue;
-            agent.SetMainTracker(this);
+            _dc.MainTracker = this;
             _announcerExceptions = new List<Exception>();
 
             if (!TrackerURL.StartsWith("http://"))
@@ -164,6 +162,13 @@ namespace BitTorrentLibrary
                 _announcer = new AnnouncerHTTP(TrackerURL);
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="peerSwarmQueue"></param>
+        public void SetPeerSwarmQueue(BlockingCollection<PeerDetails> peerSwarmQueue) {
+            _peerSwarmQueue = peerSwarmQueue;
+        } 
         /// <summary>
         /// 
         /// </summary>

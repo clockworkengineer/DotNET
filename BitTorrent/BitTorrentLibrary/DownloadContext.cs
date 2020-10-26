@@ -39,8 +39,8 @@ namespace BitTorrentLibrary
         private readonly Object _dcLock = new object();
         private readonly byte[] _piecesMissing;     // Missing piece bitfield
         public PieceInfo[] PieceData { get; set; }
-        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; set; }
-        public BlockingCollection<PieceRequest> PieceRequestQueue { get; set; }
+        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
+        public BlockingCollection<PieceRequest> PieceRequestQueue { get; }
         public UInt64 TotalBytesDownloaded { get; set; }
         public UInt64 TotalBytesToDownload { get; set; }
         public UInt64 TotalBytesUploaded { get; set; }
@@ -52,14 +52,15 @@ namespace BitTorrentLibrary
         public ManualResetEvent DownloadFinished { get; }
         public byte[] Bitfield { get; }
         public List<FileDetails> FilesToDownload { get; }
-        public byte[] InfoHash { get; }                                    // Torrent info hash
-        public string TrackerURL { get; }                                  // Main Tracker URL
+        public byte[] InfoHash { get; }                                         // Torrent info hash
+        public string TrackerURL { get; }                                       // Main Tracker URL
         public uint MissingPiecesCount { get; set; } = 0;
         public DownloadCompleteCallBack DownloadCompleteCallBack { get; set; }
         public object DownloadCompleteCallBackData { get; set; }
-        public int MaximumSwarmSize { get; set; } = 50;               // Maximim swarm size
+        public int MaximumSwarmSize { get; set; } = Constants.MaximumSwarmSize;  // Maximim swarm size
         public ConcurrentDictionary<string, Peer> PeerSwarm { get; }
-        public TorrentStatus Status { get; set; }                           // Torrent status
+        public TorrentStatus Status { get; set; }                                // Torrent status
+        public Tracker MainTracker { get; set; }
 
 
         /// <summary>
