@@ -22,8 +22,8 @@ namespace BitTorrentLibrary
         private bool[] _blockPresent;                   // == true then block present
         private uint _blockCount;                       // Unfilled block spaces in buffer
         public Peer RemotePeer { get; }                 // Remote peer (source of buffer data)
-        public uint Length { get; set; }                // Piece Length
-        public byte[] Buffer { get; set; }              // Piece Buffer
+        public uint Length { get; }                     // Piece Length
+        public byte[] Buffer { get; }                   // Piece Buffer
         public uint Number { get; set; }                // Piece Number
         public bool AllBlocksThere => _blockCount == 0; // == true All blocks have been downloaded
 

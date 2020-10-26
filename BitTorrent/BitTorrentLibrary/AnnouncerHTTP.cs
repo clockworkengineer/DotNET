@@ -109,7 +109,7 @@ namespace BitTorrentLibrary
         /// Setup data and resources needed by HTTP tracker.
         /// </summary>
         /// <param name="trackerURL"></param>
-        public AnnouncerHTTP(string trackerURL)
+        public AnnouncerHTTP(string _)
         {
 
         }

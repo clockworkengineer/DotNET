@@ -25,19 +25,19 @@ namespace BitTorrentLibrary
         private readonly PeerNetwork _network;                           // Network layer
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
-        public DownloadContext Dc { get; set; }                          // Torrent download context
+        public DownloadContext Dc { get; }                               // Torrent download context
         public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
-        public PieceBuffer AssembledPiece { get; set; }                  // Assembled pieces buffer
-        public string Ip { get; set; }                                   // Remote peer ip
+        public PieceBuffer AssembledPiece { get; }                       // Assembled pieces buffer
+        public string Ip { get; }                                        // Remote peer ip
         public uint Port { get; }                                        // peer Port
         public Task AssemblerTask { get; set; }                          // Peer piece assembly task
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
         public bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
-        public ManualResetEvent PeerChoking { get; set; }                // == true (set) then remote peer is choking client (local host)
+        public ManualResetEvent PeerChoking { get; }                     // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
-        public ManualResetEvent WaitForPieceAssembly { get; set; }       // When event set then piece has been fully assembled
-        public ManualResetEvent BitfieldReceived { get; set; }           // When event set then peer has recieved bitfield from remote peer
+        public ManualResetEvent WaitForPieceAssembly { get; }            // When event set then piece has been fully assembled
+        public ManualResetEvent BitfieldReceived { get; }                // When event set then peer has recieved bitfield from remote peer
         public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
         public byte[] ReadBuffer => _network.ReadBuffer;
         public UInt32 PacketLength => _network.PacketLength;

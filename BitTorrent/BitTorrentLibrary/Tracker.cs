@@ -36,6 +36,7 @@ namespace BitTorrentLibrary
             stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
             completed = 3   // Must be sent to the tracker when the download completes
         };
+        
         private readonly DownloadContext _dc;                   // Download context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
