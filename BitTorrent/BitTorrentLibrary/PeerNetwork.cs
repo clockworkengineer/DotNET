@@ -37,10 +37,24 @@ namespace BitTorrentLibrary
             }
         }
     }
+
+    internal interface IPeerNetwork
+    {
+        byte[] ReadBuffer { get; set; }
+        uint PacketLength { get; set; }
+        Socket PeerSocket { get; set; }
+
+        void Close();
+        void Connect(string ip, uint port);
+        int Read(byte[] buffer, int length);
+        void StartReads(Peer remotePeer);
+        void Write(byte[] buffer);
+    }
+
     /// <summary>
     /// Peer to peer network IO code.
     /// </summary>
-    internal class PeerNetwork
+    internal class PeerNetwork : IPeerNetwork
     {
         private UInt32 _bytesRead;              // Bytes read in read request
         private bool _lengthRead;               // == true packet length has been read

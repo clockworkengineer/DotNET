@@ -205,7 +205,10 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         public bool IsPieceMissing(UInt32 pieceNumber)
         {
-            return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+            lock (_dcLock)
+            {
+                return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+            }
         }
         /// <summary>
         /// Merges the piece bitfield of a remote peer with the torrents local piece map data.

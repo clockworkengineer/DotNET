@@ -18,14 +18,14 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Base for BNode Tree.
     /// </summary>
-    public class BNodeBase
+    internal class BNodeBase
     {
     }
 
     /// <summary>
     /// Dictionary BNode.
     /// </summary>
-    public class BNodeDictionary : BNodeBase
+    internal class BNodeDictionary : BNodeBase
     {
         public Dictionary<string, BNodeBase> dict;
 
@@ -38,7 +38,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// List BNode.
     /// </summary>
-    public class BNodeList : BNodeBase
+    internal class BNodeList : BNodeBase
     {
         public List<BNodeBase> list;
 
@@ -51,7 +51,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Number BNode.
     /// </summary>
-    public class BNodeNumber : BNodeBase
+    internal class BNodeNumber : BNodeBase
     {
         public byte[] number;
     }
@@ -59,7 +59,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// String BNode.
     /// </summary>
-    public class BNodeString : BNodeBase
+    internal class BNodeString : BNodeBase
     {
         public byte[] str;
     }
@@ -67,7 +67,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Support methods for Bencoding.
     /// </summary>
-    public static class Bencoding
+    internal static class Bencoding
     {
         /// <summary>
         /// Extracts a Bencoded string and returns its bytes.
