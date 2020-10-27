@@ -4,7 +4,9 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: All the high level torrent processing including download/upload
-// of torrent pieces and updating the peers in the current swarm.
+// of torrent pieces and updating the peers in the current swarm. Any  peers that
+// are connected then have an piece assembler task created for them that put together
+// pieces that they request from torrent before being written to disk. 
 //
 // Copyright 2020.
 //
@@ -72,9 +74,9 @@ namespace BitTorrentLibrary
                 Log.Logger.Info($"Peer {remotePeer.Ip} added to dead peer list.");
             }
         }
-
         /// <summary>
-        /// Inspects  peer queue, connects to the peer and creates piece assembler task before adding to swarm.
+        /// Inspects  peer queue, connects to the peer and creates piece assembler task 
+        /// before adding to swarm.
         /// </summary>
         private void PeerConnectCreatorTask()
         {
@@ -124,12 +126,6 @@ namespace BitTorrentLibrary
 
                     var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
 
-                    if (endPoint.Item1 == "192.168.1.1")
-                    { // NO IDEA WHATS BEHIND THIS AT PRESENT (HANGS IF WE DONT CLOSE THIS)
-                        remotePeerSocket.Close();
-                        continue;
-                    }
-
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
                     if (!_dc.PeerSwarm.ContainsKey(endPoint.Item1) && _dc.PeerSwarm.Count < _dc.MaximumSwarmSize)
                     {
@@ -161,6 +157,7 @@ namespace BitTorrentLibrary
             Task.Run(() => PeerListenCreatorTask());
             Task.Run(() => PeerConnectCreatorTask());
             _agentRunning = true;
+            _deadPeers.Add("192.168.1.1"); // WITHOUT THIS HANGS (FOR ME)
 
         }
         ~Agent()
@@ -176,16 +173,11 @@ namespace BitTorrentLibrary
             {
                 if (_dc.MainTracker.Left != 0)
                 {
-                    _dc.Status = TorrentStatus.Downloading;
-
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
-
+                    _dc.Status = TorrentStatus.Downloading;
                     _dc.DownloadFinished.WaitOne();
-
                     _dc.MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
-
                     Log.Logger.Info("Whole Torrent finished downloading.");
-
                 }
 
                 _dc.Status = TorrentStatus.Seeding;
@@ -241,11 +233,8 @@ namespace BitTorrentLibrary
                         }
                     }
                     _dc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
-
                     PeerNetwork.ShutdownListener();
-
                     _dc.Status = TorrentStatus.Stopped;
-
                 }
             }
             catch (Error)
@@ -287,7 +276,6 @@ namespace BitTorrentLibrary
             {
                 _pieceAssembler?.Paused.Reset();
                 _dc.Status = TorrentStatus.Paused;
-
             }
             catch (Error)
             {
