@@ -38,14 +38,14 @@ namespace BitTorrentLibrary
         private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
         private readonly Object _dcLock = new object();
         private readonly byte[] _piecesMissing;     // Missing piece bitfield
-        public PieceInfo[] PieceData { get; set; }
+        private PieceInfo[] _pieceData { get; set; }
         public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; }
         public UInt64 TotalBytesDownloaded { get; set; }
         public UInt64 TotalBytesToDownload { get; set; }
         public UInt64 TotalBytesUploaded { get; set; }
-        public uint PieceLength { get;  }
-        public uint BlocksPerPiece { get;  }
+        public uint PieceLength { get; }
+        public uint BlocksPerPiece { get; }
         public byte[] PiecesInfoHash { get; }
         public uint NumberOfPieces { get; }
         public Selector PieceSelector { get; }
@@ -81,7 +81,7 @@ namespace BitTorrentLibrary
             PiecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
             NumberOfPieces = ((UInt32)(PiecesInfoHash.Length / Constants.HashLength));
             BlocksPerPiece = PieceLength / Constants.BlockSize;
-            PieceData = new PieceInfo[NumberOfPieces];
+            _pieceData = new PieceInfo[NumberOfPieces];
             PieceWriteQueue = downloader.PieceWriteQueue;
             PieceRequestQueue = downloader.PieceRequestQueue;
             _SHA1 = new SHA1CryptoServiceProvider();
@@ -225,7 +225,7 @@ namespace BitTorrentLibrary
                     {
                         if ((remotePeer.RemotePieceBitfield[i] & bit) != 0)
                         {
-                            PieceData[pieceNumber].peerCount++;
+                            _pieceData[pieceNumber].peerCount++;
                             remotePeer.NumberOfMissingPieces--;
                         }
                     }
@@ -247,6 +247,38 @@ namespace BitTorrentLibrary
         {
             DownloadCompleteCallBack = callback;
             DownloadCompleteCallBackData = callBackData;
+        }
+        /// <summary>
+        /// Get piece length in bytes
+        /// </summary>
+        /// <param name="peiceNumber"></param>
+        /// <returns></returns>
+        public UInt32 GetPieceLength(UInt32 peiceNumber)
+        {
+            return _pieceData[peiceNumber].pieceLength;
+        }
+        /// <summary>
+        /// Set piece length in bytes.
+        /// </summary>
+        /// <param name="pieceNumber"></param>
+        /// <param name="pieceLength"></param>
+        public void SetPieceLength(UInt32 pieceNumber, UInt32 pieceLength)
+        {
+            _pieceData[pieceNumber].pieceLength = pieceLength;
+        }
+        /// <summary>
+        /// Get number of blocks in piece.
+        /// </summary>
+        /// <param name="pieceNumber"></param>
+        /// <returns></returns>
+        public UInt32 GetBlocksInPiece(UInt32 pieceNumber)
+        {
+            UInt32 blockCount = (_pieceData[pieceNumber].pieceLength / Constants.BlockSize);
+            if (_pieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
+            {
+                blockCount++;
+            }
+            return blockCount;
         }
 
     }

@@ -64,7 +64,7 @@ namespace BitTorrentLibrary
                             stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % dc.PieceLength), (Int32)(endTransfer - startTransfer));
                         }
                         bytesTransferred += (Int32)(endTransfer - startTransfer);
-                        if (bytesTransferred == dc.PieceData[transferBuffer.Number].pieceLength)
+                        if (bytesTransferred == dc.GetPieceLength(transferBuffer.Number))
                         {
                             break;
                         }
@@ -85,7 +85,7 @@ namespace BitTorrentLibrary
             {
                 dc.TotalBytesDownloaded += numberOfBytes;
             }
-            dc.PieceData[pieceNumber].pieceLength = numberOfBytes;
+            dc.SetPieceLength(pieceNumber, numberOfBytes);
             dc.MarkPieceLocal(pieceNumber, pieceThere);
             if (!pieceThere)
             {
@@ -98,7 +98,7 @@ namespace BitTorrentLibrary
         private PieceBuffer GetPieceFromTorrent(Peer remotePeer, UInt32 pieceNumber)
         {
 
-            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer, pieceNumber, remotePeer.Dc.PieceData[pieceNumber].pieceLength);
+            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer, pieceNumber, remotePeer.Dc.GetPieceLength(pieceNumber));
 
             Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
 
@@ -122,7 +122,7 @@ namespace BitTorrentLibrary
 
                 TransferPiece(pieceBuffer.RemotePeer.Dc, pieceBuffer, false);
 
-                pieceBuffer.RemotePeer.Dc.TotalBytesDownloaded += pieceBuffer.RemotePeer.Dc.PieceData[pieceBuffer.Number].pieceLength;
+                pieceBuffer.RemotePeer.Dc.TotalBytesDownloaded += pieceBuffer.RemotePeer.Dc.GetPieceLength((pieceBuffer.Number));
                 Log.Logger.Info((pieceBuffer.RemotePeer.Dc.TotalBytesDownloaded / (double)pieceBuffer.RemotePeer.Dc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 

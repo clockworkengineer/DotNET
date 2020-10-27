@@ -10,6 +10,8 @@
 // sucessfully been assembled locally when the choke occurs then it is queued for
 // writing to disk.
 //
+// TODO: Needs better use of waits and positoning of choke checks.
+//
 // Copyright 2020.
 //
 
@@ -20,10 +22,21 @@ using System.Threading;
 namespace BitTorrentLibrary
 {
     public delegate void ProgessCallBack(Object callBackData); // Download progress callback
-    public class Assembler
+
+    public interface IAssembler
     {
-        private  ProgessCallBack _progressCallBack;   // Download progress function
-        private  Object _progressCallBackData;        // Download progress function data
+        ManualResetEvent Paused { get; }
+        void AssemblePieces(Peer remotePeer);
+        void SetDownloadProgressCallBack(ProgessCallBack callBack, object callBackData);
+    }
+
+    /// <summary>
+    /// Piece Assembler
+    /// </summary>
+    public class Assembler : IAssembler
+    {
+        private ProgessCallBack _progressCallBack;   // Download progress function
+        private Object _progressCallBackData;        // Download progress function data
         public ManualResetEvent Paused { get; }       // == true (set) pause downloading from peer
 
         /// <summary>
@@ -39,7 +52,7 @@ namespace BitTorrentLibrary
             {
                 if (pieceAssembled)
                 {
-                    bool pieceValid = remotePeer.Dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, remotePeer.Dc.PieceData[pieceNumber].pieceLength);
+                    bool pieceValid = remotePeer.Dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, remotePeer.Dc.GetPieceLength(pieceNumber));
                     if (pieceValid)
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
@@ -94,10 +107,10 @@ namespace BitTorrentLibrary
 
             remotePeer.WaitForPieceAssembly.Reset();
 
-            remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Dc.PieceData[pieceNumber].pieceLength);
+            remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Dc.GetPieceLength(pieceNumber));
 
             UInt32 blockNumber = 0;
-            for (; blockNumber < remotePeer.Dc.PieceData[pieceNumber].pieceLength / Constants.BlockSize; blockNumber++)
+            for (; blockNumber < remotePeer.Dc.GetPieceLength(pieceNumber)/Constants.BlockSize; blockNumber++)
             {
                 if (!remotePeer.PeerChoking.WaitOne(0))
                 {
@@ -107,7 +120,7 @@ namespace BitTorrentLibrary
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
-            if (remotePeer.Dc.PieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
+            if (remotePeer.Dc.GetPieceLength(pieceNumber) % Constants.BlockSize != 0)
             {
                 if (!remotePeer.PeerChoking.WaitOne(0))
                 {
@@ -115,7 +128,7 @@ namespace BitTorrentLibrary
                 }
                 cancelTask.ThrowIfCancellationRequested();
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
-                             remotePeer.Dc.PieceData[pieceNumber].pieceLength % Constants.BlockSize);
+                             remotePeer.Dc.GetPieceLength(pieceNumber) % Constants.BlockSize);
             }
 
             int index = WaitHandle.WaitAny(waitHandles);
@@ -143,11 +156,8 @@ namespace BitTorrentLibrary
             {
 
                 Log.Logger.Debug($"Running piece assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
-
                 PWP.Unchoke(remotePeer);
-
                 PWP.Interested(remotePeer);
-
                 WaitOnWithCancelation(remotePeer.PeerChoking, cancelTask);
 
                 while (!remotePeer.Dc.DownloadFinished.WaitOne(0))
@@ -183,11 +193,8 @@ namespace BitTorrentLibrary
                 if (remotePeer.Connected)
                 {
                     WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
-
                     PWP.Uninterested(remotePeer);
-
                     PWP.Unchoke(remotePeer);
-
                     WaitHandle.WaitAll(waitHandles);
 
                 }
@@ -246,7 +253,8 @@ namespace BitTorrentLibrary
             Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
         }
-        public void SetDownloadProgressCallBack(ProgessCallBack callBack, Object callBackData) {
+        public void SetDownloadProgressCallBack(ProgessCallBack callBack, Object callBackData)
+        {
             _progressCallBack = callBack;
             _progressCallBackData = callBackData;
         }
