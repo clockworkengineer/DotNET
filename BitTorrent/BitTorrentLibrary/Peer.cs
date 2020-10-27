@@ -57,7 +57,7 @@ namespace BitTorrentLibrary
             _network = new PeerNetwork(socket);
             AssembledPiece = new PieceBuffer(this, Dc.PieceLength);
             WaitForPieceAssembly = new ManualResetEvent(false);
-            PeerChoking = new ManualResetEvent(true);
+            PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
             NumberOfMissingPieces = Dc.NumberOfPieces;

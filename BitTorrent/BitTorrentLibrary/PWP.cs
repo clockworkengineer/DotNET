@@ -131,7 +131,7 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         private static void HandleCHOKE(Peer remotePeer)
         {
-            if (!remotePeer.PeerChoking.WaitOne(0))
+            if (remotePeer.PeerChoking.WaitOne(0))
             {
                 Log.Logger.Info($"{RemotePeerID(remotePeer)}RX CHOKE");
                 remotePeer.PeerChoking.Reset();
