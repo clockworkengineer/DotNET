@@ -7,6 +7,7 @@ namespace BitTorrentLibraryTests
 {
     public class BEncodingTests
     {
+    
         [Fact]
         public void TestSingleFileTorrentDecodeEncodeCheckTheSameAfter()
         {

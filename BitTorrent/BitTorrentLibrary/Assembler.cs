@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
     {
         private ProgessCallBack _progressCallBack;   // Download progress function
         private Object _progressCallBackData;        // Download progress function data
-        public ManualResetEvent Paused { get; }       // == true (set) pause downloading from peer
+        public ManualResetEvent Paused { get; }      // == true (set) pause downloading from peer
 
         /// <summary>
         /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.

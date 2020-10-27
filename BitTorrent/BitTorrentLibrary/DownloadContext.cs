@@ -35,33 +35,31 @@ namespace BitTorrentLibrary
     /// </summary>
     public class DownloadContext
     {
-        private readonly SHA1 _SHA1;                          // Object to create SHA1 piece info hash
-        private readonly Object _dcLock = new object();
-        private readonly byte[] _piecesMissing;     // Missing piece bitfield
-        private PieceInfo[] _pieceData { get; set; }
-        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
-        public BlockingCollection<PieceRequest> PieceRequestQueue { get; }
-        public UInt64 TotalBytesDownloaded { get; set; }
-        public UInt64 TotalBytesToDownload { get; set; }
-        public UInt64 TotalBytesUploaded { get; set; }
-        public uint PieceLength { get; }
-        public uint BlocksPerPiece { get; }
-        public byte[] PiecesInfoHash { get; }
-        public uint NumberOfPieces { get; }
-        public Selector PieceSelector { get; }
-        public ManualResetEvent DownloadFinished { get; }
-        public byte[] Bitfield { get; }
-        public List<FileDetails> FilesToDownload { get; }
-        public byte[] InfoHash { get; }                                         // Torrent info hash
-        public string TrackerURL { get; }                                       // Main Tracker URL
-        public uint MissingPiecesCount { get; set; } = 0;
+        private readonly SHA1 _SHA1;                                        // Object to create SHA1 piece info hash
+        private readonly Object _dcLock = new object();                     // Synchronization lock for download context
+        private readonly byte[] _piecesMissing;                             // Missing piece bitfield
+        private readonly PieceInfo[] _pieceData;                            // Piece information
+        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }     // piece buffer disk write queue
+        public BlockingCollection<PieceRequest> PieceRequestQueue { get; }  // Piece request queue
+        public UInt64 TotalBytesDownloaded { get; set; }                    // Total bytes downloaded
+        public UInt64 TotalBytesToDownload { get; set; }                    // Total bytes in torrent
+        public UInt64 TotalBytesUploaded { get; set; }                      // Total bytes uploaded to all peers from torrent
+        public uint PieceLength { get; }                                    // Length of piece in bytese
+        public byte[] PiecesInfoHash { get; }                               // Pieces infohash from torrent file
+        public uint NumberOfPieces { get; }                                 // Number of pieces into torrent
+        public Selector PieceSelector { get; }                              // Piece selector
+        public ManualResetEvent DownloadFinished { get; }                   // == Set then download finished
+        public byte[] Bitfield { get; }                                     // Bitfield for current torrent on disk
+        public List<FileDetails> FilesToDownload { get; }                   // Local files in torrent
+        public byte[] InfoHash { get; }                                     // Torrent info hash
+        public string TrackerURL { get; }                                   // Main Tracker URL
+        public uint MissingPiecesCount { get; set; } = 0;                   // Missing piece count
+        public int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize;  // Maximim swarm size
+        public ConcurrentDictionary<string, Peer> PeerSwarm { get; }        // Current peer swarm
+        public TorrentStatus Status { get; set; }                           // Torrent status
+        public Tracker MainTracker { get; set; }                            // Main tracker assigned to torrent
         public DownloadCompleteCallBack DownloadCompleteCallBack { get; set; }
         public object DownloadCompleteCallBackData { get; set; }
-        public int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize;  // Maximim swarm size
-        public ConcurrentDictionary<string, Peer> PeerSwarm { get; }
-        public TorrentStatus Status { get; set; }                                // Torrent status
-        public Tracker MainTracker { get; set; }
-
 
         /// <summary>
         /// Setup data and resources needed by download context.
@@ -80,7 +78,6 @@ namespace BitTorrentLibrary
             PieceLength = uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
             PiecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
             NumberOfPieces = ((UInt32)(PiecesInfoHash.Length / Constants.HashLength));
-            BlocksPerPiece = PieceLength / Constants.BlockSize;
             _pieceData = new PieceInfo[NumberOfPieces];
             PieceWriteQueue = downloader.PieceWriteQueue;
             PieceRequestQueue = downloader.PieceRequestQueue;
