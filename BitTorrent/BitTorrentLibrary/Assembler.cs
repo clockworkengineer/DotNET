@@ -116,7 +116,6 @@ namespace BitTorrentLibrary
                 {
                     return false;
                 }
-                cancelTask.ThrowIfCancellationRequested();
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
@@ -126,7 +125,6 @@ namespace BitTorrentLibrary
                 {
                     return false;
                 }
-                cancelTask.ThrowIfCancellationRequested();
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
                              remotePeer.Dc.GetPieceLength(pieceNumber) % Constants.BlockSize);
             }
