@@ -37,6 +37,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent : IAgent
     {
+
         private bool _agentRunning = false;                             // == true while agent is up and running.
         private readonly DownloadContext _dc;                           // Torrent download context
         private readonly HashSet<string> _deadPeers;                    // Dead peers list
@@ -53,7 +54,7 @@ namespace BitTorrentLibrary
         private void StartPieceAssemblyTask(Peer remotePeer)
         {
 
-            remotePeer.SetupConnection();
+            remotePeer.Connect();
 
             if (remotePeer.Connected)
             {
@@ -111,16 +112,11 @@ namespace BitTorrentLibrary
 
                 _listenerSocket = PeerNetwork.GetListeningConnection();
 
-                while (true)
+                while (_agentRunning)
                 {
                     Log.Logger.Info("Waiting for remote peer connect...");
 
                     Socket remotePeerSocket = PeerNetwork.WaitForConnection(_listenerSocket);
-
-                    if (!_agentRunning)
-                    {
-                        break;
-                    }
 
                     Log.Logger.Info("Remote peer connected...");
 

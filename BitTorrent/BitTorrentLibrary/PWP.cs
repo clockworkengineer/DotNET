@@ -187,10 +187,10 @@ namespace BitTorrentLibrary
 
             remotePeer.SetPieceOnRemotePeer(pieceNumber);
 
-            if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
-            {
-                remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
-            }
+            // if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
+            // {
+            //     remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
+            // }
 
         }
         /// <summary>
@@ -334,15 +334,19 @@ namespace BitTorrentLibrary
         {
             try
             {
-                byte command = remotePeer.ReadBuffer[0];
-                if ((command >= CHOKE) && (command <= CANCEL))
+                if (remotePeer.Connected)
                 {
-                    _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
+                    byte command = remotePeer.ReadBuffer[0];
+                    if ((command >= CHOKE) && (command <= CANCEL))
+                    {
+                        _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
+                    }
+                    else
+                    {
+                        Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
+                    }
                 }
-                else
-                {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
-                }
+
             }
             catch (Error)
             {
@@ -362,19 +366,23 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (!remotePeer.AmChoking)
+                if (remotePeer.Connected)
                 {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CHOKE");
+                    if (!remotePeer.AmChoking)
+                    {
+                        Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CHOKE");
 
-                    List<byte> requestPacket = new List<byte>();
+                        List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32(1));
-                    requestPacket.Add(CHOKE);
+                        requestPacket.AddRange(Util.PackUInt32(1));
+                        requestPacket.Add(CHOKE);
 
-                    remotePeer.PeerWrite(requestPacket.ToArray());
+                        remotePeer.PeerWrite(requestPacket.ToArray());
 
-                    remotePeer.AmChoking = true;
+                        remotePeer.AmChoking = true;
+                    }
                 }
+
             }
             catch (Error)
             {
@@ -394,19 +402,23 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (remotePeer.AmChoking)
+                if (remotePeer.Connected)
                 {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNCHOKE");
+                    if (remotePeer.AmChoking)
+                    {
+                        Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNCHOKE");
 
-                    List<byte> requestPacket = new List<byte>();
+                        List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32(1));
-                    requestPacket.Add(UNCHOKE);
+                        requestPacket.AddRange(Util.PackUInt32(1));
+                        requestPacket.Add(UNCHOKE);
 
-                    remotePeer.PeerWrite(requestPacket.ToArray());
+                        remotePeer.PeerWrite(requestPacket.ToArray());
 
-                    remotePeer.AmChoking = false;
+                        remotePeer.AmChoking = false;
+                    }
                 }
+
             }
             catch (Error)
             {
@@ -426,19 +438,23 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (!remotePeer.AmInterested)
+                if (remotePeer.Connected)
                 {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX INTERESTED");
+                    if (!remotePeer.AmInterested)
+                    {
+                        Log.Logger.Info($"{RemotePeerID(remotePeer)}TX INTERESTED");
 
-                    List<byte> requestPacket = new List<byte>();
+                        List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32(1));
-                    requestPacket.Add(INTERESTED);
+                        requestPacket.AddRange(Util.PackUInt32(1));
+                        requestPacket.Add(INTERESTED);
 
-                    remotePeer.PeerWrite(requestPacket.ToArray());
+                        remotePeer.PeerWrite(requestPacket.ToArray());
 
-                    remotePeer.AmInterested = true;
+                        remotePeer.AmInterested = true;
+                    }
                 }
+
             }
             catch (Error)
             {
@@ -458,19 +474,23 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (remotePeer.AmInterested)
+                if (remotePeer.Connected)
                 {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNINTERESTED");
+                    if (remotePeer.AmInterested)
+                    {
+                        Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNINTERESTED");
 
-                    List<byte> requestPacket = new List<byte>();
+                        List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32(1));
-                    requestPacket.Add(UNINTERESTED);
+                        requestPacket.AddRange(Util.PackUInt32(1));
+                        requestPacket.Add(UNINTERESTED);
 
-                    remotePeer.PeerWrite(requestPacket.ToArray());
+                        remotePeer.PeerWrite(requestPacket.ToArray());
 
-                    remotePeer.AmInterested = false;
+                        remotePeer.AmInterested = false;
+                    }
                 }
+
             }
             catch (Error)
             {
@@ -491,15 +511,19 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX HAVE {pieceNumber}");
+                if (remotePeer.Connected)
+                {
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX HAVE {pieceNumber}");
 
-                List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(Util.PackUInt32(5));
-                requestPacket.Add(HAVE);
-                requestPacket.AddRange(Util.PackUInt32(pieceNumber));
+                    requestPacket.AddRange(Util.PackUInt32(5));
+                    requestPacket.Add(HAVE);
+                    requestPacket.AddRange(Util.PackUInt32(pieceNumber));
 
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
+                }
+
             }
             catch (Error)
             {
@@ -520,17 +544,21 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX BITFIELD");
+                if (remotePeer.Connected)
+                {
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX BITFIELD");
 
-                DumpBitfield(bitField);
+                    DumpBitfield(bitField);
 
-                List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(Util.PackUInt32((UInt32)bitField.Length + 1));
-                requestPacket.Add(BITFIELD);
-                requestPacket.AddRange(bitField);
+                    requestPacket.AddRange(Util.PackUInt32((UInt32)bitField.Length + 1));
+                    requestPacket.Add(BITFIELD);
+                    requestPacket.AddRange(bitField);
 
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
+                }
+
             }
             catch (Error)
             {
@@ -553,17 +581,20 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX REQUEST Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
+                if (remotePeer.Connected)
+                {
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX REQUEST Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
-                List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(Util.PackUInt32(13));
-                requestPacket.Add(REQUEST);
-                requestPacket.AddRange(Util.PackUInt32(pieceNumber));
-                requestPacket.AddRange(Util.PackUInt32(blockOffset));
-                requestPacket.AddRange(Util.PackUInt32(blockSize));
+                    requestPacket.AddRange(Util.PackUInt32(13));
+                    requestPacket.Add(REQUEST);
+                    requestPacket.AddRange(Util.PackUInt32(pieceNumber));
+                    requestPacket.AddRange(Util.PackUInt32(blockOffset));
+                    requestPacket.AddRange(Util.PackUInt32(blockSize));
 
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
+                }
 
             }
             catch (Error)
@@ -587,17 +618,21 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX PIECE {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockData.Length}");
+                if (remotePeer.Connected)
+                {
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX PIECE {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockData.Length}");
 
-                List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(Util.PackUInt32((UInt32)blockData.Length + 9));
-                requestPacket.Add(PIECE);
-                requestPacket.AddRange(Util.PackUInt32(pieceNumber));
-                requestPacket.AddRange(Util.PackUInt32(blockOffset));
-                requestPacket.AddRange(blockData);
+                    requestPacket.AddRange(Util.PackUInt32((UInt32)blockData.Length + 9));
+                    requestPacket.Add(PIECE);
+                    requestPacket.AddRange(Util.PackUInt32(pieceNumber));
+                    requestPacket.AddRange(Util.PackUInt32(blockOffset));
+                    requestPacket.AddRange(blockData);
 
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
+                }
+
             }
             catch (Error)
             {
@@ -620,15 +655,18 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CANCEL Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
+                if (remotePeer.Connected)
+                {
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CANCEL Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
-                List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                requestPacket.AddRange(Util.PackUInt32(13));
-                requestPacket.Add(CANCEL);
-                requestPacket.AddRange(Util.PackUInt32(pieceNumber));
-                requestPacket.AddRange(Util.PackUInt32(blockOffset));
-                requestPacket.AddRange(Util.PackUInt32(blockSize));
+                    requestPacket.AddRange(Util.PackUInt32(13));
+                    requestPacket.Add(CANCEL);
+                    requestPacket.AddRange(Util.PackUInt32(pieceNumber));
+                    requestPacket.AddRange(Util.PackUInt32(blockOffset));
+                    requestPacket.AddRange(Util.PackUInt32(blockSize));
+                }
 
             }
             catch (Error)

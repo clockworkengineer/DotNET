@@ -96,9 +96,9 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        ///  Setup connection to remote peer.
+        ///  Connect to remote peer.
         /// </summary>
-        public void SetupConnection()
+        public void Connect()
         {
             ValueTuple<bool, byte[]> peerResponse;
 
