@@ -192,9 +192,17 @@ namespace BitTorrentLibrary
         /// </summary>
         public static void ShutdownListener()
         {
-            IPAddress localPeerIP = Dns.GetHostEntry(Host.GetIP()).AddressList[0];
-            Socket socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(new IPEndPoint(localPeerIP, (Int32)Host.DefaultPort));
+
+            try
+            {
+                IPAddress localPeerIP = Dns.GetHostEntry(Host.GetIP()).AddressList[0];
+                Socket socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                socket.Connect(new IPEndPoint(localPeerIP, (Int32)Host.DefaultPort));
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex.Message);      
+            }
 
         }
         /// <summary>

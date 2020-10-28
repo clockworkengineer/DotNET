@@ -89,6 +89,8 @@ namespace BitTorrentLibrary
             PeerSwarm = new ConcurrentDictionary<string, Peer>();
             downloader.CreateLocalTorrentStructure(this);
             downloader.CreateTorrentBitfield(this);
+            TotalBytesToDownload -= TotalBytesDownloaded;
+            TotalBytesDownloaded = 0;
         }
         /// <summary>
         /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.

@@ -5,8 +5,10 @@
 //
 // Description: All the high level torrent processing including download/upload
 // of torrent pieces and updating the peers in the current swarm. Any  peers that
-// are connected then have an piece assembler task created for them that put together
-// pieces that they request from torrent before being written to disk. 
+// are connected then have a piece assembler task created for them that puts together
+// pieces that they request from the torrent before being written to disk.
+//
+//TODO:Support for multiple running torrents
 //
 // Copyright 2020.
 //
@@ -112,11 +114,15 @@ namespace BitTorrentLibrary
 
                 _listenerSocket = PeerNetwork.GetListeningConnection();
 
-                while (_agentRunning)
+                while (true)
                 {
                     Log.Logger.Info("Waiting for remote peer connect...");
 
                     Socket remotePeerSocket = PeerNetwork.WaitForConnection(_listenerSocket);
+
+                    if (!_agentRunning) {
+                        break;
+                    }
 
                     Log.Logger.Info("Remote peer connected...");
 
