@@ -8,7 +8,6 @@
 // Copyright 2020.
 //
 
-
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -30,7 +29,6 @@ namespace ClientUI
         private double _currentProgress = 0;
         private Downloader _downloader;
         private Tracker _tracker;
-        private ListView _peerListView;
         public Agent DownloadAgent { get; set; }
 
         private void UpdateInformation(Object obj)
@@ -44,19 +42,16 @@ namespace ClientUI
             }
             Application.MainLoop.Invoke(() =>
             {
-                if (_peerListView != null)
-                {
-                    _mainWindow.InformationWindow.PeersWindow.Remove(_peerListView);
-                }
-                _peerListView = new ListView(peers.ToArray())
+
+                _mainWindow.InformationWindow.UpdatePeers(new ListView(peers.ToArray())
                 {
                     X = 0,
                     Y = 0,
                     Width = Dim.Fill(),
                     Height = Dim.Fill(),
                     CanFocus = false
-                };
-                _mainWindow.InformationWindow.PeersWindow.Add(_peerListView);
+                });
+
                 _mainWindow.InformationWindow.InfoHashText.Text = InfoHashToString(torrentDetails.infoHash);
                 _mainWindow.InformationWindow.BytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
                 _mainWindow.InformationWindow.BytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
@@ -84,7 +79,10 @@ namespace ClientUI
             }
 
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
         private void DownloadComplete(Object obj)
         {
             MainWindow mainWindow = (MainWindow)obj;
@@ -107,7 +105,7 @@ namespace ClientUI
         /// </summary>
         /// <param name="infoHash"></param>
         /// <returns></returns>
-        public static string InfoHashToString(byte[] infoHash)
+        private static string InfoHashToString(byte[] infoHash)
         {
             StringBuilder hex = new StringBuilder(infoHash.Length * 2);
             foreach (byte b in infoHash)
@@ -140,7 +138,7 @@ namespace ClientUI
                 _downloader = new Downloader();
                 _dc = new DownloadContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
 
-                DownloadAgent = new Agent(_dc,new Assembler());
+                DownloadAgent = new Agent(_dc, new Assembler());
 
                 _tracker = new Tracker(_dc);
                 _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
@@ -148,7 +146,7 @@ namespace ClientUI
                 _tracker.StartAnnouncing();
 
                 _dc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
-                _downloader.SetDownloadProgressCallBack(UpdateProgress,  this);
+                _downloader.SetDownloadProgressCallBack(UpdateProgress, this);
                 _tracker.SetTrackerCallBack(UpdateInformation, this);
 
                 DownloadAgent.Start();

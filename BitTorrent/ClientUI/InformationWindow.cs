@@ -8,7 +8,6 @@
 // Copyright 2020.
 //
 
-
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -28,13 +27,13 @@ namespace ClientUI
         private readonly Label _bytesUploadedLabel;
         private readonly Label _statuslabel;
         private readonly Label _missingPiecesLabel;
+        private ListView _peersListView;
         public TextField TrackerText { get; }
         public TextField InfoHashText { get; set; }
         public TextField BytesDownloadedText { get; set; }
         public TextField BytesUploadedText { get; set; }
         public TextField StatusText { get; set; }
         public Window PeersWindow { get; set; }
-        public ListView PeersListView { get; set; }
         public TextField MissingPiecesText { get; set; }
 
         /// <summary>
@@ -66,7 +65,7 @@ namespace ClientUI
             {
                 X = Pos.Left(_trackerLabel),
                 Y = Pos.Bottom(_trackerLabel) + 1,
-                Width = 20,
+                Width = 30,
                 Height = Dim.Fill(),
             };
             viewables.Add(PeersWindow);
@@ -156,14 +155,31 @@ namespace ClientUI
                 Add(viewable);
             }
         }
-        public void ClearData() {
-            InfoHashText.Text ="";
+        /// <summary>
+        /// 
+        /// </summary>
+        public void ClearData()
+        {
+            InfoHashText.Text = "";
             BytesDownloadedText.Text = "";
             BytesUploadedText.Text = "";
             MissingPiecesText.Text = "";
             StatusText.Text = "Idle";
+            if (_peersListView != null)
+            {
+                PeersWindow.Remove(_peersListView);
+            }
         }
 
+        public void UpdatePeers(ListView peersList)
+        {
+            if (_peersListView != null)
+            {
+                PeersWindow.Remove(_peersListView);
+            }
+            _peersListView = peersList;
+            PeersWindow.Add(_peersListView);
+        }
 
     }
 }
