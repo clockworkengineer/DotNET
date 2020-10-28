@@ -160,15 +160,19 @@ namespace ClientUI
         /// </summary>
         public void ClearData()
         {
-            InfoHashText.Text = "";
-            BytesDownloadedText.Text = "";
-            BytesUploadedText.Text = "";
-            MissingPiecesText.Text = "";
-            StatusText.Text = "Idle";
-            if (_peersListView != null)
-            {
-                PeersWindow.Remove(_peersListView);
-            }
+            Application.MainLoop.Invoke(() =>
+                              {
+                                  InfoHashText.Text = "";
+                                  BytesDownloadedText.Text = "";
+                                  BytesUploadedText.Text = "";
+                                  MissingPiecesText.Text = "";
+                                  StatusText.Text = "Idle";
+                                  if (_peersListView != null)
+                                  {
+                                      PeersWindow.Remove(_peersListView);
+                                  }
+                              });
+
         }
 
         public void UpdatePeers(ListView peersList)

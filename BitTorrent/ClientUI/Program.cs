@@ -27,7 +27,7 @@ namespace ClientUI
             Application.Init();
             var top = Application.Top;
 
-            var mainApplicationWindow = new MainWindow("BitTorrent Demo Application")
+            var mainWindow = new MainWindow("BitTorrent Demo Application")
             {
                 X = 0,
                 Y = 0,
@@ -37,25 +37,29 @@ namespace ClientUI
 
             var downloadStatusBar = new StatusBar(new StatusItem[] {
             new StatusItem(Key.ControlD, "~^D~ Download", () => {
-                if (!mainApplicationWindow.DownloadingTorrent)
+                if (!mainWindow.DownloadingTorrent)
                 {
-                    mainApplicationWindow.Torrent = new Torrent(mainApplicationWindow.TorrentFileText.Text.ToString());
-                    mainApplicationWindow.DownloadTorrentTask = Task.Run(() => mainApplicationWindow.Torrent.Download(mainApplicationWindow));
-                    mainApplicationWindow.DownloadingTorrent = true;
+                    mainWindow.Torrent = new Torrent(mainWindow.TorrentFileText.Text.ToString());
+                    mainWindow.DownloadTorrentTask = Task.Run(() => mainWindow.Torrent.Download(mainWindow));
+                    mainWindow.DownloadingTorrent = true;
                 } else {
                     MessageBox.Query("Information", "Already downloading torrent. You need to shut it down.", "Ok");
                 }
             }),
             new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
             {
-                mainApplicationWindow.Torrent.DownloadAgent.Close();
-                mainApplicationWindow.DownloadingTorrent = false;
-                mainApplicationWindow.InformationWindow.ClearData();
+                if(mainWindow.DownloadingTorrent) {
+                    lock (mainWindow.StartupLock) {
+                        mainWindow.Torrent.DownloadAgent.Close();
+                        mainWindow.DownloadingTorrent = false;
+                        mainWindow.InformationWindow.ClearData();
+                    }
+                }
             }),
             new StatusItem(Key.ControlQ, "~^Q~ Quit", () => {  top.Running = false;  })
             });
 
-            top.Add(mainApplicationWindow, downloadStatusBar);
+            top.Add(mainWindow, downloadStatusBar);
 
             Application.Run();
 

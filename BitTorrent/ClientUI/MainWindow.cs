@@ -32,8 +32,8 @@ namespace ClientUI
         public InformationWindow InformationWindow { get; set; }
         public bool DownloadingTorrent { get; set; } = false;
         public Task DownloadTorrentTask { get; set; }
-        public Torrent Torrent { get; set;}
-
+        public Torrent Torrent { get; set; }
+        public Object StartupLock = new object();
         /// <summary>
         /// 
         /// </summary>

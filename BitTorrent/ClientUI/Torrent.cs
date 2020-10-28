@@ -124,34 +124,39 @@ namespace ClientUI
             {
                 _mainWindow = mainWindow;
 
-                _torrentFile = new MetaInfoFile(_torrentFileName);
+                
+                lock (_mainWindow.StartupLock)
+                {
+                    _torrentFile = new MetaInfoFile(_torrentFileName);
 
-                _torrentFile.Load();
-                _torrentFile.Parse();
+                    _torrentFile.Load();
+                    _torrentFile.Parse();
 
-                Application.MainLoop.Invoke(() =>
-                              {
-                                  _mainWindow.DownloadProgress.Fraction = 0;
-                                  _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
-                              });
+                    Application.MainLoop.Invoke(() =>
+                                  {
+                                      _mainWindow.DownloadProgress.Fraction = 0;
+                                      _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
+                                  });
 
-                _downloader = new Downloader();
-                _dc = new DownloadContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
+                    _downloader = new Downloader();
+                    _dc = new DownloadContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
 
-                DownloadAgent = new Agent(_dc, new Assembler());
+                    DownloadAgent = new Agent(_dc, new Assembler());
 
-                _tracker = new Tracker(_dc);
-                _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
+                    _tracker = new Tracker(_dc);
+                    _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
 
-                _tracker.StartAnnouncing();
+                    _tracker.StartAnnouncing();
 
-                _dc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
-                _downloader.SetDownloadProgressCallBack(UpdateProgress, this);
-                _tracker.SetTrackerCallBack(UpdateInformation, this);
+                    _dc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
+                    _downloader.SetDownloadProgressCallBack(UpdateProgress, this);
+                    _tracker.SetTrackerCallBack(UpdateInformation, this);
 
-                DownloadAgent.Start();
+                    DownloadAgent.Start();
 
-                DownloadAgent.Download();
+                    DownloadAgent.Download();
+                }
+
 
             }
             catch (Exception ex)
