@@ -28,14 +28,15 @@ namespace ClientUI
         private readonly Label _bytesUploadedLabel;
         private readonly Label _statuslabel;
         private readonly Label _missingPiecesLabel;
-        public TextField _infoHashText;
-        public TextField _bytesDownloadedText;
-        public TextField _bytesUploadedText;
-        public TextField _statusText;
-        public TextField _missingPiecesText;
-        public Window peersWindow;
-        public ListView peersListView;
         public TextField TrackerText { get; }
+        public TextField InfoHashText { get; set; }
+        public TextField BytesDownloadedText { get; set; }
+        public TextField BytesUploadedText { get; set; }
+        public TextField StatusText { get; set; }
+        public Window PeersWindow { get; set; }
+        public ListView PeersListView { get; set; }
+        public TextField MissingPiecesText { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -61,46 +62,46 @@ namespace ClientUI
             };
             viewables.Add(TrackerText);
 
-            peersWindow = new Window("Peers")
+            PeersWindow = new Window("Peers")
             {
                 X = Pos.Left(_trackerLabel),
                 Y = Pos.Bottom(_trackerLabel) + 1,
                 Width = 20,
                 Height = Dim.Fill(),
             };
-            viewables.Add(peersWindow);
+            viewables.Add(PeersWindow);
 
             _infoHashLabel = new Label("InfoHash:")
             {
-                X = Pos.Right(peersWindow) + 1,
-                Y = Pos.Top(peersWindow)
+                X = Pos.Right(PeersWindow) + 1,
+                Y = Pos.Top(PeersWindow)
             };
             viewables.Add(_infoHashLabel);
 
-            _infoHashText = new TextField()
+            InfoHashText = new TextField()
             {
                 X = Pos.Right(_infoHashLabel) + 3,
                 Y = Pos.Top(_infoHashLabel),
                 Width = 20,
                 CanFocus = false
             };
-            viewables.Add(_infoHashText);
+            viewables.Add(InfoHashText);
 
             _bytesDownloadedLabel = new Label("Downloaded:")
             {
-                X = Pos.Right(peersWindow) + 1,
+                X = Pos.Right(PeersWindow) + 1,
                 Y = Pos.Bottom(_infoHashLabel)
             };
             viewables.Add(_bytesDownloadedLabel);
 
-            _bytesDownloadedText = new TextField()
+            BytesDownloadedText = new TextField()
             {
                 X = Pos.Right(_bytesDownloadedLabel) + 1,
                 Y = Pos.Bottom(_infoHashLabel),
                 Width = 20,
                 CanFocus = false
             };
-            viewables.Add(_bytesDownloadedText);
+            viewables.Add(BytesDownloadedText);
 
             _bytesUploadedLabel = new Label("Uploaded:")
             {
@@ -109,14 +110,14 @@ namespace ClientUI
             };
             viewables.Add(_bytesUploadedLabel);
 
-            _bytesUploadedText = new TextField()
+            BytesUploadedText = new TextField()
             {
                 X = Pos.Right(_bytesDownloadedLabel) + 1,
                 Y = Pos.Bottom(_bytesDownloadedLabel),
                 Width = 20,
                 CanFocus = false
             };
-            viewables.Add(_bytesUploadedText);
+            viewables.Add(BytesUploadedText);
 
             _missingPiecesLabel = new Label("Missing:")
             {
@@ -125,14 +126,14 @@ namespace ClientUI
             };
             viewables.Add(_missingPiecesLabel);
 
-            _missingPiecesText = new TextField()
+            MissingPiecesText = new TextField()
             {
                 X = Pos.Right(_bytesDownloadedLabel) + 1,
                 Y = Pos.Bottom(_bytesUploadedLabel),
                 Width = 20,
                 CanFocus = false
             };
-            viewables.Add(_missingPiecesText);
+            viewables.Add(MissingPiecesText);
 
             _statuslabel = new Label("Status:")
             {
@@ -141,21 +142,26 @@ namespace ClientUI
             };
             viewables.Add(_statuslabel);
 
-            _statusText = new TextField()
+            StatusText = new TextField()
             {
                 X = Pos.Right(_bytesDownloadedLabel) + 1,
                 Y = Pos.Bottom(_missingPiecesLabel),
                 Width = 20,
                 CanFocus = false
             };
-            viewables.Add(_statusText);
-
-
+            viewables.Add(StatusText);
 
             foreach (var viewable in viewables)
             {
                 Add(viewable);
             }
+        }
+        public void ClearData() {
+            InfoHashText.Text ="";
+            BytesDownloadedText.Text = "";
+            BytesUploadedText.Text = "";
+            MissingPiecesText.Text = "";
+            StatusText.Text = "Idle";
         }
 
 

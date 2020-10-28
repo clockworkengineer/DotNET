@@ -50,6 +50,7 @@ namespace ClientUI
             {
                 mainApplicationWindow.Torrent.DownloadAgent.Close();
                 mainApplicationWindow.DownloadingTorrent = false;
+                mainApplicationWindow.InformationWindow.ClearData();
             }),
             new StatusItem(Key.ControlQ, "~^Q~ Quit", () => {  top.Running = false;  })
             });

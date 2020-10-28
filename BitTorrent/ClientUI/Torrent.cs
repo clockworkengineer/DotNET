@@ -28,7 +28,7 @@ namespace ClientUI
         private DownloadContext _dc;
         private MainWindow _mainWindow;
         private double _currentProgress = 0;
-        private Assembler _assembler;
+        private Downloader _downloader;
         private Tracker _tracker;
         private ListView _peerListView;
         public Agent DownloadAgent { get; set; }
@@ -46,7 +46,7 @@ namespace ClientUI
             {
                 if (_peerListView != null)
                 {
-                    _mainWindow.InformationWindow.peersWindow.Remove(_peerListView);
+                    _mainWindow.InformationWindow.PeersWindow.Remove(_peerListView);
                 }
                 _peerListView = new ListView(peers.ToArray())
                 {
@@ -56,12 +56,12 @@ namespace ClientUI
                     Height = Dim.Fill(),
                     CanFocus = false
                 };
-                _mainWindow.InformationWindow.peersWindow.Add(_peerListView);
-                _mainWindow.InformationWindow._infoHashText.Text = InfoHashToString(torrentDetails.infoHash);
-                _mainWindow.InformationWindow._bytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
-                _mainWindow.InformationWindow._bytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
-                _mainWindow.InformationWindow._missingPiecesText.Text = torrentDetails.missingPiecesCount.ToString();
-                _mainWindow.InformationWindow._statusText.Text = torrentDetails.status.ToString();
+                _mainWindow.InformationWindow.PeersWindow.Add(_peerListView);
+                _mainWindow.InformationWindow.InfoHashText.Text = InfoHashToString(torrentDetails.infoHash);
+                _mainWindow.InformationWindow.BytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
+                _mainWindow.InformationWindow.BytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
+                _mainWindow.InformationWindow.MissingPiecesText.Text = torrentDetails.missingPiecesCount.ToString();
+                _mainWindow.InformationWindow.StatusText.Text = torrentDetails.status.ToString();
             });
         }
         /// <summary>
@@ -137,11 +137,10 @@ namespace ClientUI
                                   _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                               });
 
-                _dc = new DownloadContext(_torrentFile, new Selector(), new Downloader(), "/home/robt/utorrent");
+                _downloader = new Downloader();
+                _dc = new DownloadContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
 
-                _assembler =  new Assembler();
-                
-                DownloadAgent = new Agent(_dc,_assembler);
+                DownloadAgent = new Agent(_dc,new Assembler());
 
                 _tracker = new Tracker(_dc);
                 _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
@@ -149,7 +148,7 @@ namespace ClientUI
                 _tracker.StartAnnouncing();
 
                 _dc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
-                _assembler.SetDownloadProgressCallBack(UpdateProgress,  this);
+                _downloader.SetDownloadProgressCallBack(UpdateProgress,  this);
                 _tracker.SetTrackerCallBack(UpdateInformation, this);
 
                 DownloadAgent.Start();

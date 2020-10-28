@@ -19,12 +19,16 @@ using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
 {
+    public delegate void ProgessCallBack(Object callBackData); // Download progress callback
+
     public interface IDownloader
     {
         BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
         BlockingCollection<PieceRequest> PieceRequestQueue { get; }
+
         void CreateLocalTorrentStructure(DownloadContext dc);
         void CreateTorrentBitfield(DownloadContext dc);
+        void SetDownloadProgressCallBack(ProgessCallBack callBack, object callBackData);
     }
 
     /// <summary>
@@ -32,6 +36,9 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Downloader : IDownloader
     {
+
+        private ProgessCallBack _progressCallBack;                          // Download progress function
+        private Object _progressCallBackData;                               // Download progress function data
         public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; }
 
@@ -126,6 +133,8 @@ namespace BitTorrentLibrary
                 Log.Logger.Info((pieceBuffer.RemotePeer.Dc.TotalBytesDownloaded / (double)pieceBuffer.RemotePeer.Dc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
+                _progressCallBack?.Invoke(_progressCallBackData);
+
                 if (pieceBuffer.RemotePeer.Dc.BytesLeftToDownload() == 0)
                 {
                     pieceBuffer.RemotePeer.Dc.DownloadFinished.Set();
@@ -165,6 +174,14 @@ namespace BitTorrentLibrary
             PieceRequestQueue = new BlockingCollection<PieceRequest>();
             Task.Run(() => PieceBufferDiskWriter());
             Task.Run(() => PieceRequestProcessingTask());
+        }
+        /// <summary>
+        /// Releases unmanaged resources and performs other cleanup operations before the
+        /// downloader class is reclaimed by garbage collection.
+        /// </summary>
+        ~Downloader()
+        {
+            PieceWriteQueue.CompleteAdding();
         }
         /// <summary>
         /// Creates the empty files on disk as place holders of files to be downloaded.
@@ -226,14 +243,15 @@ namespace BitTorrentLibrary
 
             Log.Logger.Debug("Finished generating downloaded map.");
         }
-
         /// <summary>
-        /// Releases unmanaged resources and performs other cleanup operations before the
-        /// downloader class is reclaimed by garbage collection.
+        /// 
         /// </summary>
-        ~Downloader()
+        /// <param name="callBack"></param>
+        /// <param name="callBackData"></param>
+        public void SetDownloadProgressCallBack(ProgessCallBack callBack, Object callBackData)
         {
-            PieceWriteQueue.CompleteAdding();
+            _progressCallBack = callBack;
+            _progressCallBackData = callBackData;
         }
     }
 }

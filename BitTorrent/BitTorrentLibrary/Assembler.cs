@@ -21,13 +21,11 @@ using System.Threading;
 
 namespace BitTorrentLibrary
 {
-    public delegate void ProgessCallBack(Object callBackData); // Download progress callback
 
     public interface IAssembler
     {
         ManualResetEvent Paused { get; }
         void AssemblePieces(Peer remotePeer);
-        void SetDownloadProgressCallBack(ProgessCallBack callBack, object callBackData);
     }
 
     /// <summary>
@@ -35,8 +33,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler : IAssembler
     {
-        private ProgessCallBack _progressCallBack;   // Download progress function
-        private Object _progressCallBackData;        // Download progress function data
+
         public ManualResetEvent Paused { get; }      // == true (set) pause downloading from peer
 
         /// <summary>
@@ -57,24 +54,14 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
                         remotePeer.Dc.PieceWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
-                        _progressCallBack?.Invoke(_progressCallBackData);
                         remotePeer.Dc.MarkPieceLocal(pieceNumber, true);
                     }
-                    else
-                    {
-                        Log.Logger.Debug("PIECE CONTAINED INVALID INFOHASH.");
-                        Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
-                        remotePeer.Dc.MarkPieceLocal(pieceNumber, false);
-                    }
                 }
-                else
+
+                if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
                 {
-                    if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
-                    {
-                        Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                        remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
-                    }
+                    Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
+                    remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
                 }
 
                 remotePeer.AssembledPiece.Reset();
@@ -88,7 +75,7 @@ namespace BitTorrentLibrary
         /// <param name="cancelTask"></param>
         private void WaitOnWithCancelation(ManualResetEvent evt, CancellationToken cancelTask)
         {
-            while (!evt.WaitOne(300))
+            if (WaitHandle.WaitAny(new WaitHandle[] { evt, cancelTask.WaitHandle }) == 1)
             {
                 cancelTask.ThrowIfCancellationRequested();
             }
@@ -110,7 +97,7 @@ namespace BitTorrentLibrary
             remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Dc.GetPieceLength(pieceNumber));
 
             UInt32 blockNumber = 0;
-            for (; blockNumber < remotePeer.Dc.GetPieceLength(pieceNumber)/Constants.BlockSize; blockNumber++)
+            for (; blockNumber < remotePeer.Dc.GetPieceLength(pieceNumber) / Constants.BlockSize; blockNumber++)
             {
                 if (!remotePeer.PeerChoking.WaitOne(0))
                 {
@@ -138,7 +125,9 @@ namespace BitTorrentLibrary
             {
                 cancelTask.ThrowIfCancellationRequested();
             }
+
             return (remotePeer.AssembledPiece.AllBlocksThere);
+
         }
         /// <summary>
         /// Assembles the pieces of a torrent block by block. If a choke or cancel occurs when a piece is being handled the 
@@ -194,7 +183,6 @@ namespace BitTorrentLibrary
                     PWP.Uninterested(remotePeer);
                     PWP.Unchoke(remotePeer);
                     WaitHandle.WaitAll(waitHandles);
-
                 }
             }
             catch (Exception ex)
@@ -250,11 +238,6 @@ namespace BitTorrentLibrary
 
             Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 
-        }
-        public void SetDownloadProgressCallBack(ProgessCallBack callBack, Object callBackData)
-        {
-            _progressCallBack = callBack;
-            _progressCallBackData = callBackData;
         }
     }
 }
