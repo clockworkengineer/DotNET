@@ -3,9 +3,9 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Download context for a torrent file being downloaded. This includes
-// download progress, a pieces download map and functions for accessing this map to
-// change a pieces status.
+// Description: Torrent being downloaded/seeded context. This includes
+// download progress, a pieces to download bitfiejd and functions for 
+// accessing this map to change a pieces status.
 //
 // Copyright 2020.
 //
@@ -31,12 +31,12 @@ namespace BitTorrentLibrary
     }
 
     /// <summary>
-    /// Download context for a torrent file.
+    /// Torrent context for a torrent file.
     /// </summary>
-    public class DownloadContext
+    public class TorrentContext
     {
         private readonly SHA1 _SHA1;                                        // Object to create SHA1 piece info hash
-        private readonly Object _dcLock = new object();                     // Synchronization lock for download context
+        private readonly Object _dcLock = new object();                     // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                             // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                            // Piece information
         public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }     // piece buffer disk write queue
@@ -62,12 +62,12 @@ namespace BitTorrentLibrary
         public object DownloadCompleteCallBackData { get; set; }
 
         /// <summary>
-        /// Setup data and resources needed by download context.
+        /// Setup data and resources needed by torrent context.
         /// </summary>
         /// <param name="filesToDownload">Files to download.</param>
         /// <param name="pieceLength">Piece length.</param>
         /// <param name="pieces">Pieces.</param>
-        public DownloadContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath)
+        public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath)
         {
             Status = TorrentStatus.Stopped;
             InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];

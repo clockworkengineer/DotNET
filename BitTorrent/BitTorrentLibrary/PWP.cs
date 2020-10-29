@@ -88,7 +88,7 @@ namespace BitTorrentLibrary
                 };
             handshakePacket.AddRange(_protocolName);
             handshakePacket.AddRange(new byte[8]);
-            handshakePacket.AddRange(remotePeer.Dc.InfoHash);
+            handshakePacket.AddRange(remotePeer.Tc.InfoHash);
             handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.Get()));
 
             return handshakePacket;
@@ -202,7 +202,7 @@ namespace BitTorrentLibrary
 
             DumpBitfield(remotePeer.RemotePieceBitfield);
 
-            remotePeer.Dc.MergePieceBitfield(remotePeer);
+            remotePeer.Tc.MergePieceBitfield(remotePeer);
         }
         /// <summary>
         /// Handles request command from remote peer.
@@ -219,7 +219,7 @@ namespace BitTorrentLibrary
                 blockSize = Util.UnPackUInt32(remotePeer.ReadBuffer, 9)
             };
 
-            remotePeer.Dc.PieceRequestQueue.Add(request);
+            remotePeer.Tc.PieceRequestQueue.Add(request);
 
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX REQUEST {request.pieceNumber} Block Offset {request.blockOffset} Data Size {request.blockSize}\n.");
 

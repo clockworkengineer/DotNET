@@ -45,23 +45,23 @@ namespace BitTorrentLibrary
         private void QeueAssembledPieceToDisk(Peer remotePeer, UInt32 pieceNumber, bool pieceAssembled)
         {
 
-            if (!remotePeer.Dc.DownloadFinished.WaitOne(0))
+            if (!remotePeer.Tc.DownloadFinished.WaitOne(0))
             {
                 if (pieceAssembled)
                 {
-                    bool pieceValid = remotePeer.Dc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, remotePeer.Dc.GetPieceLength(pieceNumber));
+                    bool pieceValid = remotePeer.Tc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, remotePeer.Tc.GetPieceLength(pieceNumber));
                     if (pieceValid)
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
-                        remotePeer.Dc.PieceWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
-                        remotePeer.Dc.MarkPieceLocal(pieceNumber, true);
+                        remotePeer.Tc.PieceWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
+                        remotePeer.Tc.MarkPieceLocal(pieceNumber, true);
                     }
                 }
 
-                if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
+                if (!remotePeer.Tc.IsPieceLocal(pieceNumber))
                 {
                     Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                    remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
+                    remotePeer.Tc.MarkPieceMissing(pieceNumber, true);
                 }
 
                 remotePeer.AssembledPiece.Reset();
@@ -94,10 +94,10 @@ namespace BitTorrentLibrary
 
             remotePeer.WaitForPieceAssembly.Reset();
 
-            remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Dc.GetPieceLength(pieceNumber));
+            remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Tc.GetPieceLength(pieceNumber));
 
             UInt32 blockNumber = 0;
-            for (; blockNumber < remotePeer.Dc.GetPieceLength(pieceNumber) / Constants.BlockSize; blockNumber++)
+            for (; blockNumber < remotePeer.Tc.GetPieceLength(pieceNumber) / Constants.BlockSize; blockNumber++)
             {
                 if (!remotePeer.PeerChoking.WaitOne(0))
                 {
@@ -106,14 +106,14 @@ namespace BitTorrentLibrary
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize, Constants.BlockSize);
             }
 
-            if (remotePeer.Dc.GetPieceLength(pieceNumber) % Constants.BlockSize != 0)
+            if (remotePeer.Tc.GetPieceLength(pieceNumber) % Constants.BlockSize != 0)
             {
                 if (!remotePeer.PeerChoking.WaitOne(0))
                 {
                     return false;
                 }
                 PWP.Request(remotePeer, pieceNumber, blockNumber * Constants.BlockSize,
-                             remotePeer.Dc.GetPieceLength(pieceNumber) % Constants.BlockSize);
+                             remotePeer.Tc.GetPieceLength(pieceNumber) % Constants.BlockSize);
             }
 
             switch (WaitHandle.WaitAny(waitHandles, 60000))
@@ -149,9 +149,9 @@ namespace BitTorrentLibrary
                 PWP.Interested(remotePeer);
                 WaitOnWithCancellation(remotePeer.PeerChoking, cancelTask);
 
-                while (!remotePeer.Dc.DownloadFinished.WaitOne(0))
+                while (!remotePeer.Tc.DownloadFinished.WaitOne(0))
                 {
-                    while (remotePeer.Dc.PieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
+                    while (remotePeer.Tc.PieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
                     {
                         Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
                         QeueAssembledPieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, cancelTask));
@@ -220,12 +220,12 @@ namespace BitTorrentLibrary
 
                 WaitOnWithCancellation(remotePeer.BitfieldReceived, cancelTask);
 
-                foreach (var pieceNumber in remotePeer.Dc.PieceSelector.LocalPieceSuggestions(remotePeer, 10))
+                foreach (var pieceNumber in remotePeer.Tc.PieceSelector.LocalPieceSuggestions(remotePeer, 10))
                 {
                     PWP.Have(remotePeer, pieceNumber);
                 }
 
-                if (remotePeer.Dc.BytesLeftToDownload() > 0)
+                if (remotePeer.Tc.BytesLeftToDownload() > 0)
                 {
                     AssembleMissingPieces(remotePeer, cancelTask);
                 }

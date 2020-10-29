@@ -24,7 +24,7 @@ namespace ClientUI
     {
         private readonly string _torrentFileName;
         private MetaInfoFile _torrentFile;
-        private DownloadContext _dc;
+        private TorrentContext _tc;
         private MainWindow _mainWindow;
         private double _currentProgress = 0;
         private Downloader _downloader;
@@ -66,8 +66,8 @@ namespace ClientUI
         private void UpdateProgress(Object obj)
         {
             Torrent torrent = (Torrent)obj;
-            double progress = (double)_dc.TotalBytesDownloaded /
-            (double)_dc.TotalBytesToDownload;
+            double progress = (double)_tc.TotalBytesDownloaded /
+            (double)_tc.TotalBytesToDownload;
             if (progress - _currentProgress > 0.05)
             {
                 Application.MainLoop.Invoke(() =>
@@ -139,16 +139,16 @@ namespace ClientUI
                                   });
 
                     _downloader = new Downloader();
-                    _dc = new DownloadContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
+                    _tc = new TorrentContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
 
-                    DownloadAgent = new Agent(_dc, new Assembler());
+                    DownloadAgent = new Agent(_tc, new Assembler());
 
-                    _tracker = new Tracker(_dc);
+                    _tracker = new Tracker(_tc);
                     _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
 
                     _tracker.StartAnnouncing();
 
-                    _dc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
+                    _tc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
                     _downloader.SetDownloadProgressCallBack(UpdateProgress, this);
                     _tracker.SetTrackerCallBack(UpdateInformation, this);
 

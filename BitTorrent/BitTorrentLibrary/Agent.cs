@@ -40,7 +40,7 @@ namespace BitTorrentLibrary
     public class Agent : IAgent
     {
         private bool _agentRunning = false;                             // == true while agent is up and running.
-        private readonly DownloadContext _dc;                           // Torrent download context
+        private readonly TorrentContext _tc;                            // Torrent context
         private readonly HashSet<string> _deadPeers;                    // Dead peers list
         private readonly Assembler _pieceAssembler;                     // Piece assembler for agent
         private Socket _listenerSocket;                                 // Connection listener socket
@@ -59,7 +59,7 @@ namespace BitTorrentLibrary
 
             if (remotePeer.Connected)
             {
-                if (_dc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
+                if (_tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                 {
                     Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
                     remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
@@ -89,9 +89,9 @@ namespace BitTorrentLibrary
                 try
                 {
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (!_deadPeers.Contains(peer.ip) && !_dc.PeerSwarm.ContainsKey(peer.ip) && _dc.PeerSwarm.Count < _dc.MaximumSwarmSize)
+                    if (!_deadPeers.Contains(peer.ip) && !_tc.PeerSwarm.ContainsKey(peer.ip) && _tc.PeerSwarm.Count < _tc.MaximumSwarmSize)
                     {
-                        StartPieceAssemblyTask(new Peer(peer.ip, peer.port, _dc));
+                        StartPieceAssemblyTask(new Peer(peer.ip, peer.port, _tc));
                     }
                 }
                 catch (Exception)
@@ -128,9 +128,9 @@ namespace BitTorrentLibrary
                     var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
 
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (!_dc.PeerSwarm.ContainsKey(endPoint.Item1) && _dc.PeerSwarm.Count < _dc.MaximumSwarmSize)
+                    if (!_tc.PeerSwarm.ContainsKey(endPoint.Item1) && _tc.PeerSwarm.Count < _tc.MaximumSwarmSize)
                     {
-                        StartPieceAssemblyTask(new Peer(endPoint.Item1, endPoint.Item2, _dc, remotePeerSocket));
+                        StartPieceAssemblyTask(new Peer(endPoint.Item1, endPoint.Item2, _tc, remotePeerSocket));
                     }
                 }
             }
@@ -149,9 +149,9 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(DownloadContext dc, Assembler pieceAssembler)
+        public Agent(TorrentContext tc, Assembler pieceAssembler)
         {
-            _dc = dc;
+            _tc = tc;
             _pieceAssembler = pieceAssembler;
             PeerSwarmQueue = new BlockingCollection<PeerDetails>();
             _deadPeers = new HashSet<string>();
@@ -172,16 +172,16 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (_dc.MainTracker.Left != 0)
+                if (_tc.MainTracker.Left != 0)
                 {
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
-                    _dc.Status = TorrentStatus.Downloading;
-                    _dc.DownloadFinished.WaitOne();
-                    _dc.MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
+                    _tc.Status = TorrentStatus.Downloading;
+                    _tc.DownloadFinished.WaitOne();
+                    _tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
                     Log.Logger.Info("Whole Torrent finished downloading.");
                 }
 
-                _dc.Status = TorrentStatus.Seeding;
+                _tc.Status = TorrentStatus.Seeding;
 
             }
             catch (Error)
@@ -224,18 +224,18 @@ namespace BitTorrentLibrary
                 {
                     _agentRunning = false;
 
-                    _dc.MainTracker.StopAnnouncing();
-                    if (_dc.PeerSwarm != null)
+                    _tc.MainTracker.StopAnnouncing();
+                    if (_tc.PeerSwarm != null)
                     {
                         Log.Logger.Info("Closing peer sockets.");
-                        foreach (var remotePeer in _dc.PeerSwarm.Values)
+                        foreach (var remotePeer in _tc.PeerSwarm.Values)
                         {
                             remotePeer.Close();
                         }
                     }
-                    _dc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+                    _tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
                     PeerNetwork.ShutdownListener();
-                    _dc.Status = TorrentStatus.Stopped;
+                    _tc.Status = TorrentStatus.Stopped;
                 }
             }
             catch (Error)
@@ -256,7 +256,7 @@ namespace BitTorrentLibrary
             try
             {
                 _pieceAssembler?.Paused.Set();
-                _dc.Status = TorrentStatus.Started;
+                _tc.Status = TorrentStatus.Started;
             }
             catch (Error)
             {
@@ -276,7 +276,7 @@ namespace BitTorrentLibrary
             try
             {
                 _pieceAssembler?.Paused.Reset();
-                _dc.Status = TorrentStatus.Paused;
+                _tc.Status = TorrentStatus.Paused;
             }
             catch (Error)
             {
@@ -297,19 +297,19 @@ namespace BitTorrentLibrary
 
             return new TorrentDetails
             {
-                status = _dc.Status,
+                status = _tc.Status,
 
-                peers = (from peer in _dc.PeerSwarm.Values
+                peers = (from peer in _tc.PeerSwarm.Values
                          select new PeerDetails
                          {
                              ip = peer.Ip,
                              port = peer.Port
                          }).ToList(),
 
-                downloadedBytes = _dc.TotalBytesDownloaded,
-                uploadedBytes = _dc.TotalBytesUploaded,
-                infoHash = _dc.InfoHash,
-                missingPiecesCount = _dc.MissingPiecesCount
+                downloadedBytes = _tc.TotalBytesDownloaded,
+                uploadedBytes = _tc.TotalBytesUploaded,
+                infoHash = _tc.InfoHash,
+                missingPiecesCount = _tc.MissingPiecesCount
 
             };
         }

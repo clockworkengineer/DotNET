@@ -25,7 +25,7 @@ namespace BitTorrentLibrary
         private readonly PeerNetwork _network;                           // Network layer
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
-        public DownloadContext Dc { get; }                               // Torrent download context
+        public TorrentContext Tc { get; }                                // Torrent torrent context
         public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
         public PieceBuffer AssembledPiece { get; }                       // Assembled pieces buffer
         public string Ip { get; }                                        // Remote peer ip
@@ -48,19 +48,19 @@ namespace BitTorrentLibrary
         /// <param name="ip">Ip.</param>
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
-        /// <param name="dc">Download context.</param>
-        public Peer(string ip, UInt32 port, DownloadContext dc, Socket socket = null)
+        /// <param name="tc">torrent context.</param>
+        public Peer(string ip, UInt32 port, TorrentContext tc, Socket socket = null)
         {
             Ip = ip;
             Port = port;
-            Dc = dc;
+            Tc = tc;
             _network = new PeerNetwork(socket);
-            AssembledPiece = new PieceBuffer(this, Dc.PieceLength);
+            AssembledPiece = new PieceBuffer(this, Tc.PieceLength);
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
-            NumberOfMissingPieces = Dc.NumberOfPieces;
+            NumberOfMissingPieces = Tc.NumberOfPieces;
         }
         /// <summary>
         /// Send packet to remote peer.
@@ -117,7 +117,7 @@ namespace BitTorrentLibrary
                 if (peerResponse.Item1)
                 {
                     RemotePeerID = peerResponse.Item2;
-                    PWP.Bitfield(this, Dc.Bitfield);
+                    PWP.Bitfield(this, Tc.Bitfield);
                     Connected = true;
                     _network.StartReads(this);
                 }
@@ -139,7 +139,7 @@ namespace BitTorrentLibrary
                     Connected = false;
                     CancelTaskSource.Cancel();
                     _network.Close();
-                    if (Dc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
+                    if (Tc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
                     {
                         Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
                     }

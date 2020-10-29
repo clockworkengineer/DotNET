@@ -40,12 +40,12 @@ namespace BitTorrentLibrary
             UInt32 currentPiece = startPiece;
             do
             {
-                if (remotePeer.Dc.IsPieceMissing(currentPiece) && remotePeer.IsPieceOnRemotePeer(currentPiece))
+                if (remotePeer.Tc.IsPieceMissing(currentPiece) && remotePeer.IsPieceOnRemotePeer(currentPiece))
                 {
                     return currentPiece;
                 }
                 currentPiece++;
-                currentPiece %= remotePeer.Dc.NumberOfPieces;
+                currentPiece %= remotePeer.Tc.NumberOfPieces;
             } while (startPiece != currentPiece);
 
             return -1;
@@ -76,7 +76,7 @@ namespace BitTorrentLibrary
                     if (suggestedPiece != -1)
                     {
                         nextPiece = (UInt32)suggestedPiece;
-                        remotePeer.Dc.MarkPieceMissing(nextPiece, false);
+                        remotePeer.Tc.MarkPieceMissing(nextPiece, false);
                         return true;
                     }
                     return false;
@@ -105,13 +105,13 @@ namespace BitTorrentLibrary
 
             do
             {
-                if (!remotePeer.IsPieceOnRemotePeer(currentPiece) && remotePeer.Dc.IsPieceLocal(currentPiece))
+                if (!remotePeer.IsPieceOnRemotePeer(currentPiece) && remotePeer.Tc.IsPieceLocal(currentPiece))
                 {
                     suggestions.Add(currentPiece);
                     numberOfSuggestions--;
                 }
                 currentPiece++;
-                currentPiece %= remotePeer.Dc.NumberOfPieces;
+                currentPiece %= remotePeer.Tc.NumberOfPieces;
             } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
 
             return (suggestions.ToArray());

@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
             completed = 3   // Must be sent to the tracker when the download completes
         };
         
-        private readonly DownloadContext _dc;                   // Download context
+        private readonly TorrentContext _tc;                    // Torrent context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         private TrackerCallBack _callBack;                      // Tracker ping callback function
@@ -57,9 +57,9 @@ namespace BitTorrentLibrary
         public string TrackerURL { get;  }                      // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
-        public UInt64 Downloaded => _dc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
-        public UInt64 Left => _dc.BytesLeftToDownload();        // Bytes left in torrent to download
-        public UInt64 Uploaded => _dc.TotalBytesUploaded;       // Total bytes uploaded
+        public UInt64 Downloaded => _tc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
+        public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download
+        public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes uploaded
 
         /// <summary>
         /// Perform announce request on timer tick
@@ -77,7 +77,7 @@ namespace BitTorrentLibrary
                 {
                     tracker._peerSwarmQueue?.Add(peerDetails);
                 }
-                tracker.NumWanted = Math.Max(tracker._dc.MaximumSwarmSize - tracker._dc.PeerSwarm.Count, 0);
+                tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
 
                 tracker._callBack?.Invoke(tracker._callBackData);
                 tracker.UpdateRunningStatusFromAnnounce(response);
@@ -134,14 +134,14 @@ namespace BitTorrentLibrary
         /// <param name="trackerURL"></param>
         /// <param name="infoHash"></param>
         /// <param name="updatePeerSwarm"></param>
-        public Tracker(DownloadContext dc)
+        public Tracker(TorrentContext tc)
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
-            InfoHash = dc.InfoHash;
-            TrackerURL = dc.TrackerURL;
-            _dc = dc;
-            _dc.MainTracker = this;
+            InfoHash = tc.InfoHash;
+            TrackerURL = tc.TrackerURL;
+            _tc = tc;
+            _tc.MainTracker = this;
             _announcerExceptions = new List<Exception>();
 
             if (!TrackerURL.StartsWith("http://"))
@@ -222,8 +222,8 @@ namespace BitTorrentLibrary
                 // If all of torrent downloaded reset total bytes downloaded
                 if (Left == 0)
                 {
-                    _dc.TotalBytesDownloaded = 0;
-                    _dc.TotalBytesToDownload = 0;
+                    _tc.TotalBytesDownloaded = 0;
+                    _tc.TotalBytesToDownload = 0;
                 }
                 ChangeStatus(TrackerEvent.started);
                 _announceTimer = new System.Timers.Timer(Interval);
