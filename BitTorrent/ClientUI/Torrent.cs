@@ -24,17 +24,17 @@ namespace ClientUI
     {
         private readonly string _torrentFileName;
         private MetaInfoFile _torrentFile;
-        private TorrentContext _tc;
         private MainWindow _mainWindow;
         private double _currentProgress = 0;
         private Downloader _downloader;
         private Tracker _tracker;
         public Agent DownloadAgent { get; set; }
+        public TorrentContext Tc { get; set; }
 
         private void UpdateInformation(Object obj)
         {
             Torrent torrent = (Torrent)obj;
-            TorrentDetails torrentDetails = torrent.DownloadAgent.GetTorrentDetails();
+            TorrentDetails torrentDetails = torrent.DownloadAgent.GetTorrentDetails(torrent.Tc);
             List<string> peers = new List<string>();
             foreach (var peer in torrentDetails.peers)
             {
@@ -66,8 +66,8 @@ namespace ClientUI
         private void UpdateProgress(Object obj)
         {
             Torrent torrent = (Torrent)obj;
-            double progress = (double)_tc.TotalBytesDownloaded /
-            (double)_tc.TotalBytesToDownload;
+            double progress = (double)Tc.TotalBytesDownloaded /
+            (double)Tc.TotalBytesToDownload;
             if (progress - _currentProgress > 0.05)
             {
                 Application.MainLoop.Invoke(() =>
@@ -139,22 +139,27 @@ namespace ClientUI
                                   });
 
                     _downloader = new Downloader();
-                    _tc = new TorrentContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
+                    Tc = new TorrentContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
 
-                    DownloadAgent = new Agent(_tc, new Assembler());
+                    DownloadAgent = new Agent(Tc, new Assembler());
+                    DownloadAgent.Add(Tc);
 
-                    _tracker = new Tracker(_tc);
+                    _tracker = new Tracker(Tc);
                     _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
 
                     _tracker.StartAnnouncing();
 
-                    _tc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
+                    Tc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
                     _downloader.SetDownloadProgressCallBack(UpdateProgress, this);
                     _tracker.SetTrackerCallBack(UpdateInformation, this);
 
-                    DownloadAgent.Start();
+                    DownloadAgent.Start(Tc);
 
-                    DownloadAgent.Download();
+                    DownloadAgent.Download(Tc);
+
+                    DownloadAgent.Remove(Tc);
+
+                    DownloadAgent.ShutDown();
                 }
 
 

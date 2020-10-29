@@ -50,7 +50,7 @@ namespace ClientUI
             {
                 if(mainWindow.DownloadingTorrent) {
                     lock (mainWindow.StartupLock) {
-                        mainWindow.Torrent.DownloadAgent.Close();
+                        mainWindow.Torrent.DownloadAgent.Close(mainWindow.Torrent.Tc);
                         mainWindow.DownloadingTorrent = false;
                         mainWindow.InformationWindow.ClearData();
                     }

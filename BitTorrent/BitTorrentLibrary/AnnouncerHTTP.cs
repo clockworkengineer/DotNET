@@ -53,7 +53,8 @@ namespace BitTorrentLibrary
                         {
                             PeerDetails peer = new PeerDetails
                             {
-                                _peerID = String.Empty,
+                                infoHash = tracker.InfoHash,
+                                peerID = String.Empty,
                                 ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}"
                             };
                             peer.port = ((UInt32)peers[num + 4] * 256) + peers[num + 5];

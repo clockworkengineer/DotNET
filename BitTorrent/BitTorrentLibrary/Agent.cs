@@ -24,24 +24,13 @@ using System.Net.Sockets;
 namespace BitTorrentLibrary
 {
 
-    public interface IAgent
-    {
-        void Close();
-        void Download();
-        Task DownloadAsync();
-        TorrentDetails GetTorrentDetails();
-        void Pause();
-        void Start();
-    }
-
     /// <summary>
     /// Agent class definition.
     /// </summary>
-    public class Agent : IAgent
+    public class Agent
     {
-        ConcurrentDictionary<string, TorrentContext> _torrents;         // Torrents downloading/seeding
+        readonly ConcurrentDictionary<string, TorrentContext> _torrents;// Torrents downloading/seeding
         private bool _agentRunning = false;                             // == true while agent is up and running.
-        private readonly TorrentContext _tc;                            // Torrent context
         private readonly HashSet<string> _deadPeers;                    // Dead peers list
         private readonly Assembler _pieceAssembler;                     // Piece assembler for agent
         private Socket _listenerSocket;                                 // Connection listener socket
@@ -60,12 +49,15 @@ namespace BitTorrentLibrary
 
             if (remotePeer.Connected)
             {
-                if (_tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
+                if (!remotePeer.Tc.PeerSwarm.ContainsKey(remotePeer.Ip) && remotePeer.Tc.PeerSwarm.Count < remotePeer.Tc.MaximumSwarmSize)
                 {
-                    Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                    remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
+                    if (remotePeer.Tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
+                    {
+                        Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
+                        remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
+                    } 
                 }
-                else
+                if (remotePeer.AssemblerTask==null)
                 {
                     remotePeer.Close();
                 }
@@ -89,10 +81,13 @@ namespace BitTorrentLibrary
                 PeerDetails peer = PeerSwarmQueue.Take();
                 try
                 {
-                    // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (!_deadPeers.Contains(peer.ip) && !_tc.PeerSwarm.ContainsKey(peer.ip) && _tc.PeerSwarm.Count < _tc.MaximumSwarmSize)
+                    if (_torrents.TryGetValue(Util.InfoHashToString(peer.infoHash), out TorrentContext tc))
                     {
-                        StartPieceAssemblyTask(new Peer(peer.ip, peer.port, _tc, null));
+                        // Only add peers that are not already there and is maximum swarm size hasnt been reached
+                        if (!_deadPeers.Contains(peer.ip) && !tc.PeerSwarm.ContainsKey(peer.ip) && tc.PeerSwarm.Count < tc.MaximumSwarmSize)
+                        {
+                            StartPieceAssemblyTask(new Peer(peer.ip, peer.port, tc, null));
+                        }
                     }
                 }
                 catch (Exception)
@@ -120,7 +115,8 @@ namespace BitTorrentLibrary
 
                     Socket remotePeerSocket = PeerNetwork.WaitForConnection(_listenerSocket);
 
-                    if (!_agentRunning) {
+                    if (!_agentRunning)
+                    {
                         break;
                     }
 
@@ -128,11 +124,9 @@ namespace BitTorrentLibrary
 
                     var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
 
-                    // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                    if (!_tc.PeerSwarm.ContainsKey(endPoint.Item1) && _tc.PeerSwarm.Count < _tc.MaximumSwarmSize)
-                    {
-                        StartPieceAssemblyTask(new Peer(endPoint.Item1, endPoint.Item2, _tc, remotePeerSocket));
-                    }
+                    // Pass in null torrent context as this is hooked up when we find the infohash from remote peer
+                    StartPieceAssemblyTask(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
+
                 }
             }
             catch (Exception ex)
@@ -153,8 +147,6 @@ namespace BitTorrentLibrary
         public Agent(TorrentContext tc, Assembler pieceAssembler)
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
-            _tc = tc;
-            _torrents.TryAdd(Util.InfoHashToString(_tc.InfoHash), _tc);
             _pieceAssembler = pieceAssembler;
             PeerSwarmQueue = new BlockingCollection<PeerDetails>();
             _deadPeers = new HashSet<string>();
@@ -169,22 +161,66 @@ namespace BitTorrentLibrary
             PeerSwarmQueue.CompleteAdding();
         }
         /// <summary>
-        /// Download a torrent using an piece assembler per connected peer.
+        /// 
         /// </summary>
-        public void Download()
+        /// <param name="tc"></param>
+        public void Add(TorrentContext tc)
+        {
+
+            _torrents.TryAdd(Util.InfoHashToString(tc.InfoHash), tc);
+
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tc"></param>
+        public void Remove(TorrentContext tc)
+        {
+
+            _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out tc);
+
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public void ShutDown()
         {
             try
             {
-                if (_tc.MainTracker.Left != 0)
+                if (_agentRunning)
+                {
+                    _agentRunning = false;
+                    PeerNetwork.ShutdownListener();
+                }
+            }
+            catch (Error)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (Agent): Failed in shutdown." + ex.Message);
+            }
+
+        }
+        /// <summary>
+        /// Download a torrent using an piece assembler per connected peer.
+        /// </summary>
+        public void Download(TorrentContext tc)
+        {
+            try
+            {
+                if (tc.MainTracker.Left != 0)
                 {
                     Log.Logger.Info("Starting torrent download for MetaInfo data ...");
-                    _tc.Status = TorrentStatus.Downloading;
-                    _tc.DownloadFinished.WaitOne();
-                    _tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
+                    tc.Status = TorrentStatus.Downloading;
+                    tc.DownloadFinished.WaitOne();
+                    tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
                     Log.Logger.Info("Whole Torrent finished downloading.");
                 }
 
-                _tc.Status = TorrentStatus.Seeding;
+                tc.Status = TorrentStatus.Seeding;
 
             }
             catch (Error)
@@ -200,11 +236,11 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Download torrent asynchronously.
         /// </summary>
-        public async Task DownloadAsync()
+        public async Task DownloadAsync(TorrentContext tc)
         {
             try
             {
-                await Task.Run(() => Download()).ConfigureAwait(false);
+                await Task.Run(() => Download(tc)).ConfigureAwait(false);
             }
             catch (Error)
             {
@@ -219,7 +255,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Closedown Agent
         /// </summary>
-        public void Close()
+        public void Close(TorrentContext tc)
         {
             try
             {
@@ -227,18 +263,18 @@ namespace BitTorrentLibrary
                 {
                     _agentRunning = false;
 
-                    _tc.MainTracker.StopAnnouncing();
-                    if (_tc.PeerSwarm != null)
+                    tc.MainTracker.StopAnnouncing();
+                    if (tc.PeerSwarm != null)
                     {
                         Log.Logger.Info("Closing peer sockets.");
-                        foreach (var remotePeer in _tc.PeerSwarm.Values)
+                        foreach (var remotePeer in tc.PeerSwarm.Values)
                         {
                             remotePeer.Close();
                         }
                     }
-                    _tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+                    tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
                     PeerNetwork.ShutdownListener();
-                    _tc.Status = TorrentStatus.Stopped;
+                    tc.Status = TorrentStatus.Stopped;
                 }
             }
             catch (Error)
@@ -254,12 +290,12 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Start downloading torrent.
         /// </summary>
-        public void Start()
+        public void Start(TorrentContext tc)
         {
             try
             {
                 _pieceAssembler?.Paused.Set();
-                _tc.Status = TorrentStatus.Started;
+                tc.Status = TorrentStatus.Started;
             }
             catch (Error)
             {
@@ -274,12 +310,12 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Pause downloading torrent.
         /// </summary>
-        public void Pause()
+        public void Pause(TorrentContext tc)
         {
             try
             {
                 _pieceAssembler?.Paused.Reset();
-                _tc.Status = TorrentStatus.Paused;
+                tc.Status = TorrentStatus.Paused;
             }
             catch (Error)
             {
@@ -295,24 +331,24 @@ namespace BitTorrentLibrary
         /// Return details about the currently torrents status.
         /// </summary>
         /// <returns></returns>
-        public TorrentDetails GetTorrentDetails()
+        public TorrentDetails GetTorrentDetails(TorrentContext tc)
         {
 
             return new TorrentDetails
             {
-                status = _tc.Status,
+                status = tc.Status,
 
-                peers = (from peer in _tc.PeerSwarm.Values
+                peers = (from peer in tc.PeerSwarm.Values
                          select new PeerDetails
                          {
                              ip = peer.Ip,
                              port = peer.Port
                          }).ToList(),
 
-                downloadedBytes = _tc.TotalBytesDownloaded,
-                uploadedBytes = _tc.TotalBytesUploaded,
-                infoHash = _tc.InfoHash,
-                missingPiecesCount = _tc.MissingPiecesCount
+                downloadedBytes = tc.TotalBytesDownloaded,
+                uploadedBytes = tc.TotalBytesUploaded,
+                infoHash = tc.InfoHash,
+                missingPiecesCount = tc.MissingPiecesCount
 
             };
         }

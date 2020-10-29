@@ -19,7 +19,8 @@ namespace BitTorrentLibrary
     /// </summary>
     public struct PeerDetails
     {
-        public string _peerID;  // ID (optional)
+        public byte[] infoHash; // Torrent infohash
+        public string peerID;   // ID (optional)
         public string ip;       // IP Address
         public UInt32 port;     // Port
     }
