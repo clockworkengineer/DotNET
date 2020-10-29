@@ -58,8 +58,8 @@ namespace BitTorrentLibrary
         public ConcurrentDictionary<string, Peer> PeerSwarm { get; }        // Current peer swarm
         public TorrentStatus Status { get; set; }                           // Torrent status
         public Tracker MainTracker { get; set; }                            // Main tracker assigned to torrent
-        public DownloadCompleteCallBack DownloadCompleteCallBack { get; set; }
-        public object DownloadCompleteCallBackData { get; set; }
+        public DownloadCompleteCallBack CallBack { get; set; }
+        public object CallBackData { get; set; }
 
         /// <summary>
         /// Setup data and resources needed by torrent context.
@@ -239,16 +239,6 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
             }
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="callBackData"></param>
-        public void SetDownloadCompleteCallBack(DownloadCompleteCallBack callback, Object callBackData)
-        {
-            DownloadCompleteCallBack = callback;
-            DownloadCompleteCallBackData = callBackData;
         }
         /// <summary>
         /// Get piece length in bytes

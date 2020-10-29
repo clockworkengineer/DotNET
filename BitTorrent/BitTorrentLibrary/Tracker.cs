@@ -40,8 +40,6 @@ namespace BitTorrentLibrary
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
-        private TrackerCallBack _callBack;                      // Tracker ping callback function
-        private Object _callBackData;                           // Tracker ping callback function data
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
         private BlockingCollection<PeerDetails> _peerSwarmQueue;// Peers to add to swarm queue
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
@@ -57,6 +55,8 @@ namespace BitTorrentLibrary
         public string TrackerURL { get;  }                      // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
+        public TrackerCallBack CallBack {get; set; }            // Tracker ping callback function
+        public Object CallBackData { get; set; }                // Tracker ping callback function data
         public UInt64 Downloaded => _tc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download
         public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes uploaded
@@ -79,7 +79,7 @@ namespace BitTorrentLibrary
                 }
                 tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
 
-                tracker._callBack?.Invoke(tracker._callBackData);
+                tracker.CallBack?.Invoke(tracker.CallBackData);
                 tracker.UpdateRunningStatusFromAnnounce(response);
             }
             catch (Exception ex)
@@ -169,16 +169,6 @@ namespace BitTorrentLibrary
         public void SetPeerSwarmQueue(BlockingCollection<PeerDetails> peerSwarmQueue) {
             _peerSwarmQueue = peerSwarmQueue;
         } 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="callBack"></param>
-        /// <param name="callBackData"></param>
-        public void SetTrackerCallBack(TrackerCallBack callBack, Object callBackData)
-        {
-            _callBack = callBack;
-            _callBackData = callBackData;
-        }
         /// <summary>
         /// Change tracker event status and send to server.
         /// </summary>

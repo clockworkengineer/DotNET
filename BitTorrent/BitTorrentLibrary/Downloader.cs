@@ -22,26 +22,15 @@ namespace BitTorrentLibrary
 {
     public delegate void ProgessCallBack(Object callBackData); // Download progress callback
 
-    public interface IDownloader
-    {
-        BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
-        BlockingCollection<PieceRequest> PieceRequestQueue { get; }
-
-        void CreateLocalTorrentStructure(TorrentContext tc);
-        void CreateTorrentBitfield(TorrentContext tc);
-        void SetDownloadProgressCallBack(ProgessCallBack callBack, object callBackData);
-    }
-
     /// <summary>
     /// File downloader.
     /// </summary>
-    public class Downloader : IDownloader
+    public class Downloader
     {
-
-        private ProgessCallBack _progressCallBack;                          // Download progress function
-        private Object _progressCallBackData;                               // Download progress function data
         public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; }
+        public ProgessCallBack CallBack {get; set;}                          // Download progress function
+        public Object CallBackData { get; set; }                             // Download progress function data
 
         /// <summary>
         /// Read/Write piece buffers to/from torrent on disk.
@@ -134,12 +123,12 @@ namespace BitTorrentLibrary
                 Log.Logger.Info((pieceBuffer.RemotePeer.Tc.TotalBytesDownloaded / (double)pieceBuffer.RemotePeer.Tc.TotalBytesToDownload).ToString("0.00%"));
                 Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
-                _progressCallBack?.Invoke(_progressCallBackData);
+                CallBack?.Invoke(CallBackData);
 
                 if (pieceBuffer.RemotePeer.Tc.BytesLeftToDownload() == 0)
                 {
                     pieceBuffer.RemotePeer.Tc.DownloadFinished.Set();
-                    pieceBuffer.RemotePeer.Tc.DownloadCompleteCallBack?.Invoke(pieceBuffer.RemotePeer.Tc.DownloadCompleteCallBackData);
+                    pieceBuffer.RemotePeer.Tc.CallBack?.Invoke(pieceBuffer.RemotePeer.Tc.CallBackData);
                     PieceWriteQueue.CompleteAdding();
                 }
 
@@ -243,16 +232,6 @@ namespace BitTorrentLibrary
             }
 
             Log.Logger.Debug("Finished generating downloaded map.");
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="callBack"></param>
-        /// <param name="callBackData"></param>
-        public void SetDownloadProgressCallBack(ProgessCallBack callBack, Object callBackData)
-        {
-            _progressCallBack = callBack;
-            _progressCallBackData = callBackData;
         }
     }
 }

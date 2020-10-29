@@ -5,10 +5,8 @@
 //
 // Description: All the high level torrent processing including download/upload
 // of torrent pieces and updating the peers in the current swarm. Any  peers that
-// are connected then have a piece assembler task created for them that puts together
+// are connected then have a piece assembler task created for them ehich puts together
 // pieces that they request from the torrent (remote peer) before being written to disk.
-//
-//TODO:Support for multiple running torrents
 //
 // Copyright 2020.
 //
@@ -55,9 +53,9 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
                         remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
-                    } 
+                    }
                 }
-                if (remotePeer.AssemblerTask==null)
+                if (remotePeer.AssemblerTask == null)
                 {
                     remotePeer.Close();
                 }
@@ -109,23 +107,21 @@ namespace BitTorrentLibrary
 
                 _listenerSocket = PeerNetwork.GetListeningConnection();
 
-                while (true)
+                while (_agentRunning)
                 {
                     Log.Logger.Info("Waiting for remote peer connect...");
 
                     Socket remotePeerSocket = PeerNetwork.WaitForConnection(_listenerSocket);
 
-                    if (!_agentRunning)
+                    if (_agentRunning)
                     {
-                        break;
+                        Log.Logger.Info("Remote peer connected...");
+
+                        var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
+
+                        // Pass in null torrent context as this is hooked up when we find the infohash from remote peer
+                        StartPieceAssemblyTask(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
                     }
-
-                    Log.Logger.Info("Remote peer connected...");
-
-                    var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
-
-                    // Pass in null torrent context as this is hooked up when we find the infohash from remote peer
-                    StartPieceAssemblyTask(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
 
                 }
             }
@@ -161,27 +157,43 @@ namespace BitTorrentLibrary
             PeerSwarmQueue.CompleteAdding();
         }
         /// <summary>
-        /// 
+        /// Add torrent context to dictionary of running torrents.
         /// </summary>
         /// <param name="tc"></param>
         public void Add(TorrentContext tc)
         {
-
-            _torrents.TryAdd(Util.InfoHashToString(tc.InfoHash), tc);
+            try
+            {
+                _torrents.TryAdd(Util.InfoHashToString(tc.InfoHash), tc);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (Agent): Failed to add torrent context." + ex.Message);
+            }
 
         }
         /// <summary>
-        /// 
+        /// Remove torrent context from dictionary of running torrents
         /// </summary>
         /// <param name="tc"></param>
         public void Remove(TorrentContext tc)
         {
 
-            _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out tc);
+            try
+            {
+                _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out tc);
+                Close(tc);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent Error (Agent): Failed to remove torrent context. " + ex.Message);
+            }
 
         }
         /// <summary>
-        /// 
+        /// Shutdown any agent running resourcses.
         /// </summary>
         public void ShutDown()
         {
@@ -192,10 +204,6 @@ namespace BitTorrentLibrary
                     _agentRunning = false;
                     PeerNetwork.ShutdownListener();
                 }
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {
@@ -273,7 +281,6 @@ namespace BitTorrentLibrary
                         }
                     }
                     tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
-                    PeerNetwork.ShutdownListener();
                     tc.Status = TorrentStatus.Stopped;
                 }
             }

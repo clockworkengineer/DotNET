@@ -138,20 +138,28 @@ namespace ClientUI
                                       _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                                   });
 
-                    _downloader = new Downloader();
-                    Tc = new TorrentContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent");
+                    _downloader = new Downloader() {
+                        CallBack = UpdateProgress,
+                        CallBackData = this
+                    };
+
+                    Tc = new TorrentContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent")
+                    {
+                        CallBack = DownloadComplete,
+                        CallBackData = mainWindow
+                    };
 
                     DownloadAgent = new Agent(Tc, new Assembler());
                     DownloadAgent.Add(Tc);
 
-                    _tracker = new Tracker(Tc);
+                    _tracker = new Tracker(Tc) {
+                        CallBack = UpdateInformation,
+                        CallBackData = this
+                    };
+
                     _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
-
+                    
                     _tracker.StartAnnouncing();
-
-                    Tc.SetDownloadCompleteCallBack(DownloadComplete, _mainWindow);
-                    _downloader.SetDownloadProgressCallBack(UpdateProgress, this);
-                    _tracker.SetTrackerCallBack(UpdateInformation, this);
 
                     DownloadAgent.Start(Tc);
 
