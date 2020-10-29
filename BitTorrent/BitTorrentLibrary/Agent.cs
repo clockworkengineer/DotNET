@@ -91,7 +91,7 @@ namespace BitTorrentLibrary
                     // Only add peers that are not already there and is maximum swarm size hasnt been reached
                     if (!_deadPeers.Contains(peer.ip) && !_tc.PeerSwarm.ContainsKey(peer.ip) && _tc.PeerSwarm.Count < _tc.MaximumSwarmSize)
                     {
-                        StartPieceAssemblyTask(new Peer(peer.ip, peer.port, _tc));
+                        StartPieceAssemblyTask(new Peer(peer.ip, peer.port, _tc, null));
                     }
                 }
                 catch (Exception)

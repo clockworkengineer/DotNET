@@ -25,9 +25,9 @@ namespace BitTorrentLibrary
         private readonly PeerNetwork _network;                           // Network layer
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
-        public TorrentContext Tc { get; }                                // Torrent torrent context
+        public TorrentContext Tc { get; set; }                           // Torrent torrent context
         public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
-        public PieceBuffer AssembledPiece { get; }                       // Assembled pieces buffer
+        public PieceBuffer AssembledPiece { get; set; }                  // Assembled pieces buffer
         public string Ip { get; }                                        // Remote peer ip
         public uint Port { get; }                                        // peer Port
         public Task AssemblerTask { get; set; }                          // Peer piece assembly task
@@ -49,18 +49,29 @@ namespace BitTorrentLibrary
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
         /// <param name="tc">torrent context.</param>
-        public Peer(string ip, UInt32 port, TorrentContext tc, Socket socket = null)
+        /// 
+        /// 
+        public Peer(string ip, UInt32 port, TorrentContext tc, Socket socket)
         {
             Ip = ip;
             Port = port;
-            Tc = tc;
             _network = new PeerNetwork(socket);
-            AssembledPiece = new PieceBuffer(this, Tc.PieceLength);
             WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
+            if (tc!=null) {
+                SetTorrentContext(tc);
+            }
+        }
+        /// <summary>
+        /// Set torrent context and dependant fields.
+        /// </summary>
+        /// <param name="tc"></param>
+        public void SetTorrentContext(TorrentContext tc) {
+            Tc = tc;
             NumberOfMissingPieces = Tc.NumberOfPieces;
+            AssembledPiece = new PieceBuffer(this, Tc.PieceLength);
         }
         /// <summary>
         /// Send packet to remote peer.

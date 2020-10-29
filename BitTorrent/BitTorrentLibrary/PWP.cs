@@ -78,9 +78,9 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Create intial handshake to send to remote peer.
         /// </summary>
-        /// <param name="remotePeer"></param>
+        /// <param name="infoHash"></param>
         /// <returns></returns>
-        private static List<byte> BuildInitialHandshake(Peer remotePeer)
+        private static List<byte> BuildInitialHandshake(byte[] infoHash)
         {
             List<byte> handshakePacket = new List<byte>
                 {
@@ -88,7 +88,7 @@ namespace BitTorrentLibrary
                 };
             handshakePacket.AddRange(_protocolName);
             handshakePacket.AddRange(new byte[8]);
-            handshakePacket.AddRange(remotePeer.Tc.InfoHash);
+            handshakePacket.AddRange(infoHash);
             handshakePacket.AddRange(Encoding.ASCII.GetBytes(PeerID.Get()));
 
             return handshakePacket;
@@ -262,7 +262,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                List<byte> handshakePacket = BuildInitialHandshake(remotePeer);
+                List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.InfoHash);
 
                 byte[] handshakeResponse = new byte[handshakePacket.Count];
 
@@ -299,7 +299,7 @@ namespace BitTorrentLibrary
             byte[] remotePeerID;
             try
             {
-                List<byte> handshakePacket = BuildInitialHandshake(remotePeer);
+                List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.InfoHash);
 
                 remotePeer.PeerWrite(handshakePacket.ToArray());
 
