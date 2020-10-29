@@ -9,6 +9,7 @@
 //
 
 using System;
+using System.Text;
 
 namespace BitTorrentLibrary
 {
@@ -80,6 +81,20 @@ namespace BitTorrentLibrary
             value |= ((UInt32)buffer[offset + 2]) << 8;
             value |= ((UInt32)buffer[offset + 3]);
             return value;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="infoHash"></param>
+        /// <returns></returns>
+        public static string InfoHashToString(byte[] infoHash)
+        {
+            StringBuilder hex = new StringBuilder(infoHash.Length * 2);
+            foreach (byte b in infoHash)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+            return hex.ToString().ToLower();
         }
     }
 }

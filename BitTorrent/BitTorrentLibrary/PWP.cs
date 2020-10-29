@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace BitTorrentLibrary
@@ -253,25 +254,34 @@ namespace BitTorrentLibrary
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX CANCEL {pieceNumber} Block Offset {blockOffset} Data Size {blockLength}\n.");
         }
         /// <summary>
-        /// Perform initial handshake with remote peer that connected to local client.
+        /// Perform initial handshake with remote peer that connected to local client. We need to compare
+        /// the info hash from the peer trying to connect with the currently active torrents and if no match
+        /// found then no connect is performed (we disconnect).
         /// </summary>
         /// <param name="remotePeer"></param>
-        /// <param name="infoHash"></param>
+        /// <param name="torrent"></param>
         /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
-        public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer)
+        /// 
+
+        public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer, ConcurrentDictionary<string, TorrentContext> torrents)
         {
             try
             {
-                List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.InfoHash);
+                bool connected = false;
+                byte[] remotePeerID = new byte [Constants.PeerIDLength];
 
-                byte[] handshakeResponse = new byte[handshakePacket.Count];
-
+                byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
                 UInt32 bytesRead = (UInt32)remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
-                bool connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out byte[] remotePeerID);
-                if (connected)
+                foreach (var tc in torrents.Values)
                 {
-                    remotePeer.PeerWrite(handshakePacket.ToArray());
+                    List<byte> handshakePacket = BuildInitialHandshake(tc.InfoHash);
+                    connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out remotePeerID);
+                    if (connected)
+                    {
+                        remotePeer.PeerWrite(handshakePacket.ToArray());
+                        remotePeer.SetTorrentContext(tc);
+                    }
                 }
 
                 return (connected, remotePeerID);

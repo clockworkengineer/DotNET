@@ -39,6 +39,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent : IAgent
     {
+        ConcurrentDictionary<string, TorrentContext> _torrents;         // Torrents downloading/seeding
         private bool _agentRunning = false;                             // == true while agent is up and running.
         private readonly TorrentContext _tc;                            // Torrent context
         private readonly HashSet<string> _deadPeers;                    // Dead peers list
@@ -55,7 +56,7 @@ namespace BitTorrentLibrary
         private void StartPieceAssemblyTask(Peer remotePeer)
         {
 
-            remotePeer.Connect();
+            remotePeer.Connect(_torrents);
 
             if (remotePeer.Connected)
             {
@@ -151,7 +152,9 @@ namespace BitTorrentLibrary
         /// <param name="downloadPath">Download path.</param>
         public Agent(TorrentContext tc, Assembler pieceAssembler)
         {
+            _torrents = new ConcurrentDictionary<string, TorrentContext>();
             _tc = tc;
+            _torrents.TryAdd(Util.InfoHashToString(_tc.InfoHash), _tc);
             _pieceAssembler = pieceAssembler;
             PeerSwarmQueue = new BlockingCollection<PeerDetails>();
             _deadPeers = new HashSet<string>();

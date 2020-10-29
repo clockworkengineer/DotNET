@@ -1,4 +1,5 @@
-﻿
+﻿using System.Collections.Concurrent;
+
 //
 // Author: Robert Tizzard
 //
@@ -109,7 +110,7 @@ namespace BitTorrentLibrary
         /// <summary>
         ///  Connect to remote peer.
         /// </summary>
-        public void Connect()
+        public void Connect(ConcurrentDictionary<string, TorrentContext> torrents)
         {
             ValueTuple<bool, byte[]> peerResponse;
 
@@ -123,7 +124,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    peerResponse = PWP.ConnectFromIntialHandshake(this);
+                    peerResponse = PWP.ConnectFromIntialHandshake(this, torrents);
                 }
                 if (peerResponse.Item1)
                 {
