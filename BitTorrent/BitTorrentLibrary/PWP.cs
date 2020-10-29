@@ -187,11 +187,6 @@ namespace BitTorrentLibrary
 
             remotePeer.SetPieceOnRemotePeer(pieceNumber);
 
-            // if (!remotePeer.Dc.IsPieceLocal(pieceNumber))
-            // {
-            //     remotePeer.Dc.MarkPieceMissing(pieceNumber, true);
-            // }
-
         }
         /// <summary>
         /// Handles bitfield command from remote peer.

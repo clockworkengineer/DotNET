@@ -7,7 +7,8 @@
 // data relating to the readining/writing of the local torrent files
 // to determine which pieces are missing and need downloading and
 // written to the correct positions.It also handles requests from
-// remote peers for pieces to be sent to them.
+// remote peers for pieces and redas them the from torrent image 
+// before sending on the remote peer.
 //
 // Copyright 2020.
 //
@@ -139,6 +140,7 @@ namespace BitTorrentLibrary
                 {
                     pieceBuffer.RemotePeer.Dc.DownloadFinished.Set();
                     pieceBuffer.RemotePeer.Dc.DownloadCompleteCallBack?.Invoke(pieceBuffer.RemotePeer.Dc.DownloadCompleteCallBackData);
+                    PieceWriteQueue.CompleteAdding();
                 }
 
             }
@@ -181,7 +183,6 @@ namespace BitTorrentLibrary
         /// </summary>
         ~Downloader()
         {
-            PieceWriteQueue.CompleteAdding();
         }
         /// <summary>
         /// Creates the empty files on disk as place holders of files to be downloaded.

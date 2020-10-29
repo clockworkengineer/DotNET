@@ -116,11 +116,13 @@ namespace BitTorrentLibrary
                              remotePeer.Dc.GetPieceLength(pieceNumber) % Constants.BlockSize);
             }
 
-            switch (WaitHandle.WaitAny(waitHandles))
+            switch (WaitHandle.WaitAny(waitHandles, 60000))
             {
                 case 0:
                     remotePeer.WaitForPieceAssembly.Reset();
                     break;
+                case WaitHandle.WaitTimeout:
+                    return false;
                 default:
                     cancelTask.ThrowIfCancellationRequested();
                     break;
@@ -235,6 +237,8 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Error(ex.Message);
             }
+
+            remotePeer.Close();
 
             Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 

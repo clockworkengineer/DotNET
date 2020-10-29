@@ -6,7 +6,7 @@
 // Description: All the high level torrent processing including download/upload
 // of torrent pieces and updating the peers in the current swarm. Any  peers that
 // are connected then have a piece assembler task created for them that puts together
-// pieces that they request from the torrent before being written to disk.
+// pieces that they request from the torrent (remote peer) before being written to disk.
 //
 //TODO:Support for multiple running torrents
 //
@@ -39,7 +39,6 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent : IAgent
     {
-
         private bool _agentRunning = false;                             // == true while agent is up and running.
         private readonly DownloadContext _dc;                           // Torrent download context
         private readonly HashSet<string> _deadPeers;                    // Dead peers list
