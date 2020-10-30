@@ -36,8 +36,10 @@ namespace ClientUI
         private StatusItem _download;
         private StatusItem _shutdown;
         private StatusItem _quit;
+        private StatusItem _toggleSeeding;
         private StatusBar _mainStatusBar;
         private Toplevel _top;
+        private bool informatioWindow = true;
         public MainWindow MainWindow { get; set; }
 
         /// <summary>
@@ -58,6 +60,7 @@ namespace ClientUI
             else if (status == Status.Downloading)
             {
                 _statusBarItems.Clear();
+                _statusBarItems.Add(_toggleSeeding);
                 _statusBarItems.Add(_shutdown);
                 _statusBarItems.Add(_quit);
                 _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
@@ -66,6 +69,7 @@ namespace ClientUI
             else if (status == Status.Shutdown)
             {
                 _statusBarItems.Clear();
+                _statusBarItems.Add(_toggleSeeding);
                 _statusBarItems.Add(_download);
                 _statusBarItems.Add(_quit);
                 _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
@@ -100,6 +104,22 @@ namespace ClientUI
                  MainWindow.InformationWindow.ClearData();
                  DisplayStatusBar(Status.Shutdown);
              });
+
+            _toggleSeeding = new StatusItem(Key.ControlT, "~^T~ Toggle Seeding", () =>
+            {
+                if (informatioWindow)
+                {
+                    MainWindow.Remove(MainWindow.InformationWindow);
+                    MainWindow.Add(MainWindow.SeedingWindow);
+                    informatioWindow = false;
+                }
+                else
+                {
+                    MainWindow.Remove(MainWindow.SeedingWindow);
+                    MainWindow.Add(MainWindow.InformationWindow);
+                    informatioWindow = true;
+                }
+            });
 
             _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () => { _top.Running = false; });
             _statusBarItems.Add(_download);
