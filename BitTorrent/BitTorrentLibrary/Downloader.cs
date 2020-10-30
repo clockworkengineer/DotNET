@@ -7,7 +7,7 @@
 // data relating to the readining/writing of the local torrent files
 // to determine which pieces are missing and need downloading and
 // written to the correct positions.It also handles requests from
-// remote peers for pieces and redas them the from torrent image 
+// remote peers for pieces and reads them the from torrent image 
 // before sending on the remote peer.
 //
 // Copyright 2020.
@@ -29,7 +29,7 @@ namespace BitTorrentLibrary
     {
         public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
         public BlockingCollection<PieceRequest> PieceRequestQueue { get; }
-        public ProgessCallBack CallBack {get; set;}                          // Download progress function
+        public ProgessCallBack CallBack { get; set; }                        // Download progress function
         public Object CallBackData { get; set; }                             // Download progress function data
 
         /// <summary>
@@ -141,18 +141,27 @@ namespace BitTorrentLibrary
         {
             while (!PieceRequestQueue.IsCompleted)
             {
+
                 PieceRequest request = PieceRequestQueue.Take();
+                try
+                {
+                    Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
 
-                Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
+                    PieceBuffer requestBuffer = GetPieceFromTorrent(request.remotePeer, request.pieceNumber);
+                    byte[] requestBlock = new byte[request.blockSize];
 
-                PieceBuffer requestBuffer = GetPieceFromTorrent(request.remotePeer, request.pieceNumber);
-                byte[] requestBlock = new byte[request.blockSize];
+                    Array.Copy(requestBuffer.Buffer, (Int32)request.blockOffset, requestBlock, 0, (Int32)request.blockSize);
 
-                Array.Copy(requestBuffer.Buffer, (Int32)request.blockOffset, requestBlock, 0, (Int32)request.blockSize);
+                    PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
 
-                PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
-
-                request.remotePeer.Tc.TotalBytesUploaded += request.blockSize;
+                    request.remotePeer.Tc.TotalBytesUploaded += request.blockSize;
+                }
+                catch (Exception ex)
+                {
+                    // Remote peer most probably closed socket so close connection
+                    Log.Logger.Debug(ex);      
+                    request.remotePeer.Close();
+                }
 
             }
         }
