@@ -130,7 +130,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
             }
 
-            _listenerSocket.Close();
+            _listenerSocket?.Close();
 
             Log.Logger.Info("Remote Peer connect listener terminated.");
 

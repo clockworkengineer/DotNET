@@ -30,10 +30,7 @@ namespace ClientUI
         private Tracker _tracker;
         public Agent DownloadAgent { get; set; }
         public TorrentContext Tc { get; set; }
-/// <summary>
-/// 
-/// </summary>
-/// <param name="obj"></param>
+
         private void UpdateInformation(Object obj)
         {
             Torrent torrent = (Torrent)obj;
@@ -123,58 +120,65 @@ namespace ClientUI
         /// 
         /// </summary>
         /// <param name="mainWindow"></param>
-        public void Download(MainWindow mainWindow)
+        public void Download(DemoTorrentApplication main)
         {
             try
             {
-                _mainWindow = mainWindow;
+                _mainWindow = main.MainWindow;
 
-                
-                lock (_mainWindow.StartupLock)
+                Application.MainLoop.Invoke(() =>
+                                     {
+                                         main.DisplayStatusBar(Status.Starting);
+                                     });
+
+                _torrentFile = new MetaInfoFile(_torrentFileName);
+
+                _torrentFile.Load();
+                _torrentFile.Parse();
+
+                Application.MainLoop.Invoke(() =>
+                              {
+                                  _mainWindow.DownloadProgress.Fraction = 0;
+                                  _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
+                              });
+
+                _downloader = new Downloader()
                 {
-                    _torrentFile = new MetaInfoFile(_torrentFileName);
+                    CallBack = UpdateProgress,
+                    CallBackData = this
+                };
 
-                    _torrentFile.Load();
-                    _torrentFile.Parse();
+                Tc = new TorrentContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent")
+                {
+                    CallBack = DownloadComplete,
+                    CallBackData = _mainWindow
+                };
 
-                    Application.MainLoop.Invoke(() =>
-                                  {
-                                      _mainWindow.DownloadProgress.Fraction = 0;
-                                      _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
-                                  });
+                DownloadAgent = new Agent(new Assembler());
+                DownloadAgent.Add(Tc);
 
-                    _downloader = new Downloader() {
-                        CallBack = UpdateProgress,
-                        CallBackData = this
-                    };
+                _tracker = new Tracker(Tc)
+                {
+                    CallBack = UpdateInformation,
+                    CallBackData = this
+                };
 
-                    Tc = new TorrentContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent")
-                    {
-                        CallBack = DownloadComplete,
-                        CallBackData = mainWindow
-                    };
+                _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
 
-                    DownloadAgent = new Agent(new Assembler());
-                    DownloadAgent.Add(Tc);
+                _tracker.StartAnnouncing();
 
-                    _tracker = new Tracker(Tc) {
-                        CallBack = UpdateInformation,
-                        CallBackData = this
-                    };
+                DownloadAgent.Start(Tc);
 
-                    _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
-                    
-                    _tracker.StartAnnouncing();
+                Application.MainLoop.Invoke(() =>
+                                      {
+                                          main.DisplayStatusBar(Status.Downloading);
+                                      });
 
-                    DownloadAgent.Start(Tc);
+                DownloadAgent.Download(Tc);
 
-                    DownloadAgent.Download(Tc);
+                DownloadAgent.Remove(Tc);
 
-                    DownloadAgent.Remove(Tc);
-
-                    DownloadAgent.ShutDown();
-                }
-
+                DownloadAgent.ShutDown();
 
             }
             catch (Exception ex)
@@ -182,9 +186,11 @@ namespace ClientUI
                 Application.MainLoop.Invoke(() =>
                         {
                             MessageBox.Query("Error", ex.Message, "Ok");
+                            main.DisplayStatusBar(Status.Shutdown);
                         });
-                _mainWindow.DownloadingTorrent = false;
             }
+
+
 
         }
     }

@@ -1,4 +1,9 @@
-﻿//
+﻿using System.Net.NetworkInformation;
+using System.Net;
+using System.Threading.Tasks.Dataflow;
+using System.Net.Mail;
+using System.Collections.ObjectModel;
+//
 // Author: Robert Tizzard
 //
 // Programs: Simple console application to use BitTorrent class library.
@@ -8,26 +13,74 @@
 // Copyright 2020.
 //
 
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Terminal.Gui;
 
 namespace ClientUI
 {
+    public enum Status
+    {
+        Starting,
+        Downloading,
+        Shutdown
+    };
+
     /// <summary>
     /// 
     /// </summary>
-    class DemoTorrentApplication
+    public class DemoTorrentApplication
     {
+        private List<StatusItem> _statusBarItems = new List<StatusItem>();
+        private StatusItem _download;
+        private StatusItem _shutdown;
+        private StatusItem _quit;
+        private StatusBar _mainStatusBar;
+        private Toplevel _top;
+        public MainWindow MainWindow { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
-        static void Main()
+        /// <param name="status"></param>
+        public void DisplayStatusBar(Status status)
         {
 
+            _top.Remove(_mainStatusBar);
+            if (status == Status.Starting)
+            {
+                _statusBarItems.Clear();
+                _statusBarItems.Add(_quit);
+                _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
+                _top.Add(_mainStatusBar);
+            }
+            else if (status == Status.Downloading)
+            {
+                _statusBarItems.Clear();
+                _statusBarItems.Add(_shutdown);
+                _statusBarItems.Add(_quit);
+                _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
+                _top.Add(_mainStatusBar);
+            }
+            else if (status == Status.Shutdown)
+            {
+                _statusBarItems.Clear();
+                _statusBarItems.Add(_download);
+                _statusBarItems.Add(_quit);
+                _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
+                _top.Add(_mainStatusBar);
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public DemoTorrentApplication()
+        {
             Application.Init();
-            var top = Application.Top;
+            _top = Application.Top;
 
-            var mainWindow = new MainWindow("BitTorrent Demo Application")
+            MainWindow = new MainWindow("BitTorrent Demo Application")
             {
                 X = 0,
                 Y = 0,
@@ -35,33 +88,45 @@ namespace ClientUI
                 Height = Dim.Fill()
             };
 
-            var downloadStatusBar = new StatusBar(new StatusItem[] {
-            new StatusItem(Key.ControlD, "~^D~ Download", () => {
-                if (!mainWindow.DownloadingTorrent)
-                {
-                    mainWindow.Torrent = new Torrent(mainWindow.TorrentFileText.Text.ToString());
-                    mainWindow.DownloadTorrentTask = Task.Run(() => mainWindow.Torrent.Download(mainWindow));
-                    mainWindow.DownloadingTorrent = true;
-                } else {
-                    MessageBox.Query("Information", "Already downloading torrent. You need to shut it down.", "Ok");
-                }
-            }),
-            new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
+            _download = new StatusItem(Key.ControlD, "~^D~ Download", () =>
             {
-                if(mainWindow.DownloadingTorrent) {
-                    lock (mainWindow.StartupLock) {
-                        mainWindow.Torrent.DownloadAgent.Close(mainWindow.Torrent.Tc);
-                        mainWindow.DownloadingTorrent = false;
-                        mainWindow.InformationWindow.ClearData();
-                    }
-                }
-            }),
-            new StatusItem(Key.ControlQ, "~^Q~ Quit", () => {  top.Running = false;  })
+                MainWindow.Torrent = new Torrent(MainWindow.TorrentFileText.Text.ToString());
+                MainWindow.DownloadTorrentTask = Task.Run(() => MainWindow.Torrent.Download(this));
             });
 
-            top.Add(mainWindow, downloadStatusBar);
+            _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
+             {
+                 MainWindow.Torrent.DownloadAgent.Close(MainWindow.Torrent.Tc);
+                 MainWindow.InformationWindow.ClearData();
+                 DisplayStatusBar(Status.Shutdown);
+             });
 
+            _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () => { _top.Running = false; });
+            _statusBarItems.Add(_download);
+            _statusBarItems.Add(_quit);
+
+            _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
+
+            _top.Add(MainWindow, _mainStatusBar);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        void Run()
+        {
+            Application.Init();
             Application.Run();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        static void Main()
+        {
+
+            DemoTorrentApplication main = new DemoTorrentApplication();
+
+            main.Run();
 
         }
     }

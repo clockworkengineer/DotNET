@@ -21,18 +21,14 @@ namespace ClientUI
     /// </summary>
     public class MainWindow : Window
     {
-        private MenuBar _mainMenuBar;
         private readonly Label torrentFileLabel;
         private readonly Label _progressBarBeginText;
         private readonly Label _progressBarEndText;
-        public MenuBar MainMenuBar { get => _mainMenuBar; set => _mainMenuBar = value; }
         public TextField TorrentFileText { get; set; }
         public ProgressBar DownloadProgress { get; set; }
         public InformationWindow InformationWindow { get; set; }
-        public bool DownloadingTorrent { get; set; } = false;
         public Task DownloadTorrentTask { get; set; }
         public Torrent Torrent { get; set; }
-        public Object StartupLock = new object();
 
         /// <summary>
         /// 
