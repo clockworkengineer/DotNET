@@ -22,19 +22,10 @@ namespace ClientUI
     public class InformationWindow : Window
     {
         private readonly Label _trackerLabel;
-        private readonly Label _infoHashLabel;
-        private readonly Label _bytesDownloadedLabel;
-        private readonly Label _bytesUploadedLabel;
-        private readonly Label _statuslabel;
-        private readonly Label _missingPiecesLabel;
         private ListView _peersListView;
         public TextField TrackerText { get; }
-        public TextField InfoHashText { get; set; }
-        public TextField BytesDownloadedText { get; set; }
-        public TextField BytesUploadedText { get; set; }
-        public TextField StatusText { get; set; }
+        public TextField[] InfoTextFields;
         public Window PeersWindow { get; set; }
-        public TextField MissingPiecesText { get; set; }
 
         /// <summary>
         /// 
@@ -51,7 +42,6 @@ namespace ClientUI
                 Y = 1
             };
             viewables.Add(_trackerLabel);
-
             TrackerText = new TextField()
             {
                 X = Pos.Right(_trackerLabel),
@@ -60,95 +50,38 @@ namespace ClientUI
                 CanFocus = false
             };
             viewables.Add(TrackerText);
-
             PeersWindow = new Window("Peers")
             {
                 X = Pos.Left(_trackerLabel),
                 Y = Pos.Bottom(_trackerLabel) + 1,
-                Width = 30,
+                Width = 23,
                 Height = Dim.Fill(),
             };
             viewables.Add(PeersWindow);
 
-            _infoHashLabel = new Label("InfoHash:")
-            {
-                X = Pos.Right(PeersWindow) + 1,
-                Y = Pos.Top(PeersWindow)
-            };
-            viewables.Add(_infoHashLabel);
+            string[] labels = { "InfoHash:", "Downloaded:", "Uploaded:", "Missing:", "Status:","Swarm:", "Dead:" };
 
-            InfoHashText = new TextField()
-            {
-                X = Pos.Right(_infoHashLabel) + 3,
-                Y = Pos.Top(_infoHashLabel),
-                Width = 20,
-                CanFocus = false
-            };
-            viewables.Add(InfoHashText);
+            InfoTextFields = new TextField[labels.Length];
 
-            _bytesDownloadedLabel = new Label("Downloaded:")
+            int pos = 0;
+            foreach (var label in labels)
             {
-                X = Pos.Right(PeersWindow) + 1,
-                Y = Pos.Bottom(_infoHashLabel)
-            };
-            viewables.Add(_bytesDownloadedLabel);
-
-            BytesDownloadedText = new TextField()
-            {
-                X = Pos.Right(_bytesDownloadedLabel) + 1,
-                Y = Pos.Bottom(_infoHashLabel),
-                Width = 20,
-                CanFocus = false
-            };
-            viewables.Add(BytesDownloadedText);
-
-            _bytesUploadedLabel = new Label("Uploaded:")
-            {
-                X = Pos.Left(_infoHashLabel),
-                Y = Pos.Bottom(_bytesDownloadedLabel)
-            };
-            viewables.Add(_bytesUploadedLabel);
-
-            BytesUploadedText = new TextField()
-            {
-                X = Pos.Right(_bytesDownloadedLabel) + 1,
-                Y = Pos.Bottom(_bytesDownloadedLabel),
-                Width = 20,
-                CanFocus = false
-            };
-            viewables.Add(BytesUploadedText);
-
-            _missingPiecesLabel = new Label("Missing:")
-            {
-                X = Pos.Left(_infoHashLabel),
-                Y = Pos.Bottom(_bytesUploadedLabel)
-            };
-            viewables.Add(_missingPiecesLabel);
-
-            MissingPiecesText = new TextField()
-            {
-                X = Pos.Right(_bytesDownloadedLabel) + 1,
-                Y = Pos.Bottom(_bytesUploadedLabel),
-                Width = 20,
-                CanFocus = false
-            };
-            viewables.Add(MissingPiecesText);
-
-            _statuslabel = new Label("Status:")
-            {
-                X = Pos.Left(_infoHashLabel),
-                Y = Pos.Bottom(_missingPiecesLabel)
-            };
-            viewables.Add(_statuslabel);
-
-            StatusText = new TextField()
-            {
-                X = Pos.Right(_bytesDownloadedLabel) + 1,
-                Y = Pos.Bottom(_missingPiecesLabel),
-                Width = 20,
-                CanFocus = false
-            };
-            viewables.Add(StatusText);
+                Label text = new Label(label)
+                {
+                    X = Pos.Right(PeersWindow) + 1,
+                    Y = Pos.Top(PeersWindow) + pos
+                };
+                viewables.Add(text);
+                InfoTextFields[pos] = new TextField()
+                {
+                    X = Pos.Right(PeersWindow) + 12,
+                    Y = Pos.Bottom(_trackerLabel) + pos + 1,
+                    Width = 40,
+                    CanFocus = false
+                };
+                viewables.Add(InfoTextFields[pos]);
+                pos++;
+            }
 
             foreach (var viewable in viewables)
             {
@@ -162,11 +95,13 @@ namespace ClientUI
         {
             Application.MainLoop.Invoke(() =>
                               {
-                                  InfoHashText.Text = "";
-                                  BytesDownloadedText.Text = "";
-                                  BytesUploadedText.Text = "";
-                                  MissingPiecesText.Text = "";
-                                  StatusText.Text = "Idle";
+                                  InfoTextFields[0].Text = "";
+                                  InfoTextFields[1].Text = "";
+                                  InfoTextFields[2].Text = "";
+                                  InfoTextFields[3].Text = "";
+                                  InfoTextFields[4].Text = "Idle";
+                                  InfoTextFields[5].Text = "";
+                                  InfoTextFields[6].Text = "";
                                   if (_peersListView != null)
                                   {
                                       PeersWindow.Remove(_peersListView);

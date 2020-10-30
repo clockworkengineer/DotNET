@@ -28,6 +28,8 @@ namespace BitTorrentLibrary
         public UInt64 uploadedBytes;
         public UInt64 downloadedBytes;
         public UInt32 missingPiecesCount;
+        public UInt32 swarmSize;
+        public UInt32 deadPeers;
         public byte[] infoHash;
     }
 }

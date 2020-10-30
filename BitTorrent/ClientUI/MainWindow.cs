@@ -28,12 +28,12 @@ namespace ClientUI
         public MenuBar MainMenuBar { get => _mainMenuBar; set => _mainMenuBar = value; }
         public TextField TorrentFileText { get; set; }
         public ProgressBar DownloadProgress { get; set; }
-
         public InformationWindow InformationWindow { get; set; }
         public bool DownloadingTorrent { get; set; } = false;
         public Task DownloadTorrentTask { get; set; }
         public Torrent Torrent { get; set; }
         public Object StartupLock = new object();
+
         /// <summary>
         /// 
         /// </summary>

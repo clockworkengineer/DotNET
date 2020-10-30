@@ -30,7 +30,10 @@ namespace ClientUI
         private Tracker _tracker;
         public Agent DownloadAgent { get; set; }
         public TorrentContext Tc { get; set; }
-
+/// <summary>
+/// 
+/// </summary>
+/// <param name="obj"></param>
         private void UpdateInformation(Object obj)
         {
             Torrent torrent = (Torrent)obj;
@@ -52,11 +55,13 @@ namespace ClientUI
                     CanFocus = false
                 });
 
-                _mainWindow.InformationWindow.InfoHashText.Text = InfoHashToString(torrentDetails.infoHash);
-                _mainWindow.InformationWindow.BytesDownloadedText.Text = torrentDetails.downloadedBytes.ToString();
-                _mainWindow.InformationWindow.BytesUploadedText.Text = torrentDetails.uploadedBytes.ToString();
-                _mainWindow.InformationWindow.MissingPiecesText.Text = torrentDetails.missingPiecesCount.ToString();
-                _mainWindow.InformationWindow.StatusText.Text = torrentDetails.status.ToString();
+                _mainWindow.InformationWindow.InfoTextFields[0].Text = InfoHashToString(torrentDetails.infoHash);
+                _mainWindow.InformationWindow.InfoTextFields[1].Text = torrentDetails.downloadedBytes.ToString();
+                _mainWindow.InformationWindow.InfoTextFields[2].Text = torrentDetails.uploadedBytes.ToString();
+                _mainWindow.InformationWindow.InfoTextFields[3].Text = torrentDetails.missingPiecesCount.ToString();
+                _mainWindow.InformationWindow.InfoTextFields[4].Text = torrentDetails.status.ToString();
+                _mainWindow.InformationWindow.InfoTextFields[5].Text = torrentDetails.swarmSize.ToString();
+                _mainWindow.InformationWindow.InfoTextFields[6].Text = torrentDetails.deadPeers.ToString();
             });
         }
         /// <summary>

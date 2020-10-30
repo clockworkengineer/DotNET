@@ -5,7 +5,7 @@
 //
 // Description: All the high level torrent processing including download/upload
 // of torrent pieces and updating the peers in the current swarm. Any  peers that
-// are connected then have a piece assembler task created for them ehich puts together
+// are connected then have a piece assembler task created for them which puts together
 // pieces that they request from the torrent (remote peer) before being written to disk.
 //
 // Copyright 2020.
@@ -355,8 +355,9 @@ namespace BitTorrentLibrary
                 downloadedBytes = tc.TotalBytesDownloaded,
                 uploadedBytes = tc.TotalBytesUploaded,
                 infoHash = tc.InfoHash,
-                missingPiecesCount = tc.MissingPiecesCount
-
+                missingPiecesCount = tc.MissingPiecesCount,
+                swarmSize  = (UInt32)tc.PeerSwarm.Count,
+                deadPeers = (UInt32) _deadPeers.Count
             };
         }
     }
