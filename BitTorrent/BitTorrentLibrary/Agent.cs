@@ -140,7 +140,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="torrentFileName">Torrent file name.</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(TorrentContext tc, Assembler pieceAssembler)
+        public Agent(Assembler pieceAssembler)
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
             _pieceAssembler = pieceAssembler;

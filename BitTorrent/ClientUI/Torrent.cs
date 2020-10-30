@@ -149,7 +149,7 @@ namespace ClientUI
                         CallBackData = mainWindow
                     };
 
-                    DownloadAgent = new Agent(Tc, new Assembler());
+                    DownloadAgent = new Agent(new Assembler());
                     DownloadAgent.Add(Tc);
 
                     _tracker = new Tracker(Tc) {

@@ -262,7 +262,6 @@ namespace BitTorrentLibrary
         /// <param name="torrent"></param>
         /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
         /// 
-
         public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer, ConcurrentDictionary<string, TorrentContext> torrents)
         {
             try
@@ -282,6 +281,9 @@ namespace BitTorrentLibrary
                         remotePeer.PeerWrite(handshakePacket.ToArray());
                         remotePeer.SetTorrentContext(tc);
                     }
+                }
+                if (!connected) {
+                    Log.Logger.Debug($"++++Remote peer {remotePeerID} tried to connect with invalid infohash.");
                 }
 
                 return (connected, remotePeerID);
