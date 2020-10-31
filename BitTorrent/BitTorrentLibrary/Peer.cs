@@ -151,7 +151,6 @@ namespace BitTorrentLibrary
                     Connected = false;
                     CancelTaskSource.Cancel();
                     _network.Close();
-                    Tc.PeerFilter.Remove(Ip);
                     if (Tc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
                     {
                         Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");

@@ -1,4 +1,5 @@
-﻿//
+﻿using System.Threading;
+//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -32,7 +33,8 @@ namespace BitTorrentLibrary
         private readonly HashSet<string> _deadPeers;                    // Dead peers list
         private readonly Assembler _pieceAssembler;                     // Piece assembler for agent
         private Socket _listenerSocket;                                 // Connection listener socket
-        public BlockingCollection<PeerDetails> PeerSwarmQueue { get; }  // Queue of peers to add to swarm
+        private CancellationTokenSource _cancelTaskSource;              // Cancel all agent tasks
+        public AsyncQueue<PeerDetails> PeerSwarmQueue { get; }          // Queue of peers to add to swarm
 
         /// <summary>
         /// Start assembly task for connection with remote peer. If for any reason
@@ -71,12 +73,12 @@ namespace BitTorrentLibrary
         /// Inspects  peer queue, connects to the peer and creates piece assembler task 
         /// before adding to swarm.
         /// </summary>
-        private void PeerConnectCreatorTask()
+        private async  Task PeerConnectCreatorTaskAsync(CancellationToken cancelTask)
         {
 
-            while (!PeerSwarmQueue.IsCompleted && _agentRunning)
+            while (_agentRunning)
             {
-                PeerDetails peer = PeerSwarmQueue.Take();
+                PeerDetails peer = await PeerSwarmQueue.DequeueAsync(cancelTask);
                 try
                 {
                     if (_torrents.TryGetValue(Util.InfoHashToString(peer.infoHash), out TorrentContext tc))
@@ -99,7 +101,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Listen for remote peer connects and on success start peer task then add it to swarm.
         /// </summary>
-        private void PeerListenCreatorTask()
+        private async Task PeerListenCreatorTaskAsync(CancellationToken cancelTask)
         {
 
             try
@@ -111,7 +113,7 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Info("Waiting for remote peer connect...");
 
-                    Socket remotePeerSocket = PeerNetwork.WaitForConnection(_listenerSocket);
+                    Socket remotePeerSocket = await PeerNetwork.WaitForConnectionAsync(_listenerSocket);
 
                     if (_agentRunning)
                     {
@@ -144,18 +146,22 @@ namespace BitTorrentLibrary
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
             _pieceAssembler = pieceAssembler;
-            PeerSwarmQueue = new BlockingCollection<PeerDetails>();
+            PeerSwarmQueue = new AsyncQueue<PeerDetails>();
             _deadPeers = new HashSet<string>();
-            Task.Run(() => PeerListenCreatorTask());
-            Task.Run(() => PeerConnectCreatorTask());
-            _agentRunning = true;
+            _cancelTaskSource = new CancellationTokenSource();
             _deadPeers.Add("192.168.1.1"); // WITHOUT THIS HANGS (FOR ME)
 
         }
-        ~Agent()
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Startup()
         {
-            PeerSwarmQueue.CompleteAdding();
+            CancellationToken cancelTask = _cancelTaskSource.Token;
+            _agentRunning = true;
+            Task.Run(()=> Task.WaitAll(PeerConnectCreatorTaskAsync(cancelTask),PeerListenCreatorTaskAsync(cancelTask)));
         }
+
         /// <summary>
         /// Add torrent context to dictionary of running torrents.
         /// </summary>
@@ -200,11 +206,13 @@ namespace BitTorrentLibrary
             {
                 if (_agentRunning)
                 {
-                    foreach( var tc in _torrents.Values) {
+                    _cancelTaskSource.Cancel();
+                    foreach (var tc in _torrents.Values)
+                    {
                         Close(tc);
                     }
                     PeerNetwork.ShutdownListener();
-                     _agentRunning = false;
+                    _agentRunning = false;
                 }
             }
             catch (Exception ex)
@@ -357,8 +365,8 @@ namespace BitTorrentLibrary
                 uploadedBytes = tc.TotalBytesUploaded,
                 infoHash = tc.InfoHash,
                 missingPiecesCount = tc.MissingPiecesCount,
-                swarmSize  = (UInt32)tc.PeerSwarm.Count,
-                deadPeers = (UInt32) _deadPeers.Count
+                swarmSize = (UInt32)tc.PeerSwarm.Count,
+                deadPeers = (UInt32)_deadPeers.Count
             };
         }
     }

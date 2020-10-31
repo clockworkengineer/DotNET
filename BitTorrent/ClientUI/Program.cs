@@ -234,6 +234,8 @@ namespace ClientUI
 
             DownloadAgent = new Agent(new Assembler());
 
+            DownloadAgent.Startup();
+
             Task.Run(() => LoadSeedingTorrents());
 
         }

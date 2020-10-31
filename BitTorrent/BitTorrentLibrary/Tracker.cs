@@ -41,7 +41,7 @@ namespace BitTorrentLibrary
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
-        private BlockingCollection<PeerDetails> _peerSwarmQueue;// Peers to add to swarm queue
+        private AsyncQueue<PeerDetails> _peerSwarmQueue;        // Peers to add to swarm queue
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
@@ -77,7 +77,7 @@ namespace BitTorrentLibrary
                 {
                     foreach (var peerDetails in response.peers)
                     {
-                        tracker._peerSwarmQueue?.Add(peerDetails);
+                        tracker._peerSwarmQueue?.Enqueue(peerDetails);
                     }
                     tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
                     
@@ -169,7 +169,7 @@ namespace BitTorrentLibrary
         /// 
         /// </summary>
         /// <param name="peerSwarmQueue"></param>
-        public void SetPeerSwarmQueue(BlockingCollection<PeerDetails> peerSwarmQueue)
+        public void SetPeerSwarmQueue(AsyncQueue<PeerDetails> peerSwarmQueue)
         {
             _peerSwarmQueue = peerSwarmQueue;
         }

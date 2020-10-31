@@ -10,6 +10,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using System.Text;
 namespace BitTorrentLibrary
 {
@@ -210,9 +211,9 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="listener"></param>
         /// <returns></returns>
-        public static Socket WaitForConnection(Socket listener)
+        public static async Task<Socket> WaitForConnectionAsync(Socket listener)
         {
-            return (listener.Accept());
+            return await listener.AcceptAsync();
         }
         /// <summary>
         /// Return IP and Port of remote connection.
