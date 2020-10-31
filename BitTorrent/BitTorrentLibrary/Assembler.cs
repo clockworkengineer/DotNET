@@ -181,10 +181,19 @@ namespace BitTorrentLibrary
             {
                 if (remotePeer.Connected)
                 {
-                    WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
-                    PWP.Uninterested(remotePeer);
-                    PWP.Unchoke(remotePeer);
-                    WaitHandle.WaitAll(waitHandles);
+                    if (remotePeer.NumberOfMissingPieces != 0)
+                    {
+                        WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
+                        PWP.Uninterested(remotePeer);
+                        PWP.Unchoke(remotePeer);
+                        WaitHandle.WaitAll(waitHandles);
+                    }
+                    else
+                    {
+                        // SHOULD ADD TO DEAD PEERS LIST HERE TO (NEED TO MOVE IT TO TC)
+                        Log.Logger.Info($"Remote Peer doesn't need pieces. Closing the connection.");
+                        remotePeer.Close();
+                    }
                 }
             }
             catch (Exception ex)

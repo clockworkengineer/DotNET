@@ -58,6 +58,7 @@ namespace BitTorrentLibrary
         public ConcurrentDictionary<string, Peer> PeerSwarm { get; }        // Current peer swarm
         public TorrentStatus Status { get; set; }                           // Torrent status
         public Tracker MainTracker { get; set; }                            // Main tracker assigned to torrent
+        public string FileName { get; set; }                                // Torrent file name
         public DownloadCompleteCallBack CallBack { get; set; }
         public object CallBackData { get; set; }
 
@@ -69,6 +70,7 @@ namespace BitTorrentLibrary
         /// <param name="pieces">Pieces.</param>
         public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath)
         {
+            FileName = torrentMetaInfo.TorrentFileName;
             Status = TorrentStatus.Stopped;
             InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);

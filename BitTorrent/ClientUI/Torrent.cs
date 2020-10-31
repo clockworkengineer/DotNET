@@ -9,6 +9,7 @@
 //
 
 using System;
+using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -86,12 +87,13 @@ namespace ClientUI
         /// <param name="obj"></param>
         private void DownloadComplete(Object obj)
         {
-            MainWindow mainWindow = (MainWindow)obj;
+            DemoTorrentApplication main = (DemoTorrentApplication) obj;
 
             Application.MainLoop.Invoke(() =>
             {
-                mainWindow.DownloadProgress.Fraction = 1.0F;
+                main.MainWindow.DownloadProgress.Fraction = 1.0F;
             });
+            File.Copy(main.MainWindow.Torrent.Tc.FileName, main.SeedFileDirectory+Path.GetFileName(main.MainWindow.Torrent.Tc.FileName));
         }
         /// <summary>
         /// 
@@ -150,7 +152,7 @@ namespace ClientUI
                 Tc = new TorrentContext(_torrentFile, new Selector(), Downloader, "/home/robt/utorrent")
                 {
                     CallBack = DownloadComplete,
-                    CallBackData = _mainWindow
+                    CallBackData = main
                 };
 
                 main.DownloadAgent.Add(Tc);

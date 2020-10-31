@@ -12,10 +12,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Terminal.Gui;
+using System.Text;
+using System.IO;
 using BitTorrentLibrary;
 
 namespace ClientUI
 {
+
     public enum Status
     {
         Starting,
@@ -36,8 +39,94 @@ namespace ClientUI
         private StatusBar _mainStatusBar;
         private readonly Toplevel _top;
         private bool informatioWindow = true;
+        private List<TorrentContext> _seeders;
+        private ListView _seederListView;
+        private Downloader _seederDownloader;
         public MainWindow MainWindow { get; set; }
         public Agent DownloadAgent { get; set; }
+        public string SeedFileDirectory { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="infoHash"></param>
+        /// <returns></returns>
+        public static string InfoHashToString(byte[] infoHash)
+        {
+            StringBuilder hex = new StringBuilder(infoHash.Length * 2);
+            foreach (byte b in infoHash)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+            return hex.ToString().ToLower();
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="main"></param>
+        /// <returns></returns>
+        public bool UpdateSeederList(MainLoop main)
+        {
+            List<string> seederLines = new List<string>();
+
+            foreach (var seeder in _seeders)
+            {
+                TorrentDetails seederDetails = DownloadAgent.GetTorrentDetails(seeder);
+                seederLines.Add($"File[{Path.GetFileName(seederDetails.fileName)}] Status[{seederDetails.status}] Uploaded[{seederDetails.uploadedBytes}]");
+            }
+            if (_seederListView != null)
+            {
+                MainWindow.SeedingWindow.Remove(_seederListView);
+            }
+            _seederListView = new ListView(seederLines.ToArray())
+            {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = Dim.Fill(),
+                CanFocus = false
+            };
+            MainWindow.SeedingWindow.Add(_seederListView);
+
+            return true;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        private void LoadSeedingTorrents()
+        {
+            var token = Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
+
+            _seeders = new List<TorrentContext>();
+            _seederDownloader = new Downloader();
+            string[] torrentFiles = Directory.GetFiles(SeedFileDirectory, "*.torrent");
+            foreach (var file in torrentFiles)
+            {
+
+                MetaInfoFile _seederFile = new MetaInfoFile(file);
+                _seederFile.Load();
+                _seederFile.Parse();
+
+                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDownloader, "/home/robt/utorrent");
+
+                DownloadAgent.Add(tc);
+
+                Tracker seederTracker = new Tracker(tc);
+
+                seederTracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
+
+                seederTracker.StartAnnouncing();
+
+                DownloadAgent.Start(tc);
+
+                _seeders.Add(tc);
+
+                DownloadAgent.Download(tc);
+
+                 Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
+
+            }
+        }
         /// <summary>
         /// 
         /// </summary>
@@ -80,6 +169,8 @@ namespace ClientUI
             Application.Init();
             _top = Application.Top;
 
+            SeedFileDirectory = "/home/robt/Projects/dotNET/BitTorrent/ClientUI/bin/Debug/netcoreapp3.1/seeding/";
+
             MainWindow = new MainWindow("BitTorrent Demo Application")
             {
                 X = 0,
@@ -117,12 +208,14 @@ namespace ClientUI
                 }
             });
 
-            _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () => 
-            { 
+            _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () =>
+            {
                 DownloadAgent.ShutDown();
-                _top.Running = false; });
+                _top.Running = false;
+            });
 
             _statusBarItems.Add(_download);
+            _statusBarItems.Add(_toggleSeeding);
             _statusBarItems.Add(_quit);
 
             _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
@@ -130,6 +223,8 @@ namespace ClientUI
             _top.Add(MainWindow, _mainStatusBar);
 
             DownloadAgent = new Agent(new Assembler());
+
+            Task.Run(() => LoadSeedingTorrents());
 
         }
         /// <summary>

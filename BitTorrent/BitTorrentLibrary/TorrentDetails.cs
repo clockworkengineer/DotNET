@@ -24,6 +24,7 @@ namespace BitTorrentLibrary
     public struct TorrentDetails
     {
         public TorrentStatus status;
+        public string fileName;
         public List<PeerDetails> peers;
         public UInt64 uploadedBytes;
         public UInt64 downloadedBytes;

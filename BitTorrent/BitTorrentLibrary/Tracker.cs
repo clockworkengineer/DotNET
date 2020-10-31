@@ -36,7 +36,7 @@ namespace BitTorrentLibrary
             stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
             completed = 3   // Must be sent to the tracker when the download completes
         };
-        
+
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
@@ -46,16 +46,16 @@ namespace BitTorrentLibrary
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
         public string Ip { get; set; }                          // IP of host performing announce
-        public uint Compact { get;  } = 1;                      // Is the returned peer list compressed (1=yes,0=no)
-        public uint NoPeerID { get;  }                          // Unique peer ID for downloader
-        public string Key { get;  }                             // An additional identification that is not shared with any other peers (optional)
+        public uint Compact { get; } = 1;                      // Is the returned peer list compressed (1=yes,0=no)
+        public uint NoPeerID { get; }                          // Unique peer ID for downloader
+        public string Key { get; }                             // An additional identification that is not shared with any other peers (optional)
         public string TrackerID { get; set; }                   // String that the client should send back on its next announcements. (optional).
         public int NumWanted { get; set; } = 5;                 // Number of required download clients
         public byte[] InfoHash { get; }                         // Encoded info hash for URI
-        public string TrackerURL { get;  }                      // Tracker URL
+        public string TrackerURL { get; }                      // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
-        public TrackerCallBack CallBack {get; set; }            // Tracker ping callback function
+        public TrackerCallBack CallBack { get; set; }            // Tracker ping callback function
         public Object CallBackData { get; set; }                // Tracker ping callback function data
         public UInt64 Downloaded => _tc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download
@@ -73,12 +73,15 @@ namespace BitTorrentLibrary
 
                 Log.Logger.Info("Queuing new peers for swarm ....");
 
-                foreach (var peerDetails in response.peers)
+                if (tracker._tc.Status == TorrentStatus.Downloading)
                 {
-                    tracker._peerSwarmQueue?.Add(peerDetails);
+                    foreach (var peerDetails in response.peers)
+                    {
+                        tracker._peerSwarmQueue?.Add(peerDetails);
+                    }
+                    tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
+                    
                 }
-                tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
-
                 tracker.CallBack?.Invoke(tracker.CallBackData);
                 tracker.UpdateRunningStatusFromAnnounce(response);
             }
@@ -166,9 +169,10 @@ namespace BitTorrentLibrary
         /// 
         /// </summary>
         /// <param name="peerSwarmQueue"></param>
-        public void SetPeerSwarmQueue(BlockingCollection<PeerDetails> peerSwarmQueue) {
+        public void SetPeerSwarmQueue(BlockingCollection<PeerDetails> peerSwarmQueue)
+        {
             _peerSwarmQueue = peerSwarmQueue;
-        } 
+        }
         /// <summary>
         /// Change tracker event status and send to server.
         /// </summary>

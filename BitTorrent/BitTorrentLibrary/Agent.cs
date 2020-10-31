@@ -344,6 +344,7 @@ namespace BitTorrentLibrary
 
             return new TorrentDetails
             {
+                fileName = tc.FileName,
                 status = tc.Status,
 
                 peers = (from peer in tc.PeerSwarm.Values
