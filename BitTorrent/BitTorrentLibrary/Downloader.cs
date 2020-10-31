@@ -111,59 +111,76 @@ namespace BitTorrentLibrary
         /// </summary>
         private void PieceBufferDiskWriter()
         {
-            while (!PieceWriteQueue.IsCompleted)
+            try
             {
-                PieceBuffer pieceBuffer = PieceWriteQueue.Take();
-
-                Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
-
-                TransferPiece(pieceBuffer.RemotePeer.Tc, pieceBuffer, false);
-
-                pieceBuffer.RemotePeer.Tc.TotalBytesDownloaded += pieceBuffer.RemotePeer.Tc.GetPieceLength((pieceBuffer.Number));
-                Log.Logger.Info((pieceBuffer.RemotePeer.Tc.TotalBytesDownloaded / (double)pieceBuffer.RemotePeer.Tc.TotalBytesToDownload).ToString("0.00%"));
-                Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
-
-                CallBack?.Invoke(CallBackData);
-
-                if (pieceBuffer.RemotePeer.Tc.BytesLeftToDownload() == 0)
+                while (!PieceWriteQueue.IsCompleted)
                 {
-                    pieceBuffer.RemotePeer.Tc.DownloadFinished.Set();
-                    pieceBuffer.RemotePeer.Tc.CallBack?.Invoke(pieceBuffer.RemotePeer.Tc.CallBackData);
-                    PieceWriteQueue.CompleteAdding();
-                }
+                    PieceBuffer pieceBuffer = PieceWriteQueue.Take();
 
+                    Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
+
+                    TransferPiece(pieceBuffer.RemotePeer.Tc, pieceBuffer, false);
+
+                    pieceBuffer.RemotePeer.Tc.TotalBytesDownloaded += pieceBuffer.RemotePeer.Tc.GetPieceLength((pieceBuffer.Number));
+                    Log.Logger.Info((pieceBuffer.RemotePeer.Tc.TotalBytesDownloaded / (double)pieceBuffer.RemotePeer.Tc.TotalBytesToDownload).ToString("0.00%"));
+                    Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
+
+                    CallBack?.Invoke(CallBackData);
+
+                    if (pieceBuffer.RemotePeer.Tc.BytesLeftToDownload() == 0)
+                    {
+                        pieceBuffer.RemotePeer.Tc.DownloadFinished.Set();
+                        pieceBuffer.RemotePeer.Tc.CallBack?.Invoke(pieceBuffer.RemotePeer.Tc.CallBackData);
+                    }
+
+                }
             }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex.Message);
+            }
+
         }
         /// <summary>
         /// Process any piece requests in buffer and send to remote peer.
         /// </summary>
         private void PieceRequestProcessingTask()
         {
-            while (!PieceRequestQueue.IsCompleted)
+            try
             {
-
-                PieceRequest request = PieceRequestQueue.Take();
-                try
+                while (!PieceRequestQueue.IsCompleted)
                 {
-                    Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
 
-                    PieceBuffer requestBuffer = GetPieceFromTorrent(request.remotePeer, request.pieceNumber);
-                    byte[] requestBlock = new byte[request.blockSize];
+                    PieceRequest request = PieceRequestQueue.Take();
+                    try
+                    {
+                        Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
 
-                    Array.Copy(requestBuffer.Buffer, (Int32)request.blockOffset, requestBlock, 0, (Int32)request.blockSize);
+                        PieceBuffer requestBuffer = GetPieceFromTorrent(request.remotePeer, request.pieceNumber);
+                        byte[] requestBlock = new byte[request.blockSize];
 
-                    PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
+                        Array.Copy(requestBuffer.Buffer, (Int32)request.blockOffset, requestBlock, 0, (Int32)request.blockSize);
 
-                    request.remotePeer.Tc.TotalBytesUploaded += request.blockSize;
+                        PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
+
+                        request.remotePeer.Tc.TotalBytesUploaded += request.blockSize;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Remote peer most probably closed socket so close connection
+                        Log.Logger.Debug(ex);
+                        request.remotePeer.Close();
+                    }
+
                 }
-                catch (Exception ex)
-                {
-                    // Remote peer most probably closed socket so close connection
-                    Log.Logger.Debug(ex);      
-                    request.remotePeer.Close();
-                }
-
             }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex.Message);
+            }
+
+
+
         }
         /// <summary>
         /// Setup data and resources needed by downloader.
@@ -181,6 +198,8 @@ namespace BitTorrentLibrary
         /// </summary>
         ~Downloader()
         {
+            PieceWriteQueue.CompleteAdding();
+            PieceRequestQueue.CompleteAdding();
         }
         /// <summary>
         /// Creates the empty files on disk as place holders of files to be downloaded.

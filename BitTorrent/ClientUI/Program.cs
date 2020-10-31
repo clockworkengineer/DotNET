@@ -1,9 +1,4 @@
-﻿using System.Net.NetworkInformation;
-using System.Net;
-using System.Threading.Tasks.Dataflow;
-using System.Net.Mail;
-using System.Collections.ObjectModel;
-//
+﻿//
 // Author: Robert Tizzard
 //
 // Programs: Simple console application to use BitTorrent class library.
@@ -17,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Terminal.Gui;
+using BitTorrentLibrary;
 
 namespace ClientUI
 {
@@ -32,16 +28,16 @@ namespace ClientUI
     /// </summary>
     public class DemoTorrentApplication
     {
-        private List<StatusItem> _statusBarItems = new List<StatusItem>();
-        private StatusItem _download;
-        private StatusItem _shutdown;
-        private StatusItem _quit;
-        private StatusItem _toggleSeeding;
+        private readonly List<StatusItem> _statusBarItems = new List<StatusItem>();
+        private readonly StatusItem _download;
+        private readonly StatusItem _shutdown;
+        private readonly StatusItem _quit;
+        private readonly StatusItem _toggleSeeding;
         private StatusBar _mainStatusBar;
-        private Toplevel _top;
+        private readonly Toplevel _top;
         private bool informatioWindow = true;
         public MainWindow MainWindow { get; set; }
-
+        public Agent DownloadAgent { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -100,7 +96,7 @@ namespace ClientUI
 
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
              {
-                 MainWindow.Torrent.DownloadAgent.Close(MainWindow.Torrent.Tc);
+                 DownloadAgent.Remove(MainWindow.Torrent.Tc);
                  MainWindow.InformationWindow.ClearData();
                  DisplayStatusBar(Status.Shutdown);
              });
@@ -121,13 +117,20 @@ namespace ClientUI
                 }
             });
 
-            _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () => { _top.Running = false; });
+            _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () => 
+            { 
+                DownloadAgent.ShutDown();
+                _top.Running = false; });
+
             _statusBarItems.Add(_download);
             _statusBarItems.Add(_quit);
 
             _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
 
             _top.Add(MainWindow, _mainStatusBar);
+
+            DownloadAgent = new Agent(new Assembler());
+
         }
         /// <summary>
         /// 

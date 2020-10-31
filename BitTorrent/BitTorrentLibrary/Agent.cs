@@ -201,8 +201,11 @@ namespace BitTorrentLibrary
             {
                 if (_agentRunning)
                 {
-                    _agentRunning = false;
+                    foreach( var tc in _torrents.Values) {
+                        Close(tc);
+                    }
                     PeerNetwork.ShutdownListener();
+                     _agentRunning = false;
                 }
             }
             catch (Exception ex)
@@ -269,8 +272,6 @@ namespace BitTorrentLibrary
             {
                 if (_agentRunning)
                 {
-                    _agentRunning = false;
-
                     tc.MainTracker.StopAnnouncing();
                     if (tc.PeerSwarm != null)
                     {

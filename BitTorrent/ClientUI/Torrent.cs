@@ -26,15 +26,14 @@ namespace ClientUI
         private MetaInfoFile _torrentFile;
         private MainWindow _mainWindow;
         private double _currentProgress = 0;
-        private Downloader _downloader;
         private Tracker _tracker;
-        public Agent DownloadAgent { get; set; }
         public TorrentContext Tc { get; set; }
+        public Downloader Downloader { get; set; }
 
         private void UpdateInformation(Object obj)
         {
-            Torrent torrent = (Torrent)obj;
-            TorrentDetails torrentDetails = torrent.DownloadAgent.GetTorrentDetails(torrent.Tc);
+            DemoTorrentApplication main = (DemoTorrentApplication)obj;
+            TorrentDetails torrentDetails = main.DownloadAgent.GetTorrentDetails( main.MainWindow.Torrent.Tc);
             List<string> peers = new List<string>();
             foreach (var peer in torrentDetails.peers)
             {
@@ -90,9 +89,9 @@ namespace ClientUI
             MainWindow mainWindow = (MainWindow)obj;
 
             Application.MainLoop.Invoke(() =>
-                {
-                    mainWindow.DownloadProgress.Fraction = 1.0F;
-                });
+            {
+                mainWindow.DownloadProgress.Fraction = 1.0F;
+            });
         }
         /// <summary>
         /// 
@@ -127,9 +126,9 @@ namespace ClientUI
                 _mainWindow = main.MainWindow;
 
                 Application.MainLoop.Invoke(() =>
-                                     {
-                                         main.DisplayStatusBar(Status.Starting);
-                                     });
+                {
+                    main.DisplayStatusBar(Status.Starting);
+                });
 
                 _torrentFile = new MetaInfoFile(_torrentFileName);
 
@@ -137,57 +136,52 @@ namespace ClientUI
                 _torrentFile.Parse();
 
                 Application.MainLoop.Invoke(() =>
-                              {
-                                  _mainWindow.DownloadProgress.Fraction = 0;
-                                  _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
-                              });
+                {
+                    _mainWindow.DownloadProgress.Fraction = 0;
+                    _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
+                });
 
-                _downloader = new Downloader()
+                Downloader = new Downloader()
                 {
                     CallBack = UpdateProgress,
                     CallBackData = this
                 };
 
-                Tc = new TorrentContext(_torrentFile, new Selector(), _downloader, "/home/robt/utorrent")
+                Tc = new TorrentContext(_torrentFile, new Selector(), Downloader, "/home/robt/utorrent")
                 {
                     CallBack = DownloadComplete,
                     CallBackData = _mainWindow
                 };
 
-                DownloadAgent = new Agent(new Assembler());
-                DownloadAgent.Add(Tc);
+                main.DownloadAgent.Add(Tc);
 
                 _tracker = new Tracker(Tc)
                 {
                     CallBack = UpdateInformation,
-                    CallBackData = this
+                    CallBackData = main
                 };
 
-                _tracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
+                _tracker.SetPeerSwarmQueue(main.DownloadAgent.PeerSwarmQueue);
 
                 _tracker.StartAnnouncing();
 
-                DownloadAgent.Start(Tc);
+                main.DownloadAgent.Start(Tc);
 
                 Application.MainLoop.Invoke(() =>
-                                      {
-                                          main.DisplayStatusBar(Status.Downloading);
-                                      });
+                {
+                    main.DisplayStatusBar(Status.Downloading);
+                });
 
-                DownloadAgent.Download(Tc);
-
-                DownloadAgent.Remove(Tc);
-
-                DownloadAgent.ShutDown();
+                main.DownloadAgent.Download(Tc);
 
             }
             catch (Exception ex)
             {
                 Application.MainLoop.Invoke(() =>
-                        {
-                            MessageBox.Query("Error", ex.Message, "Ok");
-                            main.DisplayStatusBar(Status.Shutdown);
-                        });
+                {
+                    MessageBox.Query("Error", ex.Message, "Ok");
+                    main.DisplayStatusBar(Status.Shutdown);
+                });
             }
 
 
