@@ -183,7 +183,6 @@ namespace BitTorrentLibrary
             try
             {
                 _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out tc);
-                Close(tc);
             }
             catch (Exception ex)
             {

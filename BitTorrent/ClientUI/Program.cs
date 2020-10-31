@@ -197,6 +197,7 @@ namespace ClientUI
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
              {
                  DownloadAgent.Remove(MainWindow.Torrent.Tc);
+                 DownloadAgent.Close(MainWindow.Torrent.Tc);
                  MainWindow.InformationWindow.ClearData();
                  DisplayStatusBar(Status.Shutdown);
              });
