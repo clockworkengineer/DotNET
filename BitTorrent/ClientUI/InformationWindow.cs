@@ -109,7 +109,10 @@ namespace ClientUI
                               });
 
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="peersList"></param>
         public void UpdatePeers(ListView peersList)
         {
             if (_peersListView != null)

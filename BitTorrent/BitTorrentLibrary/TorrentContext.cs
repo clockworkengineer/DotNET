@@ -59,6 +59,7 @@ namespace BitTorrentLibrary
         public TorrentStatus Status { get; set; }                           // Torrent status
         public Tracker MainTracker { get; set; }                            // Main tracker assigned to torrent
         public string FileName { get; set; }                                // Torrent file name
+        public HashSet<string> PeerFilter;                                  // Peers that are not interes 
         public DownloadCompleteCallBack CallBack { get; set; }
         public object CallBackData { get; set; }
 
@@ -71,7 +72,7 @@ namespace BitTorrentLibrary
         public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath)
         {
             FileName = torrentMetaInfo.TorrentFileName;
-            Status = TorrentStatus.Stopped;
+            Status = TorrentStatus.Ended;
             InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
             (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);

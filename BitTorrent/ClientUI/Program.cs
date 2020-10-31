@@ -60,6 +60,15 @@ namespace ClientUI
             }
             return hex.ToString().ToLower();
         }
+        private string BuildSeederDisplayLine(TorrentDetails seederDetails)
+        {
+            return String.Format("File[{0,-24}] Status[{1,1}] Uploaded[{2, 10}] Swarm[{3, 7}]", 
+                   Path.GetFileName(seederDetails.fileName),
+                   seederDetails.status.ToString()[0], seederDetails.uploadedBytes, seederDetails.swarmSize);
+
+
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -72,7 +81,7 @@ namespace ClientUI
             foreach (var seeder in _seeders)
             {
                 TorrentDetails seederDetails = DownloadAgent.GetTorrentDetails(seeder);
-                seederLines.Add($"File[{Path.GetFileName(seederDetails.fileName)}] Status[{seederDetails.status}] Uploaded[{seederDetails.uploadedBytes}]");
+                seederLines.Add(BuildSeederDisplayLine(seederDetails));
             }
             if (_seederListView != null)
             {
@@ -123,7 +132,7 @@ namespace ClientUI
 
                 DownloadAgent.Download(tc);
 
-                 Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
+                Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
 
             }
         }

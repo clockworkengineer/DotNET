@@ -282,7 +282,7 @@ namespace BitTorrentLibrary
                         }
                     }
                     tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
-                    tc.Status = TorrentStatus.Stopped;
+                    tc.Status = TorrentStatus.Ended;
                 }
             }
             catch (Error)
@@ -303,7 +303,7 @@ namespace BitTorrentLibrary
             try
             {
                 _pieceAssembler?.Paused.Set();
-                tc.Status = TorrentStatus.Started;
+                tc.Status = TorrentStatus.Initialised;
             }
             catch (Error)
             {

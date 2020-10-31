@@ -31,6 +31,10 @@ namespace ClientUI
         public TorrentContext Tc { get; set; }
         public Downloader Downloader { get; set; }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="obj"></param>
         private void UpdateInformation(Object obj)
         {
             DemoTorrentApplication main = (DemoTorrentApplication)obj;
@@ -185,8 +189,6 @@ namespace ClientUI
                     main.DisplayStatusBar(Status.Shutdown);
                 });
             }
-
-
 
         }
     }

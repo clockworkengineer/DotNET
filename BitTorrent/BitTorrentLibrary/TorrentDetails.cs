@@ -15,11 +15,11 @@ namespace BitTorrentLibrary
 {
     public enum TorrentStatus
     {
-        Started,
+        Initialised,
         Seeding,
         Downloading,
         Paused,
-        Stopped
+        Ended
     }
     public struct TorrentDetails
     {
