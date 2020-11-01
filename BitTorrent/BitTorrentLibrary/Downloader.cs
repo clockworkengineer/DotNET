@@ -23,10 +23,22 @@ namespace BitTorrentLibrary
 {
     public delegate void ProgessCallBack(Object callBackData); // Download progress callback
 
+    public interface IDownloader
+    {
+        AsyncQueue<PieceBuffer> PieceWriteQueue { get; }
+        AsyncQueue<PieceRequest> PieceRequestQueue { get; }
+        ProgessCallBack CallBack { get; set; }
+        object CallBackData { get; set; }
+
+        void CreateLocalTorrentStructure(TorrentContext tc);
+        void CreateTorrentBitfield(TorrentContext tc);
+        void FullyDownloadedTorrentBitfield(TorrentContext tc);
+    }
+
     /// <summary>
     /// File downloader.
     /// </summary>
-    public class Downloader
+    public class Downloader : IDownloader
     {
         private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
         public AsyncQueue<PieceBuffer> PieceWriteQueue { get; }        // Piece buffer write queue
@@ -201,7 +213,7 @@ namespace BitTorrentLibrary
         /// </summary>
         ~Downloader()
         {
-           _cancelTaskSource.Cancel();
+            _cancelTaskSource.Cancel();
         }
         /// <summary>
         /// Creates the empty files on disk as place holders of files to be downloaded.
@@ -263,5 +275,30 @@ namespace BitTorrentLibrary
 
             Log.Logger.Debug("Finished generating downloaded map.");
         }
+        /// <summary>
+        /// Mark torrent as fully downloaded for when in seeding from startup. This
+        /// means that the whole of the disk image of the torrent isn't checked so
+        /// vastly inceasing start time.
+        /// </summary>
+        public void FullyDownloadedTorrentBitfield(TorrentContext tc)
+        {
+            UInt64 totalBytesToDownload = tc.TotalBytesToDownload;
+            for (UInt32 pieceNumber = 0; pieceNumber < tc.NumberOfPieces; pieceNumber++)
+            {
+                tc.MarkPieceLocal(pieceNumber, true);
+                tc.MarkPieceMissing(pieceNumber, false);
+                if (totalBytesToDownload - Constants.BlockSize > Constants.BlockSize)
+                {
+                    tc.SetPieceLength(pieceNumber, Constants.BlockSize);
+                }
+                else
+                {
+                    tc.SetPieceLength(pieceNumber, (UInt32)totalBytesToDownload);
+                }
+                totalBytesToDownload -= Constants.BlockSize;
+            }
+
+        }
     }
+
 }

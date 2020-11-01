@@ -23,10 +23,20 @@ using static BitTorrentLibrary.Bencoding;
 
 namespace BitTorrentLibrary
 {
+    public interface IMetaInfoFile
+    {
+        Dictionary<string, byte[]> MetaInfoDict { get; }
+        string TorrentFileName { get; }
+
+        void Load();
+        (ulong, List<FileDetails>) LocalFilesToDownloadList(string downloadPath);
+        void Parse();
+    }
+
     /// <summary>
     /// Meta Info File class.
     /// </summary>
-    public class MetaInfoFile
+    public class MetaInfoFile : IMetaInfoFile
     {
         private byte[] _metaInfoData;                           // Raw data of torrent file
         public Dictionary<string, byte[]> MetaInfoDict { get; } // Dictionary of torrent file contents
@@ -252,7 +262,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list."+ex.Message);
+                throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list." + ex.Message);
             }
             return (totalBytes, filesToDownload);
         }

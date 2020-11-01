@@ -16,11 +16,41 @@ using System.Collections.Concurrent;
 
 namespace BitTorrentLibrary
 {
+    public interface IPeer
+    {
+        bool Connected { get; set; }
+        byte[] RemotePeerID { get; set; }
+        TorrentContext Tc { get; set; }
+        byte[] RemotePieceBitfield { get; set; }
+        PieceBuffer AssembledPiece { get; set; }
+        string Ip { get; }
+        uint Port { get; }
+        Task AssemblerTask { get; set; }
+        bool AmInterested { get; set; }
+        bool AmChoking { get; set; }
+        ManualResetEvent PeerChoking { get; }
+        bool PeerInterested { get; set; }
+        CancellationTokenSource CancelTaskSource { get; set; }
+        ManualResetEvent WaitForPieceAssembly { get; }
+        ManualResetEvent BitfieldReceived { get; }
+        uint NumberOfMissingPieces { get; set; }
+        byte[] ReadBuffer { get; }
+        uint PacketLength { get; }
+
+        void Close();
+        void Connect(ConcurrentDictionary<string, TorrentContext> torrents);
+        bool IsPieceOnRemotePeer(uint pieceNumber);
+        int PeerRead(byte[] buffer, int length);
+        void PeerWrite(byte[] buffer);
+        void PlaceBlockIntoPiece(uint pieceNumber, uint blockOffset);
+        void SetPieceOnRemotePeer(uint pieceNumber);
+        void SetTorrentContext(TorrentContext tc);
+    }
 
     /// <summary>
     /// Peer.
     /// </summary>
-    public class Peer
+    public class Peer : IPeer
     {
         private readonly PeerNetwork _network;                           // Network layer
         public bool Connected { get; set; }                              // == true connected to remote peer
@@ -60,7 +90,8 @@ namespace BitTorrentLibrary
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
-            if (tc!=null) {
+            if (tc != null)
+            {
                 SetTorrentContext(tc);
             }
         }
@@ -68,7 +99,8 @@ namespace BitTorrentLibrary
         /// Set torrent context and dependant fields.
         /// </summary>
         /// <param name="tc"></param>
-        public void SetTorrentContext(TorrentContext tc) {
+        public void SetTorrentContext(TorrentContext tc)
+        {
             Tc = tc;
             NumberOfMissingPieces = Tc.NumberOfPieces;
             AssembledPiece = new PieceBuffer(this, Tc.PieceLength);
@@ -116,7 +148,7 @@ namespace BitTorrentLibrary
             try
             {
                 // No socket passed to constructor so need to connect to get it
-                if (_network.PeerSocket==null)
+                if (_network.PeerSocket == null)
                 {
                     _network.Connect(Ip, Port);
                     peerResponse = PWP.ConnectToIntialHandshake(this);

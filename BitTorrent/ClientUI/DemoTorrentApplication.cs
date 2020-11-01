@@ -105,7 +105,7 @@ namespace ClientUI
                 _seederFile.Load();
                 _seederFile.Parse();
 
-                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDownloader, "/home/robt/utorrent");
+                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDownloader, "/home/robt/utorrent",  true);
 
                 DownloadAgent.Add(tc);
 

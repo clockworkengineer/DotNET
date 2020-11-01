@@ -30,10 +30,47 @@ namespace BitTorrentLibrary
         public UInt32 pieceLength;      // Piece length in bytes
     }
 
+    public interface ITorrentContext
+    {
+        AsyncQueue<PieceBuffer> PieceWriteQueue { get; }
+        AsyncQueue<PieceRequest> PieceRequestQueue { get; }
+        ulong TotalBytesDownloaded { get; set; }
+        ulong TotalBytesToDownload { get; set; }
+        ulong TotalBytesUploaded { get; set; }
+        uint PieceLength { get; }
+        byte[] PiecesInfoHash { get; }
+        uint NumberOfPieces { get; }
+        Selector PieceSelector { get; }
+        ManualResetEvent DownloadFinished { get; }
+        byte[] Bitfield { get; }
+        List<FileDetails> FilesToDownload { get; }
+        byte[] InfoHash { get; }
+        string TrackerURL { get; }
+        uint MissingPiecesCount { get; set; }
+        int MaximumSwarmSize { get; }
+        ConcurrentDictionary<string, Peer> PeerSwarm { get; }
+        TorrentStatus Status { get; set; }
+        Tracker MainTracker { get; set; }
+        string FileName { get; set; }
+        DownloadCompleteCallBack CallBack { get; set; }
+        object CallBackData { get; set; }
+
+        ulong BytesLeftToDownload();
+        bool CheckPieceHash(uint pieceNumber, byte[] pieceBuffer, uint numberOfBytes);
+        uint GetBlocksInPiece(uint pieceNumber);
+        uint GetPieceLength(uint peiceNumber);
+        bool IsPieceLocal(uint pieceNumber);
+        bool IsPieceMissing(uint pieceNumber);
+        void MarkPieceLocal(uint pieceNumber, bool local);
+        void MarkPieceMissing(uint pieceNumber, bool missing);
+        void MergePieceBitfield(Peer remotePeer);
+        void SetPieceLength(uint pieceNumber, uint pieceLength);
+    }
+
     /// <summary>
     /// Torrent context for a torrent file.
     /// </summary>
-    public class TorrentContext
+    public class TorrentContext : ITorrentContext
     {
         private readonly SHA1 _SHA1;                                        // Object to create SHA1 piece info hash
         private readonly Object _dcLock = new object();                     // Synchronization lock for torrent context
@@ -66,10 +103,12 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by torrent context.
         /// </summary>
-        /// <param name="filesToDownload">Files to download.</param>
-        /// <param name="pieceLength">Piece length.</param>
-        /// <param name="pieces">Pieces.</param>
-        public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath)
+        /// <param name="torrentMetaInfo"></param>
+        /// <param name="pieceSelector"></param>
+        /// <param name="downloader"></param>
+        /// <param name="downloadPath"></param>
+        /// <param name="seeding"></param>
+        public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath, bool seeding = false)
         {
             FileName = torrentMetaInfo.TorrentFileName;
             Status = TorrentStatus.Ended;
@@ -90,10 +129,20 @@ namespace BitTorrentLibrary
             _piecesMissing = new byte[Bitfield.Length];
             PieceSelector = pieceSelector;
             PeerSwarm = new ConcurrentDictionary<string, Peer>();
+            // In seeding mode mark eveything downloaded to save startup time
             downloader.CreateLocalTorrentStructure(this);
-            downloader.CreateTorrentBitfield(this);
-            TotalBytesToDownload -= TotalBytesDownloaded;
-            TotalBytesDownloaded = 0;
+            if (seeding)
+            {
+                downloader.FullyDownloadedTorrentBitfield(this);
+                TotalBytesDownloaded = TotalBytesToDownload = 0;
+            }
+            else
+            {
+                downloader.CreateTorrentBitfield(this);
+                TotalBytesToDownload -= TotalBytesDownloaded;
+                TotalBytesDownloaded = 0;
+            }
+
         }
         /// <summary>
         /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.

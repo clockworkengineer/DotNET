@@ -27,7 +27,7 @@ namespace ClientUI
         public TextField TorrentFileText { get; set; }
         public ProgressBar DownloadProgress { get; set; }
         public InformationWindow InformationWindow { get; set; }
-        public SeedingWindow SeedingWindow { get; set; }
+        public Window SeedingWindow { get; set; }
         public Task DownloadTorrentTask { get; set; }
         public Torrent Torrent { get; set; }
 
@@ -88,7 +88,7 @@ namespace ClientUI
             };
             viewables.Add(InformationWindow);
 
-            SeedingWindow = new SeedingWindow("Seeding")
+            SeedingWindow = new Window("Seeding")
             {
                 X = Pos.Left(this),
                 Y = Pos.Bottom(_progressBarBeginText) + 1,

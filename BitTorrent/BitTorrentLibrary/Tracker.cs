@@ -18,7 +18,34 @@ namespace BitTorrentLibrary
 {
     public delegate void TrackerCallBack(Object callBackData);            // Tracker callback
 
-    public class Tracker
+    public interface ITracker
+    {
+        Tracker.TrackerEvent Event { get; set; }
+        string PeerID { get; }
+        uint Port { get; }
+        string Ip { get; set; }
+        uint Compact { get; }
+        uint NoPeerID { get; }
+        string Key { get; }
+        string TrackerID { get; set; }
+        int NumWanted { get; set; }
+        byte[] InfoHash { get; }
+        string TrackerURL { get; }
+        uint Interval { get; set; }
+        uint MinInterval { get; set; }
+        TrackerCallBack CallBack { get; set; }
+        object CallBackData { get; set; }
+        ulong Downloaded { get; }
+        ulong Left { get; }
+        ulong Uploaded { get; }
+
+        void ChangeStatus(Tracker.TrackerEvent status);
+        void SetPeerSwarmQueue(AsyncQueue<PeerDetails> peerSwarmQueue);
+        void StartAnnouncing();
+        void StopAnnouncing();
+    }
+
+    public class Tracker : ITracker
     {
         /// <summary>
         /// Update swarm of active peers delegate
@@ -79,7 +106,7 @@ namespace BitTorrentLibrary
                         tracker._peerSwarmQueue?.Enqueue(peerDetails);
                     }
                     tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
-                    
+
                 }
                 tracker.CallBack?.Invoke(tracker.CallBackData);
                 tracker.UpdateRunningStatusFromAnnounce(response);
