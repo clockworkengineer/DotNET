@@ -159,14 +159,9 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        Log.Logger.Debug("Bittorrent (Tracker) Error: " + httpGetResponse.StatusDescription);
-                        throw new Error("Bittorrent (Tracker) Error: " + httpGetResponse.StatusDescription);
+                        throw new Exception(httpGetResponse.StatusDescription);
                     }
                 }
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {

@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-
-//
+﻿//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -14,6 +12,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace BitTorrentLibrary
 {
@@ -40,8 +39,8 @@ namespace BitTorrentLibrary
         public ManualResetEvent WaitForPieceAssembly { get; }            // When event set then piece has been fully assembled
         public ManualResetEvent BitfieldReceived { get; }                // When event set then peer has recieved bitfield from remote peer
         public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
-        public byte[] ReadBuffer => _network.ReadBuffer;
-        public UInt32 PacketLength => _network.PacketLength;
+        public byte[] ReadBuffer => _network.ReadBuffer;                 // Network read buffer
+        public UInt32 PacketLength => _network.PacketLength;             // Current read packet length
 
         /// <summary>
         /// Setup data and resources needed by peer.

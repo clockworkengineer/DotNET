@@ -276,14 +276,10 @@ namespace BitTorrentLibrary
                 int position = 0;
                 bNodeRoot = DecodeBNodes(buffer, ref position);
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BEncoding Error: Failure on decoding torrent file into BNode tree.");
+                throw new Error("BitTorrent (BEncoding) Error: Failure on decoding torrent file into BNode tree."+ex.Message);
             }
             return bNodeRoot;
         }
@@ -329,14 +325,10 @@ namespace BitTorrentLibrary
                     result.AddRange((bNodeString).str);
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BEncoding Error: Failure to encode BNode Tree.");
+                throw new Error("BitTorrent (BEncoding) Error: Failure to encode BNode Tree."+ex.Message);
             }
 
             return result.ToArray();
@@ -375,14 +367,10 @@ namespace BitTorrentLibrary
                     }
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BEncoding Error: Could not get dictionary from BNode tree.");
+                throw new Error("BitTorrent (BEncoding) Error: Could not get dictionary from BNode tree."+ex.Message);
             }
 
             return bNodeEntry;
@@ -412,14 +400,10 @@ namespace BitTorrentLibrary
                     }
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BEncoding Error: Could not get string from BNode tree.");
+                throw new Error("BitTorrent (BEncoding) Error: Could not get string from BNode tree."+ex.Message);
             }
 
             return "";

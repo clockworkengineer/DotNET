@@ -13,10 +13,10 @@ namespace BitTorrentLibrary
 {
     public struct PieceRequest
     {
-        public Peer remotePeer;
-        public UInt32 pieceNumber;
-        public UInt32 blockOffset;
-        public UInt32 blockSize;
+        public Peer remotePeer;     // Remote peer asking request
+        public UInt32 pieceNumber;  // Piece number
+        public UInt32 blockOffset;  // Block Offset
+        public UInt32 blockSize;    // Block Size
         
     }
 }

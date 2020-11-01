@@ -3,10 +3,13 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: The MetaInfoFile class loads and parses .torrent files.
+// Description: The MetaInfoFile class loads and parses torrent files.
 // It uses the BEncoding class in the parsing of the files; data which
 // is extracted during this process is placed into a dictionary for retrieval
 // by other modules.
+//
+// NOTE: So as I can see there is no underlying need to make this classes
+// disctionary threadsafe (ie. use ConcurrentDictionary<>).
 //
 // Copyright 2020.
 //
@@ -25,9 +28,9 @@ namespace BitTorrentLibrary
     /// </summary>
     public class MetaInfoFile
     {
-        private byte[] _metaInfoData;
-        public Dictionary<string, byte[]> MetaInfoDict { get; }
-        public string TorrentFileName { get; }
+        private byte[] _metaInfoData;                           // Raw data of torrent file
+        public Dictionary<string, byte[]> MetaInfoDict { get; } // Dictionary of torrent file contents
+        public string TorrentFileName { get; }                  // Torrent file name
 
         /// <summary>
         /// Get a list of dictionaries from metainfo file that have been come under the main level dictionary
@@ -58,7 +61,7 @@ namespace BitTorrentLibrary
                             string path = string.Empty;
                             foreach (var file in ((BNodeList)(fileField)).list)
                             {
-                                path += Constants.PathSeparator + Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeString)file).str);
+                                path += $"{Path.DirectorySeparatorChar}" + Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeString)file).str);
                             }
                             fileEntry = path;
                         }
@@ -72,7 +75,6 @@ namespace BitTorrentLibrary
                 }
             }
         }
-
         /// <summary>
         /// Gets the bytes representing a string or number (characters of number).
         /// </summary>
@@ -90,7 +92,6 @@ namespace BitTorrentLibrary
                 MetaInfoDict[field] = (bNodeString).str;
             }
         }
-
         /// <summary>
         /// Gets the list of strings from a BNode and create a comma separated string representing the
         /// list in the internal dictionary under the key value of field.
@@ -114,7 +115,6 @@ namespace BitTorrentLibrary
                 MetaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",", listString));
             }
         }
-
         /// <summary>
         /// Calculates the info hash for metainfo and stores in internal dictionary.
         /// </summary>
@@ -127,7 +127,6 @@ namespace BitTorrentLibrary
                 MetaInfoDict["info hash"] = new SHA1CryptoServiceProvider().ComputeHash(Bencoding.Encode(infoEncodedBytes));
             }
         }
-
         /// <summary>
         /// Initializes a new instance of the MetInfoFile class.
         /// </summary>
@@ -137,7 +136,6 @@ namespace BitTorrentLibrary
             TorrentFileName = fileName;
             MetaInfoDict = new Dictionary<string, byte[]>();
         }
-
         /// <summary>
         /// Load torrent file contents into memory for parsing.
         /// </summary>
@@ -158,10 +156,9 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw;
+                throw new Error($"BitTorrent (MetaInfoFile) Error:" + ex.Message);
             }
         }
-
         /// <summary>
         /// Decode Bencoded torrent file and load internal dictionary from its contents
         /// for later retrieval by other modules.
@@ -203,14 +200,10 @@ namespace BitTorrentLibrary
                     }
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw;
+                throw new Error($"BitTorrent (MetaInfoFile) Error:" + ex.Message);
             }
         }
 
@@ -218,7 +211,7 @@ namespace BitTorrentLibrary
         /// Generate list of local files in torrent to download from peers and total torrent size in bytes
         /// and return as a tuple.
         /// </summary>
-        public ValueTuple<UInt64, List<FileDetails>>LocalFilesToDownloadList(string downloadPath)
+        public ValueTuple<UInt64, List<FileDetails>> LocalFilesToDownloadList(string downloadPath)
         {
             List<FileDetails> filesToDownload = new List<FileDetails>();
             UInt64 totalBytes = 0;
@@ -228,7 +221,7 @@ namespace BitTorrentLibrary
                 {
                     FileDetails fileDetail = new FileDetails
                     {
-                        name = downloadPath + Constants.PathSeparator + Encoding.ASCII.GetString(MetaInfoDict["name"]),
+                        name = downloadPath + $"{Path.DirectorySeparatorChar}" + Encoding.ASCII.GetString(MetaInfoDict["name"]),
                         length = UInt64.Parse(Encoding.ASCII.GetString(MetaInfoDict["length"])),
                         offset = 0
                     };
@@ -245,7 +238,7 @@ namespace BitTorrentLibrary
                         string[] details = Encoding.ASCII.GetString(MetaInfoDict[fileNo.ToString()]).Split(',');
                         FileDetails fileDetail = new FileDetails
                         {
-                            name = downloadPath + Constants.PathSeparator + name + details[0],
+                            name = downloadPath + $"{Path.DirectorySeparatorChar}" + name + details[0],
                             length = UInt64.Parse(details[1]),
                             md5sum = details[2],
                             offset = totalBytes
@@ -259,7 +252,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list.");
+                throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list."+ex.Message);
             }
             return (totalBytes, filesToDownload);
         }

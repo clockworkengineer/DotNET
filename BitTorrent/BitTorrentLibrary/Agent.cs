@@ -1,12 +1,11 @@
-﻿using System.Threading;
-//
+﻿//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: All the high level torrent processing including download/upload
 // of torrent pieces and updating the peers in the current swarm. Any  peers that
-// are connected then have a piece assembler task created for them which puts together
+// are connected  have a piece assembler task created for them which puts together
 // pieces that they request from the torrent (remote peer) before being written to disk.
 //
 // Copyright 2020.
@@ -14,6 +13,7 @@
 
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
@@ -22,11 +22,26 @@ using System.Net.Sockets;
 
 namespace BitTorrentLibrary
 {
+    public interface IAgent
+    {
+        AsyncQueue<PeerDetails> PeerSwarmQueue { get; }
+
+        void Add(TorrentContext tc);
+        void Close(TorrentContext tc);
+        void Download(TorrentContext tc);
+        Task DownloadAsync(TorrentContext tc);
+        TorrentDetails GetTorrentDetails(TorrentContext tc);
+        void Pause(TorrentContext tc);
+        void Remove(TorrentContext tc);
+        void ShutDown();
+        void Start(TorrentContext tc);
+        void Startup();
+    }
 
     /// <summary>
     /// Agent class definition.
     /// </summary>
-    public class Agent
+    public class Agent : IAgent
     {
         readonly ConcurrentDictionary<string, TorrentContext> _torrents;// Torrents downloading/seeding
         private bool _agentRunning = false;                             // == true while agent is up and running.
@@ -73,35 +88,43 @@ namespace BitTorrentLibrary
         /// Inspects  peer queue, connects to the peer and creates piece assembler task 
         /// before adding to swarm.
         /// </summary>
-        private async  Task PeerConnectCreatorTaskAsync(CancellationToken cancelTask)
+        private async Task PeerConnectCreatorTaskAsync(CancellationToken cancelTask)
         {
 
-            while (_agentRunning)
+            try
             {
-                PeerDetails peer = await PeerSwarmQueue.DequeueAsync(cancelTask);
-                try
+                while (_agentRunning)
                 {
-                    if (_torrents.TryGetValue(Util.InfoHashToString(peer.infoHash), out TorrentContext tc))
+                    PeerDetails peer = await PeerSwarmQueue.DequeueAsync(cancelTask);
+                    try
                     {
-                        // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                        if (!_deadPeers.Contains(peer.ip) && !tc.PeerSwarm.ContainsKey(peer.ip) && tc.PeerSwarm.Count < tc.MaximumSwarmSize)
+                        if (_torrents.TryGetValue(Util.InfoHashToString(peer.infoHash), out TorrentContext tc))
                         {
-                            StartPieceAssemblyTask(new Peer(peer.ip, peer.port, tc, null));
+                            // Only add peers that are not already there and is maximum swarm size hasnt been reached
+                            if (!_deadPeers.Contains(peer.ip) && !tc.PeerSwarm.ContainsKey(peer.ip) && tc.PeerSwarm.Count < tc.MaximumSwarmSize)
+                            {
+                                StartPieceAssemblyTask(new Peer(peer.ip, peer.port, tc, null));
+                            }
                         }
                     }
-                }
-                catch (Exception)
-                {
-                    Log.Logger.Info($"Failed to connect to {peer.ip}.Added to dead per list.");
-                    _deadPeers.Add(peer.ip);
+                    catch (Exception)
+                    {
+                        Log.Logger.Info($"Failed to connect to {peer.ip}.Added to dead per list.");
+                        _deadPeers.Add(peer.ip);
+                    }
                 }
             }
+            catch (Exception)
+            {
+                Log.Logger.Info("Remote peer connect creation task terminated.");
+            }
+
 
         }
         /// <summary>
         /// Listen for remote peer connects and on success start peer task then add it to swarm.
         /// </summary>
-        private async Task PeerListenCreatorTaskAsync(CancellationToken cancelTask)
+        private async Task PeerListenCreatorTaskAsync(CancellationToken _)
         {
 
             try
@@ -157,9 +180,9 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Startup()
         {
-            CancellationToken cancelTask = _cancelTaskSource.Token;
             _agentRunning = true;
-            Task.Run(()=> Task.WaitAll(PeerConnectCreatorTaskAsync(cancelTask),PeerListenCreatorTaskAsync(cancelTask)));
+            CancellationToken cancelTask = _cancelTaskSource.Token;
+            Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(cancelTask), PeerListenCreatorTaskAsync(cancelTask)));
         }
 
         /// <summary>

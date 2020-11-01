@@ -1,4 +1,4 @@
-﻿using System.Threading;
+﻿
 //
 // Author: Robert Tizzard
 //
@@ -16,7 +16,7 @@
 
 using System;
 using System.IO;
-using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
@@ -28,11 +28,11 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Downloader
     {
-        private readonly CancellationTokenSource _cancelTaskSource;
-        public AsyncQueue<PieceBuffer> PieceWriteQueue { get; }
-        public AsyncQueue<PieceRequest> PieceRequestQueue { get; }
-        public ProgessCallBack CallBack { get; set; }                        // Download progress function
-        public Object CallBackData { get; set; }                             // Download progress function data
+        private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
+        public AsyncQueue<PieceBuffer> PieceWriteQueue { get; }        // Piece buffer write queue
+        public AsyncQueue<PieceRequest> PieceRequestQueue { get; }     // Task request read queue
+        public ProgessCallBack CallBack { get; set; }                  // Download progress function
+        public Object CallBackData { get; set; }                       // Download progress function data
 
         /// <summary>
         /// Read/Write piece buffers to/from torrent on disk.

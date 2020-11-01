@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Perform HTTP announce requests to remote tracker.
+// Description: ASync usable FIFO queue.
 //
 // Copyright 2020.
 //
@@ -20,7 +20,7 @@ namespace BitTorrentLibrary
         private readonly SemaphoreSlim _queueSemaphore;
         private readonly ConcurrentQueue<T> _queue;
         /// <summary>
-        /// 
+        /// Initialise
         /// </summary>
         public AsyncQueue()
         {
@@ -28,7 +28,7 @@ namespace BitTorrentLibrary
             _queue = new ConcurrentQueue<T>();
         }
         /// <summary>
-        /// 
+        /// Place item into back of queue.
         /// </summary>
         /// <param name="item"></param>
         public void Enqueue(T item)
@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
             _queueSemaphore.Release();
         }
         /// <summary>
-        /// 
+        /// Place number of items into back of queue.
         /// </summary>
         /// <param name="source"></param>
         public void EnqueueRange(IEnumerable<T> source)
@@ -51,12 +51,12 @@ namespace BitTorrentLibrary
             _queueSemaphore.Release(numberOfItems);
         }
         /// <summary>
-        /// 
+        /// Remove item from front of queue (awaitin until an element arrives).
         /// </summary>
         /// <returns></returns>
         public async Task<T> DequeueAsync(CancellationToken cancellationToken = default)
         {
-            for (; ; )
+            while(true)
             {
                 await _queueSemaphore.WaitAsync(cancellationToken);
 

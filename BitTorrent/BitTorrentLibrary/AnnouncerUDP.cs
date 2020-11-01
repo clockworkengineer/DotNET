@@ -101,6 +101,11 @@ namespace BitTorrentLibrary
                     Connect();
                 }
 
+                if (!_connected)
+                {
+                    throw new Exception("Could not connect to remote UDP tracker.");
+                }
+
                 List<byte> announcePacket = new List<byte>();
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
 
@@ -112,7 +117,7 @@ namespace BitTorrentLibrary
                 announcePacket.AddRange(Util.PackUInt64(tracker.Downloaded));
                 announcePacket.AddRange(Util.PackUInt64(tracker.Left));
                 announcePacket.AddRange(Util.PackUInt64(tracker.Uploaded));
-                announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.Event));      // event
+                announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.Event));
                 announcePacket.AddRange(Util.PackUInt32(0));                          // ip
                 announcePacket.AddRange(Util.PackUInt32(0));                          // key
                 announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.NumWanted));
@@ -159,7 +164,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    throw new Error("BitTorrent (TrackerUDP) Error : Invalid announce response.");
+                    throw new Exception($"Invalid announce response {Util.UnPackUInt32(announceReply, 0)}.");
                 }
             }
 

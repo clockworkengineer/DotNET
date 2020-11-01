@@ -56,7 +56,6 @@ namespace BitTorrentLibrary
         {
             return "[" + Encoding.ASCII.GetString(remotePeer.RemotePeerID) + "] ";
         }
-
         /// <summary>
         /// Dump bitfield to log.
         /// </summary>
@@ -139,7 +138,6 @@ namespace BitTorrentLibrary
                 remotePeer.WaitForPieceAssembly.Set();
             }
         }
-
         /// <summary>
         /// Handles unchoke command from remote peer.
         /// </summary>
@@ -224,7 +222,6 @@ namespace BitTorrentLibrary
 
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX REQUEST {request.pieceNumber} Block Offset {request.blockOffset} Data Size {request.blockSize}\n.");
 
-
         }
         /// <summary>
         /// Handles piece command from a remote peer.
@@ -289,10 +286,6 @@ namespace BitTorrentLibrary
                 return (connected, remotePeerID);
 
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -320,10 +313,6 @@ namespace BitTorrentLibrary
                 remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
                 connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {
@@ -354,10 +343,6 @@ namespace BitTorrentLibrary
                     }
                 }
 
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {
@@ -391,10 +376,6 @@ namespace BitTorrentLibrary
                 }
 
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -426,10 +407,6 @@ namespace BitTorrentLibrary
                     }
                 }
 
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {
@@ -463,10 +440,6 @@ namespace BitTorrentLibrary
                 }
 
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -499,10 +472,6 @@ namespace BitTorrentLibrary
                 }
 
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -531,10 +500,6 @@ namespace BitTorrentLibrary
                     remotePeer.PeerWrite(requestPacket.ToArray());
                 }
 
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {
@@ -566,10 +531,6 @@ namespace BitTorrentLibrary
                     remotePeer.PeerWrite(requestPacket.ToArray());
                 }
 
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {
@@ -604,10 +565,6 @@ namespace BitTorrentLibrary
                 }
 
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -641,10 +598,6 @@ namespace BitTorrentLibrary
                 }
 
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -675,10 +628,6 @@ namespace BitTorrentLibrary
                     requestPacket.AddRange(Util.PackUInt32(blockSize));
                 }
 
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {

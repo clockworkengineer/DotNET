@@ -12,7 +12,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Timers;
 
 namespace BitTorrentLibrary
@@ -46,16 +45,16 @@ namespace BitTorrentLibrary
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
         public string Ip { get; set; }                          // IP of host performing announce
-        public uint Compact { get; } = 1;                      // Is the returned peer list compressed (1=yes,0=no)
-        public uint NoPeerID { get; }                          // Unique peer ID for downloader
-        public string Key { get; }                             // An additional identification that is not shared with any other peers (optional)
+        public uint Compact { get; } = 1;                       // Is the returned peer list compressed (1=yes,0=no)
+        public uint NoPeerID { get; }                           // Unique peer ID for downloader
+        public string Key { get; }                              // An additional identification that is not shared with any other peers (optional)
         public string TrackerID { get; set; }                   // String that the client should send back on its next announcements. (optional).
         public int NumWanted { get; set; } = 5;                 // Number of required download clients
         public byte[] InfoHash { get; }                         // Encoded info hash for URI
-        public string TrackerURL { get; }                      // Tracker URL
+        public string TrackerURL { get; }                       // Tracker URL
         public uint Interval { get; set; } = 2000;              // Polling interval between each announce
         public uint MinInterval { get; set; }                   // Minumum allowed polling interval
-        public TrackerCallBack CallBack { get; set; }            // Tracker ping callback function
+        public TrackerCallBack CallBack { get; set; }           // Tracker ping callback function
         public Object CallBackData { get; set; }                // Tracker ping callback function data
         public UInt64 Downloaded => _tc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download

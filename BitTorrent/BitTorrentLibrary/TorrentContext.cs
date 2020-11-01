@@ -4,7 +4,7 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Torrent being downloaded/seeded context. This includes
-// download progress, a pieces to download bitfiejd and functions for 
+// download progress, a pieces to download bitfield and functions for 
 // accessing this map to change a pieces status.
 //
 // Copyright 2020.
@@ -104,16 +104,24 @@ namespace BitTorrentLibrary
         /// <param name="numberOfBytes">Number of bytes.</param>
         public bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
-            byte[] hash = _SHA1.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
-            UInt32 pieceOffset = pieceNumber * Constants.HashLength;
-            for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
+            try
             {
-                if (hash[byteNumber] != PiecesInfoHash[pieceOffset + byteNumber])
+                byte[] hash = _SHA1.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
+                UInt32 pieceOffset = pieceNumber * Constants.HashLength;
+                for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
                 {
-                    return false;
+                    if (hash[byteNumber] != PiecesInfoHash[pieceOffset + byteNumber])
+                    {
+                        return false;
+                    }
                 }
+                return true;
             }
-            return true;
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+            }
+
         }
         /// <summary>
         /// Calculate bytes left to download and report going negative.
@@ -182,24 +190,31 @@ namespace BitTorrentLibrary
         /// <param name="missing"></param>
         public void MarkPieceMissing(UInt32 pieceNumber, bool missing)
         {
-            lock (_dcLock)
+            try
             {
-                if (missing)
+                lock (_dcLock)
                 {
-                    if (!IsPieceMissing(pieceNumber))
+                    if (missing)
                     {
-                        _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                        MissingPiecesCount++;
+                        if (!IsPieceMissing(pieceNumber))
+                        {
+                            _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                            MissingPiecesCount++;
+                        }
+                    }
+                    else
+                    {
+                        if (IsPieceMissing(pieceNumber))
+                        {
+                            _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
+                            MissingPiecesCount--;
+                        }
                     }
                 }
-                else
-                {
-                    if (IsPieceMissing(pieceNumber))
-                    {
-                        _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                        MissingPiecesCount--;
-                    }
-                }
+            }
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
             }
 
         }
@@ -210,10 +225,19 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         public bool IsPieceMissing(UInt32 pieceNumber)
         {
-            lock (_dcLock)
+            try
             {
-                return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+                lock (_dcLock)
+                {
+                    return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+                }
             }
+            catch (Exception ex)
+            {
+
+                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+            }
+
         }
         /// <summary>
         /// Merges the piece bitfield of a remote peer with the torrents local piece map data.
@@ -250,7 +274,16 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         public UInt32 GetPieceLength(UInt32 peiceNumber)
         {
-            return _pieceData[peiceNumber].pieceLength;
+            try
+            {
+                return _pieceData[peiceNumber].pieceLength;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+            }
+
         }
         /// <summary>
         /// Set piece length in bytes.
@@ -259,7 +292,15 @@ namespace BitTorrentLibrary
         /// <param name="pieceLength"></param>
         public void SetPieceLength(UInt32 pieceNumber, UInt32 pieceLength)
         {
-            _pieceData[pieceNumber].pieceLength = pieceLength;
+            try
+            {
+                _pieceData[pieceNumber].pieceLength = pieceLength;
+            }
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+            }
+
         }
         /// <summary>
         /// Get number of blocks in piece.
@@ -268,12 +309,20 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         public UInt32 GetBlocksInPiece(UInt32 pieceNumber)
         {
-            UInt32 blockCount = (_pieceData[pieceNumber].pieceLength / Constants.BlockSize);
-            if (_pieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
+            try
             {
-                blockCount++;
+                UInt32 blockCount = (_pieceData[pieceNumber].pieceLength / Constants.BlockSize);
+                if (_pieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
+                {
+                    blockCount++;
+                }
+                return blockCount;
             }
-            return blockCount;
+            catch (Exception ex)
+            {
+                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+            }
+
         }
 
     }

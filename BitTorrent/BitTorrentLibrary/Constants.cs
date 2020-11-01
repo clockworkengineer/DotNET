@@ -15,7 +15,6 @@ namespace BitTorrentLibrary
 {
     internal static class Constants
     {
-        public static readonly string PathSeparator = $"{Path.DirectorySeparatorChar}";    // Path separator for host
         public const int BlockSize = 1024 * 16;      // Client Block size
         public const int HashLength = 20;            // Length of SHA1 hash in bytes
         public const int PeerIDLength = 20;          // Length of peer ID hash in bytes

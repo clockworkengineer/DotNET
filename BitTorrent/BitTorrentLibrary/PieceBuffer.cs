@@ -27,7 +27,6 @@ namespace BitTorrentLibrary
         public uint Number { get; set; }                // Piece Number
         public bool AllBlocksThere => _blockCount == 0; // == true All blocks have been downloaded
 
-
         /// <summary>
         /// Create an empty piece buffer.
         /// </summary>
@@ -42,7 +41,6 @@ namespace BitTorrentLibrary
             _blockPresent = new bool[_blockCount];
 
         }
-
         /// <summary>
         /// Create an empty piece buffer.
         /// </summary>
@@ -51,7 +49,6 @@ namespace BitTorrentLibrary
         {
             Number = pieceNumber;
         }
-
         /// <summary>
         /// Create a piece buffer from a copy of another.
         /// </summary>
@@ -67,7 +64,6 @@ namespace BitTorrentLibrary
             _blockPresent = new bool[pieceBuffer._blockPresent.Length];
             pieceBuffer._blockPresent.CopyTo(_blockPresent, 0);
         }
-
         /// <summary>
         /// Copy block from packet to piece buffer.
         /// </summary>

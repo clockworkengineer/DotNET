@@ -216,6 +216,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Task method to download any missing pieces of torrent and when that is done to simply
         /// loop processing remote peer commands until the connection is closed.
+        /// TODO:Look into making two parts of this Async and waitall.
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="_downloadFinished"></param>
