@@ -12,7 +12,8 @@ using Terminal.Gui;
 
 namespace ClientUI
 {
-    class App {
+    class App
+    {
 
         /// <summary>
         /// Intialise and run Terminal.Gui appication.
@@ -26,7 +27,7 @@ namespace ClientUI
         /// <summary>
         /// Creat application object and run it.
         /// </summary>
-        static void Main()
+        static void Main(string[] args)
         {
             DemoTorrentApplication main = new DemoTorrentApplication();
             App.Run();

@@ -12,9 +12,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Terminal.Gui;
-using System.Text;
+// using System.Text;
 using System.IO;
 using BitTorrentLibrary;
+using Microsoft.Extensions.Configuration;
+// using Microsoft.Extensions.Configuration.FileExtensions;
+// using Microsoft.Extensions.Configuration.Json;
+
 
 namespace ClientUI
 {
@@ -43,8 +47,22 @@ namespace ClientUI
         private Downloader _seederDownloader;
         public MainWindow MainWindow { get; set; }
         public Agent DownloadAgent { get; set; }
-        public string SeedFileDirectory { get; }
+        public string SeedFileDirectory { get; set; }
+        public string DestinationDirectory { get; set; }
 
+        /// <summary>
+        /// Read config settings
+        /// </summary>
+        public void ReadConfig()
+        {
+
+            IConfiguration config = new ConfigurationBuilder()
+              .AddJsonFile("appsettings.json", true, true)
+              .Build();
+
+            DestinationDirectory = config["DestinationDirectory"];
+            SeedFileDirectory = config["SeedFileDirectory"];
+        }
         /// <summary>
         /// Build seeder display line for listview.
         /// </summary>
@@ -105,7 +123,7 @@ namespace ClientUI
                 _seederFile.Load();
                 _seederFile.Parse();
 
-                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDownloader, "/home/robt/utorrent",  true);
+                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDownloader, DestinationDirectory, true);
 
                 DownloadAgent.Add(tc);
 
@@ -164,10 +182,11 @@ namespace ClientUI
         /// </summary>
         public DemoTorrentApplication()
         {
+
             Application.Init();
             _top = Application.Top;
 
-            SeedFileDirectory = "/home/robt/Projects/dotNET/BitTorrent/ClientUI/bin/Debug/netcoreapp3.1/seeding/";
+            ReadConfig();
 
             MainWindow = new MainWindow("BitTorrent Demo Application")
             {
