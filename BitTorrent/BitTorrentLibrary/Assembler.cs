@@ -53,7 +53,7 @@ namespace BitTorrentLibrary
                     if (pieceValid)
                     {
                         Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
-                        remotePeer.Tc.PieceWriteQueue.Add(new PieceBuffer(remotePeer.AssembledPiece));
+                        remotePeer.Tc.PieceWriteQueue.Enqueue(new PieceBuffer(remotePeer.AssembledPiece));
                         remotePeer.Tc.MarkPieceLocal(pieceNumber, true);
                     }
                 }

@@ -39,8 +39,8 @@ namespace BitTorrentLibrary
         private readonly Object _dcLock = new object();                     // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                             // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                            // Piece information
-        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }     // piece buffer disk write queue
-        public BlockingCollection<PieceRequest> PieceRequestQueue { get; }  // Piece request queue
+        public AsyncQueue<PieceBuffer> PieceWriteQueue { get; }             // Piece buffer disk write queue
+        public AsyncQueue<PieceRequest> PieceRequestQueue { get; }          // Piece request queue
         public UInt64 TotalBytesDownloaded { get; set; }                    // Total bytes downloaded
         public UInt64 TotalBytesToDownload { get; set; }                    // Total bytes in torrent
         public UInt64 TotalBytesUploaded { get; set; }                      // Total bytes uploaded to all peers from torrent

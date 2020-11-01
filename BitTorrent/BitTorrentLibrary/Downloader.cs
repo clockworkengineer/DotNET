@@ -1,4 +1,5 @@
-﻿//
+﻿using System.Threading;
+//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -27,8 +28,9 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Downloader
     {
-        public BlockingCollection<PieceBuffer> PieceWriteQueue { get; }
-        public BlockingCollection<PieceRequest> PieceRequestQueue { get; }
+        private readonly CancellationTokenSource _cancelTaskSource;
+        public AsyncQueue<PieceBuffer> PieceWriteQueue { get; }
+        public AsyncQueue<PieceRequest> PieceRequestQueue { get; }
         public ProgessCallBack CallBack { get; set; }                        // Download progress function
         public Object CallBackData { get; set; }                             // Download progress function data
 
@@ -109,13 +111,13 @@ namespace BitTorrentLibrary
         /// Task to take a queued download piece and write it away to the relevant file
         /// sections to which it belongs within a torrent.
         /// </summary>
-        private void PieceBufferDiskWriter()
+        private async Task PieceBufferDiskWriterAsync(CancellationToken cancelTask)
         {
             try
             {
-                while (!PieceWriteQueue.IsCompleted)
+                while (true)
                 {
-                    PieceBuffer pieceBuffer = PieceWriteQueue.Take();
+                    PieceBuffer pieceBuffer = await PieceWriteQueue.DequeueAsync(cancelTask);
 
                     Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
@@ -144,14 +146,14 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Process any piece requests in buffer and send to remote peer.
         /// </summary>
-        private void PieceRequestProcessingTask()
+        private async Task PieceRequestProcessingAsync(CancellationToken cancelTask)
         {
             try
             {
-                while (!PieceRequestQueue.IsCompleted)
+                while (true)
                 {
 
-                    PieceRequest request = PieceRequestQueue.Take();
+                    PieceRequest request = await PieceRequestQueue.DequeueAsync(cancelTask);
                     try
                     {
                         Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
@@ -187,10 +189,11 @@ namespace BitTorrentLibrary
         /// </summary>
         public Downloader()
         {
-            PieceWriteQueue = new BlockingCollection<PieceBuffer>();
-            PieceRequestQueue = new BlockingCollection<PieceRequest>();
-            Task.Run(() => PieceBufferDiskWriter());
-            Task.Run(() => PieceRequestProcessingTask());
+            _cancelTaskSource = new CancellationTokenSource();
+            PieceWriteQueue = new AsyncQueue<PieceBuffer>();
+            PieceRequestQueue = new AsyncQueue<PieceRequest>();
+            CancellationToken cancelTask = _cancelTaskSource.Token;
+            Task.Run(() => Task.WaitAll(PieceBufferDiskWriterAsync(cancelTask), PieceRequestProcessingAsync(cancelTask)));
         }
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the
@@ -198,8 +201,7 @@ namespace BitTorrentLibrary
         /// </summary>
         ~Downloader()
         {
-            PieceWriteQueue.CompleteAdding();
-            PieceRequestQueue.CompleteAdding();
+           _cancelTaskSource.Cancel();
         }
         /// <summary>
         /// Creates the empty files on disk as place holders of files to be downloaded.

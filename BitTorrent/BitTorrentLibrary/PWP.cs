@@ -220,7 +220,7 @@ namespace BitTorrentLibrary
                 blockSize = Util.UnPackUInt32(remotePeer.ReadBuffer, 9)
             };
 
-            remotePeer.Tc.PieceRequestQueue.Add(request);
+            remotePeer.Tc.PieceRequestQueue.Enqueue(request);
 
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX REQUEST {request.pieceNumber} Block Offset {request.blockOffset} Data Size {request.blockSize}\n.");
 

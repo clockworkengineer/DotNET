@@ -21,7 +21,6 @@ namespace BitTorrentLibrary
     internal class BNodeBase
     {
     }
-
     /// <summary>
     /// Dictionary BNode.
     /// </summary>
@@ -34,7 +33,6 @@ namespace BitTorrentLibrary
             dict = new Dictionary<string, BNodeBase>();
         }
     }
-
     /// <summary>
     /// List BNode.
     /// </summary>
@@ -47,7 +45,6 @@ namespace BitTorrentLibrary
             list = new List<BNodeBase>();
         }
     }
-
     /// <summary>
     /// Number BNode.
     /// </summary>
@@ -55,7 +52,6 @@ namespace BitTorrentLibrary
     {
         public byte[] number;
     }
-
     /// <summary>
     /// String BNode.
     /// </summary>
@@ -63,7 +59,6 @@ namespace BitTorrentLibrary
     {
         public byte[] str;
     }
-
     /// <summary>
     /// Support methods for Bencoding.
     /// </summary>
@@ -101,7 +96,6 @@ namespace BitTorrentLibrary
 
             return retBuffer;
         }
-
         /// <summary>
         /// Extracts a Bencoded number and returns its bytes.
         /// </summary>
@@ -126,7 +120,6 @@ namespace BitTorrentLibrary
 
             return bNode;
         }
-
         /// <summary>
         /// Creates a BNode string node.
         /// </summary>
@@ -142,7 +135,6 @@ namespace BitTorrentLibrary
 
             return bNode;
         }
-
         /// <summary>
         /// Decodes a dictionary string key.
         /// </summary>
@@ -155,7 +147,6 @@ namespace BitTorrentLibrary
 
             return key;
         }
-
         /// <summary>
         /// Create a list BNode.
         /// </summary>
@@ -195,7 +186,6 @@ namespace BitTorrentLibrary
 
             return bNode;
         }
-
         /// <summary>
         /// Create a dictionary BNode.
         /// </summary>
@@ -237,7 +227,6 @@ namespace BitTorrentLibrary
 
             return bNode;
         }
-
         /// <summary>
         /// Recursively parse a Bencoded string and return its BNode tree.
         /// </summary>
@@ -273,7 +262,6 @@ namespace BitTorrentLibrary
 
             return bNode;
         }
-
         /// <summary>
         /// Decode the specified Bendcoded buffer.
         /// </summary>
@@ -299,7 +287,6 @@ namespace BitTorrentLibrary
             }
             return bNodeRoot;
         }
-
         /// <summary>
         /// Produce Bencoded output given a root BNode.
         /// </summary>
@@ -354,7 +341,6 @@ namespace BitTorrentLibrary
 
             return result.ToArray();
         }
-
         /// <summary>
         /// Get a BNode entry for a given dictionary key. Note that it recursively searches
         /// until the key is found in the BNode tree structure.
@@ -401,7 +387,6 @@ namespace BitTorrentLibrary
 
             return bNodeEntry;
         }
-
         /// <summary>
         /// Return string representation of a given BNode dictionary entry.
         /// </summary>

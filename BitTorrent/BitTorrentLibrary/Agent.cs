@@ -33,7 +33,7 @@ namespace BitTorrentLibrary
         private readonly HashSet<string> _deadPeers;                    // Dead peers list
         private readonly Assembler _pieceAssembler;                     // Piece assembler for agent
         private Socket _listenerSocket;                                 // Connection listener socket
-        private CancellationTokenSource _cancelTaskSource;              // Cancel all agent tasks
+        private readonly CancellationTokenSource _cancelTaskSource;     // Cancel all agent tasks
         public AsyncQueue<PeerDetails> PeerSwarmQueue { get; }          // Queue of peers to add to swarm
 
         /// <summary>
