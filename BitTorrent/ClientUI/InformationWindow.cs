@@ -3,7 +3,9 @@
 //
 // Programs: Simple console application to use BitTorrent class library.
 //
-// Description: 
+// Description: Information download window. This is includes a progress
+// bar and other relevant torrent informatio like a list of peers in its swarm
+// and infohash.
 //
 // Copyright 2020.
 //
@@ -17,7 +19,7 @@ using Terminal.Gui;
 namespace ClientUI
 {
     /// <summary>
-    /// 
+    /// Torrent information window.
     /// </summary>
     public class InformationWindow : Window
     {
@@ -28,7 +30,7 @@ namespace ClientUI
         public Window PeersWindow { get; set; }
 
         /// <summary>
-        /// 
+        /// Build information window.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
@@ -89,7 +91,7 @@ namespace ClientUI
             }
         }
         /// <summary>
-        /// 
+        /// Clear information window.
         /// </summary>
         public void ClearData()
         {
@@ -110,7 +112,7 @@ namespace ClientUI
 
         }
         /// <summary>
-        /// 
+        /// Update peers in peer swarm listview.
         /// </summary>
         /// <param name="peersList"></param>
         public void UpdatePeers(ListView peersList)

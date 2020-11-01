@@ -3,7 +3,7 @@
 //
 // Programs: Simple console application to use BitTorrent class library.
 //
-// Description: 
+// Description: Main torrent downloading.
 //
 // Copyright 2020.
 //
@@ -31,14 +31,14 @@ namespace ClientUI
         public TorrentContext Tc { get; set; }
         public Downloader Downloader { get; set; }
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="obj"></param>
+        /// <summary>
+        /// Update download information.
+        /// </summary>
+        /// <param name="obj"></param>
         private void UpdateInformation(Object obj)
         {
             DemoTorrentApplication main = (DemoTorrentApplication)obj;
-            TorrentDetails torrentDetails = main.DownloadAgent.GetTorrentDetails( main.MainWindow.Torrent.Tc);
+            TorrentDetails torrentDetails = main.DownloadAgent.GetTorrentDetails(main.MainWindow.Torrent.Tc);
             List<string> peers = new List<string>();
             foreach (var peer in torrentDetails.peers)
             {
@@ -66,7 +66,7 @@ namespace ClientUI
             });
         }
         /// <summary>
-        /// 
+        /// Update torrent download progress bar.
         /// </summary>
         /// <param name="obj"></param>
         private void UpdateProgress(Object obj)
@@ -86,29 +86,21 @@ namespace ClientUI
 
         }
         /// <summary>
-        /// 
+        /// Torrent download complete callback.
         /// </summary>
         /// <param name="obj"></param>
         private void DownloadComplete(Object obj)
         {
-            DemoTorrentApplication main = (DemoTorrentApplication) obj;
+            DemoTorrentApplication main = (DemoTorrentApplication)obj;
 
             Application.MainLoop.Invoke(() =>
             {
                 main.MainWindow.DownloadProgress.Fraction = 1.0F;
             });
-            File.Copy(main.MainWindow.Torrent.Tc.FileName, main.SeedFileDirectory+Path.GetFileName(main.MainWindow.Torrent.Tc.FileName));
+            File.Copy(main.MainWindow.Torrent.Tc.FileName, main.SeedFileDirectory + Path.GetFileName(main.MainWindow.Torrent.Tc.FileName));
         }
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="torrentFileName"></param>
-        public Torrent(string torrentFileName)
-        {
-            _torrentFileName = torrentFileName;
-        }
-        /// <summary>
-        /// 
+        /// Convert torrent infohash to string.
         /// </summary>
         /// <param name="infoHash"></param>
         /// <returns></returns>
@@ -122,7 +114,15 @@ namespace ClientUI
             return hex.ToString().ToLower();
         }
         /// <summary>
-        /// 
+        /// Initialise torrent
+        /// </summary>
+        /// <param name="torrentFileName"></param>
+        public Torrent(string torrentFileName)
+        {
+            _torrentFileName = torrentFileName;
+        }
+        /// <summary>
+        /// Initiate torrent download.
         /// </summary>
         /// <param name="mainWindow"></param>
         public void Download(DemoTorrentApplication main)

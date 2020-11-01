@@ -17,7 +17,7 @@ using Terminal.Gui;
 namespace ClientUI
 {
     /// <summary>
-    /// 
+    /// Main Application window.
     /// </summary>
     public class MainWindow : Window
     {
@@ -32,7 +32,7 @@ namespace ClientUI
         public Torrent Torrent { get; set; }
 
         /// <summary>
-        /// 
+        /// Build main application window.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
