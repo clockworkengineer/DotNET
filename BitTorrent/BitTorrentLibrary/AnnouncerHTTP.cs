@@ -167,7 +167,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex);
                 // Display first error as message concatination can be unreadable if too deep
-                throw new Error("BitTorrent Error (Tracker): " + ex.GetBaseException().Message);
+                throw new Error("BitTorrent(Tracker) Error: " + ex.GetBaseException().Message);
             }
 
             return response;

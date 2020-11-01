@@ -152,7 +152,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
+                Log.Logger.Debug("BitTorrent (Agent) Error Error :" + ex.Message);
             }
 
             _listenerSocket?.Close();
@@ -198,7 +198,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): Failed to add torrent context." + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failed to add torrent context." + ex.Message);
             }
 
         }
@@ -216,7 +216,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): Failed to remove torrent context. " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failed to remove torrent context. " + ex.Message);
             }
 
         }
@@ -241,7 +241,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): Failed in shutdown." + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failed in shutdown." + ex.Message);
             }
 
         }
@@ -264,14 +264,10 @@ namespace BitTorrentLibrary
                 tc.Status = TorrentStatus.Seeding;
 
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): Failed to download torrent file.");
+                throw new Error("BitTorrent (Agent) Error : Failed to download torrent file.");
             }
         }
         /// <summary>
@@ -283,14 +279,10 @@ namespace BitTorrentLibrary
             {
                 await Task.Run(() => Download(tc)).ConfigureAwait(false);
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : " + ex.Message);
             }
         }
         /// <summary>
@@ -315,14 +307,10 @@ namespace BitTorrentLibrary
                     tc.Status = TorrentStatus.Ended;
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : " + ex.Message);
             }
         }
         /// <summary>
@@ -335,14 +323,10 @@ namespace BitTorrentLibrary
                 _pieceAssembler?.Paused.Set();
                 tc.Status = TorrentStatus.Initialised;
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : " + ex.Message);
             }
         }
         /// <summary>
@@ -355,14 +339,10 @@ namespace BitTorrentLibrary
                 _pieceAssembler?.Paused.Reset();
                 tc.Status = TorrentStatus.Paused;
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent Error (Agent): " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : " + ex.Message);
             }
         }
         /// <summary>

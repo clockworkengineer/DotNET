@@ -119,7 +119,8 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
             }
 
         }
@@ -131,7 +132,7 @@ namespace BitTorrentLibrary
         {
             if ((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded < 0)
             {
-                throw new Error("BitTorrent (DownloadConext) Error: Bytes left to download turned negative.");
+                throw new Error("BitTorrent (TorrentContext) Error: Bytes left to download turned negative.");
             }
             return (UInt64)((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded);
         }
@@ -159,7 +160,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BritTorent (DownloadConext) Error : " + ex.Message);
+                throw new Error("BritTorent (TorrentContext) Error : " + ex.Message);
             }
         }
         /// <summary>
@@ -179,7 +180,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+                throw new Error("BitTorrent (TorrentContext) Error : " + ex.Message);
             }
 
         }
@@ -214,7 +215,8 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
             }
 
         }
@@ -234,8 +236,8 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-
-                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
             }
 
         }
@@ -264,7 +266,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (DownloadConext) Error : " + ex.Message);
+                throw new Error("BitTorrent (TorrentContext) Error : " + ex.Message);
             }
         }
         /// <summary>
@@ -280,8 +282,8 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-
-                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
             }
 
         }
@@ -298,7 +300,8 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
             }
 
         }
@@ -320,7 +323,8 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                throw new Error("BitTorrent (DownloadConext) Error:" + ex.Message);
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
             }
 
         }

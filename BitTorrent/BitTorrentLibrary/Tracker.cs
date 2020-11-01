@@ -120,10 +120,6 @@ namespace BitTorrentLibrary
                     }
                 }
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -189,10 +185,6 @@ namespace BitTorrentLibrary
                 Event = TrackerEvent.None;  // Reset it back to default on next tick
                 _announceTimer?.Start();
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -224,10 +216,6 @@ namespace BitTorrentLibrary
                 _announceTimer.AutoReset = false;
                 _announceTimer.Enabled = true;
             }
-            catch (Error)
-            {
-                throw;
-            }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
@@ -248,10 +236,6 @@ namespace BitTorrentLibrary
                     _announceTimer.Dispose();
                     _announceTimer = null;
                 }
-            }
-            catch (Error)
-            {
-                throw;
             }
             catch (Exception ex)
             {

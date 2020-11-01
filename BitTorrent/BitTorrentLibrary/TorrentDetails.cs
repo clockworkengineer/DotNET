@@ -15,22 +15,22 @@ namespace BitTorrentLibrary
 {
     public enum TorrentStatus
     {
-        Initialised,
-        Seeding,
-        Downloading,
-        Paused,
-        Ended
+        Initialised,    // Not te running
+        Seeding,        // Waiting to recieve upload requests
+        Downloading,    // Currently downloading torrent
+        Paused,         // Torrent activitu paused
+        Ended           // Torrend activity ended
     }
     public struct TorrentDetails
     {
-        public TorrentStatus status;
-        public string fileName;
-        public List<PeerDetails> peers;
-        public UInt64 uploadedBytes;
-        public UInt64 downloadedBytes;
-        public UInt32 missingPiecesCount;
-        public UInt32 swarmSize;
-        public UInt32 deadPeers;
-        public byte[] infoHash;
+        public TorrentStatus status;        // Current status
+        public string fileName;             // Full file name
+        public List<PeerDetails> peers;     // List of peers in its swarm
+        public UInt64 uploadedBytes;        // Total bytes uploaed to peers
+        public UInt64 downloadedBytes;      // Total bytes downloaded from peers
+        public UInt32 missingPiecesCount;   // Number of missing pieces that need download
+        public UInt32 swarmSize;            // Swarm size
+        public UInt32 deadPeers;            // Number of dead peers 
+        public byte[] infoHash;             // Torrent InfoHash
     }
 }
