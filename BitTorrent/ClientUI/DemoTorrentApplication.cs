@@ -12,16 +12,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Terminal.Gui;
-// using System.Text;
 using System.IO;
 using BitTorrentLibrary;
 using Microsoft.Extensions.Configuration;
-// using Microsoft.Extensions.Configuration.FileExtensions;
-// using Microsoft.Extensions.Configuration.Json;
-
 
 namespace ClientUI
 {
+    // Current application status
     public enum Status
     {
         Starting,
@@ -35,25 +32,25 @@ namespace ClientUI
     public class DemoTorrentApplication
     {
     
-        private readonly List<StatusItem> _statusBarItems = new List<StatusItem>();
-        private readonly StatusItem _download;
-        private readonly StatusItem _shutdown;
-        private readonly StatusItem _quit;
-        private readonly StatusItem _toggleSeeding;
-        private StatusBar _mainStatusBar;
-        private readonly Toplevel _top;
-        private bool informatioWindow = true;
-        private List<TorrentContext> _seeders;
-        private ListView _seederListView;
-        private Downloader _seederDownloader;
-        public MainWindow MainWindow { get; set; }
-        public Agent DownloadAgent { get; set; }
-        
+        private readonly List<StatusItem> _statusBarItems;  // Status bat item list
+        private readonly StatusItem _download;              // Item download 
+        private readonly StatusItem _shutdown;              // Item shutwdown
+        private readonly StatusItem _quit;                  // Items quit
+        private readonly StatusItem _toggleSeeding;         // Item toggle information/seeding sub-windows
+        private StatusBar _mainStatusBar;                   // Main status bar
+        private readonly Toplevel _top;                     // Top level application view
+        private bool informatioWindow = true;               // == true then information window displayed otherwise seeding
+        private List<TorrentContext> _seeders;              // List of current seeding torrents
+        private ListView _seederListView;                   // List view to displat seeding torrent information
+        private Downloader _seederDownloader;               // Downloader for seeding torrents
+        public MainWindow MainWindow { get; set; }          // Main application window
+        public Agent DownloadAgent { get; set; }            // Agent for handling all torrents
+
         // Cofig values
-        public string SeedFileDirectory { get; set; } = "";
-        public string DestinationDirectory { get; set; } = "";
-        public string TorrentSourceDirectory { get; set; } = "";
-        public bool SeedingMode { get ; set; } = true;
+        public string SeedFileDirectory { get; set; } = "";         // Directory containign torrent files that are seeding
+        public string DestinationDirectory { get; set; } = "";      // Destination for torrents downloaded
+        public string TorrentSourceDirectory { get; set; } = "";    // Default path for torrent field field
+        public bool SeedingMode { get ; set; } = true;              // True dont check torrents disk inage on startup
 
         /// <summary>
         /// Read config settings
@@ -212,6 +209,9 @@ namespace ClientUI
                 Width = Dim.Fill(),
                 Height = Dim.Fill()
             };
+
+
+            _statusBarItems = new List<StatusItem>();
 
             _download = new StatusItem(Key.ControlD, "~^D~ Download", () =>
             {

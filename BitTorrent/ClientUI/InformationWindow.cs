@@ -23,11 +23,11 @@ namespace ClientUI
     /// </summary>
     public class InformationWindow : Window
     {
-        private readonly Label _trackerLabel;
-        private ListView _peersListView;
-        public TextField TrackerText { get; }
-        public TextField[] InfoTextFields;
-        public Window PeersWindow { get; set; }
+        private readonly Label _trackerLabel;       // Label for tracker text field
+        private ListView _peersListView;            // List view holding downloaded peer swarm
+        public TextField TrackerText { get; }       // Torrent tracker text field
+        public TextField[] InfoTextFields;          // Torrent information window text fields
+        public Window PeersWindow { get; set; }     // Peer swarm list sub-window
 
         /// <summary>
         /// Build information window.

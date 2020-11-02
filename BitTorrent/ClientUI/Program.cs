@@ -3,7 +3,7 @@
 //
 // Programs: Simple console application to use BitTorrent class library.
 //
-// Description: Terminal.Gui intialise and run framework.
+// Description: Terminal.Gui intialisation and run framework.
 //
 // Copyright 2020.
 //

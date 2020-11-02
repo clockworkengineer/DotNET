@@ -3,7 +3,8 @@
 //
 // Programs: Simple console application to use BitTorrent class library.
 //
-// Description: Main torrent downloading.
+// Description: Class relating to the main torrent download window and the
+// associated resources/commands necessary to download the torrent.
 //
 // Copyright 2020.
 //
@@ -12,7 +13,6 @@ using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using BitTorrentLibrary;
 using Terminal.Gui;
 
@@ -23,19 +23,20 @@ namespace ClientUI
     /// </summary>
     public class Torrent
     {
-        private readonly string _torrentFileName;
-        private MetaInfoFile _torrentFile;
-        private MainWindow _mainWindow;
-        private double _currentProgress = 0;
-        private Tracker _tracker;
-        public TorrentContext Tc { get; set; }
-        public Downloader Downloader { get; set; }
+        private readonly string _torrentFileName;   // Torrent filename
+        private MetaInfoFile _torrentFile;          // Decoded torrent file
+        private MainWindow _mainWindow;             // Main window
+        private double _currentProgress = 0;        // Value depicting the current download progress (float 0.0-1.0)
+        private Tracker _tracker;                   // Tracker associated with torrent
+        public TorrentContext Tc { get; set; }      // Torrent download context
+        public Downloader Downloader { get; set; }  // Torrent downloader
 
         /// <summary>
-        /// Update download information.
+        /// Update download information. This is used as the tracker callback to be invoked
+        /// when the next announce response is recieved back.
         /// </summary>
         /// <param name="obj"></param>
-        private void UpdateInformation(Object obj)
+        private void UpdateDownloadInformation(Object obj)
         {
             DemoTorrentApplication main = (DemoTorrentApplication)obj;
             TorrentDetails torrentDetails = main.DownloadAgent.GetTorrentDetails(main.MainWindow.Torrent.Tc);
@@ -66,10 +67,10 @@ namespace ClientUI
             });
         }
         /// <summary>
-        /// Update torrent download progress bar.
+        /// Update torrent download progress bar. Thie is the downloder progress callback.
         /// </summary>
         /// <param name="obj"></param>
-        private void UpdateProgress(Object obj)
+        private void UpdateDownloadProgress(Object obj)
         {
             Torrent torrent = (Torrent)obj;
             double progress = (double)Tc.TotalBytesDownloaded /
@@ -86,7 +87,8 @@ namespace ClientUI
 
         }
         /// <summary>
-        /// Torrent download complete callback.
+        /// Torrent download complete callback. On completion copy the torrent file to the seeding directory to
+        /// be loaded up for seeding on the next startup.
         /// </summary>
         /// <param name="obj"></param>
         private void DownloadComplete(Object obj)
@@ -149,7 +151,7 @@ namespace ClientUI
 
                 Downloader = new Downloader()
                 {
-                    CallBack = UpdateProgress,
+                    CallBack = UpdateDownloadProgress,
                     CallBackData = this
                 };
 
@@ -163,7 +165,7 @@ namespace ClientUI
 
                 _tracker = new Tracker(Tc)
                 {
-                    CallBack = UpdateInformation,
+                    CallBack = UpdateDownloadInformation,
                     CallBackData = main
                 };
 

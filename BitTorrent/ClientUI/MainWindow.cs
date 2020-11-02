@@ -3,15 +3,13 @@
 //
 // Programs: Simple console application to use BitTorrent class library.
 //
-// Description: 
+// Description: Class that defines the layout of the applications main window.
 //
 // Copyright 2020.
 //
 
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using BitTorrentLibrary;
 using Terminal.Gui;
 
 namespace ClientUI
@@ -21,18 +19,20 @@ namespace ClientUI
     /// </summary>
     public class MainWindow : Window
     {
-        private readonly Label torrentFileLabel;
-        private readonly Label _progressBarBeginText;
-        private readonly Label _progressBarEndText;
-        public TextField TorrentFileText { get; set; }
-        public ProgressBar DownloadProgress { get; set; }
-        public InformationWindow InformationWindow { get; set; }
-        public Window SeedingWindow { get; set; }
-        public Task DownloadTorrentTask { get; set; }
-        public Torrent Torrent { get; set; }
+        private readonly Label torrentFileLabel;                    // Torrent file field label
+        private readonly Label _progressBarBeginText;               // Beginning of progress bar '['
+        private readonly Label _progressBarEndText;                 // End of progress bar ']'
+        public TextField TorrentFileText { get; set; }              // Text field containing torrent file name
+        public ProgressBar DownloadProgress { get; set; }           // Downloading progress bar
+        public InformationWindow InformationWindow { get; set; }    // Torrent information sub-window.
+        public Window SeedingWindow { get; set; }                   // Seeding torrents sub-window (overlays information)
+        public Task DownloadTorrentTask { get; set; }               // Task for downloading torrent
+        public Torrent Torrent { get; set; }                        // Currently active downloading torrent
 
         /// <summary>
-        /// Build main application window.
+        /// Build main application window including the information
+        /// and seeding windows which overlay each other depending which
+        /// is toggled to display.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
