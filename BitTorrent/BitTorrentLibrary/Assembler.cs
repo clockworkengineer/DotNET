@@ -50,6 +50,19 @@ namespace BitTorrentLibrary
         public ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
 
         /// <summary>
+        /// Signal to all peers in swarm that we now have the piece local so
+        /// that they can request it if they need.
+        /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <param name="pieceNumber"></param>
+        private void SignalHaveToSwarm(Peer remotePeer, UInt32 pieceNumber)
+        {
+            foreach (var peer in remotePeer.Tc.PeerSwarm.Values)
+            {
+                PWP.Have(peer, pieceNumber);
+            }
+        }
+        /// <summary>
         /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.
         /// </summary>
         /// <param name="remotePeer"></param>
@@ -66,6 +79,7 @@ namespace BitTorrentLibrary
                     Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
                     remotePeer.Tc.PieceWriteQueue.Enqueue(new PieceBuffer(remotePeer.AssembledPiece));
                     remotePeer.Tc.MarkPieceLocal(pieceNumber, true);
+                    SignalHaveToSwarm(remotePeer, pieceNumber);
                 }
             }
 
@@ -230,7 +244,7 @@ namespace BitTorrentLibrary
                     AssembleMissingPieces(remotePeer, cancelTask);
                 }
 
-                ProcessRemotePeerRequests(remotePeer, cancelTask);
+                ProcessRemotePeerRequests(remotePeer,cancelTask);
 
             }
             catch (Exception ex)
