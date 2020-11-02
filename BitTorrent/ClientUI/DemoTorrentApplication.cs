@@ -34,6 +34,7 @@ namespace ClientUI
     /// </summary>
     public class DemoTorrentApplication
     {
+    
         private readonly List<StatusItem> _statusBarItems = new List<StatusItem>();
         private readonly StatusItem _download;
         private readonly StatusItem _shutdown;
@@ -47,8 +48,12 @@ namespace ClientUI
         private Downloader _seederDownloader;
         public MainWindow MainWindow { get; set; }
         public Agent DownloadAgent { get; set; }
-        public string SeedFileDirectory { get; set; }
-        public string DestinationDirectory { get; set; }
+        
+        // Cofig values
+        public string SeedFileDirectory { get; set; } = "";
+        public string DestinationDirectory { get; set; } = "";
+        public string TorrentSourceDirectory { get; set; } = "";
+        public bool SeedingMode { get ; set; } = true;
 
         /// <summary>
         /// Read config settings
@@ -56,12 +61,23 @@ namespace ClientUI
         public void ReadConfig()
         {
 
-            IConfiguration config = new ConfigurationBuilder()
-              .AddJsonFile("appsettings.json", true, true)
-              .Build();
+            
+            try
+            {
+                IConfiguration config = new ConfigurationBuilder()
+                  .AddJsonFile("appsettings.json", true, true)
+                  .Build();
 
-            DestinationDirectory = config["DestinationDirectory"];
-            SeedFileDirectory = config["SeedFileDirectory"];
+                TorrentSourceDirectory = config["TorrentSourceDirectory"];
+                DestinationDirectory = config["DestinationDirectory"];
+                SeedFileDirectory = config["SeedFileDirectory"];
+                SeedingMode = bool.Parse(config["Seeding"]);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug("Application Error : "+ex.Message);
+            }
+
         }
         /// <summary>
         /// Build seeder display line for listview.
@@ -123,7 +139,7 @@ namespace ClientUI
                 _seederFile.Load();
                 _seederFile.Parse();
 
-                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDownloader, DestinationDirectory, true);
+                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDownloader, DestinationDirectory, SeedingMode);
 
                 DownloadAgent.Add(tc);
 
@@ -139,9 +155,10 @@ namespace ClientUI
 
                 DownloadAgent.Download(tc);
 
-                Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
-
             }
+
+            Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
+            
         }
         /// <summary>
         /// Display program status bar.
@@ -245,6 +262,8 @@ namespace ClientUI
             DownloadAgent.Startup();
 
             Task.Run(() => LoadSeedingTorrents());
+
+            MainWindow.TorrentFileText.Text = TorrentSourceDirectory;
 
         }
     }
