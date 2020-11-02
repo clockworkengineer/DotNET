@@ -79,7 +79,7 @@ namespace BitTorrentLibrary
                 }
 
                 remotePeer.AssembledPiece.Reset();
-            }
+            } 
 
         }
         /// <summary>
