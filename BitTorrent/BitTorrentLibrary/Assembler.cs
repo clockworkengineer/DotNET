@@ -58,27 +58,24 @@ namespace BitTorrentLibrary
         private void QeueAssembledPieceToDisk(Peer remotePeer, UInt32 pieceNumber, bool pieceAssembled)
         {
 
-            if (!remotePeer.Tc.DownloadFinished.WaitOne(0))
+            if (pieceAssembled)
             {
-                if (pieceAssembled)
+                bool pieceValid = remotePeer.Tc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, remotePeer.Tc.GetPieceLength(pieceNumber));
+                if (pieceValid)
                 {
-                    bool pieceValid = remotePeer.Tc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, remotePeer.Tc.GetPieceLength(pieceNumber));
-                    if (pieceValid)
-                    {
-                        Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
-                        remotePeer.Tc.PieceWriteQueue.Enqueue(new PieceBuffer(remotePeer.AssembledPiece));
-                        remotePeer.Tc.MarkPieceLocal(pieceNumber, true);
-                    }
+                    Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
+                    remotePeer.Tc.PieceWriteQueue.Enqueue(new PieceBuffer(remotePeer.AssembledPiece));
+                    remotePeer.Tc.MarkPieceLocal(pieceNumber, true);
                 }
-
-                if (!remotePeer.Tc.IsPieceLocal(pieceNumber))
-                {
-                    Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                    remotePeer.Tc.MarkPieceMissing(pieceNumber, true);
-                }
-
-                remotePeer.AssembledPiece.Reset();
             }
+
+            if (!remotePeer.Tc.IsPieceLocal(pieceNumber))
+            {
+                Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
+                remotePeer.Tc.MarkPieceMissing(pieceNumber, true);
+            }
+
+            remotePeer.AssembledPiece.Reset();
 
         }
         /// <summary>
@@ -154,7 +151,10 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Error(ex.Message);
-                QeueAssembledPieceToDisk(remotePeer, nextPiece, remotePeer.AssembledPiece.AllBlocksThere);
+                if (!remotePeer.Tc.DownloadFinished.WaitOne(0))
+                {
+                    QeueAssembledPieceToDisk(remotePeer, nextPiece, remotePeer.AssembledPiece.AllBlocksThere);
+                }
                 throw;
             }
 

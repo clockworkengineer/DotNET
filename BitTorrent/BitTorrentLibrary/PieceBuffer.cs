@@ -16,7 +16,7 @@ namespace BitTorrentLibrary
 {
     public interface IPieceBuffer
     {
-        Peer RemotePeer { get; }
+        TorrentContext Tc { get; }
         uint Length { get; }
         byte[] Buffer { get; }
         uint Number { get; set; }
@@ -34,7 +34,7 @@ namespace BitTorrentLibrary
     {
         private bool[] _blockPresent;                   // == true then block present
         private uint _blockCount;                       // Unfilled block spaces in buffer
-        public Peer RemotePeer { get; }                 // Remote peer (source of buffer data)
+        public TorrentContext Tc { get; }               // Torrent context
         public uint Length { get; }                     // Piece Length
         public byte[] Buffer { get; }                   // Piece Buffer
         public uint Number { get; set; }                // Piece Number
@@ -44,9 +44,9 @@ namespace BitTorrentLibrary
         /// Create an empty piece buffer.
         /// </summary>
         /// <param name="length">Length.</param>
-        public PieceBuffer(Peer remotePeer, UInt32 length)
+        public PieceBuffer(TorrentContext tc, UInt32 length)
         {
-            RemotePeer = remotePeer;
+            Tc = tc;
             Number = 0;
             Length = length;
             Buffer = new byte[Length];
@@ -58,7 +58,7 @@ namespace BitTorrentLibrary
         /// Create an empty piece buffer.
         /// </summary>
         /// <param name="length">Length.</param>
-        public PieceBuffer(Peer remotePeer, UInt32 pieceNumber, UInt32 length) : this(remotePeer, length)
+        public PieceBuffer(TorrentContext tc, UInt32 pieceNumber, UInt32 length) : this(tc, length)
         {
             Number = pieceNumber;
         }
@@ -68,7 +68,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceBuffer">Piece buffer.</param>
         public PieceBuffer(PieceBuffer pieceBuffer)
         {
-            RemotePeer = pieceBuffer.RemotePeer;
+            Tc = pieceBuffer.Tc;
             Number = pieceBuffer.Number;
             Length = pieceBuffer.Length;
             Buffer = new byte[Length];

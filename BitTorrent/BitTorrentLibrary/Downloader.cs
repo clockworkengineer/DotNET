@@ -109,7 +109,7 @@ namespace BitTorrentLibrary
         private PieceBuffer GetPieceFromTorrent(Peer remotePeer, UInt32 pieceNumber)
         {
 
-            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer, pieceNumber, remotePeer.Tc.GetPieceLength(pieceNumber));
+            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.Tc, pieceNumber, remotePeer.Tc.GetPieceLength(pieceNumber));
 
             Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
 
@@ -133,18 +133,18 @@ namespace BitTorrentLibrary
 
                     Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
-                    TransferPiece(pieceBuffer.RemotePeer.Tc, pieceBuffer, false);
+                    TransferPiece(pieceBuffer.Tc, pieceBuffer, false);
 
-                    pieceBuffer.RemotePeer.Tc.TotalBytesDownloaded += pieceBuffer.RemotePeer.Tc.GetPieceLength((pieceBuffer.Number));
-                    Log.Logger.Info((pieceBuffer.RemotePeer.Tc.TotalBytesDownloaded / (double)pieceBuffer.RemotePeer.Tc.TotalBytesToDownload).ToString("0.00%"));
+                    pieceBuffer.Tc.TotalBytesDownloaded += pieceBuffer.Tc.GetPieceLength((pieceBuffer.Number));
+                    Log.Logger.Info((pieceBuffer.Tc.TotalBytesDownloaded / (double)pieceBuffer.Tc.TotalBytesToDownload).ToString("0.00%"));
                     Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
                     CallBack?.Invoke(CallBackData);
 
-                    if (pieceBuffer.RemotePeer.Tc.BytesLeftToDownload() == 0)
+                    if (pieceBuffer.Tc.BytesLeftToDownload() == 0)
                     {
-                        pieceBuffer.RemotePeer.Tc.DownloadFinished.Set();
-                        pieceBuffer.RemotePeer.Tc.CallBack?.Invoke(pieceBuffer.RemotePeer.Tc.CallBackData);
+                        pieceBuffer.Tc.DownloadFinished.Set();
+                        pieceBuffer.Tc.CallBack?.Invoke(pieceBuffer.Tc.CallBackData);
                     }
 
                 }
@@ -168,7 +168,7 @@ namespace BitTorrentLibrary
                     PieceRequest request = await PieceRequestQueue.DequeueAsync(cancelTask);
                     try
                     {
-                        Log.Logger.Info($"+++Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
+                        Log.Logger.Info($"Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
 
                         PieceBuffer requestBuffer = GetPieceFromTorrent(request.remotePeer, request.pieceNumber);
                         byte[] requestBlock = new byte[request.blockSize];
@@ -192,8 +192,6 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex.Message);
             }
-
-
 
         }
         /// <summary>
