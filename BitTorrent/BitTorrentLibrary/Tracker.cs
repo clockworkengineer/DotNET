@@ -70,23 +70,30 @@ namespace BitTorrentLibrary
             {
                 AnnounceResponse response = tracker._announcer.Announce(tracker);
 
-                Log.Logger.Info("Queuing new peers for swarm ....");
-
-                if (tracker._tc.Status == TorrentStatus.Downloading)
+                if (!response.failure)
                 {
-                    foreach (var peerDetails in response.peers)
-                    {
-                        tracker._peerSwarmQueue?.Enqueue(peerDetails);
-                    }
-                    tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
+                    Log.Logger.Info("Queuing new peers for swarm ....");
 
+                    if (tracker._tc.Status == TorrentStatus.Downloading)
+                    {
+                        foreach (var peerDetails in response.peers)
+                        {
+                            tracker._peerSwarmQueue?.Enqueue(peerDetails);
+                        }
+                        tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
+
+                    }
+                    tracker.CallBack?.Invoke(tracker.CallBackData);
+                    tracker.UpdateRunningStatusFromAnnounce(response);
                 }
-                tracker.CallBack?.Invoke(tracker.CallBackData);
-                tracker.UpdateRunningStatusFromAnnounce(response);
+                else
+                {
+                    throw new Exception("Remote tracker failure: " + response.statusMessage);
+                }
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
+                Log.Logger.Info(ex);
                 tracker._announcerExceptions.Add(ex);
             }
             finally

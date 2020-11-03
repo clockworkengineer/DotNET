@@ -195,8 +195,6 @@ namespace BitTorrentLibrary
         {
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX BITFIELD");
 
-            remotePeer.RemotePieceBitfield = new byte[(Int32)remotePeer.PacketLength - 1];
-
             Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, (Int32)remotePeer.PacketLength - 1);
 
             DumpBitfield(remotePeer.RemotePieceBitfield);

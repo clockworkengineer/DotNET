@@ -72,6 +72,7 @@ namespace BitTorrentLibrary
             Tc = tc;
             NumberOfMissingPieces = Tc.NumberOfPieces;
             AssembledPiece = new PieceBuffer(tc, Tc.PieceLength);
+            RemotePieceBitfield = new byte[tc.Bitfield.Length];
         }
         /// <summary>
         /// Send packet to remote peer.

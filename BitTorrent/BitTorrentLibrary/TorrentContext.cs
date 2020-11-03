@@ -73,7 +73,7 @@ namespace BitTorrentLibrary
         public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath, bool seeding = false)
         {
             FileName = torrentMetaInfo.TorrentFileName;
-            Status = TorrentStatus.Ended;
+            Status = TorrentStatus.Initialised;
             InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];
             TrackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
             (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
