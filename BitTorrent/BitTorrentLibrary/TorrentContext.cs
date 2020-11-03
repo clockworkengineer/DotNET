@@ -54,7 +54,6 @@ namespace BitTorrentLibrary
         internal int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize;  // Maximim swarm size
         internal ConcurrentDictionary<string, Peer> PeerSwarm { get; }        // Current peer swarm
         internal Tracker MainTracker { get; set; }                            // Main tracker assigned to torrent
-        internal HashSet<string> PeerFilter;                                  // Peers that are not interested
         public TorrentStatus Status { get; set; }                             // Torrent status
         public string FileName { get; set; }                                  // Torrent file name
         public UInt64 TotalBytesDownloaded { get; set; }                      // Total bytes downloaded
@@ -114,7 +113,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="pieceBuffer">Piece buffer.</param>
         /// <param name="numberOfBytes">Number of bytes.</param>
-        public bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
+        internal bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
             try
             {
@@ -140,7 +139,7 @@ namespace BitTorrentLibrary
         /// Calculate bytes left to download and report going negative.
         /// </summary>
         /// <returns>Bytes left in torrent to download</returns>
-        public UInt64 BytesLeftToDownload()
+        internal UInt64 BytesLeftToDownload()
         {
             if ((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded < 0)
             {
@@ -153,7 +152,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="local">If set to <c>true</c> piece has been downloaded.</param>
-        public void MarkPieceLocal(UInt32 pieceNumber, bool local)
+        internal void MarkPieceLocal(UInt32 pieceNumber, bool local)
         {
             try
             {
@@ -180,7 +179,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <returns><c>true</c>, if piece is local, <c>false</c> otherwise.</returns>
         /// <param name="pieceNumber">Piece number.</param>
-        public bool IsPieceLocal(UInt32 pieceNumber)
+        internal bool IsPieceLocal(UInt32 pieceNumber)
         {
             try
             {
@@ -201,7 +200,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber"></param>
         /// <param name="missing"></param>
-        public void MarkPieceMissing(UInt32 pieceNumber, bool missing)
+        internal void MarkPieceMissing(UInt32 pieceNumber, bool missing)
         {
             try
             {
@@ -237,7 +236,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber"></param>
         /// <returns></returns>
-        public bool IsPieceMissing(UInt32 pieceNumber)
+        internal bool IsPieceMissing(UInt32 pieceNumber)
         {
             try
             {
@@ -257,7 +256,7 @@ namespace BitTorrentLibrary
         /// Merges the piece bitfield of a remote peer with the torrents local piece map data.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
-        public void MergePieceBitfield(Peer remotePeer)
+        internal void MergePieceBitfield(Peer remotePeer)
         {
             try
             {
@@ -286,7 +285,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="peiceNumber"></param>
         /// <returns></returns>
-        public UInt32 GetPieceLength(UInt32 peiceNumber)
+        internal UInt32 GetPieceLength(UInt32 peiceNumber)
         {
             try
             {
@@ -304,7 +303,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber"></param>
         /// <param name="pieceLength"></param>
-        public void SetPieceLength(UInt32 pieceNumber, UInt32 pieceLength)
+        internal void SetPieceLength(UInt32 pieceNumber, UInt32 pieceLength)
         {
             try
             {
@@ -322,7 +321,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber"></param>
         /// <returns></returns>
-        public UInt32 GetBlocksInPiece(UInt32 pieceNumber)
+        internal UInt32 GetBlocksInPiece(UInt32 pieceNumber)
         {
             try
             {

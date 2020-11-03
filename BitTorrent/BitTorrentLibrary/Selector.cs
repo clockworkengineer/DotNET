@@ -18,13 +18,8 @@ using System.Threading;
 
 namespace BitTorrentLibrary
 {
-    public interface ISelector
-    {
-        uint[] LocalPieceSuggestions(Peer remotePeer, uint numberOfSuggestions, uint startPiece = 0);
-        bool NextPiece(Peer remotePeer, ref uint nextPiece, CancellationToken cancelTask);
-    }
-
-    public class Selector : ISelector
+  
+    public class Selector
     {
         private readonly Object _nextPieceLock;     // Missing access lock
 
@@ -65,7 +60,7 @@ namespace BitTorrentLibrary
         /// <returns><c>true</c>, if next piece was selected, <c>false</c> otherwise.</returns>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="nextPiece">Next piece.</param>
-        public bool NextPiece(Peer remotePeer, ref UInt32 nextPiece, CancellationToken cancelTask)
+        internal bool NextPiece(Peer remotePeer, ref UInt32 nextPiece, CancellationToken cancelTask)
         {
             try
             {
@@ -98,7 +93,7 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         /// <param name="numberOfSuggestions"></param>
         /// <returns></returns>
-        public UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, uint startPiece = 0)
+        internal UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, uint startPiece = 0)
         {
             List<UInt32> suggestions = new List<UInt32>();
             UInt32 currentPiece = startPiece;

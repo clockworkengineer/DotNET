@@ -167,7 +167,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Change tracker status.
         /// </summary>
-        public void ChangeStatus(TrackerEvent status)
+        internal void ChangeStatus(TrackerEvent status)
         {
             try
             {

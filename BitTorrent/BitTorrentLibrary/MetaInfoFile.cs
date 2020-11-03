@@ -128,7 +128,17 @@ namespace BitTorrentLibrary
                 MetaInfoDict["info hash"] = new SHA1CryptoServiceProvider().ComputeHash(Bencoding.Encode(infoEncodedBytes));
             }
         }
-                /// <summary>
+
+        /// <summary>
+        /// Initializes a new instance of the MetInfoFile class.
+        /// </summary>
+        /// <param name="fileName">File name.</param>
+        public MetaInfoFile(string fileName)
+        {
+            TorrentFileName = fileName;
+            MetaInfoDict = new Dictionary<string, byte[]>();
+        }
+        /// <summary>
         /// Generate list of local files in torrent to download from peers and total torrent size in bytes
         /// and return as a tuple.
         /// </summary>
@@ -176,15 +186,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list." + ex.Message);
             }
             return (totalBytes, filesToDownload);
-        }
-        /// <summary>
-        /// Initializes a new instance of the MetInfoFile class.
-        /// </summary>
-        /// <param name="fileName">File name.</param>
-        public MetaInfoFile(string fileName)
-        {
-            TorrentFileName = fileName;
-            MetaInfoDict = new Dictionary<string, byte[]>();
         }
         /// <summary>
         /// Load torrent file contents into memory for parsing.

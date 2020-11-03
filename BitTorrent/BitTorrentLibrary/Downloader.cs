@@ -204,7 +204,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Creates the empty files on disk as place holders of files to be downloaded.
         /// </summary>
-        public void CreateLocalTorrentStructure(TorrentContext tc)
+        internal void CreateLocalTorrentStructure(TorrentContext tc)
         {
             Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
 
@@ -225,7 +225,7 @@ namespace BitTorrentLibrary
         /// Creates the torrent bitfield and piece information structures from the current disc 
         /// which details the state of the piece.
         /// </summary>
-        public void CreateTorrentBitfield(TorrentContext tc)
+        internal void CreateTorrentBitfield(TorrentContext tc)
         {
             byte[] pieceBuffer = new byte[tc.PieceLength];
             UInt32 pieceNumber = 0;
@@ -266,7 +266,7 @@ namespace BitTorrentLibrary
         /// means that the whole of the disk image of the torrent isn't checked so
         /// vastly inceasing start time.
         /// </summary>
-        public void FullyDownloadedTorrentBitfield(TorrentContext tc)
+        internal void FullyDownloadedTorrentBitfield(TorrentContext tc)
         {
             UInt64 totalBytesToDownload = tc.TotalBytesToDownload;
             for (UInt32 pieceNumber = 0; pieceNumber < tc.NumberOfPieces; pieceNumber++)

@@ -219,7 +219,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="_downloadFinished"></param>
-        public void AssemblePieces(Peer remotePeer)
+        internal void AssemblePieces(Peer remotePeer)
         {
 
             try

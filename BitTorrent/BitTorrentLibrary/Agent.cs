@@ -22,7 +22,6 @@ using System.Net.Sockets;
 
 namespace BitTorrentLibrary {
 
-
     /// <summary>
     /// Agent class definition.
     /// </summary>
@@ -103,7 +102,6 @@ namespace BitTorrentLibrary {
             {
                 Log.Logger.Info("Remote peer connect creation task terminated.");
             }
-
 
         }
         /// <summary>
