@@ -4,7 +4,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: The Downloader class encapsulates all code and
+// Description: The DiskIO class encapsulates all code and
 // data relating to the readining/writing of the local torrent files
 // to determine which pieces are missing and need downloading and
 // written to the correct positions.It also handles requests from
@@ -24,21 +24,23 @@ namespace BitTorrentLibrary
     public delegate void ProgessCallBack(Object callBackData); // Download progress callback
 
     /// <summary>
-    /// File downloader.
+    /// Torrent Disk IO subsystem.
     /// </summary>
-    public class Downloader
+    public class DiskIO
     {
         private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
         internal AsyncQueue<PieceBuffer> PieceWriteQueue { get; }      // Piece buffer write queue
-        internal AsyncQueue<PieceRequest> PieceRequestQueue { get; }   // Task request read queue
+        internal AsyncQueue<PieceRequest> PieceRequestQueue { get; }   // Piece request read queue
         public ProgessCallBack CallBack { get; set; }                  // Download progress function
         public Object CallBackData { get; set; }                       // Download progress function data
 
         /// <summary>
         /// Read/Write piece buffers to/from torrent on disk.
         /// </summary>
+        /// <param name="tc"></param>
         /// <param name="transferBuffer"></param>
         /// <param name="read"></param>
+        /// <summary>
         private void TransferPiece(TorrentContext tc, PieceBuffer transferBuffer, bool read)
         {
             int bytesTransferred = 0;
@@ -74,9 +76,11 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Update torrent piece information and bitfield from buffer.
         /// </summary>
+        /// <param name="tc"></param>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="pieceBuffer">Piece buffer.</param>
         /// <param name="numberOfBytes">Number of bytes in piece.</param>
+        /// <summary>
         private void UpdateBitfieldFromBuffer(TorrentContext tc, UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
             bool pieceThere = tc.CheckPieceHash(pieceNumber, pieceBuffer, numberOfBytes);
@@ -94,6 +98,9 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Read piece from torrent
         /// </summary>
+        /// <param name="remotePeer"></param>
+        /// <param name="pieceNumber"></param>
+        /// <returns></returns>
         private PieceBuffer GetPieceFromTorrent(Peer remotePeer, UInt32 pieceNumber)
         {
 
@@ -111,6 +118,8 @@ namespace BitTorrentLibrary
         /// Task to take a queued download piece and write it away to the relevant file
         /// sections to which it belongs within a torrent.
         /// </summary>
+        /// <param name="cancelTask"></param>
+        /// <returns></returns>
         private async Task PieceBufferDiskWriterAsync(CancellationToken cancelTask)
         {
             try
@@ -146,6 +155,8 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Process any piece requests in buffer and send to remote peer.
         /// </summary>
+        /// <param name="cancelTask"></param>
+        /// <returns></returns>
         private async Task PieceRequestProcessingAsync(CancellationToken cancelTask)
         {
             try
@@ -183,9 +194,9 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Setup data and resources needed by downloader.
+        /// Setup data and resources needed by DiskIO.
         /// </summary>
-        public Downloader()
+        public DiskIO()
         {
             _cancelTaskSource = new CancellationTokenSource();
             PieceWriteQueue = new AsyncQueue<PieceBuffer>();
@@ -195,15 +206,16 @@ namespace BitTorrentLibrary
         }
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the
-        /// downloader class is reclaimed by garbage collection.
+        /// DISKIO class is reclaimed by garbage collection.
         /// </summary>
-        ~Downloader()
+        ~DiskIO()
         {
             _cancelTaskSource.Cancel();
         }
         /// <summary>
         /// Creates the empty files on disk as place holders of files to be downloaded.
-        /// </summary>
+        /// </summary>>
+        /// <param name="tc"></param>
         internal void CreateLocalTorrentStructure(TorrentContext tc)
         {
             Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
@@ -225,6 +237,7 @@ namespace BitTorrentLibrary
         /// Creates the torrent bitfield and piece information structures from the current disc 
         /// which details the state of the piece.
         /// </summary>
+        /// <param name="tc"></param>
         internal void CreateTorrentBitfield(TorrentContext tc)
         {
             byte[] pieceBuffer = new byte[tc.PieceLength];
@@ -266,6 +279,7 @@ namespace BitTorrentLibrary
         /// means that the whole of the disk image of the torrent isn't checked so
         /// vastly inceasing start time.
         /// </summary>
+        /// <param name="tc"></param>
         internal void FullyDownloadedTorrentBitfield(TorrentContext tc)
         {
             UInt64 totalBytesToDownload = tc.TotalBytesToDownload;

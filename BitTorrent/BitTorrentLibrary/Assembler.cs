@@ -205,9 +205,6 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by assembler.
         /// </summary>
-        /// <param name="torrentDownloader"></param>
-        /// <param name="progressFunction"></param>
-        /// <param name="progressData"></param>
         public Assembler()
         {
             Paused = new ManualResetEvent(false);

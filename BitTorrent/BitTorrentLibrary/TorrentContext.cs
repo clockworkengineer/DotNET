@@ -67,10 +67,10 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="torrentMetaInfo"></param>
         /// <param name="pieceSelector"></param>
-        /// <param name="downloader"></param>
+        /// <param name="diskIO"></param>
         /// <param name="downloadPath"></param>
         /// <param name="seeding"></param>
-        public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, Downloader downloader, string downloadPath, bool seeding = false)
+        public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, DiskIO diskIO, string downloadPath, bool seeding = false)
         {
             FileName = torrentMetaInfo.TorrentFileName;
             Status = TorrentStatus.Initialised;
@@ -83,8 +83,8 @@ namespace BitTorrentLibrary
             PiecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
             NumberOfPieces = ((UInt32)(PiecesInfoHash.Length / Constants.HashLength));
             _pieceData = new PieceInfo[NumberOfPieces];
-            PieceWriteQueue = downloader.PieceWriteQueue;
-            PieceRequestQueue = downloader.PieceRequestQueue;
+            PieceWriteQueue = diskIO.PieceWriteQueue;
+            PieceRequestQueue = diskIO.PieceRequestQueue;
             _SHA1 = new SHA1CryptoServiceProvider();
             DownloadFinished = new ManualResetEvent(false);
             Bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
@@ -92,15 +92,15 @@ namespace BitTorrentLibrary
             PieceSelector = pieceSelector;
             PeerSwarm = new ConcurrentDictionary<string, Peer>();
             // In seeding mode mark eveything downloaded to save startup time
-            downloader.CreateLocalTorrentStructure(this);
+            diskIO.CreateLocalTorrentStructure(this);
             if (seeding)
             {
-                downloader.FullyDownloadedTorrentBitfield(this);
+                diskIO.FullyDownloadedTorrentBitfield(this);
                 TotalBytesDownloaded = TotalBytesToDownload = 0;
             }
             else
             {
-                downloader.CreateTorrentBitfield(this);
+                diskIO.CreateTorrentBitfield(this);
                 TotalBytesToDownload -= TotalBytesDownloaded;
                 TotalBytesDownloaded = 0;
             }

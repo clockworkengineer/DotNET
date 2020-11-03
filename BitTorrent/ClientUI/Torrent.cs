@@ -29,7 +29,7 @@ namespace ClientUI
         private double _currentProgress = 0;        // Value depicting the current download progress (float 0.0-1.0)
         private Tracker _tracker;                   // Tracker associated with torrent
         public TorrentContext Tc { get; set; }      // Torrent download context
-        public Downloader Downloader { get; set; }  // Torrent downloader
+        public DiskIO TorrentDiskIO { get; set; }   // Torrent DiskIO
 
         /// <summary>
         /// Update download information. This is used as the tracker callback to be invoked
@@ -149,13 +149,13 @@ namespace ClientUI
                     _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                 });
 
-                Downloader = new Downloader()
+                TorrentDiskIO = new DiskIO()
                 {
                     CallBack = UpdateDownloadProgress,
                     CallBackData = this
                 };
 
-                Tc = new TorrentContext(_torrentFile, new Selector(), Downloader, "/home/robt/utorrent")
+                Tc = new TorrentContext(_torrentFile, new Selector(), TorrentDiskIO, "/home/robt/utorrent")
                 {
                     CallBack = DownloadComplete,
                     CallBackData = main

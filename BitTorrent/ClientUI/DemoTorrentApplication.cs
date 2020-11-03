@@ -42,7 +42,7 @@ namespace ClientUI
         private bool informatioWindow = true;               // == true then information window displayed otherwise seeding
         private List<TorrentContext> _seeders;              // List of current seeding torrents
         private ListView _seederListView;                   // List view to displat seeding torrent information
-        private Downloader _seederDownloader;               // Downloader for seeding torrents
+        private DiskIO _seederDiskIO;                       // DiskIO for seeding torrents
         public MainWindow MainWindow { get; set; }          // Main application window
         public Agent DownloadAgent { get; set; }            // Agent for handling all torrents
 
@@ -127,7 +127,7 @@ namespace ClientUI
             var token = Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
 
             _seeders = new List<TorrentContext>();
-            _seederDownloader = new Downloader();
+            _seederDiskIO = new DiskIO();
             string[] torrentFiles = Directory.GetFiles(SeedFileDirectory, "*.torrent");
             foreach (var file in torrentFiles)
             {
@@ -136,7 +136,7 @@ namespace ClientUI
                 _seederFile.Load();
                 _seederFile.Parse();
 
-                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDownloader, DestinationDirectory, SeedingMode);
+                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationDirectory, SeedingMode);
 
                 DownloadAgent.Add(tc);
 
