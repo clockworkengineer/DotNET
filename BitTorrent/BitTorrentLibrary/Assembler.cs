@@ -36,18 +36,13 @@ namespace BitTorrentLibrary
             }
         }
     }
-    public interface IAssembler
-    {
-        ManualResetEvent Paused { get; }
-        void AssemblePieces(Peer remotePeer);
-    }
 
     /// <summary>
     /// Piece Assembler
     /// </summary>
-    public class Assembler : IAssembler
+    public class Assembler
     {
-        public ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
+        internal ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
 
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so

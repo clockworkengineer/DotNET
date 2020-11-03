@@ -15,14 +15,8 @@ using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
 {
-    public interface IAsyncQueue<T>
-    {
-        Task<T> DequeueAsync(CancellationToken cancellationToken = default);
-        void Enqueue(T item);
-        void EnqueueRange(IEnumerable<T> source);
-    }
 
-    public class AsyncQueue<T> : IAsyncQueue<T>
+    internal class AsyncQueue<T>
     {
         private readonly SemaphoreSlim _queueSemaphore;
         private readonly ConcurrentQueue<T> _queue;

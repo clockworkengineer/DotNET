@@ -28,7 +28,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Announce response.
     /// </summary>
-    public struct AnnounceResponse
+    internal struct AnnounceResponse
     {
         public UInt32 announceCount;    // Announce counter
         public bool failure;            // == true tracker failure message returned

@@ -39,7 +39,7 @@ namespace BitTorrentLibrary
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
-        protected Timer _announceTimer;                         // Timer for sending tracker announce events
+        internal Timer _announceTimer;                          // Timer for sending tracker announce events
         internal AsyncQueue<PeerDetails> _peerSwarmQueue;       // Peers to add to swarm queue
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID

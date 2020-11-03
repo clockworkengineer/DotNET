@@ -23,20 +23,11 @@ using static BitTorrentLibrary.Bencoding;
 
 namespace BitTorrentLibrary
 {
-    public interface IMetaInfoFile
-    {
-        Dictionary<string, byte[]> MetaInfoDict { get; }
-        string TorrentFileName { get; }
-
-        void Load();
-        (ulong, List<FileDetails>) LocalFilesToDownloadList(string downloadPath);
-        void Parse();
-    }
 
     /// <summary>
     /// Meta Info File class.
     /// </summary>
-    public class MetaInfoFile : IMetaInfoFile
+    public class MetaInfoFile
     {
         private byte[] _metaInfoData;                           // Raw data of torrent file
         public Dictionary<string, byte[]> MetaInfoDict { get; } // Dictionary of torrent file contents
@@ -137,6 +128,55 @@ namespace BitTorrentLibrary
                 MetaInfoDict["info hash"] = new SHA1CryptoServiceProvider().ComputeHash(Bencoding.Encode(infoEncodedBytes));
             }
         }
+                /// <summary>
+        /// Generate list of local files in torrent to download from peers and total torrent size in bytes
+        /// and return as a tuple.
+        /// </summary>
+        internal ValueTuple<UInt64, List<FileDetails>> LocalFilesToDownloadList(string downloadPath)
+        {
+            List<FileDetails> filesToDownload = new List<FileDetails>();
+            UInt64 totalBytes = 0;
+            try
+            {
+                if (!MetaInfoDict.ContainsKey("0"))
+                {
+                    FileDetails fileDetail = new FileDetails
+                    {
+                        name = downloadPath + $"{Path.DirectorySeparatorChar}" + Encoding.ASCII.GetString(MetaInfoDict["name"]),
+                        length = UInt64.Parse(Encoding.ASCII.GetString(MetaInfoDict["length"])),
+                        offset = 0
+                    };
+                    filesToDownload.Add(fileDetail);
+                    totalBytes = fileDetail.length;
+                }
+                else
+                {
+                    UInt32 fileNo = 0;
+
+                    string name = Encoding.ASCII.GetString(MetaInfoDict["name"]);
+                    while (MetaInfoDict.ContainsKey(fileNo.ToString()))
+                    {
+                        string[] details = Encoding.ASCII.GetString(MetaInfoDict[fileNo.ToString()]).Split(',');
+                        FileDetails fileDetail = new FileDetails
+                        {
+                            name = downloadPath + $"{Path.DirectorySeparatorChar}" + name + details[0],
+                            length = UInt64.Parse(details[1]),
+                            md5sum = details[2],
+                            offset = totalBytes
+                        };
+                        filesToDownload.Add(fileDetail);
+                        fileNo++;
+                        totalBytes += fileDetail.length;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list." + ex.Message);
+            }
+            return (totalBytes, filesToDownload);
+        }
         /// <summary>
         /// Initializes a new instance of the MetInfoFile class.
         /// </summary>
@@ -217,54 +257,5 @@ namespace BitTorrentLibrary
             }
         }
 
-        /// <summary>
-        /// Generate list of local files in torrent to download from peers and total torrent size in bytes
-        /// and return as a tuple.
-        /// </summary>
-        public ValueTuple<UInt64, List<FileDetails>> LocalFilesToDownloadList(string downloadPath)
-        {
-            List<FileDetails> filesToDownload = new List<FileDetails>();
-            UInt64 totalBytes = 0;
-            try
-            {
-                if (!MetaInfoDict.ContainsKey("0"))
-                {
-                    FileDetails fileDetail = new FileDetails
-                    {
-                        name = downloadPath + $"{Path.DirectorySeparatorChar}" + Encoding.ASCII.GetString(MetaInfoDict["name"]),
-                        length = UInt64.Parse(Encoding.ASCII.GetString(MetaInfoDict["length"])),
-                        offset = 0
-                    };
-                    filesToDownload.Add(fileDetail);
-                    totalBytes = fileDetail.length;
-                }
-                else
-                {
-                    UInt32 fileNo = 0;
-
-                    string name = Encoding.ASCII.GetString(MetaInfoDict["name"]);
-                    while (MetaInfoDict.ContainsKey(fileNo.ToString()))
-                    {
-                        string[] details = Encoding.ASCII.GetString(MetaInfoDict[fileNo.ToString()]).Split(',');
-                        FileDetails fileDetail = new FileDetails
-                        {
-                            name = downloadPath + $"{Path.DirectorySeparatorChar}" + name + details[0],
-                            length = UInt64.Parse(details[1]),
-                            md5sum = details[2],
-                            offset = totalBytes
-                        };
-                        filesToDownload.Add(fileDetail);
-                        fileNo++;
-                        totalBytes += fileDetail.length;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list." + ex.Message);
-            }
-            return (totalBytes, filesToDownload);
-        }
     }
 }

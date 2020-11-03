@@ -16,61 +16,31 @@ using System.Collections.Concurrent;
 
 namespace BitTorrentLibrary
 {
-    public interface IPeer
-    {
-        bool Connected { get; set; }
-        byte[] RemotePeerID { get; set; }
-        TorrentContext Tc { get; set; }
-        byte[] RemotePieceBitfield { get; set; }
-        PieceBuffer AssembledPiece { get; set; }
-        string Ip { get; }
-        uint Port { get; }
-        Task AssemblerTask { get; set; }
-        bool AmInterested { get; set; }
-        bool AmChoking { get; set; }
-        ManualResetEvent PeerChoking { get; }
-        bool PeerInterested { get; set; }
-        CancellationTokenSource CancelTaskSource { get; set; }
-        ManualResetEvent WaitForPieceAssembly { get; }
-        ManualResetEvent BitfieldReceived { get; }
-        uint NumberOfMissingPieces { get; set; }
-        byte[] ReadBuffer { get; }
-        uint PacketLength { get; }
-
-        void Close();
-        void Connect(ConcurrentDictionary<string, TorrentContext> torrents);
-        bool IsPieceOnRemotePeer(uint pieceNumber);
-        int PeerRead(byte[] buffer, int length);
-        void PeerWrite(byte[] buffer);
-        void PlaceBlockIntoPiece(uint pieceNumber, uint blockOffset);
-        void SetPieceOnRemotePeer(uint pieceNumber);
-        void SetTorrentContext(TorrentContext tc);
-    }
-
+  
     /// <summary>
     /// Peer.
     /// </summary>
-    public class Peer : IPeer
+    public class Peer
     {
         private readonly PeerNetwork _network;                           // Network layer
-        public bool Connected { get; set; }                              // == true connected to remote peer
-        public byte[] RemotePeerID { get; set; }                         // Id of remote peer
-        public TorrentContext Tc { get; set; }                           // Torrent torrent context
-        public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
-        public PieceBuffer AssembledPiece { get; set; }                  // Assembled pieces buffer
-        public string Ip { get; }                                        // Remote peer ip
-        public uint Port { get; }                                        // peer Port
-        public Task AssemblerTask { get; set; }                          // Peer piece assembly task
-        public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
-        public bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
-        public ManualResetEvent PeerChoking { get; }                     // == true (set) then remote peer is choking client (local host)
-        public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
-        public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
-        public ManualResetEvent WaitForPieceAssembly { get; }            // When event set then piece has been fully assembled
-        public ManualResetEvent BitfieldReceived { get; }                // When event set then peer has recieved bitfield from remote peer
-        public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
-        public byte[] ReadBuffer => _network.ReadBuffer;                 // Network read buffer
-        public UInt32 PacketLength => _network.PacketLength;             // Current read packet length
+        internal bool Connected { get; set; }                              // == true connected to remote peer
+        internal byte[] RemotePeerID { get; set; }                         // Id of remote peer
+        internal TorrentContext Tc { get; set; }                           // Torrent torrent context
+        internal byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
+        internal PieceBuffer AssembledPiece { get; set; }                  // Assembled pieces buffer
+        internal string Ip { get; }                                        // Remote peer ip
+        internal uint Port { get; }                                        // peer Port
+        internal Task AssemblerTask { get; set; }                          // Peer piece assembly task
+        internal bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
+        internal bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
+        internal ManualResetEvent PeerChoking { get; }                     // == true (set) then remote peer is choking client (local host)
+        internal bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
+        internal CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
+        internal ManualResetEvent WaitForPieceAssembly { get; }            // When event set then piece has been fully assembled
+        internal ManualResetEvent BitfieldReceived { get; }                // When event set then peer has recieved bitfield from remote peer
+        internal UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
+        internal byte[] ReadBuffer => _network.ReadBuffer;                 // Network read buffer
+        internal UInt32 PacketLength => _network.PacketLength;             // Current read packet length
 
         /// <summary>
         /// Setup data and resources needed by peer.

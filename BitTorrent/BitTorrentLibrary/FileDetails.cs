@@ -12,7 +12,7 @@ using System;
 
 namespace BitTorrentLibrary
 {
-    public struct FileDetails
+    internal struct FileDetails
     {
         public string name;     // File file name path
         public UInt64 length;   // File length in bytes

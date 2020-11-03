@@ -13,7 +13,7 @@ using System;
 
 namespace BitTorrentLibrary
 {
-    public interface IAnnouncer
+    internal interface IAnnouncer
     {
         AnnounceResponse Announce(Tracker tracker);
     }

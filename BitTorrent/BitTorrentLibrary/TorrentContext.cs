@@ -30,75 +30,38 @@ namespace BitTorrentLibrary
         public UInt32 pieceLength;      // Piece length in bytes
     }
 
-    public interface ITorrentContext
-    {
-        AsyncQueue<PieceBuffer> PieceWriteQueue { get; }
-        AsyncQueue<PieceRequest> PieceRequestQueue { get; }
-        ulong TotalBytesDownloaded { get; set; }
-        ulong TotalBytesToDownload { get; set; }
-        ulong TotalBytesUploaded { get; set; }
-        uint PieceLength { get; }
-        byte[] PiecesInfoHash { get; }
-        uint NumberOfPieces { get; }
-        Selector PieceSelector { get; }
-        ManualResetEvent DownloadFinished { get; }
-        byte[] Bitfield { get; }
-        List<FileDetails> FilesToDownload { get; }
-        byte[] InfoHash { get; }
-        string TrackerURL { get; }
-        uint MissingPiecesCount { get; set; }
-        int MaximumSwarmSize { get; }
-        ConcurrentDictionary<string, Peer> PeerSwarm { get; }
-        TorrentStatus Status { get; set; }
-        Tracker MainTracker { get; set; }
-        string FileName { get; set; }
-        DownloadCompleteCallBack CallBack { get; set; }
-        object CallBackData { get; set; }
-
-        ulong BytesLeftToDownload();
-        bool CheckPieceHash(uint pieceNumber, byte[] pieceBuffer, uint numberOfBytes);
-        uint GetBlocksInPiece(uint pieceNumber);
-        uint GetPieceLength(uint peiceNumber);
-        bool IsPieceLocal(uint pieceNumber);
-        bool IsPieceMissing(uint pieceNumber);
-        void MarkPieceLocal(uint pieceNumber, bool local);
-        void MarkPieceMissing(uint pieceNumber, bool missing);
-        void MergePieceBitfield(Peer remotePeer);
-        void SetPieceLength(uint pieceNumber, uint pieceLength);
-    }
-
     /// <summary>
     /// Torrent context for a torrent file.
     /// </summary>
-    public class TorrentContext : ITorrentContext
+    public class TorrentContext
     {
         private readonly SHA1 _SHA1;                                        // Object to create SHA1 piece info hash
         private readonly Object _dcLock = new object();                     // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                             // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                            // Piece information
-        public AsyncQueue<PieceBuffer> PieceWriteQueue { get; }             // Piece buffer disk write queue
-        public AsyncQueue<PieceRequest> PieceRequestQueue { get; }          // Piece request queue
-        public UInt64 TotalBytesDownloaded { get; set; }                    // Total bytes downloaded
-        public UInt64 TotalBytesToDownload { get; set; }                    // Total bytes in torrent
-        public UInt64 TotalBytesUploaded { get; set; }                      // Total bytes uploaded to all peers from torrent
-        public uint PieceLength { get; }                                    // Length of piece in bytese
-        public byte[] PiecesInfoHash { get; }                               // Pieces infohash from torrent file
-        public uint NumberOfPieces { get; }                                 // Number of pieces into torrent
-        public Selector PieceSelector { get; }                              // Piece selector
-        public ManualResetEvent DownloadFinished { get; }                   // == Set then download finished
-        public byte[] Bitfield { get; }                                     // Bitfield for current torrent on disk
-        public List<FileDetails> FilesToDownload { get; }                   // Local files in torrent
-        public byte[] InfoHash { get; }                                     // Torrent info hash
-        public string TrackerURL { get; }                                   // Main Tracker URL
-        public uint MissingPiecesCount { get; set; } = 0;                   // Missing piece count
-        public int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize;  // Maximim swarm size
-        public ConcurrentDictionary<string, Peer> PeerSwarm { get; }        // Current peer swarm
-        public TorrentStatus Status { get; set; }                           // Torrent status
-        public Tracker MainTracker { get; set; }                            // Main tracker assigned to torrent
-        public string FileName { get; set; }                                // Torrent file name
-        public HashSet<string> PeerFilter;                                  // Peers that are not interes 
-        public DownloadCompleteCallBack CallBack { get; set; }
-        public object CallBackData { get; set; }
+        internal AsyncQueue<PieceBuffer> PieceWriteQueue { get; }             // Piece buffer disk write queue
+        internal AsyncQueue<PieceRequest> PieceRequestQueue { get; }          // Piece request queue
+        internal uint PieceLength { get; }                                    // Length of piece in bytese
+        internal byte[] PiecesInfoHash { get; }                               // Pieces infohash from torrent file
+        internal uint NumberOfPieces { get; }                                 // Number of pieces into torrent
+        internal Selector PieceSelector { get; }                              // Piece selector
+        internal ManualResetEvent DownloadFinished { get; }                   // == Set then download finished
+        internal byte[] Bitfield { get; }                                     // Bitfield for current torrent on disk
+        internal List<FileDetails> FilesToDownload { get; }                   // Local files in torrent
+        internal byte[] InfoHash { get; }                                     // Torrent info hash
+        internal string TrackerURL { get; }                                   // Main Tracker URL
+        internal uint MissingPiecesCount { get; set; } = 0;                   // Missing piece count
+        internal int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize;  // Maximim swarm size
+        internal ConcurrentDictionary<string, Peer> PeerSwarm { get; }        // Current peer swarm
+        internal Tracker MainTracker { get; set; }                            // Main tracker assigned to torrent
+        internal HashSet<string> PeerFilter;                                  // Peers that are not interested
+        public TorrentStatus Status { get; set; }                             // Torrent status
+        public string FileName { get; set; }                                  // Torrent file name
+        public UInt64 TotalBytesDownloaded { get; set; }                      // Total bytes downloaded
+        public UInt64 TotalBytesToDownload { get; set; }                      // Total bytes in torrent
+        public UInt64 TotalBytesUploaded { get; set; }                        // Total bytes uploaded to all peers from torrent
+        public DownloadCompleteCallBack CallBack { get; set; }                // Download complete callback
+        public object CallBackData { get; set; }                              // Download complete callback data
 
         /// <summary>
         /// Setup data and resources needed by torrent context.

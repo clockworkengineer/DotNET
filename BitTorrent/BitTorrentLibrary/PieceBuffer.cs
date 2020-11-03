@@ -14,23 +14,11 @@ using System.Linq;
 
 namespace BitTorrentLibrary
 {
-    public interface IPieceBuffer
-    {
-        TorrentContext Tc { get; }
-        uint Length { get; }
-        byte[] Buffer { get; }
-        uint Number { get; set; }
-        bool AllBlocksThere { get; }
-
-        void AddBlockFromPacket(byte[] packetBuffer, uint blockNumber);
-        void Reset();
-        void SetBlocksPresent(uint pieceLength);
-    }
 
     /// <summary>
     /// Assembled piece buffer.
     /// </summary>
-    public class PieceBuffer : IPieceBuffer
+    internal class PieceBuffer
     {
         private bool[] _blockPresent;                   // == true then block present
         private uint _blockCount;                       // Unfilled block spaces in buffer

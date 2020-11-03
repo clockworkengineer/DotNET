@@ -23,26 +23,14 @@ namespace BitTorrentLibrary
 {
     public delegate void ProgessCallBack(Object callBackData); // Download progress callback
 
-    public interface IDownloader
-    {
-        AsyncQueue<PieceBuffer> PieceWriteQueue { get; }
-        AsyncQueue<PieceRequest> PieceRequestQueue { get; }
-        ProgessCallBack CallBack { get; set; }
-        object CallBackData { get; set; }
-
-        void CreateLocalTorrentStructure(TorrentContext tc);
-        void CreateTorrentBitfield(TorrentContext tc);
-        void FullyDownloadedTorrentBitfield(TorrentContext tc);
-    }
-
     /// <summary>
     /// File downloader.
     /// </summary>
-    public class Downloader : IDownloader
+    public class Downloader
     {
         private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
-        public AsyncQueue<PieceBuffer> PieceWriteQueue { get; }        // Piece buffer write queue
-        public AsyncQueue<PieceRequest> PieceRequestQueue { get; }     // Task request read queue
+        internal AsyncQueue<PieceBuffer> PieceWriteQueue { get; }      // Piece buffer write queue
+        internal AsyncQueue<PieceRequest> PieceRequestQueue { get; }   // Task request read queue
         public ProgessCallBack CallBack { get; set; }                  // Download progress function
         public Object CallBackData { get; set; }                       // Download progress function data
 

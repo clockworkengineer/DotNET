@@ -11,7 +11,7 @@ using System;
 
 namespace BitTorrentLibrary
 {
-    public struct PieceRequest
+    internal struct PieceRequest
     {
         public Peer remotePeer;     // Remote peer asking request
         public UInt32 pieceNumber;  // Piece number
