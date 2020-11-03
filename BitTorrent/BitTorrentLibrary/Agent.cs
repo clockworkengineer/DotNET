@@ -20,36 +20,21 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.Sockets;
 
-namespace BitTorrentLibrary
-{
-    public interface IAgent
-    {
-        AsyncQueue<PeerDetails> PeerSwarmQueue { get; }
+namespace BitTorrentLibrary {
 
-        void Add(TorrentContext tc);
-        void Close(TorrentContext tc);
-        void Download(TorrentContext tc);
-        Task DownloadAsync(TorrentContext tc);
-        TorrentDetails GetTorrentDetails(TorrentContext tc);
-        void Pause(TorrentContext tc);
-        void Remove(TorrentContext tc);
-        void ShutDown();
-        void Start(TorrentContext tc);
-        void Startup();
-    }
 
     /// <summary>
     /// Agent class definition.
     /// </summary>
-    public class Agent : IAgent
+    public class Agent
     {
-        readonly ConcurrentDictionary<string, TorrentContext> _torrents;// Torrents downloading/seeding
-        private bool _agentRunning = false;                             // == true while agent is up and running.
-        private readonly HashSet<string> _deadPeers;                    // Dead peers list
-        private readonly Assembler _pieceAssembler;                     // Piece assembler for agent
-        private Socket _listenerSocket;                                 // Connection listener socket
-        private readonly CancellationTokenSource _cancelTaskSource;     // Cancel all agent tasks
-        public AsyncQueue<PeerDetails> PeerSwarmQueue { get; }          // Queue of peers to add to swarm
+        private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading/seeding
+        private bool _agentRunning = false;                                      // == true while agent is up and running.
+        private readonly HashSet<string> _deadPeers;                             // Dead peers list
+        private readonly Assembler _pieceAssembler;                              // Piece assembler for agent
+        private Socket _listenerSocket;                                          // Connection listener socket
+        private readonly CancellationTokenSource _cancelTaskSource;              // Cancel all agent tasks
+        private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;                 // Queue of peers to add to swarm
 
         /// <summary>
         /// Start assembly task for connection with remote peer. If for any reason
@@ -95,7 +80,7 @@ namespace BitTorrentLibrary
             {
                 while (_agentRunning)
                 {
-                    PeerDetails peer = await PeerSwarmQueue.DequeueAsync(cancelTask);
+                    PeerDetails peer = await _peerSwarmQeue.DequeueAsync(cancelTask);
                     try
                     {
                         if (_torrents.TryGetValue(Util.InfoHashToString(peer.infoHash), out TorrentContext tc))
@@ -169,7 +154,7 @@ namespace BitTorrentLibrary
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
             _pieceAssembler = pieceAssembler;
-            PeerSwarmQueue = new AsyncQueue<PeerDetails>();
+            _peerSwarmQeue = new AsyncQueue<PeerDetails>();
             _deadPeers = new HashSet<string>();
             _cancelTaskSource = new CancellationTokenSource();
             _deadPeers.Add("192.168.1.1"); // WITHOUT THIS HANGS (FOR ME)
@@ -371,6 +356,20 @@ namespace BitTorrentLibrary
                 swarmSize = (UInt32)tc.PeerSwarm.Count,
                 deadPeers = (UInt32)_deadPeers.Count
             };
+        }
+        /// <summary>
+        /// Attach peer swarm queue to atart recieving peers.
+        /// </summary>
+        /// <param name="tracker"></param>
+        public void AttachPeerSwarmQueue(Tracker tracker) {
+            tracker._peerSwarmQueue = _peerSwarmQeue;
+        }
+        /// <summary>
+        /// Detach peer swarm than queue.
+        /// </summary>
+        /// <param name="tracker"></param>
+        public void DetachPeerSwarmQueu(Tracker tracker) {
+            tracker._peerSwarmQueue = null;
         }
     }
 }

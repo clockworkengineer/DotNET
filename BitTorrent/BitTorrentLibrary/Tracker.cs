@@ -18,34 +18,7 @@ namespace BitTorrentLibrary
 {
     public delegate void TrackerCallBack(Object callBackData);            // Tracker callback
 
-    public interface ITracker
-    {
-        Tracker.TrackerEvent Event { get; set; }
-        string PeerID { get; }
-        uint Port { get; }
-        string Ip { get; set; }
-        uint Compact { get; }
-        uint NoPeerID { get; }
-        string Key { get; }
-        string TrackerID { get; set; }
-        int NumWanted { get; set; }
-        byte[] InfoHash { get; }
-        string TrackerURL { get; }
-        uint Interval { get; set; }
-        uint MinInterval { get; set; }
-        TrackerCallBack CallBack { get; set; }
-        object CallBackData { get; set; }
-        ulong Downloaded { get; }
-        ulong Left { get; }
-        ulong Uploaded { get; }
-
-        void ChangeStatus(Tracker.TrackerEvent status);
-        void SetPeerSwarmQueue(AsyncQueue<PeerDetails> peerSwarmQueue);
-        void StartAnnouncing();
-        void StopAnnouncing();
-    }
-
-    public class Tracker : ITracker
+    public class Tracker
     {
         /// <summary>
         /// Update swarm of active peers delegate
@@ -67,7 +40,7 @@ namespace BitTorrentLibrary
         private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         protected Timer _announceTimer;                         // Timer for sending tracker announce events
-        private AsyncQueue<PeerDetails> _peerSwarmQueue;        // Peers to add to swarm queue
+        internal AsyncQueue<PeerDetails> _peerSwarmQueue;       // Peers to add to swarm queue
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
@@ -186,14 +159,6 @@ namespace BitTorrentLibrary
                 Log.Logger.Info("Main tracker is HTTP...");
                 _announcer = new AnnouncerHTTP(TrackerURL);
             }
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="peerSwarmQueue"></param>
-        public void SetPeerSwarmQueue(AsyncQueue<PeerDetails> peerSwarmQueue)
-        {
-            _peerSwarmQueue = peerSwarmQueue;
         }
         /// <summary>
         /// Change tracker event status and send to server.

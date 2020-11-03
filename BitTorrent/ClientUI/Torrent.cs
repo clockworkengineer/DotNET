@@ -169,7 +169,7 @@ namespace ClientUI
                     CallBackData = main
                 };
 
-                _tracker.SetPeerSwarmQueue(main.DownloadAgent.PeerSwarmQueue);
+                main.DownloadAgent.AttachPeerSwarmQueue(_tracker);
 
                 _tracker.StartAnnouncing();
 

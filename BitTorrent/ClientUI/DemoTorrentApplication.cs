@@ -142,7 +142,7 @@ namespace ClientUI
 
                 Tracker seederTracker = new Tracker(tc);
 
-                seederTracker.SetPeerSwarmQueue(DownloadAgent.PeerSwarmQueue);
+                DownloadAgent.AttachPeerSwarmQueue(seederTracker);
 
                 seederTracker.StartAnnouncing();
 
