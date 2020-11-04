@@ -134,7 +134,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (Agent) Error Error :" + ex.Message);
+                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
             }
 
             _listenerSocket?.Close();

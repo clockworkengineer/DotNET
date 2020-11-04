@@ -18,10 +18,10 @@ using System.Threading;
 
 namespace BitTorrentLibrary
 {
-  
+
     public class Selector
     {
-        private readonly Object _nextPieceLock;     // Missing access lock
+        private readonly Mutex _nextPieceMutex;     // Next piece mutex guard
 
         /// <summary>
         /// Return next suggested piece to download.
@@ -52,7 +52,7 @@ namespace BitTorrentLibrary
         /// <param name="dc"></param>
         public Selector()
         {
-            _nextPieceLock = new Object();
+            _nextPieceMutex = new Mutex();
         }
         /// <summary>
         /// Selects the next piece to be downloaded.
@@ -64,28 +64,33 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool NextPiece(Peer remotePeer, ref UInt32 nextPiece, CancellationToken cancelTask)
         {
+            bool pieceSuggested = false;
+
             try
             {
-                lock (_nextPieceLock)
-                {
-                    Int64 suggestedPiece = GetSuggestedPiece(remotePeer, 0);
+                _nextPieceMutex.WaitOne();
 
-                    if (suggestedPiece != -1)
-                    {
-                        nextPiece = (UInt32)suggestedPiece;
-                        remotePeer.Tc.MarkPieceMissing(nextPiece, false);
-                        return true;
-                    }
-                    return false;
+                Int64 suggestedPiece = GetSuggestedPiece(remotePeer, 0);
+
+                if (suggestedPiece != -1)
+                {
+                    nextPiece = (UInt32)suggestedPiece;
+                    remotePeer.Tc.MarkPieceMissing(nextPiece, false);
+                    pieceSuggested = true;
                 }
 
             }
             catch (Exception ex)
             {
+                _nextPieceMutex.ReleaseMutex();
                 // Pass unknown exception up
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (Selector) Error: " + ex.Message);
             }
+
+            _nextPieceMutex.ReleaseMutex();
+
+            return pieceSuggested;
 
         }
         /// <summary>
