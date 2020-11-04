@@ -258,39 +258,32 @@ namespace BitTorrentLibrary
         /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
         public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer, Manager manager)
         {
-            try
+
+            bool connected = false;
+            byte[] remotePeerID = new byte[Constants.PeerIDLength];
+
+            byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
+            UInt32 bytesRead = (UInt32)remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+
+            foreach (var tc in manager.TorrentList)
             {
-                bool connected = false;
-                byte[] remotePeerID = new byte[Constants.PeerIDLength];
-
-                byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
-                UInt32 bytesRead = (UInt32)remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
-
-                foreach (var tc in manager.TorrentList)
+                List<byte> handshakePacket = BuildInitialHandshake(tc.InfoHash);
+                connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out remotePeerID);
+                if (connected)
                 {
-                    List<byte> handshakePacket = BuildInitialHandshake(tc.InfoHash);
-                    connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out remotePeerID);
-                    if (connected)
-                    {
-                        remotePeer.PeerWrite(handshakePacket.ToArray());
-                        remotePeer.SetTorrentContext(tc);
-                    }
+                    remotePeer.PeerWrite(handshakePacket.ToArray());
+                    remotePeer.SetTorrentContext(tc);
                 }
-                if (!connected)
-                {
-                    Log.Logger.Debug($"Remote peer {remotePeerID} tried to connect with invalid infohash.");
-                }
-
-                return (connected, remotePeerID);
-
             }
-            catch (Exception ex)
+            if (!connected)
             {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
+                Log.Logger.Debug($"Remote peer {remotePeerID} tried to connect with invalid infohash.");
             }
+
+            return (connected, remotePeerID);
 
         }
+
         /// <summary>
         /// Perform initial handshake with remote peer that the local client connected to.
         /// </summary>
@@ -300,25 +293,19 @@ namespace BitTorrentLibrary
         {
             bool connected;
             byte[] remotePeerID;
-            try
-            {
-                List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.InfoHash);
 
-                remotePeer.PeerWrite(handshakePacket.ToArray());
+            List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.InfoHash);
 
-                byte[] handshakeResponse = new byte[handshakePacket.Count];
+            remotePeer.PeerWrite(handshakePacket.ToArray());
 
-                remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+            byte[] handshakeResponse = new byte[handshakePacket.Count];
 
-                connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
+            remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+
+            connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
 
             return (connected, remotePeerID);
+
         }
         /// <summary>
         /// Route the peer message to process.
@@ -326,26 +313,16 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         public static void RemotePeerMessageProcess(Peer remotePeer)
         {
-            try
-            {
-                if (remotePeer.Connected)
-                {
-                    byte command = remotePeer.ReadBuffer[0];
-                    if ((command >= CHOKE) && (command <= CANCEL))
-                    {
-                        _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
-                    }
-                    else
-                    {
-                        Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
-                    }
-                }
 
-            }
-            catch (Exception ex)
+
+            byte command = remotePeer.ReadBuffer[0];
+            if ((command >= CHOKE) && (command <= CANCEL))
             {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
+                _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
+            }
+            else
+            {
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
             }
         }
         /// <summary>
@@ -354,31 +331,24 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         public static void Choke(Peer remotePeer)
         {
-            try
+
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
+                if (!remotePeer.AmChoking)
                 {
-                    if (!remotePeer.AmChoking)
-                    {
-                        Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CHOKE");
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CHOKE");
 
-                        List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                        requestPacket.AddRange(Util.PackUInt32(1));
-                        requestPacket.Add(CHOKE);
+                    requestPacket.AddRange(Util.PackUInt32(1));
+                    requestPacket.Add(CHOKE);
 
-                        remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
 
-                        remotePeer.AmChoking = true;
-                    }
+                    remotePeer.AmChoking = true;
                 }
+            }
 
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
         }
         /// <summary>
         /// Unchoke the specified remote peer.
@@ -386,96 +356,78 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         public static void Unchoke(Peer remotePeer)
         {
-            try
+
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
+                if (remotePeer.AmChoking)
                 {
-                    if (remotePeer.AmChoking)
-                    {
-                        Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNCHOKE");
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNCHOKE");
 
-                        List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                        requestPacket.AddRange(Util.PackUInt32(1));
-                        requestPacket.Add(UNCHOKE);
+                    requestPacket.AddRange(Util.PackUInt32(1));
+                    requestPacket.Add(UNCHOKE);
 
-                        remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
 
-                        remotePeer.AmChoking = false;
-                    }
+                    remotePeer.AmChoking = false;
                 }
+            }
 
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
         }
+
         /// <summary>
         /// Signal interest the specified remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public static void Interested(Peer remotePeer)
         {
-            try
+
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
+                if (!remotePeer.AmInterested)
                 {
-                    if (!remotePeer.AmInterested)
-                    {
-                        Log.Logger.Info($"{RemotePeerID(remotePeer)}TX INTERESTED");
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX INTERESTED");
 
-                        List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                        requestPacket.AddRange(Util.PackUInt32(1));
-                        requestPacket.Add(INTERESTED);
+                    requestPacket.AddRange(Util.PackUInt32(1));
+                    requestPacket.Add(INTERESTED);
 
-                        remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
 
-                        remotePeer.AmInterested = true;
-                    }
+                    remotePeer.AmInterested = true;
                 }
+            }
 
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
         }
+
         /// <summary>
         /// Signal uninterest the specified remote peer.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
         public static void Uninterested(Peer remotePeer)
         {
-            try
+
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
+                if (remotePeer.AmInterested)
                 {
-                    if (remotePeer.AmInterested)
-                    {
-                        Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNINTERESTED");
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX UNINTERESTED");
 
-                        List<byte> requestPacket = new List<byte>();
+                    List<byte> requestPacket = new List<byte>();
 
-                        requestPacket.AddRange(Util.PackUInt32(1));
-                        requestPacket.Add(UNINTERESTED);
+                    requestPacket.AddRange(Util.PackUInt32(1));
+                    requestPacket.Add(UNINTERESTED);
 
-                        remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.PeerWrite(requestPacket.ToArray());
 
-                        remotePeer.AmInterested = false;
-                    }
+                    remotePeer.AmInterested = false;
                 }
+            }
 
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
         }
+
         /// <summary>
         /// Signal that have the piece to specified remote peer.
         /// </summary>
@@ -483,27 +435,20 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public static void Have(Peer remotePeer, UInt32 pieceNumber)
         {
-            try
+
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
-                {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX HAVE {pieceNumber}");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX HAVE {pieceNumber}");
 
-                    List<byte> requestPacket = new List<byte>();
+                List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32(5));
-                    requestPacket.Add(HAVE);
-                    requestPacket.AddRange(Util.PackUInt32(pieceNumber));
+                requestPacket.AddRange(Util.PackUInt32(5));
+                requestPacket.Add(HAVE);
+                requestPacket.AddRange(Util.PackUInt32(pieceNumber));
 
-                    remotePeer.PeerWrite(requestPacket.ToArray());
-                }
-
+                remotePeer.PeerWrite(requestPacket.ToArray());
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
+
         }
         /// <summary>
         /// Send current piece bitfield to remote peer.
@@ -512,29 +457,22 @@ namespace BitTorrentLibrary
         /// <param name="bitField">Bit field.</param>
         public static void Bitfield(Peer remotePeer, byte[] bitField)
         {
-            try
+
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
-                {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX BITFIELD");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX BITFIELD");
 
-                    DumpBitfield(bitField);
+                DumpBitfield(bitField);
 
-                    List<byte> requestPacket = new List<byte>();
+                List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32((UInt32)bitField.Length + 1));
-                    requestPacket.Add(BITFIELD);
-                    requestPacket.AddRange(bitField);
+                requestPacket.AddRange(Util.PackUInt32((UInt32)bitField.Length + 1));
+                requestPacket.Add(BITFIELD);
+                requestPacket.AddRange(bitField);
 
-                    remotePeer.PeerWrite(requestPacket.ToArray());
-                }
-
+                remotePeer.PeerWrite(requestPacket.ToArray());
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
+
         }
         /// <summary>
         /// Request the specified piece number, block offset and block size from remote peer.
@@ -545,30 +483,24 @@ namespace BitTorrentLibrary
         /// <param name="blockSize">Block size.</param>
         public static void Request(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
         {
-            try
+
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
-                {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX REQUEST Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX REQUEST Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
-                    List<byte> requestPacket = new List<byte>();
+                List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32(13));
-                    requestPacket.Add(REQUEST);
-                    requestPacket.AddRange(Util.PackUInt32(pieceNumber));
-                    requestPacket.AddRange(Util.PackUInt32(blockOffset));
-                    requestPacket.AddRange(Util.PackUInt32(blockSize));
+                requestPacket.AddRange(Util.PackUInt32(13));
+                requestPacket.Add(REQUEST);
+                requestPacket.AddRange(Util.PackUInt32(pieceNumber));
+                requestPacket.AddRange(Util.PackUInt32(blockOffset));
+                requestPacket.AddRange(Util.PackUInt32(blockSize));
 
-                    remotePeer.PeerWrite(requestPacket.ToArray());
-                }
-
+                remotePeer.PeerWrite(requestPacket.ToArray());
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
+
         }
+
         /// <summary>
         /// Return specified piece, block offset plus its data to remote peer.
         /// </summary>
@@ -578,29 +510,22 @@ namespace BitTorrentLibrary
         /// <param name="blockData">Block data.</param>
         public static void Piece(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, byte[] blockData)
         {
-            try
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
-                {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX PIECE {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockData.Length}");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX PIECE {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockData.Length}");
 
-                    List<byte> requestPacket = new List<byte>();
+                List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32((UInt32)blockData.Length + 9));
-                    requestPacket.Add(PIECE);
-                    requestPacket.AddRange(Util.PackUInt32(pieceNumber));
-                    requestPacket.AddRange(Util.PackUInt32(blockOffset));
-                    requestPacket.AddRange(blockData);
+                requestPacket.AddRange(Util.PackUInt32((UInt32)blockData.Length + 9));
+                requestPacket.Add(PIECE);
+                requestPacket.AddRange(Util.PackUInt32(pieceNumber));
+                requestPacket.AddRange(Util.PackUInt32(blockOffset));
+                requestPacket.AddRange(blockData);
 
-                    remotePeer.PeerWrite(requestPacket.ToArray());
-                }
-
+                remotePeer.PeerWrite(requestPacket.ToArray());
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
+
+
         }
         /// <summary>
         /// Cancel the specified piece, block offset and block size request to remote peer.
@@ -611,27 +536,21 @@ namespace BitTorrentLibrary
         /// <param name="blockData">Block data.</param>
         public static void Cancel(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
         {
-            try
+
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
-                {
-                    Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CANCEL Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
+                Log.Logger.Info($"{RemotePeerID(remotePeer)}TX CANCEL Piece {pieceNumber}  BlockOffset {blockOffset} BlockSize {blockSize}");
 
-                    List<byte> requestPacket = new List<byte>();
+                List<byte> requestPacket = new List<byte>();
 
-                    requestPacket.AddRange(Util.PackUInt32(13));
-                    requestPacket.Add(CANCEL);
-                    requestPacket.AddRange(Util.PackUInt32(pieceNumber));
-                    requestPacket.AddRange(Util.PackUInt32(blockOffset));
-                    requestPacket.AddRange(Util.PackUInt32(blockSize));
-                }
-
+                requestPacket.AddRange(Util.PackUInt32(13));
+                requestPacket.Add(CANCEL);
+                requestPacket.AddRange(Util.PackUInt32(pieceNumber));
+                requestPacket.AddRange(Util.PackUInt32(blockOffset));
+                requestPacket.AddRange(Util.PackUInt32(blockSize));
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (PWP) Error: " + ex.Message);
-            }
+
         }
+
     }
 }

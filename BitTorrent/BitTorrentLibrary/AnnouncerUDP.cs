@@ -60,10 +60,9 @@ namespace BitTorrentLibrary
                     throw new Exception("Could not connect to UDP tracker server.");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Log.Logger.Debug(ex.Message);
-                throw new Error("BitTorrent (TrackerUDP) Error :" + ex.Message);
+                throw;
             }
         }
         /// <summary>
@@ -100,11 +99,6 @@ namespace BitTorrentLibrary
                 if (!_connected)
                 {
                     Connect();
-                }
-
-                if (!_connected)
-                {
-                    throw new Exception("Could not connect to remote UDP tracker.");
                 }
 
                 List<byte> announcePacket = new List<byte>();

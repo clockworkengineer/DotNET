@@ -156,9 +156,8 @@ namespace BitTorrentLibrary
                 }
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Log.Logger.Error(ex.Message);
                 if (!remotePeer.Tc.DownloadFinished.WaitOne(0))
                 {
                     QeueAssembledPieceToDisk(remotePeer, nextPiece, remotePeer.AssembledPiece.AllBlocksThere);
@@ -175,32 +174,24 @@ namespace BitTorrentLibrary
         private void ProcessRemotePeerRequests(Peer remotePeer, CancellationToken cancelTask)
         {
 
-            try
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Connected)
+                if (remotePeer.NumberOfMissingPieces != 0)
                 {
-                    if (remotePeer.NumberOfMissingPieces != 0)
-                    {
-                        WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
-                        PWP.Uninterested(remotePeer);
-                        PWP.Unchoke(remotePeer);
-                        WaitHandle.WaitAll(waitHandles);
-                    }
-                    else
-                    {
-                        // SHOULD ADD TO DEAD PEERS LIST HERE TO (NEED TO MOVE IT TO TC)
-                        Log.Logger.Info($"Remote Peer doesn't need pieces. Closing the connection.");
-                        remotePeer.Close();
-                    }
+                    WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
+                    PWP.Uninterested(remotePeer);
+                    PWP.Unchoke(remotePeer);
+                    WaitHandle.WaitAll(waitHandles);
+                }
+                else
+                {
+                    // SHOULD ADD TO DEAD PEERS LIST HERE TO (NEED TO MOVE IT TO TC)
+                    Log.Logger.Info($"Remote Peer doesn't need pieces. Closing the connection.");
+                    remotePeer.Close();
                 }
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Error(ex.Message);
-                throw;
-            }
-
         }
+
         /// <summary>
         /// Setup data and resources needed by assembler.
         /// </summary>
@@ -235,12 +226,12 @@ namespace BitTorrentLibrary
                     AssembleMissingPieces(remotePeer, cancelTask);
                 }
 
-                ProcessRemotePeerRequests(remotePeer,cancelTask);
+                ProcessRemotePeerRequests(remotePeer, cancelTask);
 
             }
             catch (Exception ex)
             {
-                Log.Logger.Error(ex.Message);
+                Log.Logger.Error("BitTorrent (Assembler) Error: "+ex.Message);
             }
 
             remotePeer.Close();

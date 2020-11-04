@@ -82,14 +82,7 @@ namespace BitTorrentLibrary
         /// <param name="buffer">Buffer.</param>
         public void PeerWrite(byte[] buffer)
         {
-            try
-            {
-                _network.Write(buffer);
-            }
-            catch (Exception ex)
-            {
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
-            }
+            _network.Write(buffer);
         }
 
         /// <summary>
@@ -100,14 +93,7 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int PeerRead(byte[] buffer, int length)
         {
-            try
-            {
-                return _network.Read(buffer, length);
-            }
-            catch (Exception ex)
-            {
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
-            }
+            return _network.Read(buffer, length);
         }
         /// <summary>
         ///  Connect to remote peer.
@@ -117,30 +103,24 @@ namespace BitTorrentLibrary
         {
             ValueTuple<bool, byte[]> peerResponse;
 
-            try
+            // No socket passed to constructor so need to connect to get it
+            if (_network.PeerSocket == null)
             {
-                // No socket passed to constructor so need to connect to get it
-                if (_network.PeerSocket == null)
-                {
-                    _network.Connect(Ip, Port);
-                    peerResponse = PWP.ConnectToIntialHandshake(this);
-                }
-                else
-                {
-                    peerResponse = PWP.ConnectFromIntialHandshake(this, manager);
-                }
-                if (peerResponse.Item1)
-                {
-                    RemotePeerID = peerResponse.Item2;
-                    PWP.Bitfield(this, Tc.Bitfield);
-                    Connected = true;
-                    _network.StartReads(this);
-                }
+                _network.Connect(Ip, Port);
+                peerResponse = PWP.ConnectToIntialHandshake(this);
             }
-            catch (Exception ex)
+            else
             {
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
+                peerResponse = PWP.ConnectFromIntialHandshake(this, manager);
             }
+            if (peerResponse.Item1)
+            {
+                RemotePeerID = peerResponse.Item2;
+                PWP.Bitfield(this, Tc.Bitfield);
+                Connected = true;
+                _network.StartReads(this);
+            }
+
         }
         /// <summary>
         /// Release  any peer class resources. Iam sure there is  better way than using a mutex to
@@ -149,31 +129,23 @@ namespace BitTorrentLibrary
         public void Close()
         {
             _closeMutex.WaitOne();
-            try
+
+            if (Connected)
             {
-                if (Connected)
+                Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
+                Connected = false;
+                CancelTaskSource.Cancel();
+                if (Tc.PeerSwarm.ContainsKey(Ip))
                 {
-                    Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
-                    Connected = false;
-                    CancelTaskSource.Cancel();
-                    _network.Close();
-                    if (Tc.PeerSwarm.ContainsKey(Ip))
+                    if (Tc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
                     {
-                        if (Tc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
-                        {
-                            Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
-                        }
+                        Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
                     }
-                    Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
                 }
-
+                _network.Close();
+                Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
 
-            catch (Exception ex)
-            {
-                _closeMutex.ReleaseMutex();
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
-            }
             _closeMutex.ReleaseMutex();
         }
         /// <summary>
@@ -183,14 +155,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            try
-            {
-                return (RemotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
-            }
-            catch (Exception ex)
-            {
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
-            }
+            return (RemotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
         }
         /// <summary>
         /// Sets piece bit in local bitfield to signify its presence.
@@ -198,18 +163,13 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            try
+
+            if (!IsPieceOnRemotePeer(pieceNumber))
             {
-                if (!IsPieceOnRemotePeer(pieceNumber))
-                {
-                    RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                    NumberOfMissingPieces--;
-                }
+                RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                NumberOfMissingPieces--;
             }
-            catch (Exception ex)
-            {
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
-            }
+
         }
         /// <summary>
         /// Place a block into the current piece being assembled.
@@ -218,26 +178,19 @@ namespace BitTorrentLibrary
         /// <param name="blockOffset">Block offset.</param>
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
         {
-            try
+
+            UInt32 blockNumber = blockOffset / Constants.BlockSize;
+
+            Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
+
+            AssembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
+
+            if (AssembledPiece.AllBlocksThere)
             {
-                UInt32 blockNumber = blockOffset / Constants.BlockSize;
-
-                Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
-
-                AssembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
-
-                if (AssembledPiece.AllBlocksThere)
-                {
-                    AssembledPiece.Number = pieceNumber;
-                    WaitForPieceAssembly.Set();
-                }
-            }
-
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Peer) Error: " + ex.Message);
+                AssembledPiece.Number = pieceNumber;
+                WaitForPieceAssembly.Set();
             }
         }
+
     }
 }

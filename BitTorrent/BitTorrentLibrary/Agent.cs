@@ -15,7 +15,6 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 
@@ -74,6 +73,8 @@ namespace BitTorrentLibrary
         private async Task PeerConnectCreatorTaskAsync(CancellationToken cancelTask)
         {
 
+            Log.Logger.Info("Remote peer connect creation task started.");
+
             try
             {
                 while (_agentRunning)
@@ -97,10 +98,12 @@ namespace BitTorrentLibrary
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Log.Logger.Info("Remote peer connect creation task terminated.");
+                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
             }
+
+            Log.Logger.Info("Remote peer connect creation task terminated.");
 
         }
         /// <summary>
@@ -108,6 +111,8 @@ namespace BitTorrentLibrary
         /// </summary>
         private async Task PeerListenCreatorTaskAsync(CancellationToken _)
         {
+
+            Log.Logger.Info("Remote Peer connect listener started.");
 
             try
             {
@@ -160,10 +165,18 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Startup()
         {
-            Log.Logger.Info("Starting up Torrent Agent...");
-            _agentRunning = true;
-            Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelTaskSource.Token), PeerListenCreatorTaskAsync(_cancelTaskSource.Token)));
-            Log.Logger.Info("Torrent started.");
+            try
+            {
+                Log.Logger.Info("Starting up Torrent Agent...");
+                _agentRunning = true;
+                Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelTaskSource.Token), PeerListenCreatorTaskAsync(_cancelTaskSource.Token)));
+                Log.Logger.Info("Torrent started.");
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Error("BitTorrent (Agent) Error : Failure to startup agent." + ex.Message);
+            }
         }
         /// <summary>
         /// Add torrent context to dictionary of running torrents.
@@ -223,7 +236,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failed in shutdown." + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failed to shutdown agent." + ex.Message);
             }
 
         }
@@ -261,10 +274,9 @@ namespace BitTorrentLibrary
             {
                 await Task.Run(() => Download(tc)).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : " + ex.Message);
+                throw;
             }
         }
         /// <summary>
@@ -294,7 +306,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failure to close torrent context" + ex.Message);
             }
         }
         /// <summary>
@@ -310,7 +322,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failure to start torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -326,7 +338,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failure to pause torrent context." + ex.Message);
             }
         }
         /// <summary>
