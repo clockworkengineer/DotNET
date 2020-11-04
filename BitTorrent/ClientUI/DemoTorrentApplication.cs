@@ -51,7 +51,8 @@ namespace ClientUI
         public string SeedFileDirectory { get; set; } = "";         // Directory containign torrent files that are seeding
         public string DestinationDirectory { get; set; } = "";      // Destination for torrents downloaded
         public string TorrentSourceDirectory { get; set; } = "";    // Default path for torrent field field
-        public bool SeedingMode { get; set; } = true;              // True dont check torrents disk inage on startup
+        public bool SeedingMode { get; set; } = true;               // == true dont check torrents disk inage on startup
+        public bool SeedingTorrents { get; set; } = true;          // == true load seeding torrents
 
         /// <summary>
         /// Read config settings
@@ -69,7 +70,9 @@ namespace ClientUI
                 TorrentSourceDirectory = config["TorrentSourceDirectory"];
                 DestinationDirectory = config["DestinationDirectory"];
                 SeedFileDirectory = config["SeedFileDirectory"];
-                SeedingMode = bool.Parse(config["Seeding"]);
+                SeedingMode = bool.Parse(config["SeedingMode"]);
+                SeedingTorrents = bool.Parse(config["LoadSeedingTorrents"]);
+
             }
             catch (Exception ex)
             {
@@ -134,6 +137,7 @@ namespace ClientUI
             {
 
                 MetaInfoFile _seederFile = new MetaInfoFile(file);
+
                 _seederFile.Load();
                 _seederFile.Parse();
 
@@ -264,7 +268,10 @@ namespace ClientUI
 
             DownloadAgent.Startup();
 
-            Task.Run(() => LoadSeedingTorrents());
+            if (SeedingTorrents)
+            {
+             //   Task.Run(() => LoadSeedingTorrents());
+            }
 
             MainWindow.TorrentFileText.Text = TorrentSourceDirectory;
 

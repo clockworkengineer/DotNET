@@ -25,7 +25,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Agent class definition.
     /// </summary>
-    public class Agent : IAgent
+    public class Agent
     {
         private readonly Manager _manager;                                       // Torrent context/ dead peer manager
         private bool _agentRunning = false;                                      // == true while agent is up and running.
@@ -47,7 +47,7 @@ namespace BitTorrentLibrary
 
             if (remotePeer.Connected)
             {
-                if (!remotePeer.Tc.PeerSwarm.ContainsKey(remotePeer.Ip) && remotePeer.Tc.PeerSwarm.Count < remotePeer.Tc.MaximumSwarmSize)
+                if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
                 {
                     if (remotePeer.Tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                     {
@@ -84,7 +84,7 @@ namespace BitTorrentLibrary
                         if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
                             // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                            if (!_manager.IsPeerDead(peer.ip) && !tc.PeerSwarm.ContainsKey(peer.ip) && tc.PeerSwarm.Count < tc.MaximumSwarmSize)
+                            if (!_manager.IsPeerDead(peer.ip) && tc.IsSpaceInSwarm(peer.ip))
                             {
                                 StartPieceAssemblyTask(new Peer(peer.ip, peer.port, tc, null));
                             }

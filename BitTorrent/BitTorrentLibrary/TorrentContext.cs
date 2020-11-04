@@ -339,6 +339,14 @@ namespace BitTorrentLibrary
             }
 
         }
+        /// <summary>
+        /// Check that ip not already in swarm and that maximum size hasnt been reached.
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <returns></returns>
+        internal bool IsSpaceInSwarm(string ip){
+            return !PeerSwarm.ContainsKey(ip) && (PeerSwarm.Count < MaximumSwarmSize);
+        }
 
     }
 }
