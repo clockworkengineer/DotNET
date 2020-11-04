@@ -21,6 +21,7 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class Peer
     {
+        private readonly Mutex _closeMutex;                              // Close mutex
         private readonly PeerNetwork _network;                           // Network layer
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
@@ -62,6 +63,7 @@ namespace BitTorrentLibrary
             {
                 SetTorrentContext(tc);
             }
+            _closeMutex = new Mutex();
         }
         /// <summary>
         /// Set torrent context and dependant fields.
@@ -141,34 +143,38 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Release  any peer class resources.
+        /// Release  any peer class resources. Iam sure there is  better way than using a mutex to
+        /// solve the mutual exclusion issue with
         /// </summary>
         public void Close()
         {
+            _closeMutex.WaitOne();
             try
             {
                 if (Connected)
                 {
+                    Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
                     Connected = false;
                     CancelTaskSource.Cancel();
                     _network.Close();
-                    if (Tc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
+                    if (Tc.PeerSwarm.ContainsKey(Ip))
                     {
-                        Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
+                        if (Tc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
+                        {
+                            Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
+                        }
                     }
-                    else
-                    {
-                        throw new Exception($"Could not remove peer {Ip} from swarm.");
-                    }
-                    Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}.");
+                    Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
                 }
 
             }
 
             catch (Exception ex)
             {
+                _closeMutex.ReleaseMutex();
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
+            _closeMutex.ReleaseMutex();
         }
         /// <summary>
         /// Check downloaded bitfield to see if a piece is present on a remote peer.
