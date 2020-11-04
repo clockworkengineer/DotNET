@@ -266,7 +266,7 @@ namespace BitTorrentLibrary
                 byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
                 UInt32 bytesRead = (UInt32)remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
-                foreach (var tc in manager.GetTorrentList())
+                foreach (var tc in manager.TorrentList)
                 {
                     List<byte> handshakePacket = BuildInitialHandshake(tc.InfoHash);
                     connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out remotePeerID);

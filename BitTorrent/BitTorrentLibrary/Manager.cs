@@ -13,28 +13,32 @@ using System.Net.Mime;
 //
 
 using System;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Linq;
-using System.Net.Sockets;
+
 namespace BitTorrentLibrary
 {
     public class Manager
     {
-        private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading/seeding
+        private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading
+        private readonly HashSet<string> _deadPeers;                             // Dead peers list
+        internal Int32 DeadPeerCount => _deadPeers.Count;                        // Number of dead 
+        internal ICollection<TorrentContext> TorrentList => _torrents.Values;    // List of torrent contexts
+
         public Manager()
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
+            _deadPeers = new HashSet<string>
+            {
+                "192.168.1.1" // WITHOUT THIS HANGS (FOR ME)
+            };
         }
         /// <summary>
         /// 
         /// </summary>
         /// <param name="infohash"></param>
         /// <returns></returns>
-        internal bool Get(byte[] infohash, out TorrentContext tc)
+        internal bool GetTorrentContext(byte[] infohash, out TorrentContext tc)
         {
             if (_torrents.TryGetValue(Util.InfoHashToString(infohash),  out tc))
             {
@@ -46,7 +50,7 @@ namespace BitTorrentLibrary
         /// 
         /// </summary>
         /// <param name="tc"></param>
-        internal bool Add(TorrentContext tc)
+        internal bool AddTorrentContext(TorrentContext tc)
         {
             return _torrents.TryAdd(Util.InfoHashToString(tc.InfoHash), tc);
   
@@ -56,16 +60,31 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="tc"></param>
         /// <returns></returns>
-        internal bool Remove(TorrentContext tc) {
+        internal bool RemoveTorrentContext(TorrentContext tc) {
             return _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out TorrentContext _);
         }
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="ip"></param>
+        internal void AddToDeadPeerList(string ip) {
+            _deadPeers.Add(ip);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ip"></param>
+        internal void RemoFromDeadPeerList(string ip) {
+            _deadPeers.Remove(ip);
+ 
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ip"></param>
         /// <returns></returns>
-        internal ICollection<TorrentContext> GetTorrentList()
-        {
-            return _torrents.Values;
+        internal bool IsPeerDead(string ip) {
+            return _deadPeers.Contains(ip);
         }
     }
 }

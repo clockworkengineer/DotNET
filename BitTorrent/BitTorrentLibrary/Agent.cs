@@ -16,7 +16,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.Sockets;
 
@@ -26,12 +25,10 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Agent class definition.
     /// </summary>
-    public class Agent
+    public class Agent : IAgent
     {
-        private readonly Manager _manager;                                       // Torrent context manager                      
-                                                                                 //private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading/seeding
+        private readonly Manager _manager;                                       // Torrent context/ dead peer manager
         private bool _agentRunning = false;                                      // == true while agent is up and running.
-        private readonly HashSet<string> _deadPeers;                             // Dead peers list
         private readonly Assembler _pieceAssembler;                              // Piece assembler for agent
         private Socket _listenerSocket;                                          // Connection listener socket
         private readonly CancellationTokenSource _cancelTaskSource;              // Cancel all agent tasks
@@ -66,7 +63,7 @@ namespace BitTorrentLibrary
 
             if (!remotePeer.Connected)
             {
-                _deadPeers.Add(remotePeer.Ip);
+                _manager.AddToDeadPeerList(remotePeer.Ip);
                 Log.Logger.Info($"Peer {remotePeer.Ip} added to dead peer list.");
             }
         }
@@ -84,10 +81,10 @@ namespace BitTorrentLibrary
                     PeerDetails peer = await _peerSwarmQeue.DequeueAsync(cancelTask);
                     try
                     {
-                        if (_manager.Get(peer.infoHash, out TorrentContext tc))
+                        if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
                             // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                            if (!_deadPeers.Contains(peer.ip) && !tc.PeerSwarm.ContainsKey(peer.ip) && tc.PeerSwarm.Count < tc.MaximumSwarmSize)
+                            if (!_manager.IsPeerDead(peer.ip) && !tc.PeerSwarm.ContainsKey(peer.ip) && tc.PeerSwarm.Count < tc.MaximumSwarmSize)
                             {
                                 StartPieceAssemblyTask(new Peer(peer.ip, peer.port, tc, null));
                             }
@@ -96,7 +93,7 @@ namespace BitTorrentLibrary
                     catch (Exception)
                     {
                         Log.Logger.Info($"Failed to connect to {peer.ip}.Added to dead per list.");
-                        _deadPeers.Add(peer.ip);
+                        _manager.AddToDeadPeerList(peer.ip);
                     }
                 }
             }
@@ -155,21 +152,19 @@ namespace BitTorrentLibrary
             _manager = manager;
             _pieceAssembler = pieceAssembler;
             _peerSwarmQeue = new AsyncQueue<PeerDetails>();
-            _deadPeers = new HashSet<string>();
             _cancelTaskSource = new CancellationTokenSource();
-            _deadPeers.Add("192.168.1.1"); // WITHOUT THIS HANGS (FOR ME)
 
         }
         /// <summary>
-        /// 
+        /// Startup agent
         /// </summary>
         public void Startup()
         {
+            Log.Logger.Info("Starting up Torrent Agent...");
             _agentRunning = true;
-            CancellationToken cancelTask = _cancelTaskSource.Token;
-            Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(cancelTask), PeerListenCreatorTaskAsync(cancelTask)));
+            Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelTaskSource.Token), PeerListenCreatorTaskAsync(_cancelTaskSource.Token)));
+            Log.Logger.Info("Torrent started.");
         }
-
         /// <summary>
         /// Add torrent context to dictionary of running torrents.
         /// </summary>
@@ -178,7 +173,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _manager.Add(tc);
+                _manager.AddTorrentContext(tc);
             }
             catch (Exception ex)
             {
@@ -196,7 +191,7 @@ namespace BitTorrentLibrary
 
             try
             {
-                _manager.Remove(tc);
+                _manager.RemoveTorrentContext(tc);
             }
             catch (Exception ex)
             {
@@ -214,13 +209,15 @@ namespace BitTorrentLibrary
             {
                 if (_agentRunning)
                 {
+                    Log.Logger.Info("Shutting down torrent agent...");
                     _cancelTaskSource.Cancel();
-                    foreach (var tc in _manager.GetTorrentList())
+                    foreach (var tc in _manager.TorrentList)
                     {
                         Close(tc);
                     }
                     PeerNetwork.ShutdownListener();
                     _agentRunning = false;
+                    Log.Logger.Info("Torrent agent shutdown.");
                 }
             }
             catch (Exception ex)
@@ -279,6 +276,7 @@ namespace BitTorrentLibrary
             {
                 if (_agentRunning)
                 {
+                    Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.InfoHash)}.");
                     tc.MainTracker.StopAnnouncing();
                     if (tc.PeerSwarm != null)
                     {
@@ -290,6 +288,7 @@ namespace BitTorrentLibrary
                     }
                     tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
                     tc.Status = TorrentStatus.Ended;
+                    Log.Logger.Info("Torrent context closed.");
                 }
             }
             catch (Exception ex)
@@ -354,7 +353,7 @@ namespace BitTorrentLibrary
                 infoHash = tc.InfoHash,
                 missingPiecesCount = tc.MissingPiecesCount,
                 swarmSize = (UInt32)tc.PeerSwarm.Count,
-                deadPeers = (UInt32)_deadPeers.Count
+                deadPeers = (UInt32)_manager.DeadPeerCount
             };
         }
         /// <summary>

@@ -264,7 +264,7 @@ namespace ClientUI
 
             DownloadAgent.Startup();
 
-            //            Task.Run(() => LoadSeedingTorrents());
+            Task.Run(() => LoadSeedingTorrents());
 
             MainWindow.TorrentFileText.Text = TorrentSourceDirectory;
 
