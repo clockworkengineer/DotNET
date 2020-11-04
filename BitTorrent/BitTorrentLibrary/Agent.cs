@@ -20,14 +20,16 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.Sockets;
 
-namespace BitTorrentLibrary {
+namespace BitTorrentLibrary
+{
 
     /// <summary>
     /// Agent class definition.
     /// </summary>
     public class Agent
     {
-        private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading/seeding
+        private readonly Manager _manager;                                       // Torrent context manager                      
+                                                                                 //private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading/seeding
         private bool _agentRunning = false;                                      // == true while agent is up and running.
         private readonly HashSet<string> _deadPeers;                             // Dead peers list
         private readonly Assembler _pieceAssembler;                              // Piece assembler for agent
@@ -44,7 +46,7 @@ namespace BitTorrentLibrary {
         private void StartPieceAssemblyTask(Peer remotePeer)
         {
 
-            remotePeer.Connect(_torrents);
+            remotePeer.Connect(_manager);
 
             if (remotePeer.Connected)
             {
@@ -82,7 +84,7 @@ namespace BitTorrentLibrary {
                     PeerDetails peer = await _peerSwarmQeue.DequeueAsync(cancelTask);
                     try
                     {
-                        if (_torrents.TryGetValue(Util.InfoHashToString(peer.infoHash), out TorrentContext tc))
+                        if (_manager.Get(peer.infoHash, out TorrentContext tc))
                         {
                             // Only add peers that are not already there and is maximum swarm size hasnt been reached
                             if (!_deadPeers.Contains(peer.ip) && !tc.PeerSwarm.ContainsKey(peer.ip) && tc.PeerSwarm.Count < tc.MaximumSwarmSize)
@@ -146,11 +148,11 @@ namespace BitTorrentLibrary {
         /// <summary>
         /// Setup data and resources needed by agent.
         /// </summary>
-        /// <param name="torrentFileName">Torrent file name.</param>
+        /// <param name="manager">Torrent context manager</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(Assembler pieceAssembler)
+        public Agent(Manager manager, Assembler pieceAssembler)
         {
-            _torrents = new ConcurrentDictionary<string, TorrentContext>();
+            _manager = manager;
             _pieceAssembler = pieceAssembler;
             _peerSwarmQeue = new AsyncQueue<PeerDetails>();
             _deadPeers = new HashSet<string>();
@@ -176,7 +178,7 @@ namespace BitTorrentLibrary {
         {
             try
             {
-                _torrents.TryAdd(Util.InfoHashToString(tc.InfoHash), tc);
+                _manager.Add(tc);
             }
             catch (Exception ex)
             {
@@ -194,7 +196,7 @@ namespace BitTorrentLibrary {
 
             try
             {
-                _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out tc);
+                _manager.Remove(tc);
             }
             catch (Exception ex)
             {
@@ -213,7 +215,7 @@ namespace BitTorrentLibrary {
                 if (_agentRunning)
                 {
                     _cancelTaskSource.Cancel();
-                    foreach (var tc in _torrents.Values)
+                    foreach (var tc in _manager.GetTorrentList())
                     {
                         Close(tc);
                     }
@@ -359,14 +361,16 @@ namespace BitTorrentLibrary {
         /// Attach peer swarm queue to atart recieving peers.
         /// </summary>
         /// <param name="tracker"></param>
-        public void AttachPeerSwarmQueue(Tracker tracker) {
+        public void AttachPeerSwarmQueue(Tracker tracker)
+        {
             tracker._peerSwarmQueue = _peerSwarmQeue;
         }
         /// <summary>
         /// Detach peer swarm than queue.
         /// </summary>
         /// <param name="tracker"></param>
-        public void DetachPeerSwarmQueu(Tracker tracker) {
+        public void DetachPeerSwarmQueu(Tracker tracker)
+        {
             tracker._peerSwarmQueue = null;
         }
     }

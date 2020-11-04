@@ -25,7 +25,6 @@ namespace BitTorrentLibrary
     public class Manager
     {
         private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading/seeding
-
         public Manager()
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
@@ -35,24 +34,38 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="infohash"></param>
         /// <returns></returns>
-        internal TorrentContext Get(byte[] infohash)
+        internal bool Get(byte[] infohash, out TorrentContext tc)
         {
-            if (_torrents.TryGetValue(Util.InfoHashToString(infohash), out TorrentContext tc))
+            if (_torrents.TryGetValue(Util.InfoHashToString(infohash),  out tc))
             {
-                return tc;
+                return true;
             }
-            throw new Error("BitTorrent (Manager) Error: Could not get torrent context for " + Util.InfoHashToString(infohash));
+            return false;
         }
         /// <summary>
         /// 
         /// </summary>
         /// <param name="tc"></param>
-        internal void Put(TorrentContext tc)
+        internal bool Add(TorrentContext tc)
         {
-            if (!_torrents.TryAdd(Util.InfoHashToString(tc.InfoHash), tc))
-            {
-                throw new Error("BitTorrent (Manager) Error: Could not put torrent context for " + Util.InfoHashToString(tc.InfoHash));
-            }
+            return _torrents.TryAdd(Util.InfoHashToString(tc.InfoHash), tc);
+  
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tc"></param>
+        /// <returns></returns>
+        internal bool Remove(TorrentContext tc) {
+            return _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out TorrentContext _);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        internal ICollection<TorrentContext> GetTorrentList()
+        {
+            return _torrents.Values;
         }
     }
 }

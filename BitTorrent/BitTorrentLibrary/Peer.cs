@@ -110,7 +110,8 @@ namespace BitTorrentLibrary
         /// <summary>
         ///  Connect to remote peer.
         /// </summary>
-        public void Connect(ConcurrentDictionary<string, TorrentContext> torrents)
+        /// <param name="manager"></param>
+        public void Connect(Manager manager)
         {
             ValueTuple<bool, byte[]> peerResponse;
 
@@ -124,7 +125,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    peerResponse = PWP.ConnectFromIntialHandshake(this, torrents);
+                    peerResponse = PWP.ConnectFromIntialHandshake(this, manager);
                 }
                 if (peerResponse.Item1)
                 {

@@ -254,20 +254,19 @@ namespace BitTorrentLibrary
         /// found then no connect is performed (we disconnect).
         /// </summary>
         /// <param name="remotePeer"></param>
-        /// <param name="torrent"></param>
+        /// <param name="manager"></param>
         /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
-        /// 
-        public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer, ConcurrentDictionary<string, TorrentContext> torrents)
+        public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer, Manager manager)
         {
             try
             {
                 bool connected = false;
-                byte[] remotePeerID = new byte [Constants.PeerIDLength];
+                byte[] remotePeerID = new byte[Constants.PeerIDLength];
 
                 byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
                 UInt32 bytesRead = (UInt32)remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
-                foreach (var tc in torrents.Values)
+                foreach (var tc in manager.GetTorrentList())
                 {
                     List<byte> handshakePacket = BuildInitialHandshake(tc.InfoHash);
                     connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out remotePeerID);
@@ -277,7 +276,8 @@ namespace BitTorrentLibrary
                         remotePeer.SetTorrentContext(tc);
                     }
                 }
-                if (!connected) {
+                if (!connected)
+                {
                     Log.Logger.Debug($"Remote peer {remotePeerID} tried to connect with invalid infohash.");
                 }
 

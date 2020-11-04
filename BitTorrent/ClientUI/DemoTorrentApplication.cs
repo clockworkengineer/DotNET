@@ -31,7 +31,7 @@ namespace ClientUI
     /// </summary>
     public class DemoTorrentApplication
     {
-    
+
         private readonly List<StatusItem> _statusBarItems;  // Status bat item list
         private readonly StatusItem _download;              // Item download 
         private readonly StatusItem _shutdown;              // Item shutwdown
@@ -43,14 +43,15 @@ namespace ClientUI
         private List<TorrentContext> _seeders;              // List of current seeding torrents
         private ListView _seederListView;                   // List view to displat seeding torrent information
         private DiskIO _seederDiskIO;                       // DiskIO for seeding torrents
-        public MainWindow MainWindow { get; set; }          // Main application window
+        public MainWindow MainWindow { get; set; }          // Main application 
+        public Manager TorrentManager { get; set; }           // Torrent context manager
         public Agent DownloadAgent { get; set; }            // Agent for handling all torrents
 
         // Cofig values
         public string SeedFileDirectory { get; set; } = "";         // Directory containign torrent files that are seeding
         public string DestinationDirectory { get; set; } = "";      // Destination for torrents downloaded
         public string TorrentSourceDirectory { get; set; } = "";    // Default path for torrent field field
-        public bool SeedingMode { get ; set; } = true;              // True dont check torrents disk inage on startup
+        public bool SeedingMode { get; set; } = true;              // True dont check torrents disk inage on startup
 
         /// <summary>
         /// Read config settings
@@ -58,7 +59,7 @@ namespace ClientUI
         public void ReadConfig()
         {
 
-            
+
             try
             {
                 IConfiguration config = new ConfigurationBuilder()
@@ -72,7 +73,7 @@ namespace ClientUI
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("Application Error : "+ex.Message);
+                Log.Logger.Debug("Application Error : " + ex.Message);
             }
 
         }
@@ -155,7 +156,7 @@ namespace ClientUI
             }
 
             Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
-            
+
         }
         /// <summary>
         /// Display program status bar.
@@ -257,11 +258,13 @@ namespace ClientUI
 
             _top.Add(MainWindow, _mainStatusBar);
 
-            DownloadAgent = new Agent(new Assembler());
+            TorrentManager = new Manager();
+
+            DownloadAgent = new Agent(TorrentManager, new Assembler());
 
             DownloadAgent.Startup();
 
-//            Task.Run(() => LoadSeedingTorrents());
+            //            Task.Run(() => LoadSeedingTorrents());
 
             MainWindow.TorrentFileText.Text = TorrentSourceDirectory;
 
