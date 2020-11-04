@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: All the high level torrent processing including download/upload
+// Description: All the high level torrent control logic including download/upload
 // of torrent pieces and updating the peers in the current swarm. Any  peers that
 // are connected  have a piece assembler task created for them which puts together
 // pieces that they request from the torrent (remote peer) before being written to disk.
@@ -37,7 +37,7 @@ namespace BitTorrentLibrary {
 
         /// <summary>
         /// Start assembly task for connection with remote peer. If for any reason
-        /// the connection fails then the peers ip is put into an dead peer list (set)
+        /// the connection fails then the peers ip is put into an dead peer list (hashset)
         /// so that no further connections are attempted.
         /// </summary>
         /// <param name="remotePeer"></param>

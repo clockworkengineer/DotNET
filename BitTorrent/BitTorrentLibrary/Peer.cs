@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Peer to peer network I/O functionality.
+// Description: Class encaspulating peer data resources and functionlaity.
 //
 // Copyright 2020.
 //
@@ -169,7 +169,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Check downloaded bitfield to see if a piece is present on a remote peer.
         /// </summary>
@@ -186,7 +185,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Sets piece bit in local bitfield to signify its presence.
         /// </summary>
@@ -206,7 +204,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (Peer) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Place a block into the current piece being assembled.
         /// </summary>

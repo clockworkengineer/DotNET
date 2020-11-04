@@ -21,10 +21,6 @@ namespace BitTorrentLibrary
     public class Tracker
     {
         /// <summary>
-        /// Update swarm of active peers delegate
-        /// </summary>
-        public delegate void UpdatePeers(List<PeerDetails> peers);
-        /// <summary>
         /// Tracker Announce event types.
         /// </summary>
         public static readonly string[] EventString = { "", "started", "stopped", "completed" };
@@ -136,9 +132,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Initialise BitTorrent Tracker.
         /// </summary>
-        /// <param name="trackerURL"></param>
-        /// <param name="infoHash"></param>
-        /// <param name="updatePeerSwarm"></param>
+        /// <param name="tc"></param>
         public Tracker(TorrentContext tc)
         {
             PeerID = BitTorrentLibrary.PeerID.Get();
@@ -168,12 +162,9 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Change tracker event status and send to server.
-        /// </summary>
-        /// <param name="tracker">Tracker.</param>
-        /// <summary>
         /// Change tracker status.
         /// </summary>
+        /// <param name="status"></param>
         internal void ChangeStatus(TrackerEvent status)
         {
             try

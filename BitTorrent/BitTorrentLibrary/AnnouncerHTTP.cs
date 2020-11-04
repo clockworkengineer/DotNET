@@ -117,6 +117,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Perform an announce request to tracker and return any response.
         /// </summary>
+        /// <param name="tracker"></param>
         /// <returns>Announce response.</returns>
         public AnnounceResponse Announce(Tracker tracker)
         {

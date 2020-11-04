@@ -36,7 +36,6 @@ namespace BitTorrentLibrary
             }
         }
     }
-
     /// <summary>
     /// Piece Assembler
     /// </summary>
@@ -169,7 +168,7 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Loop dealing with piece requests until peer connection closed.
+        /// Wait dealing with peer requets until connection closed.
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="cancelTask"></param>

@@ -60,6 +60,8 @@ namespace BitTorrentLibrary
         /// <returns><c>true</c>, if next piece was selected, <c>false</c> otherwise.</returns>
         /// <param name="remotePeer">Remote peer.</param>
         /// <param name="nextPiece">Next piece.</param>
+        /// <param name="cancelTask"></param
+        /// <returns></returns>
         internal bool NextPiece(Peer remotePeer, ref UInt32 nextPiece, CancellationToken cancelTask)
         {
             try
@@ -92,6 +94,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="numberOfSuggestions"></param>
+        /// <param name="startPiece"></param>
         /// <returns></returns>
         internal UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, uint startPiece = 0)
         {

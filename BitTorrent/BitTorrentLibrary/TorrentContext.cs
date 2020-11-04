@@ -24,7 +24,7 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Piece Information.
     /// </summary>
-    public struct PieceInfo
+    internal struct PieceInfo
     {
         public UInt16 peerCount;        // Peers with the piece
         public UInt32 pieceLength;      // Piece length in bytes

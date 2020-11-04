@@ -105,7 +105,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        ///  Setup data and resources needed by peernetwork.
+        ///  Setup data and resources needed by PeerNetwork.
         /// </summary>
         public PeerNetwork(Socket remotePeerSocket)
         {

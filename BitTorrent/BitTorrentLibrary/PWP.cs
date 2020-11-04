@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Peer Wire Protocol handling code.
+// Description: Peer Wire Protocol code.
 //
 // Copyright 2020.
 //
@@ -278,7 +278,7 @@ namespace BitTorrentLibrary
                     }
                 }
                 if (!connected) {
-                    Log.Logger.Debug($"++++Remote peer {remotePeerID} tried to connect with invalid infohash.");
+                    Log.Logger.Debug($"Remote peer {remotePeerID} tried to connect with invalid infohash.");
                 }
 
                 return (connected, remotePeerID);
