@@ -35,7 +35,7 @@ namespace BitTorrentLibrary
 
         /// <summary>
         /// Start assembly task for connection with remote peer. If for any reason
-        /// the connection fails then the peers ip is put into an dead peer list (hashset)
+        /// the connection fails then the peers ip is put into an dead peer list 
         /// so that no further connections are attempted.
         /// </summary>
         /// <param name="remotePeer"></param>
@@ -46,7 +46,8 @@ namespace BitTorrentLibrary
 
             if (remotePeer.Connected)
             {
-                if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
+                // Only add peers that are not already there and is maximum swarm size hasnt been reached
+                if (!_manager.IsPeerDead(remotePeer.Ip) && remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
                 {
                     if (remotePeer.Tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                     {
@@ -54,6 +55,7 @@ namespace BitTorrentLibrary
                         remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
                     }
                 }
+                // Assembler task not created to close connection to peer.
                 if (remotePeer.AssemblerTask == null)
                 {
                     remotePeer.Close();
@@ -67,13 +69,15 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Inspects  peer queue, connects to the peer and creates piece assembler task 
+        /// Inspect  peer queue, connect to the peer and create piece assembler task 
         /// before adding to swarm.
         /// </summary>
+        /// <param name="cancelTask"></param>
+        /// <returns></returns>
         private async Task PeerConnectCreatorTaskAsync(CancellationToken cancelTask)
         {
 
-            Log.Logger.Info("Remote peer connect creation task started.");
+            Log.Logger.Info("Remote peer connect creation task started...");
 
             try
             {
@@ -109,6 +113,8 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Listen for remote peer connects and on success start peer task then add it to swarm.
         /// </summary>
+        /// <param name="_"></param>
+        /// <returns></returns>
         private async Task PeerListenCreatorTaskAsync(CancellationToken _)
         {
 
@@ -169,7 +175,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Info("Starting up Torrent Agent...");
                 _agentRunning = true;
                 Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelTaskSource.Token), PeerListenCreatorTaskAsync(_cancelTaskSource.Token)));
-                Log.Logger.Info("Torrent started.");
+                Log.Logger.Info("Torrent Agent started.");
             }
             catch (Exception ex)
             {
@@ -192,7 +198,6 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (Agent) Error : Failed to add torrent context." + ex.Message);
             }
-
         }
         /// <summary>
         /// Remove torrent context from dictionary of running torrents
@@ -200,7 +205,6 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public void Remove(TorrentContext tc)
         {
-
             try
             {
                 _manager.RemoveTorrentContext(tc);
@@ -210,7 +214,6 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (Agent) Error : Failed to remove torrent context. " + ex.Message);
             }
-
         }
         /// <summary>
         /// Shutdown any agent running resourcses.
@@ -240,15 +243,15 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Download a torrent using an piece assembler per connected peer.
+        /// Wait for a torrent to finish downloading.
         /// </summary>
-        public void Download(TorrentContext tc)
+        public void WaitForDownload(TorrentContext tc)
         {
             try
             {
                 if (tc.MainTracker.Left != 0)
                 {
-                    Log.Logger.Info("Starting torrent download for MetaInfo data ...");
+                    Log.Logger.Info("Waiting for torrent to download for MetaInfo data ...");
                     tc.Status = TorrentStatus.Downloading;
                     tc.DownloadFinished.WaitOne();
                     tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
@@ -265,13 +268,13 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Download torrent asynchronously.
+        /// Wait for torrent to download asynch.
         /// </summary>
-        public async Task DownloadAsync(TorrentContext tc)
+        public async Task WaitForDownloadAsync(TorrentContext tc)
         {
             try
             {
-                await Task.Run(() => Download(tc)).ConfigureAwait(false);
+                await Task.Run(() => WaitForDownload(tc)).ConfigureAwait(false);
             }
             catch (Exception)
             {

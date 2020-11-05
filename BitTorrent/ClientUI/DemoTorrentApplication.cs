@@ -49,8 +49,8 @@ namespace ClientUI
 
         // Cofig values
         public string SeedFileDirectory { get; set; } = "";         // Directory containign torrent files that are seeding
-        public string DestinationDirectory { get; set; } = "";      // Destination for torrents downloaded
-        public string TorrentSourceDirectory { get; set; } = "";    // Default path for torrent field field
+        public string DestinationTorrentDirectory { get; set; } = "";      // Destination for torrents downloaded
+        public string TorrentFileDirectory { get; set; } = "";    // Default path for torrent field field
         public bool SeedingMode { get; set; } = true;               // == true dont check torrents disk inage on startup
         public bool SeedingTorrents { get; set; } = true;          // == true load seeding torrents
 
@@ -67,8 +67,8 @@ namespace ClientUI
                   .AddJsonFile("appsettings.json", true, true)
                   .Build();
 
-                TorrentSourceDirectory = config["TorrentSourceDirectory"];
-                DestinationDirectory = config["DestinationDirectory"];
+                TorrentFileDirectory = config["TorrentFileDirectory"];
+                DestinationTorrentDirectory = config["DestinationTorrentDirectory"];
                 SeedFileDirectory = config["SeedFileDirectory"];
                 SeedingMode = bool.Parse(config["SeedingMode"]);
                 SeedingTorrents = bool.Parse(config["LoadSeedingTorrents"]);
@@ -141,7 +141,7 @@ namespace ClientUI
                 _seederFile.Load();
                 _seederFile.Parse();
 
-                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationDirectory, SeedingMode);
+                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationTorrentDirectory, SeedingMode);
 
                 DownloadAgent.Add(tc);
 
@@ -155,7 +155,7 @@ namespace ClientUI
 
                 _seeders.Add(tc);
 
-                DownloadAgent.Download(tc);
+                DownloadAgent.WaitForDownload(tc);
 
             }
 
@@ -215,7 +215,6 @@ namespace ClientUI
                 Height = Dim.Fill()
             };
 
-
             _statusBarItems = new List<StatusItem>();
 
             _download = new StatusItem(Key.ControlD, "~^D~ Download", () =>
@@ -270,10 +269,10 @@ namespace ClientUI
 
             if (SeedingTorrents)
             {
-             //   Task.Run(() => LoadSeedingTorrents());
+                Task.Run(() => LoadSeedingTorrents());
             }
 
-            MainWindow.TorrentFileText.Text = TorrentSourceDirectory;
+            MainWindow.TorrentFileText.Text = TorrentFileDirectory;
 
         }
     }

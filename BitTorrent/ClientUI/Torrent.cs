@@ -180,7 +180,7 @@ namespace ClientUI
                     main.DisplayStatusBar(Status.Downloading);
                 });
 
-                main.DownloadAgent.Download(Tc);
+                main.DownloadAgent.WaitForDownload(Tc);
 
             }
             catch (Exception ex)

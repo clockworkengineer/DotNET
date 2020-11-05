@@ -135,8 +135,6 @@ namespace BitTorrentLibrary
             try
             {
 
-                Log.Logger.Debug($"Running piece assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
-
                 WaitHandle[] waitHandles = new WaitHandle[] { remotePeer.WaitForPieceAssembly, cancelTask.WaitHandle };
 
                 PWP.Unchoke(remotePeer);
@@ -209,6 +207,8 @@ namespace BitTorrentLibrary
         internal void AssemblePieces(Peer remotePeer)
         {
 
+            Log.Logger.Debug($"Entering block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
+
             try
             {
 
@@ -231,7 +231,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Error("BitTorrent (Assembler) Error: "+ex.Message);
+                Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
 
             remotePeer.Close();
