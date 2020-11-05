@@ -72,7 +72,7 @@ namespace ClientUI
         /// <param name="obj"></param>
         private void UpdateDownloadProgress(Object obj)
         {
-            Torrent torrent = (Torrent)obj;
+            DemoTorrentApplication main = (DemoTorrentApplication)obj;
             double progress = (double)Tc.TotalBytesDownloaded /
             (double)Tc.TotalBytesToDownload;
             if (progress - _currentProgress > 0.05)
@@ -84,22 +84,16 @@ namespace ClientUI
                 _mainWindow.DownloadProgress.Fraction = (float)progress;
                 _currentProgress = progress;
             }
-
-        }
-        /// <summary>
-        /// Torrent download complete callback. On completion copy the torrent file to the seeding directory to
-        /// be loaded up for seeding on the next startup.
-        /// </summary>
-        /// <param name="obj"></param>
-        private void DownloadComplete(Object obj)
-        {
-            DemoTorrentApplication main = (DemoTorrentApplication)obj;
-
-            Application.MainLoop.Invoke(() =>
+            if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
-                main.MainWindow.DownloadProgress.Fraction = 1.0F;
-            });
-            File.Copy(main.MainWindow.Torrent.Tc.FileName, main.SeedFileDirectory + Path.GetFileName(main.MainWindow.Torrent.Tc.FileName));
+                Application.MainLoop.Invoke(() =>
+                {
+                    _mainWindow.DownloadProgress.Fraction = 1.0F;
+                });
+                File.Copy(_mainWindow.Torrent.Tc.FileName,
+                         main.SeedFileDirectory + Path.GetFileName(_mainWindow.Torrent.Tc.FileName));
+            }
+
         }
         /// <summary>
         /// Convert torrent infohash to string.
@@ -152,14 +146,14 @@ namespace ClientUI
                 TorrentDiskIO = new DiskIO()
                 {
                     CallBack = UpdateDownloadProgress,
-                    CallBackData = this
-                };
-
-                Tc = new TorrentContext(_torrentFile, new Selector(), TorrentDiskIO, "/home/robt/utorrent")
-                {
-                    CallBack = DownloadComplete,
                     CallBackData = main
                 };
+
+                Tc = new TorrentContext(_torrentFile, new Selector(), TorrentDiskIO, "/home/robt/utorrent");
+                // {
+                //     CallBack = DownloadComplete,
+                //     CallBackData = main
+                // };
 
                 main.DownloadAgent.Add(Tc);
 

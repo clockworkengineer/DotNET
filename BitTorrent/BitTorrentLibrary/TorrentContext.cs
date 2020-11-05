@@ -59,9 +59,7 @@ namespace BitTorrentLibrary
         public UInt64 TotalBytesDownloaded { get; set; }                      // Total bytes downloaded
         public UInt64 TotalBytesToDownload { get; set; }                      // Total bytes in torrent
         public UInt64 TotalBytesUploaded { get; set; }                        // Total bytes uploaded to all peers from torrent
-        public DownloadCompleteCallBack CallBack { get; set; }                // Download complete callback
-        public object CallBackData { get; set; }                              // Download complete callback data
-
+ 
         /// <summary>
         /// Setup data and resources needed by torrent context.
         /// </summary>

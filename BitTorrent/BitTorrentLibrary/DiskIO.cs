@@ -132,18 +132,22 @@ namespace BitTorrentLibrary
 
                     Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
-                    TransferPiece(pieceBuffer.Tc, pieceBuffer, false);
-
-                    pieceBuffer.Tc.TotalBytesDownloaded += pieceBuffer.Tc.GetPieceLength((pieceBuffer.Number));
-                    Log.Logger.Info((pieceBuffer.Tc.TotalBytesDownloaded / (double)pieceBuffer.Tc.TotalBytesToDownload).ToString("0.00%"));
-                    Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
-
-                    CallBack?.Invoke(CallBackData);
-
-                    if (pieceBuffer.Tc.BytesLeftToDownload() == 0)
+                    if (!pieceBuffer.Tc.DownloadFinished.WaitOne(0))
                     {
-                        pieceBuffer.Tc.DownloadFinished.Set();
-                        pieceBuffer.Tc.CallBack?.Invoke(pieceBuffer.Tc.CallBackData);
+                        TransferPiece(pieceBuffer.Tc, pieceBuffer, false);
+
+                        pieceBuffer.Tc.TotalBytesDownloaded += pieceBuffer.Tc.GetPieceLength((pieceBuffer.Number));
+                        Log.Logger.Info((pieceBuffer.Tc.TotalBytesDownloaded / (double)pieceBuffer.Tc.TotalBytesToDownload).ToString("0.00%"));
+                        Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
+
+                        CallBack?.Invoke(CallBackData);
+
+                        if (pieceBuffer.Tc.BytesLeftToDownload() == 0)
+                        {
+                            pieceBuffer.Tc.DownloadFinished.Set();
+                        }
+                    } else {
+                        Log.Logger.Debug("BitTorrent (DiskIO) Error: extra piece buffer removed after download finished.");
                     }
 
                 }
