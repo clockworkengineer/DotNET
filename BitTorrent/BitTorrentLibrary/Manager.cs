@@ -34,7 +34,7 @@ namespace BitTorrentLibrary
             };
         }
         /// <summary>
-        /// 
+        /// Retrieve torrent context for infohash.
         /// </summary>
         /// <param name="infohash"></param>
         /// <returns></returns>
@@ -47,7 +47,7 @@ namespace BitTorrentLibrary
             return false;
         }
         /// <summary>
-        /// 
+        /// Add torrent context for infohash.
         /// </summary>
         /// <param name="tc"></param>
         internal bool AddTorrentContext(TorrentContext tc)
@@ -56,7 +56,7 @@ namespace BitTorrentLibrary
   
         }
         /// <summary>
-        /// 
+        /// Remove torrent context for an infohash.
         /// </summary>
         /// <param name="tc"></param>
         /// <returns></returns>
@@ -64,21 +64,21 @@ namespace BitTorrentLibrary
             return _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out TorrentContext _);
         }
         /// <summary>
-        /// 
+        /// Add peer to dead list.
         /// </summary>
         /// <param name="ip"></param>
         internal void AddToDeadPeerList(string ip) {
             _deadPeers.Add(ip);
         }
         /// <summary>
-        /// 
+        /// Remove peer from dead list. 
         /// </summary>
         /// <param name="ip"></param>
         internal void RemoFromDeadPeerList(string ip) {
             _deadPeers.Remove(ip);
         }
         /// <summary>
-        /// 
+        /// Is peer in dead list.
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>

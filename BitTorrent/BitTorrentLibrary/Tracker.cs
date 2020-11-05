@@ -32,8 +32,8 @@ namespace BitTorrentLibrary
             completed = 3   // Must be sent to the tracker when the download completes
         };
 
+        private AnnounceResponse _currentRespone;               // Last announce response 
         private readonly TorrentContext _tc;                    // Torrent context
-        private readonly List<Exception> _announcerExceptions;  // Exceptions raised during any announces
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         internal Timer _announceTimer;                          // Timer for sending tracker announce events
         internal AsyncQueue<PeerDetails> _peerSwarmQueue;       // Peers to add to swarm queue
@@ -64,15 +64,15 @@ namespace BitTorrentLibrary
         {
             try
             {
-                AnnounceResponse response = tracker._announcer.Announce(tracker);
+                tracker._currentRespone = tracker._announcer.Announce(tracker);
 
-                if (!response.failure)
+                if (!tracker._currentRespone.failure)
                 {
                     Log.Logger.Info("Queuing new peers for swarm ....");
 
                     if (tracker._tc.Status == TorrentStatus.Downloading)
                     {
-                        foreach (var peerDetails in response.peers)
+                        foreach (var peerDetails in tracker._currentRespone.peers)
                         {
                             tracker._peerSwarmQueue?.Enqueue(peerDetails);
                         }
@@ -80,22 +80,24 @@ namespace BitTorrentLibrary
 
                     }
                     tracker.CallBack?.Invoke(tracker.CallBackData);
-                    tracker.UpdateRunningStatusFromAnnounce(response);
+                    tracker.UpdateRunningStatusFromAnnounce(tracker._currentRespone);
                 }
                 else
                 {
-                    throw new Exception("Remote tracker failure: " + response.statusMessage);
+                    throw new Exception("Remote tracker failure: " + tracker._currentRespone.statusMessage);
                 }
+                tracker._announceTimer?.Start();
             }
             catch (Exception ex)
             {
-                Log.Logger.Info(ex);
-                tracker._announcerExceptions.Add(ex);
+                Log.Logger.Debug("BitTorrent (Tracker) Error : " + ex.Message);
+                if (!tracker._currentRespone.failure)
+                {
+                    tracker._currentRespone.failure = true;
+                    tracker._currentRespone.statusMessage = ex.Message;
+                }
             }
-            finally
-            {
-                tracker._announceTimer?.Start();
-            }
+
         }
         /// <summary>
         /// Restart announce on interval changing and save minimum interval and tracker ID.
@@ -134,7 +136,6 @@ namespace BitTorrentLibrary
             TrackerURL = tc.TrackerURL;
             _tc = tc;
             _tc.MainTracker = this;
-            _announcerExceptions = new List<Exception>();
 
             if (!TrackerURL.StartsWith("http://"))
             {
@@ -185,7 +186,13 @@ namespace BitTorrentLibrary
                     _tc.TotalBytesDownloaded = 0;
                     _tc.TotalBytesToDownload = 0;
                 }
+
                 ChangeStatus(TrackerEvent.started);
+                if (_currentRespone.failure)
+                {
+                    throw new Exception("Tracker failure: " + _currentRespone.statusMessage);
+                }
+
                 _announceTimer = new System.Timers.Timer(Interval);
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = false;
