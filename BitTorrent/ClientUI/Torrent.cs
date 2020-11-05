@@ -26,7 +26,7 @@ namespace ClientUI
         private readonly string _torrentFileName;   // Torrent filename
         private MetaInfoFile _torrentFile;          // Decoded torrent file
         private MainWindow _mainWindow;             // Main window
-        private double _currentProgress = 0;        // Value depicting the current download progress (float 0.0-1.0)
+                                                    //    private double _currentProgress = 0;        // Value depicting the current download progress (float 0.0-1.0)
         private Tracker _tracker;                   // Tracker associated with torrent
         public TorrentContext Tc { get; set; }      // Torrent download context
         public DiskIO TorrentDiskIO { get; set; }   // Torrent DiskIO
@@ -67,32 +67,25 @@ namespace ClientUI
             });
         }
         /// <summary>
-        /// Update torrent download progress bar. Thie is the downloder progress callback.
+        /// Update torrent download progress bar. Thie is the diskio progress callback.
         /// </summary>
         /// <param name="obj"></param>
         private void UpdateDownloadProgress(Object obj)
         {
+
             DemoTorrentApplication main = (DemoTorrentApplication)obj;
-            double progress = (double)Tc.TotalBytesDownloaded /
-            (double)Tc.TotalBytesToDownload;
-            if (progress - _currentProgress > 0.05)
+
+            Application.MainLoop.Invoke(() =>
             {
-                Application.MainLoop.Invoke(() =>
-                {
-                    _mainWindow.DownloadProgress.Fraction = (float)progress;
-                });
-                _mainWindow.DownloadProgress.Fraction = (float)progress;
-                _currentProgress = progress;
-            }
+                _mainWindow.DownloadProgress.Fraction = (float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload);
+            });
+
             if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
-                Application.MainLoop.Invoke(() =>
-                {
-                    _mainWindow.DownloadProgress.Fraction = 1.0F;
-                });
                 File.Copy(_mainWindow.Torrent.Tc.FileName,
                          main.SeedFileDirectory + Path.GetFileName(_mainWindow.Torrent.Tc.FileName));
             }
+
 
         }
         /// <summary>
@@ -150,10 +143,6 @@ namespace ClientUI
                 };
 
                 Tc = new TorrentContext(_torrentFile, new Selector(), TorrentDiskIO, "/home/robt/utorrent");
-                // {
-                //     CallBack = DownloadComplete,
-                //     CallBackData = main
-                // };
 
                 main.DownloadAgent.Add(Tc);
 

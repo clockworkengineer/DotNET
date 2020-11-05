@@ -140,13 +140,23 @@ namespace BitTorrentLibrary
                         Log.Logger.Info((pieceBuffer.Tc.TotalBytesDownloaded / (double)pieceBuffer.Tc.TotalBytesToDownload).ToString("0.00%"));
                         Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
 
-                        CallBack?.Invoke(CallBackData);
-
                         if (pieceBuffer.Tc.BytesLeftToDownload() == 0)
                         {
                             pieceBuffer.Tc.DownloadFinished.Set();
                         }
-                    } else {
+
+                        try
+                        {
+                            CallBack?.Invoke(CallBackData);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Logger.Debug(ex.Message);
+                        }
+
+                    }
+                    else
+                    {
                         Log.Logger.Debug("BitTorrent (DiskIO) Error: extra piece buffer removed after download finished.");
                     }
 
