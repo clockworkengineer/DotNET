@@ -63,7 +63,7 @@ namespace BitTorrentLibrary
 
                 if ((bytesRead <= 0) || (socketError != SocketError.Success))
                 {
-                    remotePeer.Close();
+                    remotePeer.QueueForClosure();
                     return;
                 }
 
@@ -96,12 +96,12 @@ namespace BitTorrentLibrary
             catch (System.ObjectDisposedException)
             {
                 Log.Logger.Info($"ReadPacketCallBack()  {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
-                remotePeer.Close();
+                remotePeer.QueueForClosure();
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex.Message);
-                remotePeer.Close();
+                remotePeer.QueueForClosure();
             }
         }
         /// <summary>
@@ -189,7 +189,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex.Message);      
+                Log.Logger.Debug(ex.Message);
             }
 
         }

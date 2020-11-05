@@ -185,7 +185,7 @@ namespace BitTorrentLibrary
                 {
                     // SHOULD ADD TO DEAD PEERS LIST HERE TO (NEED TO MOVE IT TO TC)
                     Log.Logger.Info($"Remote Peer doesn't need pieces. Closing the connection.");
-                    remotePeer.Close();
+                    remotePeer.QueueForClosure();
                 }
             }
         }
@@ -234,7 +234,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
 
-            remotePeer.Close();
+            remotePeer.QueueForClosure();
 
             Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
 

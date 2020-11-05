@@ -150,11 +150,11 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (DiskIO) Error: ",ex.Message);
+                Log.Logger.Debug("BitTorrent (DiskIO) Error: ", ex.Message);
             }
-            
+
             Log.Logger.Info("Piece Buffer disk writer task terminated.");
-                
+
         }
         /// <summary>
         /// Process any piece requests in buffer and send to remote peer.
@@ -187,15 +187,15 @@ namespace BitTorrentLibrary
                     catch (Exception ex)
                     {
                         // Remote peer most probably closed socket so close connection
-                        Log.Logger.Debug("BitTorrent (DiskIO) Error :",ex.Message);
-                        request.remotePeer.Close();
+                        Log.Logger.Debug("BitTorrent (DiskIO) Error :", ex.Message);
+                        request.remotePeer.QueueForClosure();
                     }
 
                 }
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (DiskIO) Error :",ex.Message);
+                Log.Logger.Debug("BitTorrent (DiskIO) Error :", ex.Message);
             }
 
             Log.Logger.Info("Piece request processing task terminated.");

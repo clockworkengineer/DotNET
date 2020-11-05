@@ -20,8 +20,8 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class Peer
     {
-        private readonly Mutex _closeMutex;                              // Close mutex
         private readonly PeerNetwork _network;                           // Network layer
+        internal AsyncQueue<Peer> peerCloseQueue;                        // Peer close queue
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public TorrentContext Tc { get; set; }                           // Torrent torrent context
@@ -40,6 +40,7 @@ namespace BitTorrentLibrary
         public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
         public byte[] ReadBuffer => _network.ReadBuffer;                 // Network read buffer
         public UInt32 PacketLength => _network.PacketLength;             // Current read packet length
+
 
         /// <summary>
         /// Setup data and resources needed by peer.
@@ -62,7 +63,6 @@ namespace BitTorrentLibrary
             {
                 SetTorrentContext(tc);
             }
-            _closeMutex = new Mutex();
         }
         /// <summary>
         /// Set torrent context and dependant fields.
@@ -127,7 +127,6 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Close()
         {
-            _closeMutex.WaitOne();
 
             if (Connected)
             {
@@ -144,8 +143,6 @@ namespace BitTorrentLibrary
                 _network.Close();
                 Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
-
-            _closeMutex.ReleaseMutex();
         }
         /// <summary>
         /// Check downloaded bitfield to see if a piece is present on a remote peer.
@@ -189,6 +186,12 @@ namespace BitTorrentLibrary
                 AssembledPiece.Number = pieceNumber;
                 WaitForPieceAssembly.Set();
             }
+        }
+        /// <summary>
+        /// Queue peer for closing.
+        /// </summary>
+        public void QueueForClosure() {
+            peerCloseQueue.Enqueue(this);
         }
 
     }
