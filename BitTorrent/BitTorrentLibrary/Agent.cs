@@ -112,11 +112,10 @@ namespace BitTorrentLibrary
         private async Task PeerListenCreatorTaskAsync(CancellationToken _)
         {
 
-            Log.Logger.Info("Remote Peer connect listener started.");
+            Log.Logger.Info("Remote Peer connect listener started...");
 
             try
             {
-
                 _listenerSocket = PeerNetwork.GetListeningConnection();
 
                 while (_agentRunning)

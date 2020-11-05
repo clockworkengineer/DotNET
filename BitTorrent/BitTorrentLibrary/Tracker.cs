@@ -103,30 +103,23 @@ namespace BitTorrentLibrary
         /// <param name="response"></param>
         private void UpdateRunningStatusFromAnnounce(AnnounceResponse response)
         {
-            try
-            {
-                TrackerID = response.trackerID;
-                MinInterval = response.minInterval;
 
-                if (response.interval > MinInterval)
+            TrackerID = response.trackerID;
+            MinInterval = response.minInterval;
+
+            if (response.interval > MinInterval)
+            {
+                UInt32 oldInterval = Interval;
+                Interval = response.interval;
+                if (oldInterval != Interval)
                 {
-                    UInt32 oldInterval = Interval;
-                    Interval = response.interval;
-                    if (oldInterval != Interval)
+                    if (_announceTimer != null)
                     {
-                        if (_announceTimer != null)
-                        {
-                            _announceTimer.Stop();
-                            _announceTimer.Interval = Interval;
-                            _announceTimer.Start();
-                        }
+                        _announceTimer.Stop();
+                        _announceTimer.Interval = Interval;
+                        _announceTimer.Start();
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
         /// <summary>
@@ -167,19 +160,11 @@ namespace BitTorrentLibrary
         /// <param name="status"></param>
         internal void ChangeStatus(TrackerEvent status)
         {
-            try
-            {
-                _announceTimer?.Stop();
-                Event = status;
-                OnAnnounceEvent(this);
-                Event = TrackerEvent.None;  // Reset it back to default on next tick
-                _announceTimer?.Start();
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
-            }
+            _announceTimer?.Stop();
+            Event = status;
+            OnAnnounceEvent(this);
+            Event = TrackerEvent.None;  // Reset it back to default on next tick
+            _announceTimer?.Start();
         }
         /// <summary>
         /// Starts the announce requests to tracker.
@@ -191,7 +176,7 @@ namespace BitTorrentLibrary
                 //  Swarm queue needs to be initialised
                 if (_peerSwarmQueue == null)
                 {
-                    throw new Error("BitTorrent (Tracker) Error: Peer swarm queue has not been set.");
+                    throw new Exception("Peer swarm queue has not been set.");
                 }
 
                 // If all of torrent downloaded reset total bytes downloaded

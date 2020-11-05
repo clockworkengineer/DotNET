@@ -76,7 +76,6 @@ namespace BitTorrentLibrary
         /// <param name="ip"></param>
         internal void RemoFromDeadPeerList(string ip) {
             _deadPeers.Remove(ip);
- 
         }
         /// <summary>
         /// 

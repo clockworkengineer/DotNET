@@ -124,6 +124,8 @@ namespace BitTorrentLibrary
         {
             try
             {
+                Log.Logger.Info("Piece Buffer disk writer task starting...");
+
                 while (true)
                 {
                     PieceBuffer pieceBuffer = await PieceWriteQueue.DequeueAsync(cancelTask);
@@ -148,9 +150,11 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex.Message);
+                Log.Logger.Debug("BitTorrent (DiskIO) Error: ",ex.Message);
             }
-
+            
+            Log.Logger.Info("Piece Buffer disk writer task terminated.");
+                
         }
         /// <summary>
         /// Process any piece requests in buffer and send to remote peer.
@@ -161,6 +165,8 @@ namespace BitTorrentLibrary
         {
             try
             {
+                Log.Logger.Info("Piece request processing task started...");
+
                 while (true)
                 {
 
@@ -181,7 +187,7 @@ namespace BitTorrentLibrary
                     catch (Exception ex)
                     {
                         // Remote peer most probably closed socket so close connection
-                        Log.Logger.Debug(ex);
+                        Log.Logger.Debug("BitTorrent (DiskIO) Error :",ex.Message);
                         request.remotePeer.Close();
                     }
 
@@ -189,8 +195,10 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex.Message);
+                Log.Logger.Debug("BitTorrent (DiskIO) Error :",ex.Message);
             }
+
+            Log.Logger.Info("Piece request processing task terminated.");
 
         }
         /// <summary>

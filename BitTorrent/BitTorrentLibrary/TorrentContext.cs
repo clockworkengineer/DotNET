@@ -115,25 +115,17 @@ namespace BitTorrentLibrary
         /// <param name="numberOfBytes">Number of bytes.</param>
         internal bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
-            try
-            {
-                byte[] hash = _SHA1.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
-                UInt32 pieceOffset = pieceNumber * Constants.HashLength;
-                for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
-                {
-                    if (hash[byteNumber] != PiecesInfoHash[pieceOffset + byteNumber])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
-            }
 
+            byte[] hash = _SHA1.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
+            UInt32 pieceOffset = pieceNumber * Constants.HashLength;
+            for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
+            {
+                if (hash[byteNumber] != PiecesInfoHash[pieceOffset + byteNumber])
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         /// <summary>
         /// Calculate bytes left to download and report going negative.
@@ -154,25 +146,19 @@ namespace BitTorrentLibrary
         /// <param name="local">If set to <c>true</c> piece has been downloaded.</param>
         internal void MarkPieceLocal(UInt32 pieceNumber, bool local)
         {
-            try
+
+            lock (_dcLock)
             {
-                lock (_dcLock)
+                if (local)
                 {
-                    if (local)
-                    {
-                        Bitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                    }
-                    else
-                    {
-                        Bitfield[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                    }
+                    Bitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                }
+                else
+                {
+                    Bitfield[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
                 }
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BritTorent (TorrentContext) Error : " + ex.Message);
-            }
+
         }
         /// <summary>
         /// Has a piece been fully downloaded.
@@ -181,19 +167,10 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         internal bool IsPieceLocal(UInt32 pieceNumber)
         {
-            try
+            lock (_dcLock)
             {
-                lock (_dcLock)
-                {
-                    return (Bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
-                }
+                return (Bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (TorrentContext) Error : " + ex.Message);
-            }
-
         }
         /// <summary>
         /// 
@@ -202,35 +179,28 @@ namespace BitTorrentLibrary
         /// <param name="missing"></param>
         internal void MarkPieceMissing(UInt32 pieceNumber, bool missing)
         {
-            try
+
+            lock (_dcLock)
             {
-                lock (_dcLock)
+                if (missing)
                 {
-                    if (missing)
+                    if (!IsPieceMissing(pieceNumber))
                     {
-                        if (!IsPieceMissing(pieceNumber))
-                        {
-                            _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                            MissingPiecesCount++;
-                        }
+                        _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                        MissingPiecesCount++;
                     }
-                    else
+                }
+                else
+                {
+                    if (IsPieceMissing(pieceNumber))
                     {
-                        if (IsPieceMissing(pieceNumber))
-                        {
-                            _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                            MissingPiecesCount--;
-                        }
+                        _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
+                        MissingPiecesCount--;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
-            }
-
         }
+
         /// <summary>
         /// Is a piece missing from local peer.
         /// </summary>
@@ -238,19 +208,11 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool IsPieceMissing(UInt32 pieceNumber)
         {
-            try
-            {
-                lock (_dcLock)
-                {
-                    return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
-            }
 
+            lock (_dcLock)
+            {
+                return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+            }
         }
         /// <summary>
         /// Merges the piece bitfield of a remote peer with the torrents local piece map data.
@@ -258,27 +220,20 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         internal void MergePieceBitfield(Peer remotePeer)
         {
-            try
+
+            UInt32 pieceNumber = 0;
+            for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
             {
-                UInt32 pieceNumber = 0;
-                for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
+                for (byte bit = 0x80; bit != 0; bit >>= 1, pieceNumber++)
                 {
-                    for (byte bit = 0x80; bit != 0; bit >>= 1, pieceNumber++)
+                    if ((remotePeer.RemotePieceBitfield[i] & bit) != 0)
                     {
-                        if ((remotePeer.RemotePieceBitfield[i] & bit) != 0)
-                        {
-                            _pieceData[pieceNumber].peerCount++;
-                            remotePeer.NumberOfMissingPieces--;
-                        }
+                        _pieceData[pieceNumber].peerCount++;
+                        remotePeer.NumberOfMissingPieces--;
                     }
                 }
-                remotePeer.BitfieldReceived.Set();
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (TorrentContext) Error : " + ex.Message);
-            }
+            remotePeer.BitfieldReceived.Set();
         }
         /// <summary>
         /// Get piece length in bytes
@@ -287,16 +242,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal UInt32 GetPieceLength(UInt32 peiceNumber)
         {
-            try
-            {
-                return _pieceData[peiceNumber].pieceLength;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
-            }
-
+            return _pieceData[peiceNumber].pieceLength;
         }
         /// <summary>
         /// Set piece length in bytes.
@@ -305,16 +251,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceLength"></param>
         internal void SetPieceLength(UInt32 pieceNumber, UInt32 pieceLength)
         {
-            try
-            {
-                _pieceData[pieceNumber].pieceLength = pieceLength;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
-            }
-
+            _pieceData[pieceNumber].pieceLength = pieceLength;
         }
         /// <summary>
         /// Get number of blocks in piece.
@@ -323,28 +260,20 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal UInt32 GetBlocksInPiece(UInt32 pieceNumber)
         {
-            try
+            UInt32 blockCount = (_pieceData[pieceNumber].pieceLength / Constants.BlockSize);
+            if (_pieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
             {
-                UInt32 blockCount = (_pieceData[pieceNumber].pieceLength / Constants.BlockSize);
-                if (_pieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
-                {
-                    blockCount++;
-                }
-                return blockCount;
+                blockCount++;
             }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (TorrentContext) Error:" + ex.Message);
-            }
-
+            return blockCount;
         }
         /// <summary>
         /// Check that ip not already in swarm and that maximum size hasnt been reached.
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
-        internal bool IsSpaceInSwarm(string ip){
+        internal bool IsSpaceInSwarm(string ip)
+        {
             return !PeerSwarm.ContainsKey(ip) && (PeerSwarm.Count < MaximumSwarmSize);
         }
 
