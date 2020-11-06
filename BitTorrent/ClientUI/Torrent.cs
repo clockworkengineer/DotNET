@@ -86,7 +86,6 @@ namespace ClientUI
                          main.SeedFileDirectory + Path.GetFileName(_mainWindow.Torrent.Tc.FileName));
             }
 
-
         }
         /// <summary>
         /// Convert torrent infohash to string.

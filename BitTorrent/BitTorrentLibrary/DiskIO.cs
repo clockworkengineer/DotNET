@@ -145,6 +145,7 @@ namespace BitTorrentLibrary
                             pieceBuffer.Tc.DownloadFinished.Set();
                         }
 
+                        // Make sure progress call back does not termiate the task.
                         try
                         {
                             CallBack?.Invoke(CallBackData);

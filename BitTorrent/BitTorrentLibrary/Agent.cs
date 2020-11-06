@@ -26,13 +26,13 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent
     {
-        private readonly Manager _manager;                                       // Torrent context/ dead peer manager
-        private bool _agentRunning = false;                                      // == true while agent is up and running.
-        private readonly Assembler _pieceAssembler;                              // Piece assembler for agent
-        private Socket _listenerSocket;                                          // Connection listener socket
-        private readonly CancellationTokenSource _cancelTaskSource;              // Cancel all agent tasks
-        private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;                 // Queue of peers to add to swarm
-        private readonly AsyncQueue<Peer> _peerCloseQueue;                       // Peer close queue
+        private readonly Manager _manager;                           // Torrent context/ dead peer manager
+        private bool _agentRunning = false;                          // == true while agent is up and running.
+        private readonly Assembler _pieceAssembler;                  // Piece assembler for agent
+        private Socket _listenerSocket;                              // Connection listener socket
+        private readonly CancellationTokenSource _cancelTaskSource;  // Cancel all agent tasks
+        private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;     // Queue of peers to add to swarm
+        private readonly AsyncQueue<Peer> _peerCloseQueue;           // Peer close queue
 
         /// <summary>
         /// Peer close processing task.
@@ -214,7 +214,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Add torrent context to dictionary of running torrents.
+        /// Add torrent context to managers database.
         /// </summary>
         /// <param name="tc"></param>
         public void Add(TorrentContext tc)
@@ -230,7 +230,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Remove torrent context from dictionary of running torrents
+        /// Remove torrent context from managers database.
         /// </summary>
         /// <param name="tc"></param>
         public void Remove(TorrentContext tc)
@@ -246,7 +246,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Shutdown any agent running resourcses.
+        /// Shutdown any agent running resources.
         /// </summary>
         public void ShutDown()
         {
