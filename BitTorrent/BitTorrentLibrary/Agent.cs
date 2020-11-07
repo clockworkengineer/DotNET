@@ -72,28 +72,24 @@ namespace BitTorrentLibrary
 
             if (remotePeer.Connected)
             {
-
                 if (!_manager.IsPeerDead(remotePeer.Ip) && remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
                 {
-
                     if (remotePeer.Tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                     {
                         remotePeer.BitfieldReceived.WaitOne();
-
                         foreach (var pieceNumber in remotePeer.Tc.Selector.LocalPieceSuggestions(remotePeer, 10))
                         {
                             PWP.Have(remotePeer, pieceNumber);
                         }
+                        PWP.Uninterested(remotePeer);
+                        PWP.Unchoke(remotePeer);
                         Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
                     }
                     else
                     {
                         remotePeer.Connected = false;
-
                     }
-
                 }
-
             }
             else
             {
@@ -168,9 +164,7 @@ namespace BitTorrentLibrary
                     if (_agentRunning)
                     {
                         Log.Logger.Info("Remote peer connected...");
-
                         var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
-
                         AddPeerToSwarm(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
                     }
 

@@ -166,7 +166,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex.Message);
-                throw new Error("BitTorrent (TrackerUDP) Error : " + ex.Message);
+                throw;
             }
 
             return response;

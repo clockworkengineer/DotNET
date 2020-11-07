@@ -170,9 +170,12 @@ namespace ClientUI
                 {
                     if (tc != null)
                     {
+                        if (_seeders.Contains(tc)) {
+                            _seeders.Remove(tc);
+                        }
                         if (seederTracker != null)
                         {
-                            seederTracker?.StopAnnouncing();
+                            seederTracker.StopAnnouncing();
                         }
                         DownloadAgent.Close(tc);
                         DownloadAgent.Remove(tc);

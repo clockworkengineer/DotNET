@@ -29,13 +29,13 @@ namespace BitTorrentLibrary
         /// Signal to all peers in swarm that we now have the piece local so
         /// that they can request it if they need.
         /// </summary>
-        /// <param name="remotePeer"></param>
+        /// <param name="tc"></param>
         /// <param name="pieceNumber"></param>
         private void SignalHaveToSwarm(TorrentContext tc, UInt32 pieceNumber)
         {
-            foreach (var peer in tc.PeerSwarm.Values)
+            foreach (var remotePeer in tc.PeerSwarm.Values)
             {
-                PWP.Have(peer, pieceNumber);
+                PWP.Have(remotePeer, pieceNumber);
             }
         }
         /// <summary>
@@ -69,9 +69,9 @@ namespace BitTorrentLibrary
         private bool GetPieceFromPeers(TorrentContext tc, uint pieceNumber, WaitHandle[] waitHandles)
         {
 
-            Peer[] peers = tc.Selector.GetListOfPeers(tc, pieceNumber);
+            Peer[] remotePeers = tc.Selector.GetListOfPeers(tc, pieceNumber);
 
-            if (peers.Length == 0)
+            if (remotePeers.Length == 0)
             {
                 return false;
             }
@@ -95,16 +95,16 @@ namespace BitTorrentLibrary
                     {
                         if (bytesToTransfer >= Constants.BlockSize)
                         {
-                            Request(peers[currentPeer], pieceNumber, blockOffset, Constants.BlockSize);
+                            Request(remotePeers[currentPeer], pieceNumber, blockOffset, Constants.BlockSize);
                         }
                         else
                         {
-                            Request(peers[currentPeer], pieceNumber, blockOffset, bytesToTransfer);
+                            Request(remotePeers[currentPeer], pieceNumber, blockOffset, bytesToTransfer);
                         }
 
                     }
                     currentPeer++;
-                    currentPeer %= (UInt32)peers.Length;
+                    currentPeer %= (UInt32)remotePeers.Length;
                     blockOffset += Constants.BlockSize;
                     bytesToTransfer -= Constants.BlockSize;
                 }
@@ -174,10 +174,10 @@ namespace BitTorrentLibrary
         {
 
             WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
-            foreach (var peer in tc.PeerSwarm.Values)
+            foreach (var remotePeer in tc.PeerSwarm.Values)
             {
-                PWP.Uninterested(peer);
-                PWP.Unchoke(peer);
+                PWP.Uninterested(remotePeer);
+                PWP.Unchoke(remotePeer);
             }
             WaitHandle.WaitAll(waitHandles);
 
