@@ -28,10 +28,7 @@ namespace BitTorrentLibrary
         public Manager()
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
-            _deadPeers = new HashSet<string>
-            {
-                "192.168.1.1" // WITHOUT THIS HANGS (FOR ME)
-            };
+            _deadPeers = new HashSet<string>();
         }
         /// <summary>
         /// Retrieve torrent context for infohash.
@@ -68,7 +65,7 @@ namespace BitTorrentLibrary
         /// Add peer to dead list.
         /// </summary>
         /// <param name="ip"></param>
-        internal void AddToDeadPeerList(string ip)
+        public void AddToDeadPeerList(string ip)
         {
             _deadPeers.Add(ip);
         }
@@ -76,7 +73,7 @@ namespace BitTorrentLibrary
         /// Remove peer from dead list. 
         /// </summary>
         /// <param name="ip"></param>
-        internal void RemoFromDeadPeerList(string ip)
+        public void RemoFromDeadPeerList(string ip)
         {
             _deadPeers.Remove(ip);
         }
@@ -85,7 +82,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
-        internal bool IsPeerDead(string ip)
+        public bool IsPeerDead(string ip)
         {
             return _deadPeers.Contains(ip);
         }

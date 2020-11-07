@@ -277,6 +277,7 @@ namespace BitTorrentLibrary
             }
             if (!connected)
             {
+                manager.AddToDeadPeerList(remotePeer.Ip);
                 Log.Logger.Debug($"Remote peer {remotePeerID} tried to connect with invalid infohash.");
             }
 

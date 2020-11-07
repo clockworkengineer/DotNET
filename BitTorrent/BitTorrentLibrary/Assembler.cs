@@ -197,7 +197,7 @@ namespace BitTorrentLibrary
         internal void AssemblePieces(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
 
-            Log.Logger.Debug($"Entering block assembler for InfoHash {Util.InfoHashToString(tc.InfoHash)}.");
+            Log.Logger.Debug($"Starting block assembler for InfoHash {Util.InfoHashToString(tc.InfoHash)}.");
 
             try
             {
@@ -217,7 +217,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
 
-            Log.Logger.Debug($"Exiting block assembler for InfoHash {Util.InfoHashToString(tc.InfoHash)}.");
+            Log.Logger.Debug($"Terminating block assembler for InfoHash {Util.InfoHashToString(tc.InfoHash)}.");
 
         }
     }

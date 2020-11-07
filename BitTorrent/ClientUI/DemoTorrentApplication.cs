@@ -59,8 +59,6 @@ namespace ClientUI
         /// </summary>
         public void ReadConfig()
         {
-
-
             try
             {
                 IConfiguration config = new ConfigurationBuilder()
@@ -289,6 +287,8 @@ namespace ClientUI
             _top.Add(MainWindow, _mainStatusBar);
 
             TorrentManager = new Manager();
+
+            TorrentManager.AddToDeadPeerList("192.168.1.1");
 
             DownloadAgent = new Agent(TorrentManager, new Assembler());
 

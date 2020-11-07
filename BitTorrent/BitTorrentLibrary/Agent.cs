@@ -98,8 +98,6 @@ namespace BitTorrentLibrary
 
             if ((remotePeer.Tc == null) || (!remotePeer.Connected))
             {
-                Log.Logger.Info($"Failed to connect to {remotePeer.Ip}.Added to dead per list.");
-                _manager.AddToDeadPeerList(remotePeer.Ip);
                 remotePeer.QueueForClosure();
             }
 
@@ -126,10 +124,9 @@ namespace BitTorrentLibrary
                             AddPeerToSwarm(new Peer(peer.ip, peer.port, tc, null));
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        Log.Logger.Info($"Failed to connect to {peer.ip}.Added to dead per list.");
-                        _manager.AddToDeadPeerList(peer.ip);
+                        // Add to dead peer here depending on exception type.
                     }
                 }
             }
