@@ -135,7 +135,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info($"{RemotePeerID(remotePeer)}RX CHOKE");
                 remotePeer.PeerChoking.Reset();
-                remotePeer.WaitForPieceAssembly.Set();
+                remotePeer.Tc.WaitForPieceAssembly.Set();
             }
         }
         /// <summary>

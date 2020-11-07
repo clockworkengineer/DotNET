@@ -4,38 +4,20 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Provide functionality for downloading pieces of a torrent
-// from a remote server using the piece selector algorithm passed to it. If
-// the remote peer chokes while a piece is being processed then the the processing
-// of the piece halts and it is requeued for download; except when the piece has
-// sucessfully been assembled locally when the choke occurs then it is queued for
-// writing to disk.
-//
-// TODO: Needs better use of waits and positoning of choke checks.
+// from a remote server using the piece selector algorithm passed to it. 
 //
 // Copyright 2020.
 //
 
 using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Collections.Generic;
 
 namespace BitTorrentLibrary
 {
-    internal static class ManualResetEventExtensions
-    {
-        /// <summary>
-        /// Wait for event to be set throwing a cancel exception if it is fired.
-        /// </summary>
-        /// <param name="evt"></param>
-        /// <param name="cancel"></param>
-        public static void WaitOne(this ManualResetEvent evt, CancellationToken cancel)
-        {
-            if (WaitHandle.WaitAny(new WaitHandle[] { evt, cancel.WaitHandle }) == 1)
-            {
-                cancel.ThrowIfCancellationRequested();
-            }
-        }
-    }
+
     /// <summary>
     /// Piece Assembler
     /// </summary>
@@ -49,147 +31,175 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="pieceNumber"></param>
-        private void SignalHaveToSwarm(Peer remotePeer, UInt32 pieceNumber)
+        private void SignalHaveToSwarm(TorrentContext tc, UInt32 pieceNumber)
         {
-            foreach (var peer in remotePeer.Tc.PeerSwarm.Values)
+            foreach (var peer in tc.PeerSwarm.Values)
             {
                 PWP.Have(peer, pieceNumber);
             }
         }
         /// <summary>
-        /// Queue sucessfully assembled piece for writing to disk or requeue for download if not.
+        /// 
         /// </summary>
-        /// <param name="remotePeer"></param>
+        /// <param name="peers"></param>
         /// <param name="pieceNumber"></param>
-        /// <param name="pieceAssembled"></param>
-        private void QeueAssembledPieceToDisk(Peer remotePeer, UInt32 pieceNumber, bool pieceAssembled)
+        /// <param name="blockOffset"></param>
+        /// <param name="blockSize"></param>
+        private void Request(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
         {
-
-            if (pieceAssembled)
-            {
-                bool pieceValid = remotePeer.Tc.CheckPieceHash(pieceNumber, remotePeer.AssembledPiece.Buffer, remotePeer.Tc.GetPieceLength(pieceNumber));
-                if (pieceValid)
-                {
-                    Log.Logger.Debug($"All blocks for piece {pieceNumber} received");
-                    remotePeer.Tc.PieceWriteQueue.Enqueue(new PieceBuffer(remotePeer.AssembledPiece));
-                    remotePeer.Tc.MarkPieceLocal(pieceNumber, true);
-                    SignalHaveToSwarm(remotePeer, pieceNumber);
-                }
-            }
-
-            if (!remotePeer.Tc.IsPieceLocal(pieceNumber))
-            {
-                Log.Logger.Debug($"REQUEUING PIECE {pieceNumber}");
-                remotePeer.Tc.MarkPieceMissing(pieceNumber, true);
-            }
-
-            remotePeer.AssembledPiece.Reset();
-
-        }
-        /// <summary>
-        /// Request piece from remote peer. If peer is choked or an cancel arises exit without completeing
-        /// requests so that piece can be requeued for handling later.
-        /// </summary>
-        /// <param name="remotePeer"></param>
-        /// <param name="pieceNumber"></param>
-        /// <param name="waitHandles"></param>
-        /// <returns></returns>
-        private bool GetPieceFromPeer(Peer remotePeer, uint pieceNumber, WaitHandle[] waitHandles)
-        {
-
-            remotePeer.WaitForPieceAssembly.Reset();
-
-            remotePeer.AssembledPiece.SetBlocksPresent(remotePeer.Tc.GetPieceLength(pieceNumber));
-
-            UInt32 bytesToRequest = remotePeer.Tc.GetPieceLength(pieceNumber);
-            UInt32 byteOffset = 0;
-
-            for (; bytesToRequest >= Constants.BlockSize; byteOffset += Constants.BlockSize, bytesToRequest -= Constants.BlockSize)
-            {
-                if (!remotePeer.PeerChoking.WaitOne(0)) return false;
-                PWP.Request(remotePeer, pieceNumber, byteOffset, Constants.BlockSize);
-            }
-            if (bytesToRequest > 0)
-            {
-                if (!remotePeer.PeerChoking.WaitOne(0)) return false;
-                PWP.Request(remotePeer, pieceNumber, byteOffset, bytesToRequest);
-            }
-
-            if (WaitHandle.WaitAny(waitHandles, 60000) != 0) return false;
-
-            remotePeer.WaitForPieceAssembly.Reset();
-
-            return (remotePeer.AssembledPiece.AllBlocksThere);
-
-        }
-        /// <summary>
-        /// Assembles the pieces of a torrent block by block. If a choke or cancel occurs when a piece is being handled the 
-        /// piece is requeued for handling later by this or another task.
-        /// </summary>
-        /// <param name="remotePeer"></param>
-        /// <param name="cancelTask"></param>
-        private void AssembleMissingPieces(Peer remotePeer, CancellationToken cancelTask)
-        {
-            UInt32 nextPiece = 0;
 
             try
             {
-
-                WaitHandle[] waitHandles = new WaitHandle[] { remotePeer.WaitForPieceAssembly, cancelTask.WaitHandle };
-
-                PWP.Unchoke(remotePeer);
-                PWP.Interested(remotePeer);
-                remotePeer.PeerChoking.WaitOne(cancelTask);
-
-                while (!remotePeer.Tc.DownloadFinished.WaitOne(0))
-                {
-                    while (remotePeer.Tc.PieceSelector.NextPiece(remotePeer, ref nextPiece, cancelTask))
-                    {
-                        Log.Logger.Debug($"Assembling blocks for piece {nextPiece}.");
-                        QeueAssembledPieceToDisk(remotePeer, nextPiece, GetPieceFromPeer(remotePeer, nextPiece, waitHandles));
-                        remotePeer.PeerChoking.WaitOne(cancelTask);
-                        Paused.WaitOne(cancelTask);
-                        cancelTask.ThrowIfCancellationRequested();
-                    }
-                }
-
+                remotePeer.CancelTaskSource.Token.ThrowIfCancellationRequested();
+                PWP.Request(remotePeer, pieceNumber, blockOffset, blockSize);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                if (!remotePeer.Tc.DownloadFinished.WaitOne(0))
-                {
-                    QeueAssembledPieceToDisk(remotePeer, nextPiece, remotePeer.AssembledPiece.AllBlocksThere);
-                }
-                throw;
+                Log.Logger.Debug("BitTorrent (Assembler) Error:" + ex.Message);
             }
 
         }
         /// <summary>
-        /// Wait dealing with peer requets until connection closed.
+        /// 
         /// </summary>
-        /// <param name="remotePeer"></param>
-        /// <param name="cancelTask"></param>
-        private void ProcessRemotePeerRequests(Peer remotePeer, CancellationToken cancelTask)
+        /// <param name="tc"></param>
+        /// <param name="pieceNumber"></param>
+        /// <returns></returns>
+        private Peer[] GetListOfOpenPeers(TorrentContext tc, UInt32 pieceNumber)
         {
-
-            if (remotePeer.Connected)
+            List<Peer> peers = new List<Peer>();
+            foreach (var peer in tc.PeerSwarm.Values)
             {
-                if (remotePeer.NumberOfMissingPieces != 0)
+                if (peer.Connected &&
+                    peer.PeerChoking.WaitOne(0) &&
+                    peer.IsPieceOnRemotePeer(pieceNumber))
                 {
-                    WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
-                    PWP.Uninterested(remotePeer);
-                    PWP.Unchoke(remotePeer);
-                    WaitHandle.WaitAll(waitHandles);
-                }
-                else
-                {
-                    // SHOULD ADD TO DEAD PEERS LIST HERE TO (NEED TO MOVE IT TO TC)
-                    Log.Logger.Info($"Remote Peer doesn't need pieces. Closing the connection.");
-                    remotePeer.QueueForClosure();
+                    peers.Add(peer);
                 }
             }
+            return (peers.ToArray());
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tc"></param>
+        /// <param name="pieceNumber"></param>
+        /// <param name="waitHandles"></param>
+        /// <returns></returns>
+        private bool GetPieceFromPeers(TorrentContext tc, uint pieceNumber, WaitHandle[] waitHandles)
+        {
 
+            tc.AssembledPiece.Number = pieceNumber;
+            tc.AssembledPiece.Reset();
+            tc.WaitForPieceAssembly.Reset();
+            tc.AssembledPiece.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
+            Peer[] peers = GetListOfOpenPeers(tc, pieceNumber);
+            bool[] blockThere = tc.AssembledPiece.BlocksPresent();
+
+            if (peers.Length == 0)
+            {
+                return false;
+            }
+
+            while (true)
+            {
+                UInt32 blockOffset = 0;
+                UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
+                UInt32 currentPeer = 0;
+
+                for (var blockNumber = 0; blockNumber < tc.GetBlocksInPiece(pieceNumber); blockNumber++)
+                {
+                    if (!blockThere[blockNumber])
+                    {
+                        if (bytesToTransfer >= Constants.BlockSize)
+                        {
+                            Request(peers[currentPeer], pieceNumber, blockOffset, Constants.BlockSize);
+                        }
+                        else
+                        {
+                            Request(peers[currentPeer], pieceNumber, blockOffset, bytesToTransfer);
+                        }
+
+                    }
+                    currentPeer++;
+                    currentPeer %= (UInt32)peers.Length;
+                    blockOffset += Constants.BlockSize;
+                    bytesToTransfer -= Constants.BlockSize;
+                }
+
+                switch (WaitHandle.WaitAny(waitHandles, 60000))
+                {
+                    case 0:
+                        return tc.AssembledPiece.AllBlocksThere;
+                    case 1:
+                        return false;
+                    case WaitHandle.WaitTimeout:
+                        continue;
+                }
+
+            }
+
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tc"></param>
+        /// <param name="cancelTask"></param>
+        private void AssembleMissingPieces(TorrentContext tc, CancellationToken cancelTask)
+        {
+            UInt32 nextPiece = 0;
+
+            WaitHandle[] waitHandles = new WaitHandle[] { tc.WaitForPieceAssembly, cancelTask.WaitHandle };
+
+            while (!tc.DownloadFinished.WaitOne(0))
+            {
+                while (tc.PieceSelector.NextPiece(tc, ref nextPiece, nextPiece, cancelTask))
+                {
+                    if (GetPieceFromPeers(tc, nextPiece, waitHandles))
+                    {
+                        bool pieceValid = tc.CheckPieceHash(nextPiece, tc.AssembledPiece.Buffer, tc.GetPieceLength(nextPiece));
+                        if (pieceValid)
+                        {
+                            Log.Logger.Debug($"All blocks for piece {nextPiece} received");
+                            tc.PieceWriteQueue.Enqueue(new PieceBuffer(tc.AssembledPiece));
+                            tc.MarkPieceLocal(nextPiece, true);
+                            SignalHaveToSwarm(tc, nextPiece);
+                        }
+                        else
+                        {
+                            Log.Logger.Debug($"InfoHash for piece {nextPiece} corrupt.");
+                        }
+                    }
+                    else
+                    {
+                        Thread.Sleep(100);
+                    }
+                    if (!tc.IsPieceLocal(nextPiece))
+                    {
+                        tc.MarkPieceMissing(nextPiece, true);
+                    }
+                    cancelTask.ThrowIfCancellationRequested();
+                }
+
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tc"></param>
+        /// <param name="cancelTask"></param>
+        private void ProcessRemotePeerRequests(TorrentContext tc, CancellationToken cancelTask)
+        {
+
+            WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
+            foreach (var peer in tc.PeerSwarm.Values)
+            {
+                PWP.Uninterested(peer);
+                PWP.Unchoke(peer);
+            }
+            WaitHandle.WaitAll(waitHandles);
+
+        }
         /// <summary>
         /// Setup data and resources needed by assembler.
         /// </summary>
@@ -198,35 +208,26 @@ namespace BitTorrentLibrary
             Paused = new ManualResetEvent(false);
         }
         /// <summary>
-        /// Task method to download any missing pieces of torrent and when that is done to simply
-        /// loop processing remote peer commands until the connection is closed.
-        /// TODO:Look into making two parts of this Async and waitall.
+        /// 
         /// </summary>
-        /// <param name="remotePeer"></param>
-        /// <param name="_downloadFinished"></param>
-        internal void AssemblePieces(Peer remotePeer)
+        /// <param name="tc"></param>
+        /// <param name="cancelAssemblerTask"></param>
+        internal void AssemblePieces(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
 
-            Log.Logger.Debug($"Entering block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
+            Log.Logger.Debug($"Entering block assembler for InfoHash {Util.InfoHashToString(tc.InfoHash)}.");
 
             try
             {
 
-                CancellationToken cancelTask = remotePeer.CancelTaskSource.Token;
+                Paused.WaitOne();
 
-                remotePeer.BitfieldReceived.WaitOne(cancelTask);
-
-                foreach (var pieceNumber in remotePeer.Tc.PieceSelector.LocalPieceSuggestions(remotePeer, 10))
+                if (tc.BytesLeftToDownload() > 0)
                 {
-                    PWP.Have(remotePeer, pieceNumber);
+                    AssembleMissingPieces(tc, cancelAssemblerTask);
                 }
 
-                if (remotePeer.Tc.BytesLeftToDownload() > 0)
-                {
-                    AssembleMissingPieces(remotePeer, cancelTask);
-                }
-
-                ProcessRemotePeerRequests(remotePeer, cancelTask);
+                ProcessRemotePeerRequests(tc, cancelAssemblerTask);
 
             }
             catch (Exception ex)
@@ -234,9 +235,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
 
-            remotePeer.QueueForClosure();
-
-            Log.Logger.Debug($"Exiting block assembler for peer {Encoding.ASCII.GetString(remotePeer.RemotePeerID)}.");
+            Log.Logger.Debug($"Exiting block assembler for InfoHash {Util.InfoHashToString(tc.InfoHash)}.");
 
         }
     }

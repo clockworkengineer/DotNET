@@ -18,10 +18,8 @@ using System.Threading;
 
 namespace BitTorrentLibrary
 {
-
     public class Selector
     {
-        private readonly Mutex _nextPieceMutex;     // Next piece mutex guard
 
         /// <summary>
         /// Return next suggested piece to download.
@@ -29,18 +27,18 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         /// <param name="startPiece"></param>
         /// <returns></returns>
-        private Int64 GetSuggestedPiece(Peer remotePeer, UInt32 startPiece = 0)
+        private Int64 GetSuggestedPiece(TorrentContext tc, UInt32 startPiece)
         {
 
             UInt32 currentPiece = startPiece;
             do
             {
-                if (remotePeer.Tc.IsPieceMissing(currentPiece) && remotePeer.IsPieceOnRemotePeer(currentPiece))
+                if (tc.IsPieceMissing(currentPiece) && (tc.PeersThatHavePiece(currentPiece) > 0))
                 {
                     return currentPiece;
                 }
                 currentPiece++;
-                currentPiece %= remotePeer.Tc.NumberOfPieces;
+                currentPiece %= tc.NumberOfPieces;
             } while (startPiece != currentPiece);
 
             return -1;
@@ -52,43 +50,30 @@ namespace BitTorrentLibrary
         /// <param name="dc"></param>
         public Selector()
         {
-            _nextPieceMutex = new Mutex();
         }
-        /// <summary>
-        /// Selects the next piece to be downloaded.
-        /// </summary>
-        /// <returns><c>true</c>, if next piece was selected, <c>false</c> otherwise.</returns>
-        /// <param name="remotePeer">Remote peer.</param>
-        /// <param name="nextPiece">Next piece.</param>
-        /// <param name="cancelTask"></param
-        /// <returns></returns>
-        internal bool NextPiece(Peer remotePeer, ref UInt32 nextPiece, CancellationToken cancelTask)
+        internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece, UInt32 startPiece, CancellationToken _)
         {
             bool pieceSuggested = false;
 
             try
             {
-                _nextPieceMutex.WaitOne();
 
-                Int64 suggestedPiece = GetSuggestedPiece(remotePeer, 0);
+                Int64 suggestedPiece = GetSuggestedPiece(tc, startPiece);
 
                 if (suggestedPiece != -1)
                 {
                     nextPiece = (UInt32)suggestedPiece;
-                    remotePeer.Tc.MarkPieceMissing(nextPiece, false);
+                    tc.MarkPieceMissing(nextPiece, false);
                     pieceSuggested = true;
                 }
 
             }
             catch (Exception ex)
             {
-                _nextPieceMutex.ReleaseMutex();
                 // Pass unknown exception up
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (Selector) Error: " + ex.Message);
             }
-
-            _nextPieceMutex.ReleaseMutex();
 
             return pieceSuggested;
 

@@ -12,6 +12,7 @@
 
 using System;
 using System.Text;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
@@ -54,12 +55,17 @@ namespace BitTorrentLibrary
         internal int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize;  // Maximim swarm size
         internal ConcurrentDictionary<string, Peer> PeerSwarm { get; }        // Current peer swarm
         internal Tracker MainTracker { get; set; }                            // Main tracker assigned to torrent
+        internal PieceBuffer AssembledPiece { get; set; }                     // Assembled pieces buffer
+        internal Task AssemblerTask { get; set; }                             // Peer piece assembly task
+        internal ManualResetEvent WaitForPieceAssembly { get; }               // When event set then piece has been fully assembled
+        internal CancellationTokenSource CancelAssemblerTaskSource;           // Cancel assembler task token
         public TorrentStatus Status { get; set; }                             // Torrent status
         public string FileName { get; set; }                                  // Torrent file name
         public UInt64 TotalBytesDownloaded { get; set; }                      // Total bytes downloaded
         public UInt64 TotalBytesToDownload { get; set; }                      // Total bytes in torrent
         public UInt64 TotalBytesUploaded { get; set; }                        // Total bytes uploaded to all peers from torrent
- 
+
+
         /// <summary>
         /// Setup data and resources needed by torrent context.
         /// </summary>
@@ -89,6 +95,9 @@ namespace BitTorrentLibrary
             _piecesMissing = new byte[Bitfield.Length];
             PieceSelector = pieceSelector;
             PeerSwarm = new ConcurrentDictionary<string, Peer>();
+            WaitForPieceAssembly = new ManualResetEvent(false);
+            AssembledPiece = new PieceBuffer(this, PieceLength);
+            CancelAssemblerTaskSource = new CancellationTokenSource();
             // In seeding mode mark eveything downloaded to save startup time
             diskIO.CreateLocalTorrentStructure(this);
             if (seeding)
@@ -265,6 +274,10 @@ namespace BitTorrentLibrary
             }
             return blockCount;
         }
+        internal UInt32 PeersThatHavePiece(UInt32 pieceNumber)
+        {
+            return _pieceData[pieceNumber].peerCount;
+        }
         /// <summary>
         /// Check that ip not already in swarm and that maximum size hasnt been reached.
         /// </summary>
@@ -273,6 +286,14 @@ namespace BitTorrentLibrary
         internal bool IsSpaceInSwarm(string ip)
         {
             return !PeerSwarm.ContainsKey(ip) && (PeerSwarm.Count < MaximumSwarmSize);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pieceNumber"></param>
+        internal void IncrementPeerCount(UInt32 pieceNumber)
+        {
+            _pieceData[pieceNumber].peerCount++;
         }
 
     }

@@ -71,7 +71,10 @@ namespace BitTorrentLibrary
                         {
                             if (listItem is BNodeDictionary bNodeDictionary)
                             {
-                                PeerDetails peer = new PeerDetails();
+                                PeerDetails peer = new PeerDetails
+                                {
+                                    infoHash = tracker.InfoHash
+                                };
                                 BNodeBase peerDictionaryItem = (bNodeDictionary);
                                 BNodeBase peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "ip");
                                 if (peerField != null)

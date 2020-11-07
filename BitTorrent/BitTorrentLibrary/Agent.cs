@@ -26,13 +26,13 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent
     {
-        private readonly Manager _manager;                           // Torrent context/ dead peer manager
-        private bool _agentRunning = false;                          // == true while agent is up and running.
-        private readonly Assembler _pieceAssembler;                  // Piece assembler for agent
-        private Socket _listenerSocket;                              // Connection listener socket
-        private readonly CancellationTokenSource _cancelTaskSource;  // Cancel all agent tasks
-        private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;     // Queue of peers to add to swarm
-        private readonly AsyncQueue<Peer> _peerCloseQueue;           // Peer close queue
+        private readonly Manager _manager;                                 // Torrent context/ dead peer manager
+        private bool _agentRunning = false;                                // == true while agent is up and running.
+        private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
+        private Socket _listenerSocket;                                    // Connection listener socket
+        private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent tasks
+        private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;           // Queue of peers to add to swarm
+        private readonly AsyncQueue<Peer> _peerCloseQueue;                 // Peer close queue
 
         /// <summary>
         /// Peer close processing task.
@@ -60,12 +60,10 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Start assembly task for connection with remote peer. If for any reason
-        /// the connection fails then the peers ip is put into an dead peer list 
-        /// so that no further connections are attempted.
+        /// Add Peer to swarm.
         /// </summary>
         /// <param name="remotePeer"></param>
-        private void StartPieceAssemblyTask(Peer remotePeer)
+        private void AddPeerToSwarm(Peer remotePeer)
         {
 
             remotePeer.Connect(_manager);
@@ -74,27 +72,34 @@ namespace BitTorrentLibrary
             {
                 remotePeer.peerCloseQueue = _peerCloseQueue;
 
-                // Only add peers that are not already there and is maximum swarm size hasnt been reached
                 if (!_manager.IsPeerDead(remotePeer.Ip) && remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
                 {
+
+                    remotePeer.BitfieldReceived.WaitOne();
+
+                    foreach (var pieceNumber in remotePeer.Tc.PieceSelector.LocalPieceSuggestions(remotePeer, 10))
+                    {
+                        PWP.Have(remotePeer, pieceNumber);
+                    }
+
                     if (remotePeer.Tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                     {
                         Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                        remotePeer.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(remotePeer));
                     }
                 }
-                // Assembler task not created to close connection to peer.
-                if (remotePeer.AssemblerTask == null)
-                {
-                    remotePeer.QueueForClosure();
-                }
+
+            }
+            else
+            {
+                Log.Logger.Info($"Failed to connect to {remotePeer.Ip}.Added to dead per list.");
+                _manager.AddToDeadPeerList(remotePeer.Ip);
             }
 
-            if (!remotePeer.Connected)
+            if (!remotePeer.Tc.PeerSwarm.ContainsKey(remotePeer.Ip) && remotePeer.Connected)
             {
-                _manager.AddToDeadPeerList(remotePeer.Ip);
-                Log.Logger.Info($"Peer {remotePeer.Ip} added to dead peer list.");
+                remotePeer.QueueForClosure();
             }
+
         }
         /// <summary>
         /// Inspect  peer queue, connect to the peer and create piece assembler task 
@@ -116,11 +121,7 @@ namespace BitTorrentLibrary
                     {
                         if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
-                            // Only add peers that are not already there and is maximum swarm size hasnt been reached
-                            if (!_manager.IsPeerDead(peer.ip) && tc.IsSpaceInSwarm(peer.ip))
-                            {
-                                StartPieceAssemblyTask(new Peer(peer.ip, peer.port, tc, null));
-                            }
+                            AddPeerToSwarm(new Peer(peer.ip, peer.port, tc, null));
                         }
                     }
                     catch (Exception)
@@ -164,8 +165,7 @@ namespace BitTorrentLibrary
 
                         var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
 
-                        // Pass in null torrent context as this is hooked up when we find the infohash from remote peer
-                        StartPieceAssemblyTask(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
+                        AddPeerToSwarm(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
                     }
 
                 }
@@ -190,7 +190,7 @@ namespace BitTorrentLibrary
             _manager = manager;
             _pieceAssembler = pieceAssembler;
             _peerSwarmQeue = new AsyncQueue<PeerDetails>();
-            _cancelTaskSource = new CancellationTokenSource();
+            _cancelWorkerTaskSource = new CancellationTokenSource();
             _peerCloseQueue = new AsyncQueue<Peer>();
         }
         /// <summary>
@@ -202,9 +202,9 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info("Starting up Torrent Agent...");
                 _agentRunning = true;
-                Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelTaskSource.Token),
-                                            PeerListenCreatorTaskAsync(_cancelTaskSource.Token),
-                                            PeerCloseQueueTaskAsync(_cancelTaskSource.Token)));
+                Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token),
+                                            PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token),
+                                            PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token)));
                 Log.Logger.Info("Torrent Agent started.");
             }
             catch (Exception ex)
@@ -221,6 +221,8 @@ namespace BitTorrentLibrary
         {
             try
             {
+
+                tc.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.CancelAssemblerTaskSource.Token));
                 _manager.AddTorrentContext(tc);
             }
             catch (Exception ex)
@@ -255,7 +257,7 @@ namespace BitTorrentLibrary
                 if (_agentRunning)
                 {
                     Log.Logger.Info("Shutting down torrent agent...");
-                    _cancelTaskSource.Cancel();
+                    _cancelWorkerTaskSource.Cancel();
                     foreach (var tc in _manager.TorrentList)
                     {
                         Close(tc);
@@ -320,6 +322,7 @@ namespace BitTorrentLibrary
             {
                 if (_agentRunning)
                 {
+                    tc.CancelAssemblerTaskSource.Cancel();
                     Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.InfoHash)}.");
                     tc.MainTracker.StopAnnouncing();
                     if (tc.PeerSwarm != null)

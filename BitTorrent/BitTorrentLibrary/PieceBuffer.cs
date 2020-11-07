@@ -1,4 +1,5 @@
-﻿//
+﻿using System.Threading;
+//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -20,6 +21,7 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class PieceBuffer
     {
+        private readonly Mutex _bufferMutex;            // Piece buffer guard mutex
         private bool[] _blockPresent;                   // == true then block present
         private uint _blockCount;                       // Unfilled block spaces in buffer
         public TorrentContext Tc { get; }               // Torrent context
@@ -40,6 +42,7 @@ namespace BitTorrentLibrary
             Buffer = new byte[Length];
             _blockCount = length / Constants.BlockSize;
             _blockPresent = new bool[_blockCount];
+            _bufferMutex = new Mutex();
 
         }
         /// <summary>
@@ -64,6 +67,7 @@ namespace BitTorrentLibrary
             _blockCount = pieceBuffer._blockCount;
             _blockPresent = new bool[pieceBuffer._blockPresent.Length];
             pieceBuffer._blockPresent.CopyTo(_blockPresent, 0);
+            _bufferMutex = new Mutex();
         }
         /// <summary>
         /// Copy block from packet to piece buffer.
@@ -72,12 +76,14 @@ namespace BitTorrentLibrary
         /// <param name="blockNumber"></param>
         public void AddBlockFromPacket(byte[] packetBuffer, UInt32 blockNumber)
         {
+            _bufferMutex.WaitOne();
             System.Buffer.BlockCopy(packetBuffer, 9, Buffer, (Int32)blockNumber * Constants.BlockSize, (Int32)packetBuffer.Length - 9);
             if (!_blockPresent[blockNumber])
             {
                 _blockPresent[blockNumber] = true;
                 _blockCount--;
             }
+            _bufferMutex.ReleaseMutex();
 
         }
         /// <summary>
@@ -99,6 +105,14 @@ namespace BitTorrentLibrary
             {
                 _blockCount++;
             }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public bool[] BlocksPresent()
+        {
+            return _blockPresent;
         }
 
     }
