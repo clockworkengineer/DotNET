@@ -89,6 +89,5 @@ namespace BitTorrentLibrary
         {
             return _deadPeers.Contains(ip);
         }
-
     }
 }

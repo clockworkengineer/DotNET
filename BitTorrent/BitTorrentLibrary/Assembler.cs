@@ -4,7 +4,7 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Provide functionality for downloading pieces of a torrent
-// from a remote server using the piece selector algorithm passed to it. 
+// from a remote server using the piece/peer selector algorithm passed to it. 
 //
 // Copyright 2020.
 //
@@ -23,7 +23,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler
     {
-        internal ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
+         internal ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
 
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
@@ -39,7 +39,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// 
+        /// Request block piece from a peer.
         /// </summary>
         /// <param name="peers"></param>
         /// <param name="pieceNumber"></param>
@@ -60,27 +60,7 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="tc"></param>
-        /// <param name="pieceNumber"></param>
-        /// <returns></returns>
-        private Peer[] GetListOfOpenPeers(TorrentContext tc, UInt32 pieceNumber)
-        {
-            List<Peer> peers = new List<Peer>();
-            foreach (var peer in tc.PeerSwarm.Values)
-            {
-                if (peer.Connected &&
-                    peer.PeerChoking.WaitOne(0) &&
-                    peer.IsPieceOnRemotePeer(pieceNumber))
-                {
-                    peers.Add(peer);
-                }
-            }
-            return (peers.ToArray());
-        }
-        /// <summary>
-        /// 
+        /// Request a piece and wait for it to be assembled.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="pieceNumber"></param>
@@ -89,17 +69,19 @@ namespace BitTorrentLibrary
         private bool GetPieceFromPeers(TorrentContext tc, uint pieceNumber, WaitHandle[] waitHandles)
         {
 
-            tc.AssembledPiece.Number = pieceNumber;
-            tc.AssembledPiece.Reset();
-            tc.WaitForPieceAssembly.Reset();
-            tc.AssembledPiece.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
-            Peer[] peers = GetListOfOpenPeers(tc, pieceNumber);
-            bool[] blockThere = tc.AssembledPiece.BlocksPresent();
+            Peer[] peers = tc.Selector.GetListOfPeers(tc, pieceNumber);
 
             if (peers.Length == 0)
             {
                 return false;
             }
+
+            tc.AssembledPiece.Number = pieceNumber;
+            tc.AssembledPiece.Reset();
+            tc.AssembledPiece.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
+            tc.WaitForPieceAssembly.Reset();
+
+            bool[] blockThere = tc.AssembledPiece.BlocksPresent();
 
             while (true)
             {
@@ -153,7 +135,7 @@ namespace BitTorrentLibrary
 
             while (!tc.DownloadFinished.WaitOne(0))
             {
-                while (tc.PieceSelector.NextPiece(tc, ref nextPiece, nextPiece, cancelTask))
+                while (tc.Selector.NextPiece(tc, ref nextPiece, nextPiece, cancelTask))
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
@@ -184,7 +166,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// 
+        // Wait and process remote peer requests until cancelleed.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="cancelTask"></param>

@@ -4,8 +4,8 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: All the high level torrent control logic including download/upload
-// of torrent pieces and updating the peers in the current swarm. Any  peers that
-// are connected  have a piece assembler task created for them which puts together
+// of torrent pieces and updating the peers in the current swarm. When a torrent context
+// is added to an agent it has a piece assembler task created for it which puts together
 // pieces that they request from the torrent (remote peer) before being written to disk.
 //
 // Copyright 2020.
@@ -30,7 +30,7 @@ namespace BitTorrentLibrary
         private bool _agentRunning = false;                                // == true while agent is up and running.
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private Socket _listenerSocket;                                    // Connection listener socket
-        private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent tasks
+        private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
         private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;           // Queue of peers to add to swarm
         private readonly AsyncQueue<Peer> _peerCloseQueue;                 // Peer close queue
 
@@ -68,42 +68,48 @@ namespace BitTorrentLibrary
 
             remotePeer.Connect(_manager);
 
+            remotePeer.peerCloseQueue = _peerCloseQueue;
+
             if (remotePeer.Connected)
             {
-                remotePeer.peerCloseQueue = _peerCloseQueue;
 
                 if (!_manager.IsPeerDead(remotePeer.Ip) && remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
                 {
 
-                    remotePeer.BitfieldReceived.WaitOne();
-
-                    foreach (var pieceNumber in remotePeer.Tc.PieceSelector.LocalPieceSuggestions(remotePeer, 10))
-                    {
-                        PWP.Have(remotePeer, pieceNumber);
-                    }
-
                     if (remotePeer.Tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                     {
+                        remotePeer.BitfieldReceived.WaitOne();
+
+                        foreach (var pieceNumber in remotePeer.Tc.Selector.LocalPieceSuggestions(remotePeer, 10))
+                        {
+                            PWP.Have(remotePeer, pieceNumber);
+                        }
                         Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
                     }
+                    else
+                    {
+                        remotePeer.Connected = false;
+
+                    }
+
                 }
 
             }
             else
             {
-                Log.Logger.Info($"Failed to connect to {remotePeer.Ip}.Added to dead per list.");
-                _manager.AddToDeadPeerList(remotePeer.Ip);
+                remotePeer.Tc = null;
             }
 
-            if (!remotePeer.Tc.PeerSwarm.ContainsKey(remotePeer.Ip) && remotePeer.Connected)
+            if ((remotePeer.Tc == null) || (!remotePeer.Connected))
             {
+                Log.Logger.Info($"Failed to connect to {remotePeer.Ip}.Added to dead per list.");
+                _manager.AddToDeadPeerList(remotePeer.Ip);
                 remotePeer.QueueForClosure();
             }
 
         }
         /// <summary>
-        /// Inspect  peer queue, connect to the peer and create piece assembler task 
-        /// before adding to swarm.
+        /// Inspect  peer queue, connect to the peer and add into to swarm.
         /// </summary>
         /// <param name="cancelTask"></param>
         /// <returns></returns>
@@ -140,7 +146,7 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Listen for remote peer connects and on success start peer task then add it to swarm.
+        /// Listen for remote peer connects and on success add it to swarm.
         /// </summary>
         /// <param name="_"></param>
         /// <returns></returns>
@@ -194,7 +200,7 @@ namespace BitTorrentLibrary
             _peerCloseQueue = new AsyncQueue<Peer>();
         }
         /// <summary>
-        /// Startup agent
+        /// Startup agent.
         /// </summary>
         public void Startup()
         {
@@ -214,7 +220,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Add torrent context to managers database.
+        /// Add torrent context to managers database while creating an assembler task for it.
         /// </summary>
         /// <param name="tc"></param>
         public void Add(TorrentContext tc)
@@ -304,14 +310,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public async Task WaitForDownloadAsync(TorrentContext tc)
         {
-            try
-            {
-                await Task.Run(() => WaitForDownload(tc)).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            await Task.Run(() => WaitForDownload(tc)).ConfigureAwait(false);
         }
         /// <summary>
         /// Closedown Agent
@@ -320,23 +319,21 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (_agentRunning)
+                tc.CancelAssemblerTaskSource.Cancel();
+                Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.InfoHash)}.");
+                tc.MainTracker.StopAnnouncing();
+                if (tc.PeerSwarm != null)
                 {
-                    tc.CancelAssemblerTaskSource.Cancel();
-                    Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.InfoHash)}.");
-                    tc.MainTracker.StopAnnouncing();
-                    if (tc.PeerSwarm != null)
+                    Log.Logger.Info("Closing peer sockets.");
+                    foreach (var remotePeer in tc.PeerSwarm.Values)
                     {
-                        Log.Logger.Info("Closing peer sockets.");
-                        foreach (var remotePeer in tc.PeerSwarm.Values)
-                        {
-                            remotePeer.QueueForClosure();
-                        }
+                        remotePeer.QueueForClosure();
                     }
-                    tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
-                    tc.Status = TorrentStatus.Ended;
-                    Log.Logger.Info("Torrent context closed.");
                 }
+                tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+                tc.Status = TorrentStatus.Ended;
+                Log.Logger.Info("Torrent context closed.");
+
             }
             catch (Exception ex)
             {

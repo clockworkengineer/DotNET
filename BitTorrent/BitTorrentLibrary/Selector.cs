@@ -3,11 +3,12 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Contains code and data to implement a specific piece
-// selection method for piece download. In this case it just starts
+// Description: Contains code and data to implement a specific piece and
+// peer selection methods for piece download. For piece selection it just starts
 // at beginning of the missing pieces bitfield and stops when it finds
 // the first piece as flagged missing and returns its ordinal position within
-// the bitfield.
+// the bitfield. For peers its just al those that are currently active and have
+// the required piece.
 //
 // Copyright 2020.
 //
@@ -51,28 +52,25 @@ namespace BitTorrentLibrary
         public Selector()
         {
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tc"></param>
+        /// <param name="nextPiece"></param>
+        /// <param name="startPiece"></param>
+        /// <param name="_"></param>
+        /// <returns></returns>
         internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece, UInt32 startPiece, CancellationToken _)
         {
             bool pieceSuggested = false;
 
-            try
+            Int64 suggestedPiece = GetSuggestedPiece(tc, startPiece);
+
+            if (suggestedPiece != -1)
             {
-
-                Int64 suggestedPiece = GetSuggestedPiece(tc, startPiece);
-
-                if (suggestedPiece != -1)
-                {
-                    nextPiece = (UInt32)suggestedPiece;
-                    tc.MarkPieceMissing(nextPiece, false);
-                    pieceSuggested = true;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                // Pass unknown exception up
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Selector) Error: " + ex.Message);
+                nextPiece = (UInt32)suggestedPiece;
+                tc.MarkPieceMissing(nextPiece, false);
+                pieceSuggested = true;
             }
 
             return pieceSuggested;
@@ -104,6 +102,26 @@ namespace BitTorrentLibrary
 
             return (suggestions.ToArray());
 
+        }
+        /// <summary>
+        /// Return list of peers connected that are not choked and have the piece.
+        /// </summary>
+        /// <param name="tc"></param>
+        /// <param name="pieceNumber"></param>
+        /// <returns></returns>
+        internal Peer[] GetListOfPeers(TorrentContext tc, UInt32 pieceNumber)
+        {
+            List<Peer> peers = new List<Peer>();
+            foreach (var peer in tc.PeerSwarm.Values)
+            {
+                if (peer.Connected &&
+                    peer.PeerChoking.WaitOne(0) &&
+                    peer.IsPieceOnRemotePeer(pieceNumber))
+                {
+                    peers.Add(peer);
+                }
+            }
+            return (peers.ToArray());
         }
     }
 

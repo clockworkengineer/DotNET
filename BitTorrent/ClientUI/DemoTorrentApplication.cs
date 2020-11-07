@@ -133,29 +133,53 @@ namespace ClientUI
             _seeders = new List<TorrentContext>();
             _seederDiskIO = new DiskIO();
             string[] torrentFiles = Directory.GetFiles(SeedFileDirectory, "*.torrent");
+            TorrentContext tc;
+            Tracker seederTracker;
+
             foreach (var file in torrentFiles)
             {
 
-                MetaInfoFile _seederFile = new MetaInfoFile(file);
+                seederTracker = null;
+                tc = null;
+                
+                try
+                {
 
-                _seederFile.Load();
-                _seederFile.Parse();
+                    MetaInfoFile _seederFile = new MetaInfoFile(file);
 
-                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationTorrentDirectory, SeedingMode);
+                    _seederFile.Load();
+                    _seederFile.Parse();
 
-                DownloadAgent.Add(tc);
+                    tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationTorrentDirectory, SeedingMode);
 
-                Tracker seederTracker = new Tracker(tc);
+                    DownloadAgent.Add(tc);
 
-                DownloadAgent.AttachPeerSwarmQueue(seederTracker);
+                    seederTracker = new Tracker(tc);
 
-                seederTracker.StartAnnouncing();
+                    DownloadAgent.AttachPeerSwarmQueue(seederTracker);
 
-                DownloadAgent.Start(tc);
+                    seederTracker.StartAnnouncing();
 
-                _seeders.Add(tc);
+                    DownloadAgent.Start(tc);
 
-                DownloadAgent.WaitForDownload(tc);
+                    _seeders.Add(tc);
+
+                    DownloadAgent.WaitForDownload(tc);
+                }
+                catch (Exception ex)
+                {
+                    if (tc != null)
+                    {
+                        if (seederTracker != null)
+                        {
+                            seederTracker?.StopAnnouncing();
+                        }
+                        DownloadAgent.Close(tc);
+                        DownloadAgent.Remove(tc);
+                    }
+                    continue;
+                }
+
 
             }
 
