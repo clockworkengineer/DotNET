@@ -404,7 +404,7 @@ namespace BitTorrentLibrary
         /// Detach peer swarm than queue.
         /// </summary>
         /// <param name="tracker"></param>
-        public void DetachPeerSwarmQueu(Tracker tracker)
+        public void DetachPeerSwarmQueue(Tracker tracker)
         {
             tracker._peerSwarmQueue = null;
         }

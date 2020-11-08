@@ -27,9 +27,9 @@ namespace BitTorrentLibrary
     };
     public enum TrackerStatus
     {
-        Running,
-        Stopped,
-        Stalled
+        Running,    // Currently running
+        Stopped,    // Stopped from annoucing to server
+        Stalled     // Stalled because of an error
     }
     public class Tracker
     {
@@ -211,16 +211,18 @@ namespace BitTorrentLibrary
                 _announceTimer.Enabled = true;
 
                 _trackerStatus = TrackerStatus.Running;
+                _announceTimer?.Start();
+                CallBack?.Invoke(CallBackData);
 
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
                 _trackerStatus = TrackerStatus.Stalled;
+                CallBack?.Invoke(CallBackData);
                 throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Stop announcing to tracker..
         /// </summary>
@@ -244,12 +246,21 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// 
+        /// ASync StartAnnouncing().
         /// </summary>
         /// <returns></returns>
         public async Task StartAnnouncingAsync()
         {
             await Task.Run(() => StartAnnouncing()).ConfigureAwait(false);
         }
+        /// <summary>
+        /// Restart a stalled tracker. 
+        /// </summary>
+        public void RestartAnnouncing()
+        {
+            StopAnnouncing();
+            StartAnnouncing();
+        }
+
     }
 }
