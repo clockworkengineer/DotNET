@@ -85,10 +85,11 @@ namespace ClientUI
         /// <returns></returns>
         private string BuildSeederDisplayLine(TorrentDetails seederDetails)
         {
-            return String.Format("File[{0,-24}] Status[{1,1}] Uploaded[{2, 10}] Swarm[{3, 7}]",
-                   Path.GetFileName(seederDetails.fileName),
-                   seederDetails.status.ToString()[0], seederDetails.uploadedBytes, seederDetails.swarmSize);
-
+            return String.Format("File[{0,-12}] Tracker[{1,3}] Status[{2,1}] Uploaded[{3, 11}] Swarm[{4, 5}]",
+                   Path.GetFileNameWithoutExtension(seederDetails.fileName),
+                   seederDetails.trackerStatus.ToString().Substring(0,3), 
+                   seederDetails.status.ToString().Substring(0,1),
+                   seederDetails.uploadedBytes, seederDetails.swarmSize);
 
         }
         /// <summary>
