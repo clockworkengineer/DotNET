@@ -153,7 +153,7 @@ namespace ClientUI
 
                 main.DownloadAgent.AttachPeerSwarmQueue(_tracker);
 
-                _tracker.StartAnnouncing();
+                _ = _tracker.StartAnnouncingAsync();
 
                 main.DownloadAgent.Start(Tc);
 
@@ -162,7 +162,7 @@ namespace ClientUI
                     main.DisplayStatusBar(Status.Downloading);
                 });
 
-                main.DownloadAgent.WaitForDownload(Tc);
+                _ = main.DownloadAgent.WaitForDownloadAsync(Tc);
 
             }
             catch (Exception ex)

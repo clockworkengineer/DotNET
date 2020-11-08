@@ -72,7 +72,7 @@ namespace BitTorrentLibrary
 
             if (remotePeer.Connected)
             {
-                if (!_manager.IsPeerDead(remotePeer.Ip) && remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
+                if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
                 {
                     if (remotePeer.Tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                     {
@@ -83,23 +83,13 @@ namespace BitTorrentLibrary
                         }
                         PWP.Uninterested(remotePeer);
                         PWP.Unchoke(remotePeer);
-                        Log.Logger.Info($"BTP: Local Peer [{ PeerID.Get()}] to remote peer [{Encoding.ASCII.GetString(remotePeer.RemotePeerID)}].");
-                    }
-                    else
-                    {
-                        remotePeer.Connected = false;
+                        Log.Logger.Info($"Peer [{remotePeer.Ip}] added to swarm.");
+                        return;
                     }
                 }
             }
-            else
-            {
-                remotePeer.Tc = null;
-            }
-
-            if ((remotePeer.Tc == null) || (!remotePeer.Connected))
-            {
-                remotePeer.QueueForClosure();
-            }
+            
+            remotePeer.QueueForClosure();
 
         }
         /// <summary>
@@ -119,9 +109,12 @@ namespace BitTorrentLibrary
                     PeerDetails peer = await _peerSwarmQeue.DequeueAsync(cancelTask);
                     try
                     {
-                        if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
+                        if (!_manager.IsPeerDead(peer.ip))
                         {
-                            AddPeerToSwarm(new Peer(peer.ip, peer.port, tc, null));
+                            if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
+                            {
+                                AddPeerToSwarm(new Peer(peer.ip, peer.port, tc, null));
+                            }
                         }
                     }
                     catch (Exception _)
@@ -162,7 +155,14 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Info("Remote peer connected...");
                         var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
-                        AddPeerToSwarm(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
+                        if (!_manager.IsPeerDead(endPoint.Item1))
+                        {
+                            AddPeerToSwarm(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
+                        }
+                        else
+                        {
+                            remotePeerSocket.Close();
+                        }
                     }
 
                 }
@@ -200,7 +200,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Info("Starting up Torrent Agent...");
                 _agentRunning = true;
                 Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token),
-                                            PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token),
+                                       //     PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token),
                                             PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token)));
                 Log.Logger.Info("Torrent Agent started.");
             }
@@ -289,7 +289,7 @@ namespace BitTorrentLibrary
 
                 tc.Status = TorrentStatus.Seeding;
 
-                tc.MainTracker.Interval = 60000*30;
+                tc.MainTracker.Interval = 60000 * 30;
 
             }
             catch (Exception ex)

@@ -156,13 +156,13 @@ namespace ClientUI
 
                     DownloadAgent.AttachPeerSwarmQueue(seederTracker);
 
-                    seederTracker.StartAnnouncing();
+                    _ = seederTracker.StartAnnouncingAsync();
 
                     DownloadAgent.Start(tc);
 
                     _seeders.Add(tc);
 
-                    DownloadAgent.WaitForDownload(tc);
+                    _ = DownloadAgent.WaitForDownloadAsync(tc);
                 }
                 catch (Exception ex)
                 {

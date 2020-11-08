@@ -135,10 +135,11 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
                     }
+                    _network.Close();
                 }
                 Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
-            _network.Close(); // Close network layer which still may be open
+
         }
         /// <summary>
         /// Check downloaded bitfield to see if a piece is present on a remote peer.

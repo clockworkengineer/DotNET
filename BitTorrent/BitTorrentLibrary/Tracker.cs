@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 //
 // Author: Robert Tizzard
 //
@@ -224,6 +225,14 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
                 throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public async Task StartAnnouncingAsync()
+        {
+            await Task.Run(() => StartAnnouncing()).ConfigureAwait(false);
         }
     }
 }
