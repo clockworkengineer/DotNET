@@ -25,7 +25,40 @@ namespace BitTorrentLibrary
         private UInt64 _connectionID;                               // Returned connection ID
         private readonly UdpClient _trackerConnection;              // Tracker UDP connection
         private IPEndPoint _trackerEndPoint;                        // Tracker enpoint
+        
+        /// <summary>
+        /// Send and reciece command to UDP tracker. If we get a timeout then the
+        /// standard says keep retryon for 60 seconds if we have a timeout error.
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        private byte[] SendCommand(byte[] command)
+        {
+            byte[] commandReply = null;
 
+            for (var retries = 0; retries < 4; retries++)
+            {
+                try
+                {
+                    _trackerConnection.Send(command, command.Length);
+                    commandReply = _trackerConnection.Receive(ref _trackerEndPoint);
+                    return commandReply;
+                }
+                catch (SocketException ex)
+                {
+                    if ((ex.ErrorCode == 110) && (retries < 3))
+                    {
+                        continue;
+                    }
+                    throw;
+                }
+                catch (Exception _)
+                {
+                    throw;
+                }
+            }
+            return commandReply;
+        }
         /// <summary>
         /// Connect to UDP tracker server.
         /// </summary>
@@ -40,9 +73,7 @@ namespace BitTorrentLibrary
                 connectPacket.AddRange(Util.PackUInt32(0));
                 connectPacket.AddRange(Util.PackUInt32(transactionID));
 
-                _trackerConnection.Connect(_trackerEndPoint);
-                _trackerConnection.Send(connectPacket.ToArray(), connectPacket.Count);
-                byte[] connectReply = _trackerConnection.Receive(ref _trackerEndPoint);
+                byte[] connectReply = SendCommand(connectPacket.ToArray());
                 if (connectReply.Length == 16)
                 {
                     if (Util.UnPackUInt32(connectReply, 0) == 0)
@@ -76,6 +107,7 @@ namespace BitTorrentLibrary
             Uri trackerURI = new Uri(trackerURL);
             IPAddress[] trackerAddress = Dns.GetHostAddresses(trackerURI.Host);
             _trackerEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
+            _trackerConnection.Connect(_trackerEndPoint);
         }
         /// <summary>
         /// Perform an announce request to tracker and return any response.
@@ -119,8 +151,7 @@ namespace BitTorrentLibrary
                 announcePacket.AddRange(Util.PackUInt32(tracker.Port));
                 announcePacket.AddRange(Util.PackUInt32(0));                          // Extensions.
 
-                _trackerConnection.Send(announcePacket.ToArray(), announcePacket.Count);
-                byte[] announceReply = _trackerConnection.Receive(ref _trackerEndPoint);
+                byte[] announceReply = SendCommand(announcePacket.ToArray());
 
                 if (Util.UnPackUInt32(announceReply, 0) == 1)
                 {

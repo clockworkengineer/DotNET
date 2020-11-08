@@ -118,8 +118,7 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Release  any peer class resources. Iam sure there is  better way than using a mutex to
-        /// solve the mutual exclusion issue with
+        /// Release  any peer class resources.
         /// </summary>
         public void Close()
         {
@@ -137,9 +136,9 @@ namespace BitTorrentLibrary
                         Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
                     }
                 }
-                _network.Close();
                 Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
+            _network.Close(); // Close network layer which still may be open
         }
         /// <summary>
         /// Check downloaded bitfield to see if a piece is present on a remote peer.

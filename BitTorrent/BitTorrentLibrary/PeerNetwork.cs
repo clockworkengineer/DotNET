@@ -61,16 +61,11 @@ namespace BitTorrentLibrary
             {
                 Int32 bytesRead = (Int32)PeerSocket.EndReceive(readAsyncState, out SocketError socketError);
 
-                if ((socketError != SocketError.Success) || !PeerSocket.Connected)
+                if ((bytesRead <=0) || (socketError != SocketError.Success) || !PeerSocket.Connected)
                 {
 
                     remotePeer.QueueForClosure();
                     return;
-                }
-
-                if (bytesRead == 0)
-                {
-                    Log.Logger.Debug("BitTorrent (PeerNetwork) Error: Socket returned zero bytes.");
                 }
 
                 _bytesRead += (UInt32)bytesRead;

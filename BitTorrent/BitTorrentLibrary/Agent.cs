@@ -289,6 +289,8 @@ namespace BitTorrentLibrary
 
                 tc.Status = TorrentStatus.Seeding;
 
+                tc.MainTracker.Interval = 60000*30;
+
             }
             catch (Exception ex)
             {
