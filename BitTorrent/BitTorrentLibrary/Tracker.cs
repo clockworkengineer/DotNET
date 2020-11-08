@@ -18,26 +18,31 @@ using System.Timers;
 namespace BitTorrentLibrary
 {
     public delegate void TrackerCallBack(Object callBackData);            // Tracker callback
-
+    public enum TrackerEvent
+    {
+        None = 0,      // Default announce has none for event
+        started = 1,   // The first request to the tracker must include the event key with this value
+        stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
+        completed = 3   // Must be sent to the tracker when the download completes
+    };
+    public enum TrackerStatus
+    {
+        Running,
+        Stopped,
+        Stalled
+    }
     public class Tracker
     {
         /// <summary>
         /// Tracker Announce event types.
         /// </summary>
         public static readonly string[] EventString = { "", "started", "stopped", "completed" };
-        public enum TrackerEvent
-        {
-            None = 0,      // Default announce has none for event
-            started = 1,   // The first request to the tracker must include the event key with this value
-            stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
-            completed = 3   // Must be sent to the tracker when the download completes
-        };
-
         private AnnounceResponse _currentRespone;               // Last announce response 
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         internal Timer _announceTimer;                          // Timer for sending tracker announce events
         internal AsyncQueue<PeerDetails> _peerSwarmQueue;       // Peers to add to swarm queue
+        internal TrackerStatus _trackerStatus;                  // Current tracker status
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
@@ -65,32 +70,35 @@ namespace BitTorrentLibrary
         {
             try
             {
-                tracker._currentRespone = tracker._announcer.Announce(tracker);
-
-                if (!tracker._currentRespone.failure)
+                if (tracker._trackerStatus != TrackerStatus.Stalled)
                 {
-                    Log.Logger.Info("Queuing new peers for swarm ....");
+                    tracker._currentRespone = tracker._announcer.Announce(tracker);
 
-                    if (tracker._tc.Status == TorrentStatus.Downloading)
+                    if (!tracker._currentRespone.failure)
                     {
-                        foreach (var peerDetails in tracker._currentRespone.peers)
-                        {
-                            tracker._peerSwarmQueue?.Enqueue(peerDetails);
-                        }
-                        tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
+                        Log.Logger.Info("Queuing new peers for swarm ....");
 
+                        if (tracker._tc.Status == TorrentStatus.Downloading)
+                        {
+                            foreach (var peerDetails in tracker._currentRespone.peers)
+                            {
+                                tracker._peerSwarmQueue?.Enqueue(peerDetails);
+                            }
+                            tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
+
+                        }
+                        tracker.UpdateRunningStatusFromAnnounce(tracker._currentRespone);
                     }
-                    tracker.CallBack?.Invoke(tracker.CallBackData);
-                    tracker.UpdateRunningStatusFromAnnounce(tracker._currentRespone);
+                    else
+                    {
+                        throw new Exception("Remote tracker failure: " + tracker._currentRespone.statusMessage);
+                    }
                 }
-                else
-                {
-                    throw new Exception("Remote tracker failure: " + tracker._currentRespone.statusMessage);
-                }
-                tracker._announceTimer?.Start();
+
             }
             catch (Exception ex)
             {
+                tracker._trackerStatus = TrackerStatus.Stalled;
                 Log.Logger.Debug("BitTorrent (Tracker) Error : " + ex.Message);
                 if (!tracker._currentRespone.failure)
                 {
@@ -98,6 +106,8 @@ namespace BitTorrentLibrary
                     tracker._currentRespone.statusMessage = ex.Message;
                 }
             }
+            tracker._announceTimer?.Start();
+            tracker.CallBack?.Invoke(tracker.CallBackData);
 
         }
         /// <summary>
@@ -131,6 +141,7 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public Tracker(TorrentContext tc)
         {
+            _trackerStatus = TrackerStatus.Stopped;
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
             InfoHash = tc.InfoHash;
@@ -198,10 +209,14 @@ namespace BitTorrentLibrary
                 _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = false;
                 _announceTimer.Enabled = true;
+
+                _trackerStatus = TrackerStatus.Running;
+
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                _trackerStatus = TrackerStatus.Stalled;
                 throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
@@ -218,11 +233,13 @@ namespace BitTorrentLibrary
                     _announceTimer.Stop();
                     _announceTimer.Dispose();
                     _announceTimer = null;
+                    _trackerStatus = TrackerStatus.Stopped;
                 }
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                _trackerStatus = TrackerStatus.Stalled;
                 throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }

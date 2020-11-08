@@ -27,8 +27,8 @@ namespace BitTorrentLibrary
         private IPEndPoint _trackerEndPoint;                        // Tracker enpoint
         
         /// <summary>
-        /// Send and reciece command to UDP tracker. If we get a timeout then the
-        /// standard says keep retryon for 60 seconds if we have a timeout error.
+        /// Send and recieve command to UDP tracker. If we get a timeout then the
+        /// standard says keep retrying for 60 seconds.
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
@@ -52,7 +52,7 @@ namespace BitTorrentLibrary
                     }
                     throw;
                 }
-                catch (Exception _)
+                catch (Exception)
                 {
                     throw;
                 }

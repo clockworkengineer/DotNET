@@ -263,7 +263,7 @@ namespace BitTorrentLibrary
             byte[] remotePeerID = new byte[Constants.PeerIDLength];
 
             byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
-            UInt32 bytesRead = (UInt32)remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+            remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
             foreach (var tc in manager.TorrentList)
             {
@@ -292,9 +292,6 @@ namespace BitTorrentLibrary
         /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
         public static ValueTuple<bool, byte[]> ConnectToIntialHandshake(Peer remotePeer)
         {
-            bool connected;
-            byte[] remotePeerID;
-
             List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.InfoHash);
 
             remotePeer.PeerWrite(handshakePacket.ToArray());
@@ -303,7 +300,7 @@ namespace BitTorrentLibrary
 
             remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
-            connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
+            bool connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out byte[] remotePeerID);
 
             return (connected, remotePeerID);
 

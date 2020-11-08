@@ -32,5 +32,6 @@ namespace BitTorrentLibrary
         public UInt32 swarmSize;            // Swarm size
         public UInt32 deadPeers;            // Number of dead peers 
         public byte[] infoHash;             // Torrent InfoHash
+        public TrackerStatus trackerStatus; // Tracker status;
     }
 }

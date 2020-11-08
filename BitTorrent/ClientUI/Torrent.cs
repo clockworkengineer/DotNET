@@ -64,6 +64,7 @@ namespace ClientUI
                 _mainWindow.InformationWindow.InfoTextFields[4].Text = torrentDetails.status.ToString();
                 _mainWindow.InformationWindow.InfoTextFields[5].Text = torrentDetails.swarmSize.ToString();
                 _mainWindow.InformationWindow.InfoTextFields[6].Text = torrentDetails.deadPeers.ToString();
+                _mainWindow.InformationWindow.InfoTextFields[7].Text = torrentDetails.trackerStatus.ToString();
             });
         }
         /// <summary>

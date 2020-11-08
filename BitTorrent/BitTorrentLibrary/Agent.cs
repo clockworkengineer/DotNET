@@ -12,7 +12,6 @@
 //
 
 using System;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
@@ -117,7 +116,7 @@ namespace BitTorrentLibrary
                             }
                         }
                     }
-                    catch (Exception _)
+                    catch (Exception)
                     {
                         // Add to dead peer here depending on exception type.
                     }
@@ -200,7 +199,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Info("Starting up Torrent Agent...");
                 _agentRunning = true;
                 Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token),
-                                       //     PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token),
+                                            PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token),
                                             PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token)));
                 Log.Logger.Info("Torrent Agent started.");
             }
@@ -283,13 +282,11 @@ namespace BitTorrentLibrary
                     Log.Logger.Info("Waiting for torrent to download for MetaInfo data ...");
                     tc.Status = TorrentStatus.Downloading;
                     tc.DownloadFinished.WaitOne();
-                    tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.completed);
+                    tc.MainTracker.ChangeStatus(TrackerEvent.completed);
                     Log.Logger.Info("Whole Torrent finished downloading.");
                 }
 
                 tc.Status = TorrentStatus.Seeding;
-
-                tc.MainTracker.Interval = 60000 * 30;
 
             }
             catch (Exception ex)
@@ -323,7 +320,7 @@ namespace BitTorrentLibrary
                         remotePeer.QueueForClosure();
                     }
                 }
-                tc.MainTracker.ChangeStatus(Tracker.TrackerEvent.stopped);
+                tc.MainTracker.ChangeStatus(TrackerEvent.stopped);
                 tc.Status = TorrentStatus.Ended;
                 Log.Logger.Info("Torrent context closed.");
 
@@ -390,7 +387,9 @@ namespace BitTorrentLibrary
                 infoHash = tc.InfoHash,
                 missingPiecesCount = tc.MissingPiecesCount,
                 swarmSize = (UInt32)tc.PeerSwarm.Count,
-                deadPeers = (UInt32)_manager.DeadPeerCount
+                deadPeers = (UInt32)_manager.DeadPeerCount,
+                trackerStatus = tc.MainTracker._trackerStatus
+                
             };
         }
         /// <summary>

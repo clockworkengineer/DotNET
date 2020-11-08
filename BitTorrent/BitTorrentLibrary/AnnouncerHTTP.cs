@@ -139,7 +139,7 @@ namespace BitTorrentLibrary
                     $"&left={tracker.Left}&ip={tracker.Ip}&key={tracker.Key}&trackerid={tracker.TrackerID}&numwanted={tracker.NumWanted}";
 
                 // Some trackers require no event present if its value is none
-                if (tracker.Event!=Tracker.TrackerEvent.None) {
+                if (tracker.Event!=TrackerEvent.None) {
                     announceURL += $"&event={Tracker.EventString[(int)tracker.Event]}";
                 }
 
