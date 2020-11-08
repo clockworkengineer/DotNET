@@ -61,10 +61,16 @@ namespace BitTorrentLibrary
             {
                 Int32 bytesRead = (Int32)PeerSocket.EndReceive(readAsyncState, out SocketError socketError);
 
-                if ((bytesRead <= 0) || (socketError != SocketError.Success))
+                if ((socketError != SocketError.Success) || !PeerSocket.Connected)
                 {
+
                     remotePeer.QueueForClosure();
                     return;
+                }
+
+                if (bytesRead == 0)
+                {
+                    Log.Logger.Debug("BitTorrent (PeerNetwork) Error: Socket returned zero bytes.");
                 }
 
                 _bytesRead += (UInt32)bytesRead;
@@ -118,7 +124,10 @@ namespace BitTorrentLibrary
         /// <param name="buffer">Buffer.</param>
         public void Write(byte[] buffer)
         {
-            PeerSocket.Send(buffer);
+            if (PeerSocket.Connected)
+            {
+                PeerSocket.Send(buffer);
+            }
         }
         /// <summary>
         /// Read packet from remote peer.
@@ -128,7 +137,11 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int Read(byte[] buffer, int length)
         {
-            return PeerSocket.Receive(buffer, length, SocketFlags.None);
+            if (PeerSocket.Connected)
+            {
+                return PeerSocket.Receive(buffer, length, SocketFlags.None);
+            }
+            return 0;
         }
         /// <summary>
         /// Start Async reading of network socket.
@@ -136,7 +149,10 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         public void StartReads(Peer remotePeer)
         {
-            PeerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, remotePeer);
+            if (PeerSocket.Connected)
+            {
+                PeerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, 0, ReadPacketAsyncHandler, remotePeer);
+            }
         }
         /// <summary>
         /// Connect to remote peer and return connection socket.
@@ -157,7 +173,10 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Close()
         {
-            PeerSocket.Close();
+            if (PeerSocket.Connected)
+            {
+                PeerSocket.Close();
+            }
         }
         /// <summary>
         /// Get an local endpoint socket to listen for connections on 

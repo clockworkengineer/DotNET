@@ -124,7 +124,7 @@ namespace BitTorrentLibrary
                             AddPeerToSwarm(new Peer(peer.ip, peer.port, tc, null));
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception _)
                     {
                         // Add to dead peer here depending on exception type.
                     }

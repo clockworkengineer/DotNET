@@ -314,16 +314,17 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         public static void RemotePeerMessageProcess(Peer remotePeer)
         {
-
-
-            byte command = remotePeer.ReadBuffer[0];
-            if ((command >= CHOKE) && (command <= CANCEL))
+            if (remotePeer.Connected)
             {
-                _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
-            }
-            else
-            {
-                Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
+                byte command = remotePeer.ReadBuffer[0];
+                if ((command >= CHOKE) && (command <= CANCEL))
+                {
+                    _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
+                }
+                else
+                {
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
+                }
             }
         }
         /// <summary>
