@@ -157,7 +157,7 @@ namespace ClientUI
 
                     DownloadAgent.AttachPeerSwarmQueue(seederTracker);
 
-                    _ = seederTracker.StartAnnouncingAsync();
+                    seederTracker.StartAnnouncing();
 
                     DownloadAgent.Start(tc);
 

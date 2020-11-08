@@ -8,6 +8,7 @@
 // Copyright 2020.
 //
 using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -24,7 +25,7 @@ namespace BitTorrentLibrary
         private bool _connected = false;                            // == true connected
         private UInt64 _connectionID;                               // Returned connection ID
         private readonly UdpClient _trackerConnection;              // Tracker UDP connection
-        private IPEndPoint _trackerEndPoint;                        // Tracker enpoint
+        private readonly IPEndPoint _trackerEndPoint;               // Tracker enpoint
         
         /// <summary>
         /// Send and recieve command to UDP tracker. If we get a timeout then the
@@ -32,7 +33,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        private byte[] SendCommand(byte[] command)
+        private async Task<byte[]> SendCommandAsync(byte[] command)
         {
             byte[] commandReply = null;
 
@@ -40,9 +41,9 @@ namespace BitTorrentLibrary
             {
                 try
                 {
-                    _trackerConnection.Send(command, command.Length);
-                    commandReply = _trackerConnection.Receive(ref _trackerEndPoint);
-                    return commandReply;
+                    await _trackerConnection.SendAsync(command, command.Length);
+                    var result =  await _trackerConnection.ReceiveAsync();
+                    return result.Buffer;
                 }
                 catch (SocketException ex)
                 {
@@ -62,7 +63,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Connect to UDP tracker server.
         /// </summary>
-        private void Connect()
+        private async Task<bool> ConnectAsync()
         {
             try
             {
@@ -73,7 +74,7 @@ namespace BitTorrentLibrary
                 connectPacket.AddRange(Util.PackUInt32(0));
                 connectPacket.AddRange(Util.PackUInt32(transactionID));
 
-                byte[] connectReply = SendCommand(connectPacket.ToArray());
+                var connectReply = await SendCommandAsync(connectPacket.ToArray());
                 if (connectReply.Length == 16)
                 {
                     if (Util.UnPackUInt32(connectReply, 0) == 0)
@@ -86,6 +87,7 @@ namespace BitTorrentLibrary
                         }
                     }
                 }
+                
                 if (!_connected)
                 {
                     throw new Exception("Could not connect to UDP tracker server.");
@@ -95,6 +97,7 @@ namespace BitTorrentLibrary
             {
                 throw;
             }
+            return _connected;
         }
         /// <summary>
         /// Setup data and resources needed by UDP tracker.
@@ -114,7 +117,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="tracker"></param>
         /// <returns>Announce response</returns>
-        public AnnounceResponse Announce(Tracker tracker)
+        public async Task<AnnounceResponse> AnnounceAsync(Tracker tracker)
         {
             Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))} " +
                   $"peer_id={tracker.PeerID} port={tracker.Port} compact={tracker.Compact} no_peer_id={tracker.NoPeerID} uploaded={tracker.Uploaded}" +
@@ -130,7 +133,7 @@ namespace BitTorrentLibrary
             {
                 if (!_connected)
                 {
-                    Connect();
+                    await ConnectAsync();
                 }
 
                 List<byte> announcePacket = new List<byte>();
@@ -151,7 +154,7 @@ namespace BitTorrentLibrary
                 announcePacket.AddRange(Util.PackUInt32(tracker.Port));
                 announcePacket.AddRange(Util.PackUInt32(0));                          // Extensions.
 
-                byte[] announceReply = SendCommand(announcePacket.ToArray());
+                var announceReply = await SendCommandAsync(announcePacket.ToArray());
 
                 if (Util.UnPackUInt32(announceReply, 0) == 1)
                 {

@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -122,7 +123,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="tracker"></param>
         /// <returns>Announce response.</returns>
-        public AnnounceResponse Announce(Tracker tracker)
+        public async Task<AnnounceResponse> AnnounceAsync(Tracker tracker)
         {
             Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))} " +
                    $"peer_id={tracker.PeerID} port={tracker.Port} compact={tracker.Compact} no_peer_id={tracker.NoPeerID} uploaded={tracker.Uploaded}" +
@@ -148,7 +149,7 @@ namespace BitTorrentLibrary
                 httpGetRequest.Method = "GET";
                 httpGetRequest.ContentType = "text/xml";
 
-                using (HttpWebResponse httpGetResponse = httpGetRequest.GetResponse() as HttpWebResponse)
+                using (HttpWebResponse httpGetResponse = await httpGetRequest.GetResponseAsync() as HttpWebResponse)
                 {
                     byte[] announceResponse;
                     StreamReader reader = new StreamReader(httpGetResponse.GetResponseStream());

@@ -154,7 +154,7 @@ namespace ClientUI
 
                 main.DownloadAgent.AttachPeerSwarmQueue(_tracker);
 
-                _ = _tracker.StartAnnouncingAsync();
+                _tracker.StartAnnouncing();
 
                 main.DownloadAgent.Start(Tc);
 

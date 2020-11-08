@@ -10,11 +10,12 @@
 //
 
 using System;
+using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
 {
     internal interface IAnnouncer
     {
-        AnnounceResponse Announce(Tracker tracker);
+        Task<AnnounceResponse> AnnounceAsync(Tracker tracker);
     }
 }

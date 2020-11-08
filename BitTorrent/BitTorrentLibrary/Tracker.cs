@@ -66,13 +66,13 @@ namespace BitTorrentLibrary
         /// Perform announce request on timer tick
         /// </summary>
         /// <param name="tracker"></param>
-        private static void OnAnnounceEvent(Tracker tracker)
+        private async Task OnAnnounceEventAsync(Tracker tracker)
         {
             try
             {
                 if (tracker._trackerStatus != TrackerStatus.Stalled)
                 {
-                    tracker._currentRespone = tracker._announcer.Announce(tracker);
+                    tracker._currentRespone = await tracker._announcer.AnnounceAsync(tracker);
 
                     if (!tracker._currentRespone.failure)
                     {
@@ -175,7 +175,7 @@ namespace BitTorrentLibrary
         {
             _announceTimer?.Stop();
             Event = status;
-            OnAnnounceEvent(this);
+            _ = OnAnnounceEventAsync(this);
             Event = TrackerEvent.None;  // Reset it back to default on next tick
             _announceTimer?.Start();
         }
@@ -206,7 +206,7 @@ namespace BitTorrentLibrary
                 }
 
                 _announceTimer = new System.Timers.Timer(Interval);
-                _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
+                _announceTimer.Elapsed += async(sender, e) => await OnAnnounceEventAsync(this);
                 _announceTimer.AutoReset = false;
                 _announceTimer.Enabled = true;
 
@@ -244,14 +244,6 @@ namespace BitTorrentLibrary
                 _trackerStatus = TrackerStatus.Stalled;
                 throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
-        }
-        /// <summary>
-        /// ASync StartAnnouncing().
-        /// </summary>
-        /// <returns></returns>
-        public async Task StartAnnouncingAsync()
-        {
-            await Task.Run(() => StartAnnouncing()).ConfigureAwait(false);
         }
         /// <summary>
         /// Restart a stalled tracker. 
