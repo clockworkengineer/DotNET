@@ -36,35 +36,35 @@ namespace BitTorrentLibrary
     /// </summary>
     public class TorrentContext
     {
-        private readonly SHA1 _SHA1;                                        // Object to create SHA1 piece info hash
-        private readonly Object _dcLock = new object();                     // Synchronization lock for torrent context
-        private readonly byte[] _piecesMissing;                             // Missing piece bitfield
-        private readonly PieceInfo[] _pieceData;                            // Piece information
-        internal AsyncQueue<PieceBuffer> PieceWriteQueue { get; }           // Piece buffer disk write queue
-        internal AsyncQueue<PieceRequest> PieceRequestQueue { get; }        // Piece request queue
-        internal uint PieceLength { get; }                                  // Length of piece in bytese
-        internal byte[] PiecesInfoHash { get; }                             // Pieces infohash from torrent file
-        internal uint NumberOfPieces { get; }                               // Number of pieces into torrent
-        internal Selector Selector { get; }                                  // Piece selector
-        internal ManualResetEvent DownloadFinished { get; }                  // == Set then download finished
-        internal byte[] Bitfield { get; }                                    // Bitfield for current torrent on disk
-        internal List<FileDetails> FilesToDownload { get; }                  // Local files in torrent
-        internal byte[] InfoHash { get; }                                    // Torrent info hash
-        internal string TrackerURL { get; }                                  // Main Tracker URL
-        internal uint MissingPiecesCount { get; set; } = 0;                  // Missing piece count
-        internal int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize; // Maximim swarm size
-        internal ConcurrentDictionary<string, Peer> PeerSwarm { get; }       // Current peer swarm
-        internal Tracker MainTracker { get; set; }                           // Main tracker assigned to torrent
-        internal ManualResetEvent TrackerStarted {get; set; }                // Signal when tracker started
-        internal PieceBuffer AssembledPiece { get; set; }                    // Assembled pieces buffer
-        internal Task AssemblerTask { get; set; }                            // Peer piece assembly task
-        internal ManualResetEvent WaitForPieceAssembly { get; }              // When event set then piece has been fully assembled
-        internal CancellationTokenSource CancelAssemblerTaskSource;          // Cancel assembler task token
-        public TorrentStatus Status { get; set; }                            // Torrent status
-        public string FileName { get; set; }                                 // Torrent file name
-        public UInt64 TotalBytesDownloaded { get; set; }                     // Total bytes downloaded
-        public UInt64 TotalBytesToDownload { get; set; }                     // Total bytes in torrent
-        public UInt64 TotalBytesUploaded { get; set; }                       // Total bytes uploaded to all peers from torrent
+        private readonly SHA1 _SHA1;                                 // Object to create SHA1 piece info hash
+        private readonly Object _dcLock = new object();               // Synchronization lock for torrent context
+        private readonly byte[] _piecesMissing;                      // Missing piece bitfield
+        private readonly PieceInfo[] _pieceData;                     // Piece information
+        internal AsyncQueue<PieceBuffer> pieceWriteQueue;            // Piece buffer disk write queue
+        internal AsyncQueue<PieceRequest> pieceRequestQueue;         // Piece request queue
+        internal uint pieceLength;                                   // Length of piece in bytese
+        internal byte[] piecesInfoHash;                              // Pieces infohash from torrent file
+        internal uint numberOfPieces;                                // Number of pieces into torrent
+        internal Selector selector;                                  // Piece selector
+        internal ManualResetEvent downloadFinished;                  // == Set then download finished
+        internal byte[] Bitfield;                                    // Bitfield for current torrent on disk
+        internal List<FileDetails> filesToDownload;                  // Local files in torrent
+        internal byte[] infoHash;                                    // Torrent info hash
+        internal string trackerURL;                                  // Main Tracker URL
+        internal uint missingPiecesCount = 0;                        // Missing piece count
+        internal int maximumSwarmSize = Constants.MaximumSwarmSize; // Maximim swarm size
+        internal ConcurrentDictionary<string, Peer> peerSwarm;       // Current peer swarm
+        internal Tracker MainTracker;                                // Main tracker assigned to torrent
+        internal ManualResetEvent trackerStarted;                    // Signal when tracker started
+        internal PieceBuffer assembledPiece;                         // Assembled pieces buffer
+        internal Task assemblerTask;                                 // Peer piece assembly task
+        internal ManualResetEvent waitForPieceAssembly;              // When event set then piece has been fully assembled
+        internal CancellationTokenSource cancelAssemblerTaskSource;  // Cancel assembler task token
+        public TorrentStatus Status { get; set; }                    // Torrent status
+        public string FileName { get; set; }                         // Torrent file name
+        public UInt64 TotalBytesDownloaded { get; set; }             // Total bytes downloaded
+        public UInt64 TotalBytesToDownload { get; set; }             // Total bytes in torrent
+        public UInt64 TotalBytesUploaded { get; set; }               // Total bytes uploaded to all peers from torrent
 
 
         /// <summary>
@@ -79,27 +79,27 @@ namespace BitTorrentLibrary
         {
             FileName = torrentMetaInfo.TorrentFileName;
             Status = TorrentStatus.Initialised;
-            InfoHash = torrentMetaInfo.MetaInfoDict["info hash"];
-            TrackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
+            infoHash = torrentMetaInfo.MetaInfoDict["info hash"];
+            trackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
             (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
-            FilesToDownload = filesToDownload;
+            this.filesToDownload = filesToDownload;
             TotalBytesToDownload = totalDownloadLength;
-            PieceLength = uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
-            PiecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
-            NumberOfPieces = ((UInt32)(PiecesInfoHash.Length / Constants.HashLength));
-            _pieceData = new PieceInfo[NumberOfPieces];
-            PieceWriteQueue = diskIO.PieceWriteQueue;
-            PieceRequestQueue = diskIO.PieceRequestQueue;
+            pieceLength = uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
+            piecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
+            numberOfPieces = ((UInt32)(piecesInfoHash.Length / Constants.HashLength));
+            _pieceData = new PieceInfo[numberOfPieces];
+            pieceWriteQueue = diskIO.pieceWriteQueue;
+            pieceRequestQueue = diskIO.pieceRequestQueue;
             _SHA1 = new SHA1CryptoServiceProvider();
-            DownloadFinished = new ManualResetEvent(false);
-            Bitfield = new byte[(int)Math.Ceiling((double)NumberOfPieces / (double)8)];
+            downloadFinished = new ManualResetEvent(false);
+            Bitfield = new byte[(int)Math.Ceiling((double)numberOfPieces / (double)8)];
             _piecesMissing = new byte[Bitfield.Length];
-            Selector = pieceSelector;
-            PeerSwarm = new ConcurrentDictionary<string, Peer>();
-            WaitForPieceAssembly = new ManualResetEvent(false);
-            AssembledPiece = new PieceBuffer(this, PieceLength);
-            CancelAssemblerTaskSource = new CancellationTokenSource();
-            TrackerStarted = new ManualResetEvent(false);
+            selector = pieceSelector;
+            peerSwarm = new ConcurrentDictionary<string, Peer>();
+            waitForPieceAssembly = new ManualResetEvent(false);
+            assembledPiece = new PieceBuffer(this, pieceLength);
+            cancelAssemblerTaskSource = new CancellationTokenSource();
+            trackerStarted = new ManualResetEvent(false);
             // In seeding mode mark eveything downloaded to save startup time
             diskIO.CreateLocalTorrentStructure(this);
             if (seeding)
@@ -129,7 +129,7 @@ namespace BitTorrentLibrary
             UInt32 pieceOffset = pieceNumber * Constants.HashLength;
             for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
             {
-                if (hash[byteNumber] != PiecesInfoHash[pieceOffset + byteNumber])
+                if (hash[byteNumber] != piecesInfoHash[pieceOffset + byteNumber])
                 {
                     return false;
                 }
@@ -196,7 +196,7 @@ namespace BitTorrentLibrary
                     if (!IsPieceMissing(pieceNumber))
                     {
                         _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                        MissingPiecesCount++;
+                        missingPiecesCount++;
                     }
                 }
                 else
@@ -204,7 +204,7 @@ namespace BitTorrentLibrary
                     if (IsPieceMissing(pieceNumber))
                     {
                         _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                        MissingPiecesCount--;
+                        missingPiecesCount--;
                     }
                 }
             }
@@ -287,7 +287,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool IsSpaceInSwarm(string ip)
         {
-            return !PeerSwarm.ContainsKey(ip) && (PeerSwarm.Count < MaximumSwarmSize);
+            return !peerSwarm.ContainsKey(ip) && (peerSwarm.Count < maximumSwarmSize);
         }
         /// <summary>
         /// 

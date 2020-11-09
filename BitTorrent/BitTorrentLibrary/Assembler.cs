@@ -34,7 +34,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler
     {
-        internal ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
+        internal ManualResetEvent paused;  // == false (unset) pause downloading from peer
 
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
@@ -44,7 +44,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber"></param>
         private void SignalHaveToSwarm(TorrentContext tc, UInt32 pieceNumber)
         {
-            foreach (var remotePeer in tc.PeerSwarm.Values)
+            foreach (var remotePeer in tc.peerSwarm.Values)
             {
                 PWP.Have(remotePeer, pieceNumber);
             }
@@ -80,17 +80,17 @@ namespace BitTorrentLibrary
         private bool GetPieceFromPeers(TorrentContext tc, uint pieceNumber, WaitHandle[] waitHandles)
         {
 
-            Peer[] remotePeers = tc.Selector.GetListOfPeers(tc, pieceNumber);
+            Peer[] remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber);
 
             if (remotePeers.Length == 0)
             {
                 return false;
             }
 
-            tc.AssembledPiece.Number = pieceNumber;
-            tc.AssembledPiece.Reset();
-            tc.AssembledPiece.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
-            tc.WaitForPieceAssembly.Reset();
+            tc.assembledPiece.Number = pieceNumber;
+            tc.assembledPiece.Reset();
+            tc.assembledPiece.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
+            tc.waitForPieceAssembly.Reset();
 
             while (true)
             {
@@ -98,7 +98,7 @@ namespace BitTorrentLibrary
                 UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
                 UInt32 currentPeer = 0;
 
-                foreach (var blockThere in tc.AssembledPiece.BlocksPresent())
+                foreach (var blockThere in tc.assembledPiece.BlocksPresent())
                 {
                     if (!blockThere)
                     {
@@ -113,7 +113,7 @@ namespace BitTorrentLibrary
                 switch (WaitHandle.WaitAny(waitHandles, 60000))
                 {
                     case 0:
-                        return tc.AssembledPiece.AllBlocksThere;
+                        return tc.assembledPiece.AllBlocksThere;
                     case 1:
                         return false;
                     case WaitHandle.WaitTimeout:
@@ -132,19 +132,19 @@ namespace BitTorrentLibrary
         {
             UInt32 nextPiece = 0;
 
-            WaitHandle[] waitHandles = new WaitHandle[] { tc.WaitForPieceAssembly, cancelAssemblerTask.WaitHandle };
+            WaitHandle[] waitHandles = new WaitHandle[] { tc.waitForPieceAssembly, cancelAssemblerTask.WaitHandle };
 
-            while (!tc.DownloadFinished.WaitOne(0))
+            while (!tc.downloadFinished.WaitOne(0))
             {
-                while (tc.Selector.NextPiece(tc, ref nextPiece, nextPiece, cancelAssemblerTask))
+                while (tc.selector.NextPiece(tc, ref nextPiece, nextPiece, cancelAssemblerTask))
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
-                        bool pieceValid = tc.CheckPieceHash(nextPiece, tc.AssembledPiece.Buffer, tc.GetPieceLength(nextPiece));
+                        bool pieceValid = tc.CheckPieceHash(nextPiece, tc.assembledPiece.Buffer, tc.GetPieceLength(nextPiece));
                         if (pieceValid)
                         {
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
-                            tc.PieceWriteQueue.Enqueue(new PieceBuffer(tc.AssembledPiece));
+                            tc.pieceWriteQueue.Enqueue(new PieceBuffer(tc.assembledPiece));
                             tc.MarkPieceLocal(nextPiece, true);
                             SignalHaveToSwarm(tc, nextPiece);
                         }
@@ -162,7 +162,7 @@ namespace BitTorrentLibrary
                         tc.MarkPieceMissing(nextPiece, true);
                     }
                     cancelAssemblerTask.ThrowIfCancellationRequested();
-                    Paused.WaitOne(cancelAssemblerTask);
+                    paused.WaitOne(cancelAssemblerTask);
                 }
 
             }
@@ -176,7 +176,7 @@ namespace BitTorrentLibrary
         {
 
             WaitHandle[] waitHandles = new WaitHandle[] { cancelAssemblerTask.WaitHandle };
-            foreach (var remotePeer in tc.PeerSwarm.Values)
+            foreach (var remotePeer in tc.peerSwarm.Values)
             {
                 PWP.Uninterested(remotePeer);
                 PWP.Unchoke(remotePeer);
@@ -189,7 +189,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public Assembler()
         {
-            Paused = new ManualResetEvent(false);
+            paused = new ManualResetEvent(false);
         }
         /// <summary>
         /// 
@@ -199,14 +199,14 @@ namespace BitTorrentLibrary
         internal void AssemblePieces(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
 
-            Log.Logger.Debug($"Starting block assembler for InfoHash {Util.InfoHashToString(tc.InfoHash)}.");
+            Log.Logger.Debug($"Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
 
             try
             {
 
-                Paused.WaitOne(cancelAssemblerTask);
+                paused.WaitOne(cancelAssemblerTask);
 
-                tc.TrackerStarted.WaitOne(cancelAssemblerTask);
+                tc.trackerStarted.WaitOne(cancelAssemblerTask);
 
                 if (tc.MainTracker.Left != 0)
                 {
@@ -228,7 +228,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
 
-            Log.Logger.Debug($"Terminating block assembler for InfoHash {Util.InfoHashToString(tc.InfoHash)}.");
+            Log.Logger.Debug($"Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
 
         }
     }

@@ -21,7 +21,7 @@ namespace BitTorrentLibrary
     internal class Peer
     {
         private readonly PeerNetwork _network;                           // Network layer
-        internal AsyncQueue<Peer> PeerCloseQueue {get; set; }            // Peer close queue
+        internal AsyncQueue<Peer> peerCloseQueue;                        // Peer close queue
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public TorrentContext Tc { get; set; }                           // Torrent torrent context
@@ -67,7 +67,7 @@ namespace BitTorrentLibrary
         public void SetTorrentContext(TorrentContext tc)
         {
             Tc = tc;
-            NumberOfMissingPieces = Tc.NumberOfPieces;
+            NumberOfMissingPieces = Tc.numberOfPieces;
             // AssembledPiece = new PieceBuffer(tc, Tc.PieceLength);
             RemotePieceBitfield = new byte[tc.Bitfield.Length];
         }
@@ -129,9 +129,9 @@ namespace BitTorrentLibrary
                 Connected = false;
                 CancelTaskSource.Cancel();
                 BitfieldReceived.Set();
-                if (Tc.PeerSwarm.ContainsKey(Ip))
+                if (Tc.peerSwarm.ContainsKey(Ip))
                 {
-                    if (Tc.PeerSwarm.TryRemove(Ip, out Peer _))
+                    if (Tc.peerSwarm.TryRemove(Ip, out Peer _))
                     {
                         Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
                     }
@@ -173,18 +173,18 @@ namespace BitTorrentLibrary
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
         {
 
-            if (pieceNumber == Tc.AssembledPiece.Number)
+            if (pieceNumber == Tc.assembledPiece.Number)
             {
                 UInt32 blockNumber = blockOffset / Constants.BlockSize;
 
                 Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
 
-                Tc.AssembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
+                Tc.assembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
 
-                if (Tc.AssembledPiece.AllBlocksThere)
+                if (Tc.assembledPiece.AllBlocksThere)
                 {
-                    Tc.AssembledPiece.Number = pieceNumber;
-                    Tc.WaitForPieceAssembly.Set();
+                    Tc.assembledPiece.Number = pieceNumber;
+                    Tc.waitForPieceAssembly.Set();
                 }
             }
             else
@@ -197,7 +197,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public void QueueForClosure()
         {
-            PeerCloseQueue.Enqueue(this);
+            peerCloseQueue.Enqueue(this);
         }
 
     }

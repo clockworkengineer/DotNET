@@ -29,8 +29,8 @@ namespace BitTorrentLibrary
     public class DiskIO
     {
         private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
-        internal AsyncQueue<PieceBuffer> PieceWriteQueue { get; }      // Piece buffer write queue
-        internal AsyncQueue<PieceRequest> PieceRequestQueue { get; }   // Piece request read queue
+        internal AsyncQueue<PieceBuffer> pieceWriteQueue;              // Piece buffer write queue
+        internal AsyncQueue<PieceRequest> pieceRequestQueue;           // Piece request read queue
         public ProgessCallBack CallBack { get; set; }                  // Download progress function
         public Object CallBackData { get; set; }                       // Download progress function data
 
@@ -44,10 +44,10 @@ namespace BitTorrentLibrary
         private void TransferPiece(TorrentContext tc, PieceBuffer transferBuffer, bool read)
         {
             int bytesTransferred = 0;
-            UInt64 startOffset = transferBuffer.Number * tc.PieceLength;
-            UInt64 endOffset = startOffset + tc.PieceLength;
+            UInt64 startOffset = transferBuffer.Number * tc.pieceLength;
+            UInt64 endOffset = startOffset + tc.pieceLength;
 
-            foreach (var file in tc.FilesToDownload)
+            foreach (var file in tc.filesToDownload)
             {
                 if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
                 {
@@ -58,11 +58,11 @@ namespace BitTorrentLibrary
                         stream.Seek((Int64)(startTransfer - file.offset), SeekOrigin.Begin);
                         if (read)
                         {
-                            stream.Read(transferBuffer.Buffer, (Int32)(startTransfer % tc.PieceLength), (Int32)(endTransfer - startTransfer));
+                            stream.Read(transferBuffer.Buffer, (Int32)(startTransfer % tc.pieceLength), (Int32)(endTransfer - startTransfer));
                         }
                         else
                         {
-                            stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % tc.PieceLength), (Int32)(endTransfer - startTransfer));
+                            stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % tc.pieceLength), (Int32)(endTransfer - startTransfer));
                         }
                         bytesTransferred += (Int32)(endTransfer - startTransfer);
                         if (bytesTransferred == tc.GetPieceLength(transferBuffer.Number))
@@ -128,11 +128,11 @@ namespace BitTorrentLibrary
 
                 while (true)
                 {
-                    PieceBuffer pieceBuffer = await PieceWriteQueue.DequeueAsync(cancelTask);
+                    PieceBuffer pieceBuffer = await pieceWriteQueue.DequeueAsync(cancelTask);
 
                     Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
 
-                    if (!pieceBuffer.Tc.DownloadFinished.WaitOne(0))
+                    if (!pieceBuffer.Tc.downloadFinished.WaitOne(0))
                     {
                         TransferPiece(pieceBuffer.Tc, pieceBuffer, false);
 
@@ -142,7 +142,7 @@ namespace BitTorrentLibrary
 
                         if (pieceBuffer.Tc.BytesLeftToDownload() == 0)
                         {
-                            pieceBuffer.Tc.DownloadFinished.Set();
+                            pieceBuffer.Tc.downloadFinished.Set();
                         }
 
                         // Make sure progress call back does not termiate the task.
@@ -185,7 +185,7 @@ namespace BitTorrentLibrary
                 while (true)
                 {
 
-                    PieceRequest request = await PieceRequestQueue.DequeueAsync(cancelTask);
+                    PieceRequest request = await pieceRequestQueue.DequeueAsync(cancelTask);
                     try
                     {
                         Log.Logger.Info($"Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
@@ -222,8 +222,8 @@ namespace BitTorrentLibrary
         public DiskIO()
         {
             _cancelTaskSource = new CancellationTokenSource();
-            PieceWriteQueue = new AsyncQueue<PieceBuffer>();
-            PieceRequestQueue = new AsyncQueue<PieceRequest>();
+            pieceWriteQueue = new AsyncQueue<PieceBuffer>();
+            pieceRequestQueue = new AsyncQueue<PieceRequest>();
             CancellationToken cancelTask = _cancelTaskSource.Token;
             Task.Run(() => Task.WaitAll(PieceBufferDiskWriterAsync(cancelTask), PieceRequestProcessingAsync(cancelTask)));
         }
@@ -243,7 +243,7 @@ namespace BitTorrentLibrary
         {
             Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
 
-            foreach (var file in tc.FilesToDownload)
+            foreach (var file in tc.filesToDownload)
             {
                 if (!System.IO.File.Exists(file.name))
                 {
@@ -263,14 +263,14 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal void CreateTorrentBitfield(TorrentContext tc)
         {
-            byte[] pieceBuffer = new byte[tc.PieceLength];
+            byte[] pieceBuffer = new byte[tc.pieceLength];
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
             int bytesRead = 0;
 
             Log.Logger.Debug("Generate pieces downloaded map from local files ...");
 
-            foreach (var file in tc.FilesToDownload)
+            foreach (var file in tc.filesToDownload)
             {
                 Log.Logger.Debug($"File: {file.name}");
 
@@ -280,7 +280,7 @@ namespace BitTorrentLibrary
                     {
                         bytesInBuffer += (UInt32)bytesRead;
 
-                        if (bytesInBuffer == tc.PieceLength)
+                        if (bytesInBuffer == tc.pieceLength)
                         {
                             UpdateBitfieldFromBuffer(tc, pieceNumber, pieceBuffer, bytesInBuffer);
                             bytesInBuffer = 0;
@@ -306,7 +306,7 @@ namespace BitTorrentLibrary
         internal void FullyDownloadedTorrentBitfield(TorrentContext tc)
         {
             UInt64 totalBytesToDownload = tc.TotalBytesToDownload;
-            for (UInt32 pieceNumber = 0; pieceNumber < tc.NumberOfPieces; pieceNumber++)
+            for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
             {
                 tc.MarkPieceLocal(pieceNumber, true);
                 tc.MarkPieceMissing(pieceNumber, false);

@@ -39,7 +39,7 @@ namespace BitTorrentLibrary
                     return currentPiece;
                 }
                 currentPiece++;
-                currentPiece %= tc.NumberOfPieces;
+                currentPiece %= tc.numberOfPieces;
             } while (startPiece != currentPiece);
 
             return -1;
@@ -97,7 +97,7 @@ namespace BitTorrentLibrary
                     numberOfSuggestions--;
                 }
                 currentPiece++;
-                currentPiece %= remotePeer.Tc.NumberOfPieces;
+                currentPiece %= remotePeer.Tc.numberOfPieces;
             } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
 
             return (suggestions.ToArray());
@@ -112,7 +112,7 @@ namespace BitTorrentLibrary
         internal Peer[] GetListOfPeers(TorrentContext tc, UInt32 pieceNumber)
         {
             List<Peer> peers = new List<Peer>();
-            foreach (var peer in tc.PeerSwarm.Values)
+            foreach (var peer in tc.peerSwarm.Values)
             {
                 if (peer.Connected &&
                     peer.PeerChoking.WaitOne(0) &&

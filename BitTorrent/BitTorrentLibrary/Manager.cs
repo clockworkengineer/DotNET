@@ -49,7 +49,7 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal bool AddTorrentContext(TorrentContext tc)
         {
-            return _torrents.TryAdd(Util.InfoHashToString(tc.InfoHash), tc);
+            return _torrents.TryAdd(Util.InfoHashToString(tc.infoHash), tc);
 
         }
         /// <summary>
@@ -59,7 +59,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool RemoveTorrentContext(TorrentContext tc)
         {
-            return _torrents.TryRemove(Util.InfoHashToString(tc.InfoHash), out TorrentContext _);
+            return _torrents.TryRemove(Util.InfoHashToString(tc.infoHash), out TorrentContext _);
         }
         /// <summary>
         /// Add peer to dead list.

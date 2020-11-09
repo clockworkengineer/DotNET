@@ -77,16 +77,16 @@ namespace BitTorrentLibrary
 
             remotePeer.Connect(_manager);
 
-            remotePeer.PeerCloseQueue = _peerCloseQueue;
+            remotePeer.peerCloseQueue = _peerCloseQueue;
 
             if (remotePeer.Connected)
             {
                 if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
                 {
-                    if (remotePeer.Tc.PeerSwarm.TryAdd(remotePeer.Ip, remotePeer))
+                    if (remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                     {
                         remotePeer.BitfieldReceived.WaitOne();
-                        foreach (var pieceNumber in remotePeer.Tc.Selector.LocalPieceSuggestions(remotePeer, 10))
+                        foreach (var pieceNumber in remotePeer.Tc.selector.LocalPieceSuggestions(remotePeer, 10))
                         {
                             PWP.Have(remotePeer, pieceNumber);
                         }
@@ -234,7 +234,7 @@ namespace BitTorrentLibrary
         {
             if (_manager.AddTorrentContext(tc))
             {
-                tc.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.CancelAssemblerTaskSource.Token));
+                tc.assemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.cancelAssemblerTaskSource.Token));
             }
             else
             {
@@ -286,14 +286,14 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.InfoHash)}.");
-                tc.CancelAssemblerTaskSource.Cancel();
+                Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.infoHash)}.");
+                tc.cancelAssemblerTaskSource.Cancel();
                 tc.MainTracker.ChangeStatus(TrackerEvent.stopped);
                 tc.MainTracker.StopAnnouncing();
-                if (tc.PeerSwarm != null)
+                if (tc.peerSwarm != null)
                 {
                     Log.Logger.Info("Closing peer sockets.");
-                    foreach (var remotePeer in tc.PeerSwarm.Values)
+                    foreach (var remotePeer in tc.peerSwarm.Values)
                     {
                         remotePeer.QueueForClosure();
                     }
@@ -315,7 +315,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _pieceAssembler?.Paused.Set();
+                _pieceAssembler?.paused.Set();
                 tc.Status = TorrentStatus.Initialised;
             }
             catch (Exception ex)
@@ -331,7 +331,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _pieceAssembler?.Paused.Reset();
+                _pieceAssembler?.paused.Reset();
                 tc.Status = TorrentStatus.Paused;
             }
             catch (Exception ex)
@@ -352,7 +352,7 @@ namespace BitTorrentLibrary
                 fileName = tc.FileName,
                 status = tc.Status,
 
-                peers = (from peer in tc.PeerSwarm.Values
+                peers = (from peer in tc.peerSwarm.Values
                          select new PeerDetails
                          {
                              ip = peer.Ip,
@@ -361,11 +361,11 @@ namespace BitTorrentLibrary
 
                 downloadedBytes = tc.TotalBytesDownloaded,
                 uploadedBytes = tc.TotalBytesUploaded,
-                infoHash = tc.InfoHash,
-                missingPiecesCount = tc.MissingPiecesCount,
-                swarmSize = (UInt32)tc.PeerSwarm.Count,
+                infoHash = tc.infoHash,
+                missingPiecesCount = tc.missingPiecesCount,
+                swarmSize = (UInt32)tc.peerSwarm.Count,
                 deadPeers = (UInt32)_manager.DeadPeerCount,
-                trackerStatus = tc.MainTracker._trackerStatus
+                trackerStatus = tc.MainTracker.trackerStatus
 
             };
         }
@@ -375,7 +375,7 @@ namespace BitTorrentLibrary
         /// <param name="tracker"></param>
         public void AttachPeerSwarmQueue(Tracker tracker)
         {
-            tracker._peerSwarmQueue = _peerSwarmQeue;
+            tracker.peerSwarmQueue = _peerSwarmQeue;
         }
         /// <summary>
         /// Detach peer swarm than queue.
@@ -383,7 +383,7 @@ namespace BitTorrentLibrary
         /// <param name="tracker"></param>
         public void DetachPeerSwarmQueue(Tracker tracker)
         {
-            tracker._peerSwarmQueue = null;
+            tracker.peerSwarmQueue = null;
         }
     }
 }
