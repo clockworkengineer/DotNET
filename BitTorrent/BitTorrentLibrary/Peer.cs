@@ -21,7 +21,7 @@ namespace BitTorrentLibrary
     internal class Peer
     {
         private readonly PeerNetwork _network;                           // Network layer
-        internal AsyncQueue<Peer> peerCloseQueue;                        // Peer close queue
+        internal AsyncQueue<Peer> PeerCloseQueue {get; set; }            // Peer close queue
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public TorrentContext Tc { get; set; }                           // Torrent torrent context
@@ -197,7 +197,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public void QueueForClosure()
         {
-            peerCloseQueue.Enqueue(this);
+            PeerCloseQueue.Enqueue(this);
         }
 
     }

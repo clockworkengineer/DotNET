@@ -11,7 +11,7 @@
 //
 
 using System;
-using System.Threading;
+using System.Timers;
 using System.Threading.Tasks;
 
 
@@ -40,10 +40,9 @@ namespace BitTorrentLibrary
         private AnnounceResponse _currentRespone;               // Last announce response 
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
-        internal System.Timers.Timer _announceTimer;            // Timer for sending tracker announce events
+        internal Timer _announceTimer;                          // Timer for sending tracker announce events
         internal AsyncQueue<PeerDetails> _peerSwarmQueue;       // Peers to add to swarm queue
         internal TrackerStatus _trackerStatus;                  // Current tracker status
-        internal ManualResetEvent trackerStarted;               // Signal when tracker started
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
@@ -145,7 +144,6 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public Tracker(TorrentContext tc)
         {
-            trackerStarted = new ManualResetEvent(false);
             _trackerStatus = TrackerStatus.Stopped;
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
@@ -222,7 +220,7 @@ namespace BitTorrentLibrary
                 _trackerStatus = TrackerStatus.Running;
                 _announceTimer?.Start();
                 CallBack?.Invoke(CallBackData);
-                trackerStarted.Set();
+                _tc.TrackerStarted.Set();
 
             }
             catch (Exception ex)

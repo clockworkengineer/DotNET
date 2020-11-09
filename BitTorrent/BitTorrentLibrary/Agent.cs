@@ -77,7 +77,7 @@ namespace BitTorrentLibrary
 
             remotePeer.Connect(_manager);
 
-            remotePeer.peerCloseQueue = _peerCloseQueue;
+            remotePeer.PeerCloseQueue = _peerCloseQueue;
 
             if (remotePeer.Connected)
             {
@@ -315,7 +315,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _pieceAssembler?.paused.Set();
+                _pieceAssembler?.Paused.Set();
                 tc.Status = TorrentStatus.Initialised;
             }
             catch (Exception ex)
@@ -331,7 +331,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _pieceAssembler?.paused.Reset();
+                _pieceAssembler?.Paused.Reset();
                 tc.Status = TorrentStatus.Paused;
             }
             catch (Exception ex)

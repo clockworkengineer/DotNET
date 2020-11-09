@@ -55,6 +55,7 @@ namespace BitTorrentLibrary
         internal int MaximumSwarmSize { get; } = Constants.MaximumSwarmSize; // Maximim swarm size
         internal ConcurrentDictionary<string, Peer> PeerSwarm { get; }       // Current peer swarm
         internal Tracker MainTracker { get; set; }                           // Main tracker assigned to torrent
+        internal ManualResetEvent TrackerStarted {get; set; }                // Signal when tracker started
         internal PieceBuffer AssembledPiece { get; set; }                    // Assembled pieces buffer
         internal Task AssemblerTask { get; set; }                            // Peer piece assembly task
         internal ManualResetEvent WaitForPieceAssembly { get; }              // When event set then piece has been fully assembled
@@ -98,6 +99,7 @@ namespace BitTorrentLibrary
             WaitForPieceAssembly = new ManualResetEvent(false);
             AssembledPiece = new PieceBuffer(this, PieceLength);
             CancelAssemblerTaskSource = new CancellationTokenSource();
+            TrackerStarted = new ManualResetEvent(false);
             // In seeding mode mark eveything downloaded to save startup time
             diskIO.CreateLocalTorrentStructure(this);
             if (seeding)

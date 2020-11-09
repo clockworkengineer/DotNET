@@ -148,7 +148,7 @@ namespace ClientUI
                     DownloadAgent.AddTorrent(tc);
                     seederTracker = new Tracker(tc);
                     DownloadAgent.AttachPeerSwarmQueue(seederTracker);
-                    seederTracker.StartAnnouncingAsync();
+                    seederTracker.StartAnnouncing();
                     DownloadAgent.StartTorrent(tc);
                     _seeders.Add(tc);
                 }

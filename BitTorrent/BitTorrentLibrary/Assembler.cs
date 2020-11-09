@@ -34,7 +34,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler
     {
-        internal ManualResetEvent paused { get; }      // == false (unset) pause downloading from peer
+        internal ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
 
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
@@ -162,7 +162,7 @@ namespace BitTorrentLibrary
                         tc.MarkPieceMissing(nextPiece, true);
                     }
                     cancelAssemblerTask.ThrowIfCancellationRequested();
-                    paused.WaitOne(cancelAssemblerTask);
+                    Paused.WaitOne(cancelAssemblerTask);
                 }
 
             }
@@ -189,7 +189,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public Assembler()
         {
-            paused = new ManualResetEvent(false);
+            Paused = new ManualResetEvent(false);
         }
         /// <summary>
         /// 
@@ -204,9 +204,9 @@ namespace BitTorrentLibrary
             try
             {
 
-                paused.WaitOne(cancelAssemblerTask);
+                Paused.WaitOne(cancelAssemblerTask);
 
-                tc.MainTracker.trackerStarted.WaitOne(cancelAssemblerTask);
+                tc.TrackerStarted.WaitOne(cancelAssemblerTask);
 
                 if (tc.MainTracker.Left != 0)
                 {
