@@ -87,7 +87,7 @@ namespace BitTorrentLibrary
                     }
                 }
             }
-            
+
             remotePeer.QueueForClosure();
 
         }
@@ -215,16 +215,13 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public void Add(TorrentContext tc)
         {
-            try
+            if (_manager.AddTorrentContext(tc))
             {
-
                 tc.AssemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.CancelAssemblerTaskSource.Token));
-                _manager.AddTorrentContext(tc);
             }
-            catch (Exception ex)
+            else
             {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failed to add torrent context." + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failed to add torrent context.");
             }
         }
         /// <summary>
@@ -233,14 +230,9 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public void Remove(TorrentContext tc)
         {
-            try
+            if (!_manager.RemoveTorrentContext(tc))
             {
-                _manager.RemoveTorrentContext(tc);
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failed to remove torrent context. " + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failed to remove torrent context. ");
             }
         }
         /// <summary>
@@ -389,7 +381,7 @@ namespace BitTorrentLibrary
                 swarmSize = (UInt32)tc.PeerSwarm.Count,
                 deadPeers = (UInt32)_manager.DeadPeerCount,
                 trackerStatus = tc.MainTracker._trackerStatus
-                
+
             };
         }
         /// <summary>

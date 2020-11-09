@@ -165,7 +165,7 @@ namespace ClientUI
 
                     _ = DownloadAgent.WaitForDownloadAsync(tc);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     if (tc != null)
                     {
@@ -302,6 +302,12 @@ namespace ClientUI
 
             MainWindow.TorrentFileText.Text = TorrentFileDirectory;
 
+        }
+
+                public void Run()
+        {
+            Application.Init();
+            Application.Run();
         }
     }
 }

@@ -16,21 +16,12 @@ namespace ClientUI
     {
 
         /// <summary>
-        /// Intialise and run Terminal.Gui appication.
-        /// </summary>
-        private static void Run()
-        {
-            Application.Init();
-            Application.Run();
-        }
-
-        /// <summary>
         /// Creat application object and run it.
         /// </summary>
-        static void Main(string[] args)
+        static void Main(string[] _)
         {
             DemoTorrentApplication main = new DemoTorrentApplication();
-            App.Run();
+            main.Run();
         }
     }
 }
