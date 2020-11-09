@@ -151,7 +151,7 @@ namespace ClientUI
 
                     tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationTorrentDirectory, SeedingMode);
 
-                    DownloadAgent.Add(tc);
+                    DownloadAgent.AddTorrent(tc);
 
                     seederTracker = new Tracker(tc);
 
@@ -159,11 +159,10 @@ namespace ClientUI
 
                     seederTracker.StartAnnouncing();
 
-                    DownloadAgent.Start(tc);
+                    DownloadAgent.StartTorrent(tc);
 
                     _seeders.Add(tc);
 
-                    _ = DownloadAgent.WaitForDownloadAsync(tc);
                 }
                 catch (Exception)
                 {
@@ -177,7 +176,7 @@ namespace ClientUI
                             seederTracker.StopAnnouncing();
                         }
                         DownloadAgent.Close(tc);
-                        DownloadAgent.Remove(tc);
+                        DownloadAgent.RemoveTorrent(tc);
                     }
                     continue;
                 }
@@ -251,7 +250,7 @@ namespace ClientUI
 
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
              {
-                 DownloadAgent.Remove(MainWindow.Torrent.Tc);
+                 DownloadAgent.RemoveTorrent(MainWindow.Torrent.Tc);
                  DownloadAgent.Close(MainWindow.Torrent.Tc);
                  MainWindow.InformationWindow.ClearData();
                  DisplayStatusBar(Status.Shutdown);

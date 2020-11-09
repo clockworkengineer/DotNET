@@ -144,7 +144,7 @@ namespace ClientUI
 
                 Tc = new TorrentContext(_torrentFile, new Selector(), TorrentDiskIO, "/home/robt/utorrent");
 
-                main.DownloadAgent.Add(Tc);
+                main.DownloadAgent.AddTorrent(Tc);
 
                 _tracker = new Tracker(Tc)
                 {
@@ -156,14 +156,12 @@ namespace ClientUI
 
                 _tracker.StartAnnouncing();
 
-                main.DownloadAgent.Start(Tc);
+                main.DownloadAgent.StartTorrent(Tc);
 
                 Application.MainLoop.Invoke(() =>
                 {
                     main.DisplayStatusBar(Status.Downloading);
                 });
-
-                _ = main.DownloadAgent.WaitForDownloadAsync(Tc);
 
             }
             catch (Exception ex)

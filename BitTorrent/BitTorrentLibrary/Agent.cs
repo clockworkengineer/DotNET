@@ -213,7 +213,7 @@ namespace BitTorrentLibrary
         /// Add torrent context to managers database while creating an assembler task for it.
         /// </summary>
         /// <param name="tc"></param>
-        public void Add(TorrentContext tc)
+        public void AddTorrent(TorrentContext tc)
         {
             if (_manager.AddTorrentContext(tc))
             {
@@ -228,7 +228,7 @@ namespace BitTorrentLibrary
         /// Remove torrent context from managers database.
         /// </summary>
         /// <param name="tc"></param>
-        public void Remove(TorrentContext tc)
+        public void RemoveTorrent(TorrentContext tc)
         {
             if (!_manager.RemoveTorrentContext(tc))
             {
@@ -263,46 +263,14 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Wait for a torrent to finish downloading.
-        /// </summary>
-        public void WaitForDownload(TorrentContext tc)
-        {
-            try
-            {
-                if (tc.MainTracker.Left != 0)
-                {
-                    Log.Logger.Info("Waiting for torrent to download for MetaInfo data ...");
-                    tc.Status = TorrentStatus.Downloading;
-                    tc.DownloadFinished.WaitOne();
-                    tc.MainTracker.ChangeStatus(TrackerEvent.completed);
-                    Log.Logger.Info("Whole Torrent finished downloading.");
-                }
-
-                tc.Status = TorrentStatus.Seeding;
-
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failed to download torrent file.");
-            }
-        }
-        /// <summary>
-        /// Wait for torrent to download asynch.
-        /// </summary>
-        public async Task WaitForDownloadAsync(TorrentContext tc)
-        {
-            await Task.Run(() => WaitForDownload(tc)).ConfigureAwait(false);
-        }
-        /// <summary>
         /// Closedown Agent
         /// </summary>
         public void Close(TorrentContext tc)
         {
             try
             {
-                tc.CancelAssemblerTaskSource.Cancel();
                 Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.InfoHash)}.");
+                tc.CancelAssemblerTaskSource.Cancel();
                 tc.MainTracker.StopAnnouncing();
                 if (tc.PeerSwarm != null)
                 {
@@ -326,7 +294,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Start downloading torrent.
         /// </summary>
-        public void Start(TorrentContext tc)
+        public void StartTorrent(TorrentContext tc)
         {
             try
             {
@@ -342,7 +310,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Pause downloading torrent.
         /// </summary>
-        public void Pause(TorrentContext tc)
+        public void PauseTorrent(TorrentContext tc)
         {
             try
             {

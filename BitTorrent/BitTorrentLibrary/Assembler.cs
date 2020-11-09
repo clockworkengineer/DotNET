@@ -10,10 +10,7 @@
 //
 
 using System;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Collections.Generic;
 
 namespace BitTorrentLibrary
 {
@@ -23,7 +20,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler
     {
-         internal ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
+        internal ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
 
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
@@ -206,9 +203,15 @@ namespace BitTorrentLibrary
 
                 if (tc.BytesLeftToDownload() > 0)
                 {
+                    Log.Logger.Info("Torrent downloading...");
+                    tc.Status = TorrentStatus.Downloading;
                     AssembleMissingPieces(tc, cancelAssemblerTask);
+                    tc.MainTracker.ChangeStatus(TrackerEvent.completed);
+                    Log.Logger.Info("Whole Torrent finished downloading.");
                 }
 
+                Log.Logger.Info("Torrent sedding...");
+                tc.Status = TorrentStatus.Seeding;
                 ProcessRemotePeerRequests(tc, cancelAssemblerTask);
 
             }
