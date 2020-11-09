@@ -14,7 +14,21 @@ using System.Threading;
 
 namespace BitTorrentLibrary
 {
-
+    internal static class ManualResetEventExtensions
+    {
+        /// <summary>
+        /// Wait for event to be set throwing a cancel exception if it is fired.
+        /// </summary>
+        /// <param name="evt"></param>
+        /// <param name="cancel"></param>
+        public static void WaitOne(this ManualResetEvent evt, CancellationToken cancel)
+        {
+            if (WaitHandle.WaitAny(new WaitHandle[] { evt, cancel.WaitHandle }) == 1)
+            {
+                cancel.ThrowIfCancellationRequested();
+            }
+        }
+    }
     /// <summary>
     /// Piece Assembler
     /// </summary>
@@ -78,27 +92,17 @@ namespace BitTorrentLibrary
             tc.AssembledPiece.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
             tc.WaitForPieceAssembly.Reset();
 
-            bool[] blockThere = tc.AssembledPiece.BlocksPresent();
-
             while (true)
             {
                 UInt32 blockOffset = 0;
                 UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
                 UInt32 currentPeer = 0;
 
-                for (var blockNumber = 0; blockNumber < tc.GetBlocksInPiece(pieceNumber); blockNumber++)
+                foreach (var blockThere in tc.AssembledPiece.BlocksPresent())
                 {
-                    if (!blockThere[blockNumber])
+                    if (!blockThere)
                     {
-                        if (bytesToTransfer >= Constants.BlockSize)
-                        {
-                            Request(remotePeers[currentPeer], pieceNumber, blockOffset, Constants.BlockSize);
-                        }
-                        else
-                        {
-                            Request(remotePeers[currentPeer], pieceNumber, blockOffset, bytesToTransfer);
-                        }
-
+                        Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
                     }
                     currentPeer++;
                     currentPeer %= (UInt32)remotePeers.Length;
@@ -123,16 +127,16 @@ namespace BitTorrentLibrary
         /// 
         /// </summary>
         /// <param name="tc"></param>
-        /// <param name="cancelTask"></param>
-        private void AssembleMissingPieces(TorrentContext tc, CancellationToken cancelTask)
+        /// <param name="cancelAssemblerTask"></param>
+        private void AssembleMissingPieces(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
             UInt32 nextPiece = 0;
 
-            WaitHandle[] waitHandles = new WaitHandle[] { tc.WaitForPieceAssembly, cancelTask.WaitHandle };
+            WaitHandle[] waitHandles = new WaitHandle[] { tc.WaitForPieceAssembly, cancelAssemblerTask.WaitHandle };
 
             while (!tc.DownloadFinished.WaitOne(0))
             {
-                while (tc.Selector.NextPiece(tc, ref nextPiece, nextPiece, cancelTask))
+                while (tc.Selector.NextPiece(tc, ref nextPiece, nextPiece, cancelAssemblerTask))
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
@@ -157,7 +161,8 @@ namespace BitTorrentLibrary
                     {
                         tc.MarkPieceMissing(nextPiece, true);
                     }
-                    cancelTask.ThrowIfCancellationRequested();
+                    cancelAssemblerTask.ThrowIfCancellationRequested();
+                    Paused.WaitOne(cancelAssemblerTask);
                 }
 
             }
@@ -167,10 +172,10 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="cancelTask"></param>
-        private void ProcessRemotePeerRequests(TorrentContext tc, CancellationToken cancelTask)
+        private void ProcessRemotePeerRequests(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
 
-            WaitHandle[] waitHandles = new WaitHandle[] { cancelTask.WaitHandle };
+            WaitHandle[] waitHandles = new WaitHandle[] { cancelAssemblerTask.WaitHandle };
             foreach (var remotePeer in tc.PeerSwarm.Values)
             {
                 PWP.Uninterested(remotePeer);
@@ -199,7 +204,7 @@ namespace BitTorrentLibrary
             try
             {
 
-                Paused.WaitOne();
+                Paused.WaitOne(cancelAssemblerTask);
 
                 if (tc.BytesLeftToDownload() > 0)
                 {
