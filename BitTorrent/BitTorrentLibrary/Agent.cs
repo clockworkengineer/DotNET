@@ -55,6 +55,16 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
             }
 
+            Log.Logger.Info("Close remaining peers left in queue... ");
+            if (_peerCloseQueue.Count > 0)
+            {
+                for (UInt32 peerNo = 0; peerNo < _peerCloseQueue.Count; peerNo++)
+                {
+                    Peer peer = await _peerCloseQueue.DequeueAsync();
+                    peer.Close();
+                }
+            }
+
             Log.Logger.Info("Peer close queue task terminated.");
 
         }
@@ -116,9 +126,16 @@ namespace BitTorrentLibrary
                             }
                         }
                     }
-                    catch (Exception)
+                    catch (SocketException ex)
                     {
-                        // Add to dead peer here depending on exception type.
+                        if (ex.ErrorCode == 111)
+                        {    // Connection refused
+                            _manager.AddToDeadPeerList(peer.ip);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Logger.Debug(ex.Message);
                     }
                 }
             }
@@ -245,13 +262,13 @@ namespace BitTorrentLibrary
                 if (_agentRunning)
                 {
                     Log.Logger.Info("Shutting down torrent agent...");
-                    _cancelWorkerTaskSource.Cancel();
+                    _agentRunning = false;
                     foreach (var tc in _manager.TorrentList)
                     {
                         Close(tc);
                     }
                     PeerNetwork.ShutdownListener();
-                    _agentRunning = false;
+                    _cancelWorkerTaskSource.Cancel();
                     Log.Logger.Info("Torrent agent shutdown.");
                 }
             }
@@ -271,6 +288,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.InfoHash)}.");
                 tc.CancelAssemblerTaskSource.Cancel();
+                tc.MainTracker.ChangeStatus(TrackerEvent.stopped);
                 tc.MainTracker.StopAnnouncing();
                 if (tc.PeerSwarm != null)
                 {
@@ -280,7 +298,6 @@ namespace BitTorrentLibrary
                         remotePeer.QueueForClosure();
                     }
                 }
-                tc.MainTracker.ChangeStatus(TrackerEvent.stopped);
                 tc.Status = TorrentStatus.Ended;
                 Log.Logger.Info("Torrent context closed.");
 
@@ -298,7 +315,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _pieceAssembler?.Paused.Set();
+                _pieceAssembler?.paused.Set();
                 tc.Status = TorrentStatus.Initialised;
             }
             catch (Exception ex)
@@ -314,7 +331,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _pieceAssembler?.Paused.Reset();
+                _pieceAssembler?.paused.Reset();
                 tc.Status = TorrentStatus.Paused;
             }
             catch (Exception ex)

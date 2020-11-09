@@ -34,7 +34,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler
     {
-        internal ManualResetEvent Paused { get; }      // == false (unset) pause downloading from peer
+        internal ManualResetEvent paused { get; }      // == false (unset) pause downloading from peer
 
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
@@ -162,7 +162,7 @@ namespace BitTorrentLibrary
                         tc.MarkPieceMissing(nextPiece, true);
                     }
                     cancelAssemblerTask.ThrowIfCancellationRequested();
-                    Paused.WaitOne(cancelAssemblerTask);
+                    paused.WaitOne(cancelAssemblerTask);
                 }
 
             }
@@ -189,7 +189,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public Assembler()
         {
-            Paused = new ManualResetEvent(false);
+            paused = new ManualResetEvent(false);
         }
         /// <summary>
         /// 
@@ -204,9 +204,11 @@ namespace BitTorrentLibrary
             try
             {
 
-                Paused.WaitOne(cancelAssemblerTask);
+                paused.WaitOne(cancelAssemblerTask);
 
-                if (tc.BytesLeftToDownload() > 0)
+                tc.MainTracker.trackerStarted.WaitOne(cancelAssemblerTask);
+
+                if (tc.MainTracker.Left != 0)
                 {
                     Log.Logger.Info("Torrent downloading...");
                     tc.Status = TorrentStatus.Downloading;
@@ -215,8 +217,9 @@ namespace BitTorrentLibrary
                     Log.Logger.Info("Whole Torrent finished downloading.");
                 }
 
-                Log.Logger.Info("Torrent sedding...");
+                Log.Logger.Info("Torrent seeding...");
                 tc.Status = TorrentStatus.Seeding;
+                tc.MainTracker.SetSeedingInterval(60000 * 30);
                 ProcessRemotePeerRequests(tc, cancelAssemblerTask);
 
             }

@@ -16,6 +16,6 @@ namespace BitTorrentLibrary
 {
     internal interface IAnnouncer
     {
-        Task<AnnounceResponse> AnnounceAsync(Tracker tracker);
+        AnnounceResponse Announce(Tracker tracker);
     }
 }

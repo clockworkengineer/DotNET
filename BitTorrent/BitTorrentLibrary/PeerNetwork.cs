@@ -34,7 +34,6 @@ namespace BitTorrentLibrary
             else
             {
                 socket.Close();
-                throw new Error("BitTorrent (Connect) Error: Peer connect timed out.");
             }
         }
     }

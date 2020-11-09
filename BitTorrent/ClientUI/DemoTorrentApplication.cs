@@ -137,32 +137,20 @@ namespace ClientUI
 
             foreach (var file in torrentFiles)
             {
-
                 seederTracker = null;
                 tc = null;
-                
                 try
                 {
-
                     MetaInfoFile _seederFile = new MetaInfoFile(file);
-
                     _seederFile.Load();
                     _seederFile.Parse();
-
                     tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationTorrentDirectory, SeedingMode);
-
                     DownloadAgent.AddTorrent(tc);
-
                     seederTracker = new Tracker(tc);
-
                     DownloadAgent.AttachPeerSwarmQueue(seederTracker);
-
-                    seederTracker.StartAnnouncing();
-
+                    seederTracker.StartAnnouncingAsync();
                     DownloadAgent.StartTorrent(tc);
-
                     _seeders.Add(tc);
-
                 }
                 catch (Exception)
                 {
@@ -180,8 +168,6 @@ namespace ClientUI
                     }
                     continue;
                 }
-
-
             }
 
             Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);

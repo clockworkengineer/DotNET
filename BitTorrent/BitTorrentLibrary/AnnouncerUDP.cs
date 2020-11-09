@@ -25,7 +25,7 @@ namespace BitTorrentLibrary
         private bool _connected = false;                            // == true connected
         private UInt64 _connectionID;                               // Returned connection ID
         private readonly UdpClient _trackerConnection;              // Tracker UDP connection
-        private readonly IPEndPoint _trackerEndPoint;               // Tracker enpoint
+        private  IPEndPoint _trackerEndPoint;                       // Tracker enpoint
         
         /// <summary>
         /// Send and recieve command to UDP tracker. If we get a timeout then the
@@ -33,7 +33,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        private async Task<byte[]> SendCommandAsync(byte[] command)
+        private byte[] SendCommand(byte[] command)
         {
             byte[] commandReply = null;
 
@@ -41,9 +41,8 @@ namespace BitTorrentLibrary
             {
                 try
                 {
-                    await _trackerConnection.SendAsync(command, command.Length);
-                    var result =  await _trackerConnection.ReceiveAsync();
-                    return result.Buffer;
+                    _trackerConnection.Send(command, command.Length);
+                    return _trackerConnection.Receive(ref _trackerEndPoint);
                 }
                 catch (SocketException ex)
                 {
@@ -63,7 +62,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Connect to UDP tracker server.
         /// </summary>
-        private async Task<bool> ConnectAsync()
+        private void Connect()
         {
             try
             {
@@ -74,7 +73,7 @@ namespace BitTorrentLibrary
                 connectPacket.AddRange(Util.PackUInt32(0));
                 connectPacket.AddRange(Util.PackUInt32(transactionID));
 
-                var connectReply = await SendCommandAsync(connectPacket.ToArray());
+                var connectReply = SendCommand(connectPacket.ToArray());
                 if (connectReply.Length == 16)
                 {
                     if (Util.UnPackUInt32(connectReply, 0) == 0)
@@ -97,7 +96,7 @@ namespace BitTorrentLibrary
             {
                 throw;
             }
-            return _connected;
+ 
         }
         /// <summary>
         /// Setup data and resources needed by UDP tracker.
@@ -117,7 +116,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="tracker"></param>
         /// <returns>Announce response</returns>
-        public async Task<AnnounceResponse> AnnounceAsync(Tracker tracker)
+        public AnnounceResponse Announce(Tracker tracker)
         {
             Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))} " +
                   $"peer_id={tracker.PeerID} port={tracker.Port} compact={tracker.Compact} no_peer_id={tracker.NoPeerID} uploaded={tracker.Uploaded}" +
@@ -133,7 +132,7 @@ namespace BitTorrentLibrary
             {
                 if (!_connected)
                 {
-                    await ConnectAsync();
+                    Connect();
                 }
 
                 List<byte> announcePacket = new List<byte>();
@@ -154,7 +153,7 @@ namespace BitTorrentLibrary
                 announcePacket.AddRange(Util.PackUInt32(tracker.Port));
                 announcePacket.AddRange(Util.PackUInt32(0));                          // Extensions.
 
-                var announceReply = await SendCommandAsync(announcePacket.ToArray());
+                var announceReply = SendCommand(announcePacket.ToArray());
 
                 if (Util.UnPackUInt32(announceReply, 0) == 1)
                 {

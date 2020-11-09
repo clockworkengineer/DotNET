@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 //
 // Author: Robert Tizzard
 //
@@ -12,8 +11,9 @@ using System.Threading.Tasks;
 //
 
 using System;
-using System.Collections.Generic;
-using System.Timers;
+using System.Threading;
+using System.Threading.Tasks;
+
 
 namespace BitTorrentLibrary
 {
@@ -40,9 +40,10 @@ namespace BitTorrentLibrary
         private AnnounceResponse _currentRespone;               // Last announce response 
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
-        internal Timer _announceTimer;                          // Timer for sending tracker announce events
+        internal System.Timers.Timer _announceTimer;            // Timer for sending tracker announce events
         internal AsyncQueue<PeerDetails> _peerSwarmQueue;       // Peers to add to swarm queue
         internal TrackerStatus _trackerStatus;                  // Current tracker status
+        internal ManualResetEvent trackerStarted;               // Signal when tracker started
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
@@ -66,13 +67,13 @@ namespace BitTorrentLibrary
         /// Perform announce request on timer tick
         /// </summary>
         /// <param name="tracker"></param>
-        private async Task OnAnnounceEventAsync(Tracker tracker)
+        private void OnAnnounceEvent(Tracker tracker)
         {
             try
             {
                 if (tracker._trackerStatus != TrackerStatus.Stalled)
                 {
-                    tracker._currentRespone = await tracker._announcer.AnnounceAsync(tracker);
+                    tracker._currentRespone = tracker._announcer.Announce(tracker);
 
                     if (!tracker._currentRespone.failure)
                     {
@@ -120,17 +121,20 @@ namespace BitTorrentLibrary
             TrackerID = response.trackerID;
             MinInterval = response.minInterval;
 
-            if (response.interval > MinInterval)
+            if (_tc.Status == TorrentStatus.Downloading)
             {
-                UInt32 oldInterval = Interval;
-                Interval = response.interval;
-                if (oldInterval != Interval)
+                if (response.interval > MinInterval)
                 {
-                    if (_announceTimer != null)
+                    UInt32 oldInterval = Interval;
+                    Interval = response.interval;
+                    if (oldInterval != Interval)
                     {
-                        _announceTimer.Stop();
-                        _announceTimer.Interval = Interval;
-                        _announceTimer.Start();
+                        if (_announceTimer != null)
+                        {
+                            _announceTimer.Stop();
+                            _announceTimer.Interval = Interval;
+                            _announceTimer.Start();
+                        }
                     }
                 }
             }
@@ -141,6 +145,7 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public Tracker(TorrentContext tc)
         {
+            trackerStarted = new ManualResetEvent(false);
             _trackerStatus = TrackerStatus.Stopped;
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
@@ -175,7 +180,7 @@ namespace BitTorrentLibrary
         {
             _announceTimer?.Stop();
             Event = status;
-            _ = OnAnnounceEventAsync(this);
+            OnAnnounceEvent(this);
             Event = TrackerEvent.None;  // Reset it back to default on next tick
             _announceTimer?.Start();
         }
@@ -197,22 +202,27 @@ namespace BitTorrentLibrary
                 {
                     _tc.TotalBytesDownloaded = 0;
                     _tc.TotalBytesToDownload = 0;
+                    ChangeStatus(TrackerEvent.None);
+                }
+                else
+                {
+                    ChangeStatus(TrackerEvent.started);
                 }
 
-                ChangeStatus(TrackerEvent.started);
                 if (_currentRespone.failure)
                 {
                     throw new Exception("Tracker failure: " + _currentRespone.statusMessage);
                 }
 
                 _announceTimer = new System.Timers.Timer(Interval);
-                _announceTimer.Elapsed += async(sender, e) => await OnAnnounceEventAsync(this);
+                _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
                 _announceTimer.AutoReset = false;
                 _announceTimer.Enabled = true;
 
                 _trackerStatus = TrackerStatus.Running;
                 _announceTimer?.Start();
                 CallBack?.Invoke(CallBackData);
+                trackerStarted.Set();
 
             }
             catch (Exception ex)
@@ -246,12 +256,40 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
+        /// 
+        /// </summary>
+        public void StartAnnouncingAsync()
+        {
+            Task.Run(() => StartAnnouncing());
+        }
+        /// <summary>
         /// Restart a stalled tracker. 
         /// </summary>
         public void RestartAnnouncing()
         {
             StopAnnouncing();
             StartAnnouncing();
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="seedingInerval"></param>
+        public void SetSeedingInterval(UInt32 seedingInerval)
+        {
+            if (_tc.Status == TorrentStatus.Seeding)
+            {
+                if (seedingInerval > MinInterval)
+                {
+
+                    if (_announceTimer != null)
+                    {
+                        _announceTimer.Stop();
+                        _announceTimer.Interval = seedingInerval;
+                        _announceTimer.Start();
+                    }
+
+                }
+            }
         }
 
     }
