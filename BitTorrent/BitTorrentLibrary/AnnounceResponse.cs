@@ -4,14 +4,14 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Structure containing details returned from a announce request 
-// to a tracker server.
+// to a tracker server.If failure is returned true then the annouce request
+// has been rejected by the tracker and the reason will be put into statusMessage.
 //
 // Copyright 2020.
 //
 
 using System;
 using System.Collections.Generic;
-
 namespace BitTorrentLibrary
 {
     /// <summary>

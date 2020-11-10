@@ -135,7 +135,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info($"{RemotePeerID(remotePeer)}RX CHOKE");
                 remotePeer.PeerChoking.Reset();
-                remotePeer.WaitForPieceAssembly.Set();
+                remotePeer.Tc.waitForPieceAssembly.Set();
             }
         }
         /// <summary>
@@ -216,7 +216,7 @@ namespace BitTorrentLibrary
                 blockSize = Util.UnPackUInt32(remotePeer.ReadBuffer, 9)
             };
 
-            remotePeer.Tc.PieceRequestQueue.Enqueue(request);
+            remotePeer.Tc.pieceRequestQueue.Enqueue(request);
 
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX REQUEST {request.pieceNumber} Block Offset {request.blockOffset} Data Size {request.blockSize}\n.");
 
@@ -263,11 +263,11 @@ namespace BitTorrentLibrary
             byte[] remotePeerID = new byte[Constants.PeerIDLength];
 
             byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
-            UInt32 bytesRead = (UInt32)remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+            remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
             foreach (var tc in manager.TorrentList)
             {
-                List<byte> handshakePacket = BuildInitialHandshake(tc.InfoHash);
+                List<byte> handshakePacket = BuildInitialHandshake(tc.infoHash);
                 connected = ValidatePeerConnect(handshakeResponse, handshakePacket.ToArray(), out remotePeerID);
                 if (connected)
                 {
@@ -277,7 +277,8 @@ namespace BitTorrentLibrary
             }
             if (!connected)
             {
-                Log.Logger.Debug($"Remote peer {remotePeerID} tried to connect with invalid infohash.");
+                manager.AddToDeadPeerList(remotePeer.Ip);
+                Log.Logger.Debug($"Remote peer {remotePeer.Ip} tried to connect with invalid infohash.");
             }
 
             return (connected, remotePeerID);
@@ -291,10 +292,7 @@ namespace BitTorrentLibrary
         /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
         public static ValueTuple<bool, byte[]> ConnectToIntialHandshake(Peer remotePeer)
         {
-            bool connected;
-            byte[] remotePeerID;
-
-            List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.InfoHash);
+            List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.infoHash);
 
             remotePeer.PeerWrite(handshakePacket.ToArray());
 
@@ -302,7 +300,7 @@ namespace BitTorrentLibrary
 
             remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
-            connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out remotePeerID);
+            bool connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out byte[] remotePeerID);
 
             return (connected, remotePeerID);
 
@@ -313,16 +311,17 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         public static void RemotePeerMessageProcess(Peer remotePeer)
         {
-
-
-            byte command = remotePeer.ReadBuffer[0];
-            if ((command >= CHOKE) && (command <= CANCEL))
+            if (remotePeer.Connected)
             {
-                _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
-            }
-            else
-            {
-                Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
+                byte command = remotePeer.ReadBuffer[0];
+                if ((command >= CHOKE) && (command <= CANCEL))
+                {
+                    _protocolHandler[remotePeer.ReadBuffer[0]](remotePeer);
+                }
+                else
+                {
+                    Log.Logger.Info($"{RemotePeerID(remotePeer)}RX UNKOWN REQUEST{command}");
+                }
             }
         }
         /// <summary>

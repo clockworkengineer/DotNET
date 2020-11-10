@@ -26,21 +26,17 @@ namespace BitTorrentLibrary
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public TorrentContext Tc { get; set; }                           // Torrent torrent context
         public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
-        public PieceBuffer AssembledPiece { get; set; }                  // Assembled pieces buffer
         public string Ip { get; }                                        // Remote peer ip
         public uint Port { get; }                                        // peer Port
-        public Task AssemblerTask { get; set; }                          // Peer piece assembly task
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
         public bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
         public ManualResetEvent PeerChoking { get; }                     // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
-        public ManualResetEvent WaitForPieceAssembly { get; }            // When event set then piece has been fully assembled
         public ManualResetEvent BitfieldReceived { get; }                // When event set then peer has recieved bitfield from remote peer
         public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
         public byte[] ReadBuffer => _network.ReadBuffer;                 // Network read buffer
         public UInt32 PacketLength => _network.PacketLength;             // Current read packet length
-
 
         /// <summary>
         /// Setup data and resources needed by peer.
@@ -55,7 +51,6 @@ namespace BitTorrentLibrary
             Ip = ip;
             Port = port;
             _network = new PeerNetwork(socket);
-            WaitForPieceAssembly = new ManualResetEvent(false);
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
@@ -71,8 +66,7 @@ namespace BitTorrentLibrary
         public void SetTorrentContext(TorrentContext tc)
         {
             Tc = tc;
-            NumberOfMissingPieces = Tc.NumberOfPieces;
-            AssembledPiece = new PieceBuffer(tc, Tc.PieceLength);
+            NumberOfMissingPieces = Tc.numberOfPieces;
             RemotePieceBitfield = new byte[tc.Bitfield.Length];
         }
         /// <summary>
@@ -122,8 +116,7 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Release  any peer class resources. Iam sure there is  better way than using a mutex to
-        /// solve the mutual exclusion issue with
+        /// Release  any peer class resources.
         /// </summary>
         public void Close()
         {
@@ -133,16 +126,18 @@ namespace BitTorrentLibrary
                 Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
                 Connected = false;
                 CancelTaskSource.Cancel();
-                if (Tc.PeerSwarm.ContainsKey(Ip))
+                BitfieldReceived.Set();
+                if (Tc.peerSwarm.ContainsKey(Ip))
                 {
-                    if (Tc.PeerSwarm.TryRemove(Ip, out Peer deadPeer))
+                    if (Tc.peerSwarm.TryRemove(Ip, out Peer _))
                     {
                         Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
                     }
+                    _network.Close();
                 }
-                _network.Close();
                 Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
+
         }
         /// <summary>
         /// Check downloaded bitfield to see if a piece is present on a remote peer.
@@ -163,6 +158,7 @@ namespace BitTorrentLibrary
             if (!IsPieceOnRemotePeer(pieceNumber))
             {
                 RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                Tc.IncrementPeerCount(pieceNumber);
                 NumberOfMissingPieces--;
             }
 
@@ -175,22 +171,30 @@ namespace BitTorrentLibrary
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
         {
 
-            UInt32 blockNumber = blockOffset / Constants.BlockSize;
-
-            Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
-
-            AssembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
-
-            if (AssembledPiece.AllBlocksThere)
+            if (pieceNumber == Tc.assembledPiece.Number)
             {
-                AssembledPiece.Number = pieceNumber;
-                WaitForPieceAssembly.Set();
+                UInt32 blockNumber = blockOffset / Constants.BlockSize;
+
+                Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
+
+                Tc.assembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
+
+                if (Tc.assembledPiece.AllBlocksThere)
+                {
+                    Tc.assembledPiece.Number = pieceNumber;
+                    Tc.waitForPieceAssembly.Set();
+                }
+            }
+            else
+            {
+                Log.Logger.Debug($"PIECE {pieceNumber} DISCARED.");
             }
         }
         /// <summary>
         /// Queue peer for closing.
         /// </summary>
-        public void QueueForClosure() {
+        public void QueueForClosure()
+        {
             peerCloseQueue.Enqueue(this);
         }
 

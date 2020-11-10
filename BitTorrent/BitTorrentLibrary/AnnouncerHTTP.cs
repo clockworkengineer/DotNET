@@ -23,7 +23,7 @@ namespace BitTorrentLibrary
     internal class AnnouncerHTTP : IAnnouncer
     {
         /// <summary>
-        /// Decodes the announce request response recieved from a tracker.
+        /// Decodes the announce request BEncoded response recieved from a tracker.
         /// </summary>
         /// <param name="announceResponse">Announce response.</param>
         /// <param name="decodedResponse">Response.</param>
@@ -46,7 +46,7 @@ namespace BitTorrentLibrary
                 if (field != null)
                 {
                     decodedResponse.peers = new List<PeerDetails>();
-                    if (field is BNodeString bNodeString)
+                    if (field is BNodeString bNodeString) // Compact peer list reply
                     {
                         byte[] peers = (bNodeString).str;
                         for (var num = 0; num < peers.Length; num += 6)
@@ -65,13 +65,16 @@ namespace BitTorrentLibrary
                             }
                         }
                     }
-                    else if (field is BNodeList bNodeList)
+                    else if (field is BNodeList bNodeList)  // Non-compact peer list reply
                     {
                         foreach (var listItem in (bNodeList).list)
                         {
                             if (listItem is BNodeDictionary bNodeDictionary)
                             {
-                                PeerDetails peer = new PeerDetails();
+                                PeerDetails peer = new PeerDetails
+                                {
+                                    infoHash = tracker.InfoHash
+                                };
                                 BNodeBase peerDictionaryItem = (bNodeDictionary);
                                 BNodeBase peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "ip");
                                 if (peerField != null)
@@ -104,7 +107,30 @@ namespace BitTorrentLibrary
                 decodedResponse.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "warning message");
 
                 decodedResponse.announceCount++;
+
             }
+        }
+        /// <summary>
+        /// Build url string used for announce.
+        /// </summary>
+        /// <param name="tracker"></param>
+        /// <returns></returns>
+        private string BuildAnnouceURL(Tracker tracker)
+        {
+            string announceURL = $"{tracker.TrackerURL}?info_hash=" +
+                  $"{Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))}" +
+                  $"&peer_id={tracker.PeerID}&port={tracker.Port}&compact={tracker.Compact}" +
+                  $"&no_peer_id={tracker.NoPeerID}&uploaded={tracker.Uploaded}&downloaded={tracker.Downloaded}" +
+                  $"&left={tracker.Left}&ip={tracker.Ip}&key={tracker.Key}&trackerid={tracker.TrackerID}&numwanted={tracker.NumWanted}";
+
+            // Some trackers require no event present if its value is none
+            if (tracker.Event != TrackerEvent.None)
+            {
+                announceURL += $"&event={Tracker.EventString[(int)tracker.Event]}";
+            }
+
+            return announceURL;
+
         }
         /// <summary>
         /// Setup data and resources needed by HTTP tracker.
@@ -115,30 +141,20 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Perform an announce request to tracker and return any response.
+        /// Perform an HTTP announce request to tracker and return any response.
         /// </summary>
         /// <param name="tracker"></param>
         /// <returns>Announce response.</returns>
         public AnnounceResponse Announce(Tracker tracker)
         {
-            Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))} " +
-                   $"peer_id={tracker.PeerID} port={tracker.Port} compact={tracker.Compact} no_peer_id={tracker.NoPeerID} uploaded={tracker.Uploaded}" +
-                   $"downloaded={tracker.Downloaded} left={tracker.Left} event={Tracker.EventString[(int)tracker.Event]} ip={tracker.Ip} key={tracker.Key}" +
-                   $" trackerid={tracker.TrackerID} numwanted={tracker.NumWanted}");
+
+            Tracker.LogAnnouce(tracker);
 
             AnnounceResponse response = new AnnounceResponse();
 
             try
             {
-                string announceURL = $"{tracker.TrackerURL}?info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))}" +
-                    $"&peer_id={tracker.PeerID}&port={tracker.Port}&compact={tracker.Compact}" +
-                    $"&no_peer_id={tracker.NoPeerID}&uploaded={tracker.Uploaded}&downloaded={tracker.Downloaded}" +
-                    $"&left={tracker.Left}&ip={tracker.Ip}&key={tracker.Key}&trackerid={tracker.TrackerID}&numwanted={tracker.NumWanted}";
-
-                // Some trackers require no event present if its value is none
-                if (tracker.Event!=Tracker.TrackerEvent.None) {
-                    announceURL += $"&event={Tracker.EventString[(int)tracker.Event]}";
-                }
+                string announceURL = BuildAnnouceURL(tracker);
 
                 HttpWebRequest httpGetRequest = WebRequest.Create(announceURL) as HttpWebRequest;
 
@@ -147,8 +163,8 @@ namespace BitTorrentLibrary
 
                 using (HttpWebResponse httpGetResponse = httpGetRequest.GetResponse() as HttpWebResponse)
                 {
-                    byte[] announceResponse;
                     StreamReader reader = new StreamReader(httpGetResponse.GetResponseStream());
+                    byte[] announceResponse;
                     using (var memstream = new MemoryStream())
                     {
                         reader.BaseStream.CopyTo(memstream);
@@ -167,8 +183,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                // Display first error as message concatination can be unreadable if too deep
-                throw new Error("BitTorrent (Tracker) Error: " + ex.GetBaseException().Message);
+                throw;
             }
 
             return response;

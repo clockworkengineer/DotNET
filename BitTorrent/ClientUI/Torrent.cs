@@ -64,6 +64,7 @@ namespace ClientUI
                 _mainWindow.InformationWindow.InfoTextFields[4].Text = torrentDetails.status.ToString();
                 _mainWindow.InformationWindow.InfoTextFields[5].Text = torrentDetails.swarmSize.ToString();
                 _mainWindow.InformationWindow.InfoTextFields[6].Text = torrentDetails.deadPeers.ToString();
+                _mainWindow.InformationWindow.InfoTextFields[7].Text = torrentDetails.trackerStatus.ToString();
             });
         }
         /// <summary>
@@ -126,7 +127,6 @@ namespace ClientUI
 
                 _torrentFile = new MetaInfoFile(_torrentFileName);
 
-                _torrentFile.Load();
                 _torrentFile.Parse();
 
                 Application.MainLoop.Invoke(() =>
@@ -143,7 +143,7 @@ namespace ClientUI
 
                 Tc = new TorrentContext(_torrentFile, new Selector(), TorrentDiskIO, "/home/robt/utorrent");
 
-                main.DownloadAgent.Add(Tc);
+                main.DownloadAgent.AddTorrent(Tc);
 
                 _tracker = new Tracker(Tc)
                 {
@@ -155,14 +155,12 @@ namespace ClientUI
 
                 _tracker.StartAnnouncing();
 
-                main.DownloadAgent.Start(Tc);
+                main.DownloadAgent.StartTorrent(Tc);
 
                 Application.MainLoop.Invoke(() =>
                 {
                     main.DisplayStatusBar(Status.Downloading);
                 });
-
-                main.DownloadAgent.WaitForDownload(Tc);
 
             }
             catch (Exception ex)

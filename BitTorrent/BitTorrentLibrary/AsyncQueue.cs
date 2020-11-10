@@ -8,6 +8,7 @@
 // Copyright 2020.
 //
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -20,6 +21,8 @@ namespace BitTorrentLibrary
     {
         private readonly SemaphoreSlim _queueSemaphore;
         private readonly ConcurrentQueue<T> _queue;
+        public UInt32 Count => (UInt32)_queue.Count;
+
         /// <summary>
         /// Initialise
         /// </summary>
@@ -52,7 +55,7 @@ namespace BitTorrentLibrary
             _queueSemaphore.Release(numberOfItems);
         }
         /// <summary>
-        /// Remove item from front of queue (awaitin until an element arrives).
+        /// Remove item from front of queue (awaiting until an element arrives).
         /// </summary>
         /// <returns></returns>
         public async Task<T> DequeueAsync(CancellationToken cancellationToken = default)

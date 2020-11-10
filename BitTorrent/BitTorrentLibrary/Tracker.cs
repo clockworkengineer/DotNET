@@ -11,32 +11,40 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.Timers;
+using System.Threading.Tasks;
+using System.Net;
+using System.Text;
+
 
 namespace BitTorrentLibrary
 {
     public delegate void TrackerCallBack(Object callBackData);            // Tracker callback
-
+    public enum TrackerEvent
+    {
+        None = 0,      // Default announce has none for event
+        started = 1,   // The first request to the tracker must include the event key with this value
+        stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
+        completed = 3   // Must be sent to the tracker when the download completes
+    };
+    public enum TrackerStatus
+    {
+        Running,    // Currently running
+        Stopped,    // Stopped from annoucing to server
+        Stalled     // Stalled because of an error
+    }
     public class Tracker
     {
         /// <summary>
         /// Tracker Announce event types.
         /// </summary>
         public static readonly string[] EventString = { "", "started", "stopped", "completed" };
-        public enum TrackerEvent
-        {
-            None = 0,      // Default announce has none for event
-            started = 1,   // The first request to the tracker must include the event key with this value
-            stopped = 2,   // Must be sent to the tracker if the client is shutting down gracefully        
-            completed = 3   // Must be sent to the tracker when the download completes
-        };
-
         private AnnounceResponse _currentRespone;               // Last announce response 
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
-        internal Timer _announceTimer;                          // Timer for sending tracker announce events
-        internal AsyncQueue<PeerDetails> _peerSwarmQueue;       // Peers to add to swarm queue
+        internal Timer announceTimer;                           // Timer for sending tracker announce events
+        internal AsyncQueue<PeerDetails> peerSwarmQueue;        // Peers to add to swarm queue
+        internal TrackerStatus trackerStatus;                   // Current tracker status
         public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
@@ -57,39 +65,54 @@ namespace BitTorrentLibrary
         public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes uploaded
 
         /// <summary>
+        /// Log announce details.
+        /// </summary>
+        /// <param name="tracker"></param>
+        internal static void LogAnnouce(Tracker tracker)
+        {
+            Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))} " +
+                     $"peer_id={tracker.PeerID} port={tracker.Port} compact={tracker.Compact} no_peer_id={tracker.NoPeerID} uploaded={tracker.Uploaded}" +
+                     $"downloaded={tracker.Downloaded} left={tracker.Left} event={Tracker.EventString[(int)tracker.Event]} ip={tracker.Ip} key={tracker.Key}" +
+                     $" trackerid={tracker.TrackerID} numwanted={tracker.NumWanted}");
+
+        }
+        /// <summary>
         /// Perform announce request on timer tick
         /// </summary>
         /// <param name="tracker"></param>
-        private static void OnAnnounceEvent(Tracker tracker)
+        private void OnAnnounceEvent(Tracker tracker)
         {
             try
             {
-                tracker._currentRespone = tracker._announcer.Announce(tracker);
-
-                if (!tracker._currentRespone.failure)
+                if (tracker.trackerStatus != TrackerStatus.Stalled)
                 {
-                    Log.Logger.Info("Queuing new peers for swarm ....");
+                    tracker._currentRespone = tracker._announcer.Announce(tracker);
 
-                    if (tracker._tc.Status == TorrentStatus.Downloading)
+                    if (!tracker._currentRespone.failure)
                     {
-                        foreach (var peerDetails in tracker._currentRespone.peers)
-                        {
-                            tracker._peerSwarmQueue?.Enqueue(peerDetails);
-                        }
-                        tracker.NumWanted = Math.Max(tracker._tc.MaximumSwarmSize - tracker._tc.PeerSwarm.Count, 0);
+                        Log.Logger.Info("Queuing new peers for swarm ....");
 
+                        if (tracker._tc.Status == TorrentStatus.Downloading)
+                        {
+                            foreach (var peerDetails in tracker._currentRespone.peers)
+                            {
+                                tracker.peerSwarmQueue?.Enqueue(peerDetails);
+                            }
+                            tracker.NumWanted = Math.Max(tracker._tc.maximumSwarmSize - tracker._tc.peerSwarm.Count, 0);
+
+                        }
+                        tracker.UpdateRunningStatusFromAnnounce(tracker._currentRespone);
                     }
-                    tracker.CallBack?.Invoke(tracker.CallBackData);
-                    tracker.UpdateRunningStatusFromAnnounce(tracker._currentRespone);
+                    else
+                    {
+                        throw new Exception("Remote tracker failure: " + tracker._currentRespone.statusMessage);
+                    }
                 }
-                else
-                {
-                    throw new Exception("Remote tracker failure: " + tracker._currentRespone.statusMessage);
-                }
-                tracker._announceTimer?.Start();
+
             }
             catch (Exception ex)
             {
+                tracker.trackerStatus = TrackerStatus.Stalled;
                 Log.Logger.Debug("BitTorrent (Tracker) Error : " + ex.Message);
                 if (!tracker._currentRespone.failure)
                 {
@@ -97,6 +120,8 @@ namespace BitTorrentLibrary
                     tracker._currentRespone.statusMessage = ex.Message;
                 }
             }
+            tracker.announceTimer?.Start();
+            tracker.CallBack?.Invoke(tracker.CallBackData);
 
         }
         /// <summary>
@@ -109,17 +134,20 @@ namespace BitTorrentLibrary
             TrackerID = response.trackerID;
             MinInterval = response.minInterval;
 
-            if (response.interval > MinInterval)
+            if (_tc.Status == TorrentStatus.Downloading)
             {
-                UInt32 oldInterval = Interval;
-                Interval = response.interval;
-                if (oldInterval != Interval)
+                if (response.interval > MinInterval)
                 {
-                    if (_announceTimer != null)
+                    UInt32 oldInterval = Interval;
+                    Interval = response.interval;
+                    if (oldInterval != Interval)
                     {
-                        _announceTimer.Stop();
-                        _announceTimer.Interval = Interval;
-                        _announceTimer.Start();
+                        if (announceTimer != null)
+                        {
+                            announceTimer.Stop();
+                            announceTimer.Interval = Interval;
+                            announceTimer.Start();
+                        }
                     }
                 }
             }
@@ -130,10 +158,11 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public Tracker(TorrentContext tc)
         {
+            trackerStatus = TrackerStatus.Stopped;
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
-            InfoHash = tc.InfoHash;
-            TrackerURL = tc.TrackerURL;
+            InfoHash = tc.infoHash;
+            TrackerURL = tc.trackerURL;
             _tc = tc;
             _tc.MainTracker = this;
 
@@ -161,11 +190,11 @@ namespace BitTorrentLibrary
         /// <param name="status"></param>
         internal void ChangeStatus(TrackerEvent status)
         {
-            _announceTimer?.Stop();
+            announceTimer?.Stop();
             Event = status;
             OnAnnounceEvent(this);
             Event = TrackerEvent.None;  // Reset it back to default on next tick
-            _announceTimer?.Start();
+            announceTimer?.Start();
         }
         /// <summary>
         /// Starts the announce requests to tracker.
@@ -175,7 +204,7 @@ namespace BitTorrentLibrary
             try
             {
                 //  Swarm queue needs to be initialised
-                if (_peerSwarmQueue == null)
+                if (peerSwarmQueue == null)
                 {
                     throw new Exception("Peer swarm queue has not been set.");
                 }
@@ -185,26 +214,37 @@ namespace BitTorrentLibrary
                 {
                     _tc.TotalBytesDownloaded = 0;
                     _tc.TotalBytesToDownload = 0;
+                    ChangeStatus(TrackerEvent.None);
+                }
+                else
+                {
+                    ChangeStatus(TrackerEvent.started);
                 }
 
-                ChangeStatus(TrackerEvent.started);
                 if (_currentRespone.failure)
                 {
                     throw new Exception("Tracker failure: " + _currentRespone.statusMessage);
                 }
 
-                _announceTimer = new System.Timers.Timer(Interval);
-                _announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
-                _announceTimer.AutoReset = false;
-                _announceTimer.Enabled = true;
+                announceTimer = new System.Timers.Timer(Interval);
+                announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
+                announceTimer.AutoReset = false;
+                announceTimer.Enabled = true;
+
+                trackerStatus = TrackerStatus.Running;
+                announceTimer?.Start();
+                CallBack?.Invoke(CallBackData);
+                _tc.trackerStarted.Set();
+
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                trackerStatus = TrackerStatus.Stalled;
+                CallBack?.Invoke(CallBackData);
                 throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
-
         /// <summary>
         /// Stop announcing to tracker..
         /// </summary>
@@ -212,18 +252,57 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (_announceTimer != null)
+                if (announceTimer != null)
                 {
-                    _announceTimer.Stop();
-                    _announceTimer.Dispose();
-                    _announceTimer = null;
+                    announceTimer.Stop();
+                    announceTimer.Dispose();
+                    announceTimer = null;
+                    trackerStatus = TrackerStatus.Stopped;
                 }
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                trackerStatus = TrackerStatus.Stalled;
                 throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        public void StartAnnouncingAsync()
+        {
+            Task.Run(() => StartAnnouncing());
+        }
+        /// <summary>
+        /// Restart a stalled tracker. 
+        /// </summary>
+        public void RestartAnnouncing()
+        {
+            StopAnnouncing();
+            StartAnnouncing();
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="seedingInerval"></param>
+        public void SetSeedingInterval(UInt32 seedingInerval)
+        {
+            if (_tc.Status == TorrentStatus.Seeding)
+            {
+                if (seedingInerval > MinInterval)
+                {
+
+                    if (announceTimer != null)
+                    {
+                        announceTimer.Stop();
+                        announceTimer.Interval = seedingInerval;
+                        announceTimer.Start();
+                    }
+
+                }
+            }
+        }
+
     }
 }

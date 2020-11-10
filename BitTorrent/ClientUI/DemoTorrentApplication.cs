@@ -59,8 +59,6 @@ namespace ClientUI
         /// </summary>
         public void ReadConfig()
         {
-
-
             try
             {
                 IConfiguration config = new ConfigurationBuilder()
@@ -87,10 +85,11 @@ namespace ClientUI
         /// <returns></returns>
         private string BuildSeederDisplayLine(TorrentDetails seederDetails)
         {
-            return String.Format("File[{0,-24}] Status[{1,1}] Uploaded[{2, 10}] Swarm[{3, 7}]",
-                   Path.GetFileName(seederDetails.fileName),
-                   seederDetails.status.ToString()[0], seederDetails.uploadedBytes, seederDetails.swarmSize);
-
+            return String.Format("File[{0,-12}] Tracker[{1,3}] Status[{2,1}] Uploaded[{3, 11}] Swarm[{4, 5}]",
+                   Path.GetFileNameWithoutExtension(seederDetails.fileName),
+                   seederDetails.trackerStatus.ToString().Substring(0,3), 
+                   seederDetails.status.ToString().Substring(0,1),
+                   seederDetails.uploadedBytes, seederDetails.swarmSize);
 
         }
         /// <summary>
@@ -133,30 +132,41 @@ namespace ClientUI
             _seeders = new List<TorrentContext>();
             _seederDiskIO = new DiskIO();
             string[] torrentFiles = Directory.GetFiles(SeedFileDirectory, "*.torrent");
+            TorrentContext tc;
+            Tracker seederTracker;
+
             foreach (var file in torrentFiles)
             {
-
-                MetaInfoFile _seederFile = new MetaInfoFile(file);
-
-                _seederFile.Load();
-                _seederFile.Parse();
-
-                TorrentContext tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationTorrentDirectory, SeedingMode);
-
-                DownloadAgent.Add(tc);
-
-                Tracker seederTracker = new Tracker(tc);
-
-                DownloadAgent.AttachPeerSwarmQueue(seederTracker);
-
-                seederTracker.StartAnnouncing();
-
-                DownloadAgent.Start(tc);
-
-                _seeders.Add(tc);
-
-                DownloadAgent.WaitForDownload(tc);
-
+                seederTracker = null;
+                tc = null;
+                try
+                {
+                    MetaInfoFile _seederFile = new MetaInfoFile(file);
+                    _seederFile.Parse();
+                    tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationTorrentDirectory, SeedingMode);
+                    DownloadAgent.AddTorrent(tc);
+                    seederTracker = new Tracker(tc);
+                    DownloadAgent.AttachPeerSwarmQueue(seederTracker);
+                    seederTracker.StartAnnouncing();
+                    DownloadAgent.StartTorrent(tc);
+                    _seeders.Add(tc);
+                }
+                catch (Exception)
+                {
+                    if (tc != null)
+                    {
+                        if (_seeders.Contains(tc)) {
+                            _seeders.Remove(tc);
+                        }
+                        if (seederTracker != null)
+                        {
+                            seederTracker.StopAnnouncing();
+                        }
+                        DownloadAgent.CloseTorrent(tc);
+                        DownloadAgent.RemoveTorrent(tc);
+                    }
+                    continue;
+                }
             }
 
             Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
@@ -225,8 +235,8 @@ namespace ClientUI
 
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
              {
-                 DownloadAgent.Remove(MainWindow.Torrent.Tc);
-                 DownloadAgent.Close(MainWindow.Torrent.Tc);
+                 DownloadAgent.RemoveTorrent(MainWindow.Torrent.Tc);
+                 DownloadAgent.CloseTorrent(MainWindow.Torrent.Tc);
                  MainWindow.InformationWindow.ClearData();
                  DisplayStatusBar(Status.Shutdown);
              });
@@ -263,6 +273,8 @@ namespace ClientUI
 
             TorrentManager = new Manager();
 
+            TorrentManager.AddToDeadPeerList("192.168.1.1");
+
             DownloadAgent = new Agent(TorrentManager, new Assembler());
 
             DownloadAgent.Startup();
@@ -274,6 +286,12 @@ namespace ClientUI
 
             MainWindow.TorrentFileText.Text = TorrentFileDirectory;
 
+        }
+
+                public void Run()
+        {
+            Application.Init();
+            Application.Run();
         }
     }
 }

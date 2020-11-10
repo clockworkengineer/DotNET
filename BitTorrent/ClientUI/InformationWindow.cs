@@ -61,7 +61,7 @@ namespace ClientUI
             };
             viewables.Add(PeersWindow);
 
-            string[] labels = { "InfoHash:", "Downloaded:", "Uploaded:", "Missing:", "Status:","Swarm:", "Dead:" };
+            string[] labels = { "InfoHash:", "Downloaded:", "Uploaded:", "Missing:", "Status:","Swarm:", "Dead:","Tracker:" };
 
             InfoTextFields = new TextField[labels.Length];
 
@@ -104,6 +104,7 @@ namespace ClientUI
                                   InfoTextFields[4].Text = "Idle";
                                   InfoTextFields[5].Text = "";
                                   InfoTextFields[6].Text = "";
+                                  InfoTextFields[7].Text = "";
                                   if (_peersListView != null)
                                   {
                                       PeersWindow.Remove(_peersListView);
