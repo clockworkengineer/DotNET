@@ -38,7 +38,6 @@ namespace BitTorrentLibrary
         public byte[] ReadBuffer => _network.ReadBuffer;                 // Network read buffer
         public UInt32 PacketLength => _network.PacketLength;             // Current read packet length
 
-
         /// <summary>
         /// Setup data and resources needed by peer.
         /// </summary>
@@ -68,7 +67,6 @@ namespace BitTorrentLibrary
         {
             Tc = tc;
             NumberOfMissingPieces = Tc.numberOfPieces;
-            // AssembledPiece = new PieceBuffer(tc, Tc.PieceLength);
             RemotePieceBitfield = new byte[tc.Bitfield.Length];
         }
         /// <summary>

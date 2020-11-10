@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Details associated with each file in a torrent to download
+// Description: Details associated with each file in a torrent to download.
 //
 // Copyright 2020.
 //

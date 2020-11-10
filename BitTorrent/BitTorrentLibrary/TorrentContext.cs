@@ -66,7 +66,6 @@ namespace BitTorrentLibrary
         public UInt64 TotalBytesToDownload { get; set; }             // Total bytes in torrent
         public UInt64 TotalBytesUploaded { get; set; }               // Total bytes uploaded to all peers from torrent
 
-
         /// <summary>
         /// Setup data and resources needed by torrent context.
         /// </summary>

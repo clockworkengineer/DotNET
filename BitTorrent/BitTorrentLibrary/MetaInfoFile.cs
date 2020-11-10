@@ -128,15 +128,45 @@ namespace BitTorrentLibrary
                 MetaInfoDict["info hash"] = new SHA1CryptoServiceProvider().ComputeHash(Bencoding.Encode(infoEncodedBytes));
             }
         }
-
+        /// <summary>
+        /// Load torrent file contents into memory for parsing.
+        /// </summary>
+        private void Load()
+        {
+            try
+            {
+                _metaInfoData = System.IO.File.ReadAllBytes(TorrentFileName);
+            }
+            catch (System.IO.DirectoryNotFoundException)
+            {
+                throw new Exception($"Could not find torrent file {TorrentFileName}");
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                throw new Exception($"Could not find torrent file {TorrentFileName}");
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw;
+            }
+        }
         /// <summary>
         /// Initializes a new instance of the MetInfoFile class.
         /// </summary>
         /// <param name="fileName">File name.</param>
         public MetaInfoFile(string fileName)
         {
-            TorrentFileName = fileName;
-            MetaInfoDict = new Dictionary<string, byte[]>();
+            try
+            {
+                TorrentFileName = fileName;
+                MetaInfoDict = new Dictionary<string, byte[]>();
+                Load();
+            }
+            catch (Exception ex)
+            {
+                throw new Error($"BitTorrent (MetaInfoFile) Error:" + ex.Message);
+            }
         }
         /// <summary>
         /// Generate list of local files in torrent to download from peers and total torrent size in bytes
@@ -186,29 +216,6 @@ namespace BitTorrentLibrary
                 throw new Error("BitTorrent (MetaInfoFile) Error: Failed to create download file list." + ex.Message);
             }
             return (totalBytes, filesToDownload);
-        }
-        /// <summary>
-        /// Load torrent file contents into memory for parsing.
-        /// </summary>
-        public void Load()
-        {
-            try
-            {
-                _metaInfoData = System.IO.File.ReadAllBytes(TorrentFileName);
-            }
-            catch (System.IO.DirectoryNotFoundException)
-            {
-                throw new Error($"BitTorrent (MetaInfoFile) Error: Could not find torrent file {TorrentFileName}");
-            }
-            catch (System.IO.FileNotFoundException)
-            {
-                throw new Error($"BitTorrent (MetaInfoFile) Error: Could not find torrent file {TorrentFileName}");
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Error($"BitTorrent (MetaInfoFile) Error:" + ex.Message);
-            }
         }
         /// <summary>
         /// Decode Bencoded torrent file and load internal dictionary from its contents

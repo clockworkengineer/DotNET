@@ -225,7 +225,8 @@ namespace BitTorrentLibrary
             pieceWriteQueue = new AsyncQueue<PieceBuffer>();
             pieceRequestQueue = new AsyncQueue<PieceRequest>();
             CancellationToken cancelTask = _cancelTaskSource.Token;
-            Task.Run(() => Task.WaitAll(PieceBufferDiskWriterAsync(cancelTask), PieceRequestProcessingAsync(cancelTask)));
+            Task.Run(() => PieceBufferDiskWriterAsync(cancelTask));
+            Task.Run(() => PieceRequestProcessingAsync(cancelTask));
         }
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the
@@ -258,7 +259,7 @@ namespace BitTorrentLibrary
         }
         /// <summary>
         /// Creates the torrent bitfield and piece information structures from the current disc 
-        /// which details the state of the piece.
+        /// which details the state of the torrent. ie. what needs to be downloaded still.
         /// </summary>
         /// <param name="tc"></param>
         internal void CreateTorrentBitfield(TorrentContext tc)

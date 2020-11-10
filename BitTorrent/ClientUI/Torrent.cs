@@ -127,7 +127,6 @@ namespace ClientUI
 
                 _torrentFile = new MetaInfoFile(_torrentFileName);
 
-                _torrentFile.Load();
                 _torrentFile.Parse();
 
                 Application.MainLoop.Invoke(() =>

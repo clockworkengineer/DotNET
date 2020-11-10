@@ -5,6 +5,8 @@
 //
 // Description: BitTorrent Bencoding encoding/decoding support that reads
 // torrent file data to be processed.
+// 
+// TODO: Conatins a fair bit of duplication that can be refactored at somme point.
 //
 // Copyright 2020.
 //

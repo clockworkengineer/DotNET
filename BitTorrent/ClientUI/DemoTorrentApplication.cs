@@ -142,7 +142,6 @@ namespace ClientUI
                 try
                 {
                     MetaInfoFile _seederFile = new MetaInfoFile(file);
-                    _seederFile.Load();
                     _seederFile.Parse();
                     tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, DestinationTorrentDirectory, SeedingMode);
                     DownloadAgent.AddTorrent(tc);
