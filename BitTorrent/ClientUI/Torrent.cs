@@ -47,16 +47,16 @@ namespace ClientUI
             Application.MainLoop.Invoke(() =>
             {
 
-                _mainWindow.InformationWindow.UpdatePeers(peers.ToArray());
+                _mainWindow.InfoWindow.UpdatePeers(peers.ToArray());
 
-                _mainWindow.InformationWindow.InfoTextFields[0].Text = InfoHashToString(torrentDetails.infoHash);
-                _mainWindow.InformationWindow.InfoTextFields[1].Text = torrentDetails.downloadedBytes.ToString();
-                _mainWindow.InformationWindow.InfoTextFields[2].Text = torrentDetails.uploadedBytes.ToString();
-                _mainWindow.InformationWindow.InfoTextFields[3].Text = torrentDetails.missingPiecesCount.ToString();
-                _mainWindow.InformationWindow.InfoTextFields[4].Text = torrentDetails.status.ToString();
-                _mainWindow.InformationWindow.InfoTextFields[5].Text = torrentDetails.swarmSize.ToString();
-                _mainWindow.InformationWindow.InfoTextFields[6].Text = torrentDetails.deadPeers.ToString();
-                _mainWindow.InformationWindow.InfoTextFields[7].Text = torrentDetails.trackerStatus.ToString();
+                _mainWindow.InfoWindow.InfoTextFields[0].Text = InfoHashToString(torrentDetails.infoHash);
+                _mainWindow.InfoWindow.InfoTextFields[1].Text = torrentDetails.downloadedBytes.ToString();
+                _mainWindow.InfoWindow.InfoTextFields[2].Text = torrentDetails.uploadedBytes.ToString();
+                _mainWindow.InfoWindow.InfoTextFields[3].Text = torrentDetails.missingPiecesCount.ToString();
+                _mainWindow.InfoWindow.InfoTextFields[4].Text = torrentDetails.status.ToString();
+                _mainWindow.InfoWindow.InfoTextFields[5].Text = torrentDetails.swarmSize.ToString();
+                _mainWindow.InfoWindow.InfoTextFields[6].Text = torrentDetails.deadPeers.ToString();
+                _mainWindow.InfoWindow.InfoTextFields[7].Text = torrentDetails.trackerStatus.ToString();
             });
         }
         /// <summary>
@@ -124,7 +124,7 @@ namespace ClientUI
                 Application.MainLoop.Invoke(() =>
                 {
                     _mainWindow.DownloadProgress.Fraction = 0;
-                    _mainWindow.InformationWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
+                    _mainWindow.InfoWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
                 });
 
                 TorrentDiskIO = new DiskIO()

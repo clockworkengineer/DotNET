@@ -42,7 +42,7 @@ namespace ClientUI
             {
                 main.DownloadAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
                 main.DownloadAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
-                main.MainWindow.InformationWindow.ClearData();
+                main.MainWindow.InfoWindow.ClearData();
                 main.MainStatusBar.Display(Status.Shutdown);
             });
 
@@ -50,14 +50,14 @@ namespace ClientUI
             {
                 if (main.InformationWindow)
                 {
-                    main.MainWindow.Remove(main.MainWindow.InformationWindow);
-                    main.MainWindow.Add(main.MainWindow.SeedingWindow);
+                    main.MainWindow.Remove(main.MainWindow.InfoWindow);
+                    main.MainWindow.Add(main.MainWindow.SeederListWindow);
                     main.InformationWindow = false;
                 }
                 else
                 {
-                    main.MainWindow.Remove(main.MainWindow.SeedingWindow);
-                    main.MainWindow.Add(main.MainWindow.InformationWindow);
+                    main.MainWindow.Remove(main.MainWindow.SeederListWindow);
+                    main.MainWindow.Add(main.MainWindow.InfoWindow);
                     main.InformationWindow = true;
                 }
             });

@@ -24,8 +24,8 @@ namespace ClientUI
         private readonly Label _progressBarEndText;                 // End of progress bar ']'
         public TextField TorrentFileText { get; set; }              // Text field containing torrent file name
         public ProgressBar DownloadProgress { get; set; }           // Downloading progress bar
-        public InformationWindow InformationWindow { get; set; }    // Torrent information sub-window.
-        public Window SeedingWindow { get; set; }                   // Seeding torrents sub-window (overlays information)
+        public InformationWindow InfoWindow { get; set; }           // Torrent information sub-window.
+        public SeedingWindow SeederListWindow { get; set; }         // Seeding torrents sub-window (overlays information)
         public Task DownloadTorrentTask { get; set; }               // Task for downloading torrent
         public Torrent Torrent { get; set; }                        // Currently active downloading torrent
 
@@ -36,7 +36,7 @@ namespace ClientUI
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public MainApplicationWindow(string name) : base(name)
+        public MainApplicationWindow(DemoTorrentApplication main, string name) : base(name)
         {
             List<View> viewables = new List<View>();
 
@@ -78,7 +78,7 @@ namespace ClientUI
             };
             viewables.Add(_progressBarEndText);
 
-            InformationWindow = new InformationWindow("Information")
+            InfoWindow = new InformationWindow("Information")
             {
                 X = Pos.Left(this),
                 Y = Pos.Bottom(_progressBarBeginText) + 1,
@@ -86,9 +86,9 @@ namespace ClientUI
                 Height = Dim.Fill(),
                 CanFocus = false
             };
-            viewables.Add(InformationWindow);
+            viewables.Add(InfoWindow);
 
-            SeedingWindow = new Window("Seeding")
+            SeederListWindow = new SeedingWindow(main, "Seeding")
             {
                 X = Pos.Left(this),
                 Y = Pos.Bottom(_progressBarBeginText) + 1,
