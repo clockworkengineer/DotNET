@@ -15,6 +15,7 @@ using Terminal.Gui;
 using System.IO;
 using BitTorrentLibrary;
 using Microsoft.Extensions.Configuration;
+using System.Linq;
 
 namespace ClientUI
 {
@@ -87,8 +88,8 @@ namespace ClientUI
         {
             return String.Format("File[{0,-12}] Tracker[{1,3}] Status[{2,1}] Uploaded[{3, 11}] Swarm[{4, 5}]",
                    Path.GetFileNameWithoutExtension(seederDetails.fileName),
-                   seederDetails.trackerStatus.ToString().Substring(0,3), 
-                   seederDetails.status.ToString().Substring(0,1),
+                   seederDetails.trackerStatus.ToString().Substring(0, 3),
+                   seederDetails.status.ToString().Substring(0, 1),
                    seederDetails.uploadedBytes, seederDetails.swarmSize);
 
         }
@@ -99,26 +100,17 @@ namespace ClientUI
         /// <returns></returns>
         public bool UpdateSeederList(MainLoop main)
         {
-            List<string> seederLines = new List<string>();
 
-            foreach (var seeder in _seeders)
+            List<string> seederLines = (from seeder in _seeders
+                                        let seederDetails = DownloadAgent.GetTorrentDetails(seeder)
+                                        select BuildSeederDisplayLine(seederDetails)).ToList();
+
+            if (seederLines.Count > 0)
             {
-                TorrentDetails seederDetails = DownloadAgent.GetTorrentDetails(seeder);
-                seederLines.Add(BuildSeederDisplayLine(seederDetails));
+                var item = _seederListView.SelectedItem;
+                _seederListView.SetSource(seederLines.ToArray());
+                _seederListView.SelectedItem = item;
             }
-            if (_seederListView != null)
-            {
-                MainWindow.SeedingWindow.Remove(_seederListView);
-            }
-            _seederListView = new ListView(seederLines.ToArray())
-            {
-                X = 0,
-                Y = 0,
-                Width = Dim.Fill(),
-                Height = Dim.Fill(),
-                CanFocus = false
-            };
-            MainWindow.SeedingWindow.Add(_seederListView);
 
             return true;
         }
@@ -155,7 +147,8 @@ namespace ClientUI
                 {
                     if (tc != null)
                     {
-                        if (_seeders.Contains(tc)) {
+                        if (_seeders.Contains(tc))
+                        {
                             _seeders.Remove(tc);
                         }
                         if (seederTracker != null)
@@ -257,6 +250,16 @@ namespace ClientUI
                 }
             });
 
+            _seederListView = new ListView()
+            {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = Dim.Fill(),
+                CanFocus = true
+            };
+            MainWindow.SeedingWindow.Add(_seederListView);
+
             _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () =>
             {
                 DownloadAgent.ShutDown();
@@ -288,7 +291,7 @@ namespace ClientUI
 
         }
 
-                public void Run()
+        public void Run()
         {
             Application.Init();
             Application.Run();

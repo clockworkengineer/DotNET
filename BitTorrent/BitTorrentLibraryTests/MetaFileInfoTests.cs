@@ -10,9 +10,8 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestExceptionOnFileNotExisting()
         {
-            MetaInfoFile torrentFile = new MetaInfoFile("s" + Constants.SingleFileTorrent);
 
-            Assert.Throws<Error>(() => torrentFile.Load());
+            Assert.Throws<Error>(() =>  { MetaInfoFile torrentFile = new MetaInfoFile("s" + Constants.SingleFileTorrent);} );
         }
 
         [Theory]
@@ -31,7 +30,6 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
 
-            torrentFile.Load();
             torrentFile.Parse();
 
             Assert.True(torrentFile.MetaInfoDict.ContainsKey(key));
@@ -57,7 +55,6 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.MultiFileTorrent);
 
-            torrentFile.Load();
             torrentFile.Parse();
 
             Assert.True(torrentFile.MetaInfoDict.ContainsKey(key));
@@ -76,8 +73,7 @@ namespace BitTorrentLibraryTests
         public void TestSingleFileTorrentCheckKeyContents(string key, string expected)
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
-
-            torrentFile.Load();
+            
             torrentFile.Parse();
 
             string actual = System.Text.Encoding.UTF8.GetString(torrentFile.MetaInfoDict[key]);
@@ -103,7 +99,6 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.MultiFileTorrent);
 
-            torrentFile.Load();
             torrentFile.Parse();
 
             string actual = System.Text.Encoding.UTF8.GetString(torrentFile.MetaInfoDict[key]);
@@ -118,7 +113,6 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile torrentFile = new MetaInfoFile(file);
 
-            torrentFile.Load();
             torrentFile.Parse();
 
             byte[] infoHash = torrentFile.MetaInfoDict["info hash"];
