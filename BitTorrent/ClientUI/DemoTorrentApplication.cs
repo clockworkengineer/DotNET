@@ -163,7 +163,7 @@ namespace ClientUI
                         {
                             seederTracker.StopAnnouncing();
                         }
-                        DownloadAgent.Close(tc);
+                        DownloadAgent.CloseTorrent(tc);
                         DownloadAgent.RemoveTorrent(tc);
                     }
                     continue;
@@ -237,7 +237,7 @@ namespace ClientUI
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
              {
                  DownloadAgent.RemoveTorrent(MainWindow.Torrent.Tc);
-                 DownloadAgent.Close(MainWindow.Torrent.Tc);
+                 DownloadAgent.CloseTorrent(MainWindow.Torrent.Tc);
                  MainWindow.InformationWindow.ClearData();
                  DisplayStatusBar(Status.Shutdown);
              });

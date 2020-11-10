@@ -13,6 +13,8 @@
 using System;
 using System.Timers;
 using System.Threading.Tasks;
+using System.Net;
+using System.Text;
 
 
 namespace BitTorrentLibrary
@@ -62,6 +64,18 @@ namespace BitTorrentLibrary
         public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download
         public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes uploaded
 
+        /// <summary>
+        /// Log announce details.
+        /// </summary>
+        /// <param name="tracker"></param>
+        internal static void LogAnnouce(Tracker tracker)
+        {
+            Log.Logger.Info($"Announce: info_hash={Encoding.ASCII.GetString(WebUtility.UrlEncodeToBytes(tracker.InfoHash, 0, tracker.InfoHash.Length))} " +
+                     $"peer_id={tracker.PeerID} port={tracker.Port} compact={tracker.Compact} no_peer_id={tracker.NoPeerID} uploaded={tracker.Uploaded}" +
+                     $"downloaded={tracker.Downloaded} left={tracker.Left} event={Tracker.EventString[(int)tracker.Event]} ip={tracker.Ip} key={tracker.Key}" +
+                     $" trackerid={tracker.TrackerID} numwanted={tracker.NumWanted}");
+
+        }
         /// <summary>
         /// Perform announce request on timer tick
         /// </summary>

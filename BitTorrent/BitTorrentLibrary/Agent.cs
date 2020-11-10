@@ -3,10 +3,9 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: All the high level torrent control logic including download/upload
-// of torrent pieces and updating the peers in the current swarm. When a torrent context
-// is added to an agent it has a piece assembler task created for it which puts together
-// pieces that they request from the torrent (remote peer) before being written to disk.
+// Description: Class for adding peers to swarm and for the high level
+// control of torrent contexts which includes the creation of their
+// assembler task and for the starting of downloads/seeding.
 //
 // Copyright 2020.
 //
@@ -34,7 +33,9 @@ namespace BitTorrentLibrary
         private readonly AsyncQueue<Peer> _peerCloseQueue;                 // Peer close queue
 
         /// <summary>
-        /// Peer close processing task.
+        /// Peer close processing task. Peers can be closed from differene threads and
+        /// contexts and having a queue and only one place that they are closed solves
+        /// any mutual exlusion issues.
         /// <param name="cancelTask"></param>
         /// <returns></returns>
         private async Task PeerCloseQueueTaskAsync(CancellationToken cancelTask)
@@ -69,7 +70,8 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Add Peer to swarm.
+        /// Add Peer to swarm if it connected, is not in the dead peer list,
+        /// is not already present in the swarm and there is room enough.
         /// </summary>
         /// <param name="remotePeer"></param>
         private void AddPeerToSwarm(Peer remotePeer)
@@ -102,7 +104,8 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Inspect  peer queue, connect to the peer and add into to swarm.
+        /// Inspect peer queue added to by tracker, connect to the peer and add it to swarm
+        /// on success.
         /// </summary>
         /// <param name="cancelTask"></param>
         /// <returns></returns>
@@ -118,12 +121,9 @@ namespace BitTorrentLibrary
                     PeerDetails peer = await _peerSwarmQeue.DequeueAsync(cancelTask);
                     try
                     {
-                        if (!_manager.IsPeerDead(peer.ip))
+                        if (!_manager.IsPeerDead(peer.ip) && _manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
-                            if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
-                            {
-                                AddPeerToSwarm(new Peer(peer.ip, peer.port, tc, null));
-                            }
+                            AddPeerToSwarm(new Peer(peer.ip, peer.port, tc, null));
                         }
                     }
                     catch (SocketException ex)
@@ -207,7 +207,7 @@ namespace BitTorrentLibrary
             _peerCloseQueue = new AsyncQueue<Peer>();
         }
         /// <summary>
-        /// Startup agent.
+        /// Startup worker tasks needed by the agent.
         /// </summary>
         public void Startup()
         {
@@ -215,9 +215,9 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info("Starting up Torrent Agent...");
                 _agentRunning = true;
-                Task.Run(() => Task.WaitAll(PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token),
-                                            PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token),
-                                            PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token)));
+                Task.Run(() => PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token));
+                Task.Run(() => PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token));
+                Task.Run(() => PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token));
                 Log.Logger.Info("Torrent Agent started.");
             }
             catch (Exception ex)
@@ -253,7 +253,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Shutdown any agent running resources.
+        /// Shutdown(close) any agent running resources used by the agent.
         /// </summary>
         public void ShutDown()
         {
@@ -265,7 +265,7 @@ namespace BitTorrentLibrary
                     _agentRunning = false;
                     foreach (var tc in _manager.TorrentList)
                     {
-                        Close(tc);
+                        CloseTorrent(tc);
                     }
                     PeerNetwork.ShutdownListener();
                     _cancelWorkerTaskSource.Cancel();
@@ -280,9 +280,9 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Closedown Agent
+        /// Closedown torrent.
         /// </summary>
-        public void Close(TorrentContext tc)
+        public void CloseTorrent(TorrentContext tc)
         {
             try
             {
@@ -299,7 +299,7 @@ namespace BitTorrentLibrary
                     }
                 }
                 tc.Status = TorrentStatus.Ended;
-                Log.Logger.Info("Torrent context closed.");
+                Log.Logger.Info($"Torrent context for {Util.InfoHashToString(tc.infoHash)} closed.");
 
             }
             catch (Exception ex)
@@ -309,7 +309,8 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Start downloading torrent.
+        /// Start processing torrent; this many be to start downloading or seeding if it has already been
+        /// sucessfully downloaded.
         /// </summary>
         public void StartTorrent(TorrentContext tc)
         {
@@ -325,7 +326,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Pause downloading torrent.
+        /// Pause processing torrent.
         /// </summary>
         public void PauseTorrent(TorrentContext tc)
         {
@@ -341,7 +342,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Return details about the currently torrents status.
+        /// Return details about the torrents status.
         /// </summary>
         /// <returns></returns>
         public TorrentDetails GetTorrentDetails(TorrentContext tc)
@@ -370,7 +371,7 @@ namespace BitTorrentLibrary
             };
         }
         /// <summary>
-        /// Attach peer swarm queue to atart recieving peers.
+        /// Attach peer swarm queue to start recieving peers.
         /// </summary>
         /// <param name="tracker"></param>
         public void AttachPeerSwarmQueue(Tracker tracker)

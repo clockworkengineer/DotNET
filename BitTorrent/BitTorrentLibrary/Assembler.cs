@@ -4,7 +4,9 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Provide functionality for downloading pieces of a torrent
-// from a remote server using the piece/peer selector algorithm passed to it. 
+// from a remote server using the piece/peer selector algorithm passed to it.
+// Each piece is selected and download requests are made for its individual
+// blocks by a list of selected peers before the next piece is moved to.
 //
 // Copyright 2020.
 //
@@ -71,7 +73,7 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Request a piece and wait for it to be assembled.
+        /// Request a piece block by block and wait for it to be assembled.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="pieceNumber"></param>
@@ -110,13 +112,19 @@ namespace BitTorrentLibrary
                     bytesToTransfer -= Constants.BlockSize;
                 }
 
+                // Wait for piece to be assembled
+
                 switch (WaitHandle.WaitAny(waitHandles, 60000))
                 {
+                     //  Something has been assembled
                     case 0:
                         return tc.assembledPiece.AllBlocksThere;
+                    // Assembly has been cancelled by external source
                     case 1:
                         return false;
-                    case WaitHandle.WaitTimeout:
+                    // Timeout so re-request blocks not returned
+                    // Note: can result in blocks having to be discarded
+                    case WaitHandle.WaitTimeout:    
                         continue;
                 }
 
@@ -124,7 +132,9 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// 
+        /// Loop for all pieces assembling them block by block until the download is
+        /// complete or has been interrupted. If an an assembled piece is found to be
+        /// corrupt it is discarded and requested again.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="cancelAssemblerTask"></param>
@@ -154,9 +164,10 @@ namespace BitTorrentLibrary
                         }
                     }
                     else
-                    {
+                    {   // if we reach here then no eligable peers in swarm so sleep a bit.
                         Thread.Sleep(100);
                     }
+                    // Signal piece to be requested in unsucessful download
                     if (!tc.IsPieceLocal(nextPiece))
                     {
                         tc.MarkPieceMissing(nextPiece, true);
@@ -168,7 +179,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        // Wait and process remote peer requests until cancelleed.
+        // Wait and process remote peer requests until cancelled.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="cancelTask"></param>
@@ -192,7 +203,9 @@ namespace BitTorrentLibrary
             paused = new ManualResetEvent(false);
         }
         /// <summary>
-        /// 
+        /// Piece assembler task. If/once downboad is complete then start seeding the torrent until
+        /// a cancel request is sent. Note: For seeding we only send announce requests every 30 minutes
+        /// to stop the local and remote peers from being swamped by alot of requests.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="cancelAssemblerTask"></param>
