@@ -25,8 +25,7 @@ namespace ClientUI
     {
         private readonly string _torrentFileName;   // Torrent filename
         private MetaInfoFile _torrentFile;          // Decoded torrent file
-        private MainWindow _mainWindow;             // Main window
-                                                    //    private double _currentProgress = 0;        // Value depicting the current download progress (float 0.0-1.0)
+        private MainApplicationWindow _mainWindow;             // Main window
         private Tracker _tracker;                   // Tracker associated with torrent
         public TorrentContext Tc { get; set; }      // Torrent download context
         public DiskIO TorrentDiskIO { get; set; }   // Torrent DiskIO
@@ -48,14 +47,7 @@ namespace ClientUI
             Application.MainLoop.Invoke(() =>
             {
 
-                _mainWindow.InformationWindow.UpdatePeers(new ListView(peers.ToArray())
-                {
-                    X = 0,
-                    Y = 0,
-                    Width = Dim.Fill(),
-                    Height = Dim.Fill(),
-                    CanFocus = false
-                });
+                _mainWindow.InformationWindow.UpdatePeers(peers.ToArray());
 
                 _mainWindow.InformationWindow.InfoTextFields[0].Text = InfoHashToString(torrentDetails.infoHash);
                 _mainWindow.InformationWindow.InfoTextFields[1].Text = torrentDetails.downloadedBytes.ToString();
@@ -122,7 +114,7 @@ namespace ClientUI
 
                 Application.MainLoop.Invoke(() =>
                 {
-                    main.DisplayStatusBar(Status.Starting);
+                    main.MainStatusBar.Display(Status.Starting);
                 });
 
                 _torrentFile = new MetaInfoFile(_torrentFileName);
@@ -159,7 +151,7 @@ namespace ClientUI
 
                 Application.MainLoop.Invoke(() =>
                 {
-                    main.DisplayStatusBar(Status.Downloading);
+                    main.MainStatusBar.Display(Status.Downloading);
                 });
 
             }
@@ -168,7 +160,7 @@ namespace ClientUI
                 Application.MainLoop.Invoke(() =>
                 {
                     MessageBox.Query("Error", ex.Message, "Ok");
-                    main.DisplayStatusBar(Status.Shutdown);
+                    main.MainStatusBar.Display(Status.Shutdown);
                 });
             }
 

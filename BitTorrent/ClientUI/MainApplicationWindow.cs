@@ -17,7 +17,7 @@ namespace ClientUI
     /// <summary>
     /// Main Application window.
     /// </summary>
-    public class MainWindow : Window
+    public class MainApplicationWindow : Window
     {
         private readonly Label torrentFileLabel;                    // Torrent file field label
         private readonly Label _progressBarBeginText;               // Beginning of progress bar '['
@@ -36,7 +36,7 @@ namespace ClientUI
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public MainWindow(string name) : base(name)
+        public MainApplicationWindow(string name) : base(name)
         {
             List<View> viewables = new List<View>();
 

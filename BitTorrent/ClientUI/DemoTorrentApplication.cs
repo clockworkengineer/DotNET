@@ -33,32 +33,28 @@ namespace ClientUI
     public class DemoTorrentApplication
     {
 
-        private readonly List<StatusItem> _statusBarItems;  // Status bat item list
-        private readonly StatusItem _download;              // Item download 
-        private readonly StatusItem _shutdown;              // Item shutwdown
-        private readonly StatusItem _quit;                  // Items quit
-        private readonly StatusItem _toggleSeeding;         // Item toggle information/seeding sub-windows
-        private StatusBar _mainStatusBar;                   // Main status bar
-        private readonly Toplevel _top;                     // Top level application view
-        private bool informatioWindow = true;               // == true then information window displayed otherwise seeding
-        private List<TorrentContext> _seeders;              // List of current seeding torrents
-        private ListView _seederListView;                   // List view to displat seeding torrent information
-        private DiskIO _seederDiskIO;                       // DiskIO for seeding torrents
-        public MainWindow MainWindow { get; set; }          // Main application 
+        private List<TorrentContext> _seeders;                // List of current seeding torrents
+        private readonly ListView _seederListView;            // List view to displat seeding torrent information
+        private DiskIO _seederDiskIO;                         // DiskIO for seeding torrents
+        public bool InformationWindow { get; set; } = true;   // == true information window displayed
+        public MainApplicationWindow MainWindow { get; set; } // Main application 
         public Manager TorrentManager { get; set; }           // Torrent context manager
-        public Agent DownloadAgent { get; set; }            // Agent for handling all torrents
+        public Agent DownloadAgent { get; set; }              // Agent for handling all torrents
+        public MainStatusBar MainStatusBar { get; set; }      // Mains status bar
+        public Toplevel Top { get; set; }                     // Top level application view
 
         // Cofig values
-        public string SeedFileDirectory { get; set; } = "";         // Directory containign torrent files that are seeding
-        public string DestinationTorrentDirectory { get; set; } = "";      // Destination for torrents downloaded
-        public string TorrentFileDirectory { get; set; } = "";    // Default path for torrent field field
-        public bool SeedingMode { get; set; } = true;               // == true dont check torrents disk inage on startup
-        public bool SeedingTorrents { get; set; } = true;          // == true load seeding torrents
+        public string SeedFileDirectory { get; set; } = "";             // Directory containign torrent files that are seeding
+        public string DestinationTorrentDirectory { get; set; } = "";   // Destination for torrents downloaded
+        public string TorrentFileDirectory { get; set; } = "";          // Default path for torrent field field
+        public bool SeedingMode { get; set; } = true;                   // == true dont check torrents disk inage on startup
+        public bool SeedingTorrents { get; set; } = true;               // == true load seeding torrents
+
 
         /// <summary>
         /// Read config settings
         /// </summary>
-        public void ReadConfig()
+        private void ReadConfig()
         {
             try
             {
@@ -98,7 +94,7 @@ namespace ClientUI
         /// </summary>
         /// <param name="main"></param>
         /// <returns></returns>
-        public bool UpdateSeederList(MainLoop main)
+        private bool UpdateSeederList(MainLoop main)
         {
 
             List<string> seederLines = (from seeder in _seeders
@@ -166,89 +162,23 @@ namespace ClientUI
 
         }
         /// <summary>
-        /// Display program status bar.
-        /// </summary>
-        /// <param name="status"></param>
-        public void DisplayStatusBar(Status status)
-        {
-
-            _top.Remove(_mainStatusBar);
-            if (status == Status.Starting)
-            {
-                _statusBarItems.Clear();
-                _statusBarItems.Add(_quit);
-                _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
-                _top.Add(_mainStatusBar);
-            }
-            else if (status == Status.Downloading)
-            {
-                _statusBarItems.Clear();
-                _statusBarItems.Add(_toggleSeeding);
-                _statusBarItems.Add(_shutdown);
-                _statusBarItems.Add(_quit);
-                _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
-                _top.Add(_mainStatusBar);
-            }
-            else if (status == Status.Shutdown)
-            {
-                _statusBarItems.Clear();
-                _statusBarItems.Add(_toggleSeeding);
-                _statusBarItems.Add(_download);
-                _statusBarItems.Add(_quit);
-                _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
-                _top.Add(_mainStatusBar);
-            }
-        }
-        /// <summary>
         /// Build and run application.
         /// </summary>
         public DemoTorrentApplication()
         {
 
             Application.Init();
-            _top = Application.Top;
+            Top = Application.Top;
 
             ReadConfig();
 
-            MainWindow = new MainWindow("BitTorrent Demo Application")
+            MainWindow = new MainApplicationWindow("BitTorrent Demo Application")
             {
                 X = 0,
                 Y = 0,
                 Width = Dim.Fill(),
                 Height = Dim.Fill()
             };
-
-            _statusBarItems = new List<StatusItem>();
-
-            _download = new StatusItem(Key.ControlD, "~^D~ Download", () =>
-            {
-                MainWindow.Torrent = new Torrent(MainWindow.TorrentFileText.Text.ToString());
-                MainWindow.DownloadTorrentTask = Task.Run(() => MainWindow.Torrent.Download(this));
-            });
-
-            _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
-             {
-                 DownloadAgent.RemoveTorrent(MainWindow.Torrent.Tc);
-                 DownloadAgent.CloseTorrent(MainWindow.Torrent.Tc);
-                 MainWindow.InformationWindow.ClearData();
-                 DisplayStatusBar(Status.Shutdown);
-             });
-
-            _toggleSeeding = new StatusItem(Key.ControlT, "~^T~ Toggle Seeding", () =>
-            {
-                if (informatioWindow)
-                {
-                    MainWindow.Remove(MainWindow.InformationWindow);
-                    MainWindow.Add(MainWindow.SeedingWindow);
-                    informatioWindow = false;
-                }
-                else
-                {
-                    MainWindow.Remove(MainWindow.SeedingWindow);
-                    MainWindow.Add(MainWindow.InformationWindow);
-                    informatioWindow = true;
-                }
-            });
 
             _seederListView = new ListView()
             {
@@ -258,21 +188,12 @@ namespace ClientUI
                 Height = Dim.Fill(),
                 CanFocus = true
             };
+            
             MainWindow.SeedingWindow.Add(_seederListView);
 
-            _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () =>
-            {
-                DownloadAgent.ShutDown();
-                _top.Running = false;
-            });
+            MainStatusBar = new MainStatusBar(this);
 
-            _statusBarItems.Add(_download);
-            _statusBarItems.Add(_toggleSeeding);
-            _statusBarItems.Add(_quit);
-
-            _mainStatusBar = new StatusBar(_statusBarItems.ToArray());
-
-            _top.Add(MainWindow, _mainStatusBar);
+            Top.Add(MainWindow, MainStatusBar);
 
             TorrentManager = new Manager();
 
@@ -290,7 +211,6 @@ namespace ClientUI
             MainWindow.TorrentFileText.Text = TorrentFileDirectory;
 
         }
-
         public void Run()
         {
             Application.Init();

@@ -61,7 +61,17 @@ namespace ClientUI
             };
             viewables.Add(PeersWindow);
 
-            string[] labels = { "InfoHash:", "Downloaded:", "Uploaded:", "Missing:", "Status:","Swarm:", "Dead:","Tracker:" };
+            _peersListView = new ListView()
+            {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = Dim.Fill(),
+                CanFocus = false
+            };
+            PeersWindow.Add(_peersListView);
+
+            string[] labels = { "InfoHash:", "Downloaded:", "Uploaded:", "Missing:", "Status:", "Swarm:", "Dead:", "Tracker:" };
 
             InfoTextFields = new TextField[labels.Length];
 
@@ -105,10 +115,7 @@ namespace ClientUI
                                   InfoTextFields[5].Text = "";
                                   InfoTextFields[6].Text = "";
                                   InfoTextFields[7].Text = "";
-                                  if (_peersListView != null)
-                                  {
-                                      PeersWindow.Remove(_peersListView);
-                                  }
+                                  _peersListView.SetSource(null);
                               });
 
         }
@@ -116,14 +123,9 @@ namespace ClientUI
         /// Update peers in peer swarm listview.
         /// </summary>
         /// <param name="peersList"></param>
-        public void UpdatePeers(ListView peersList)
+        public void UpdatePeers(string[] peersList)
         {
-            if (_peersListView != null)
-            {
-                PeersWindow.Remove(_peersListView);
-            }
-            _peersListView = peersList;
-            PeersWindow.Add(_peersListView);
+            _peersListView.SetSource(peersList);
         }
 
     }
