@@ -24,10 +24,10 @@ namespace ClientUI
         private StatusItem _quit;                  // Items quit
         private StatusItem _toggleSeeding;         // Item toggle information/seeding sub-window
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="main"></param>
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="main"></param>
         public MainStatusBar(DemoTorrentApplication main)
         {
             _statusBarItems = new List<StatusItem>();
@@ -48,24 +48,24 @@ namespace ClientUI
 
             _toggleSeeding = new StatusItem(Key.ControlT, "~^T~ Toggle Seeding", () =>
             {
-                if (main.InformationWindow)
+                if (main.MainWindow.DisplayInformationWindow)
                 {
                     main.MainWindow.Remove(main.MainWindow.InfoWindow);
                     main.MainWindow.Add(main.MainWindow.SeederListWindow);
-                    main.InformationWindow = false;
+                    main.MainWindow.DisplayInformationWindow = false;
                 }
                 else
                 {
                     main.MainWindow.Remove(main.MainWindow.SeederListWindow);
                     main.MainWindow.Add(main.MainWindow.InfoWindow);
-                    main.InformationWindow = true;
+                    main.MainWindow.DisplayInformationWindow = true;
                 }
             });
 
             _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () =>
             {
                 main.DownloadAgent.ShutDown();
-                main.Top.Running = false;
+                Application.Top.Running = false;
             });
 
             _statusBarItems.Add(_download);

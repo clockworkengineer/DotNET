@@ -90,7 +90,7 @@ namespace ClientUI
 
             _seeders = new List<TorrentContext>();
             _seederDiskIO = new DiskIO();
-            string[] torrentFiles = Directory.GetFiles(_main.SeedFileDirectory, "*.torrent");
+            string[] torrentFiles = Directory.GetFiles(_main.Configuration.SeedFileDirectory, "*.torrent");
             TorrentContext tc;
             Tracker seederTracker;
 
@@ -102,7 +102,8 @@ namespace ClientUI
                 {
                     MetaInfoFile _seederFile = new MetaInfoFile(file);
                     _seederFile.Parse();
-                    tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, _main.DestinationTorrentDirectory, _main.SeedingMode);
+                    tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, 
+                        _main.Configuration.DestinationTorrentDirectory, _main.Configuration.SeedingMode);
                     _main.DownloadAgent.AddTorrent(tc);
                     seederTracker = new Tracker(tc);
                     _main.DownloadAgent.AttachPeerSwarmQueue(seederTracker);

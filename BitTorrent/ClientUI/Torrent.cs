@@ -48,15 +48,8 @@ namespace ClientUI
             {
 
                 _mainWindow.InfoWindow.UpdatePeers(peers.ToArray());
+                _mainWindow.InfoWindow.UpdateInformation(torrentDetails);
 
-                _mainWindow.InfoWindow.InfoTextFields[0].Text = InfoHashToString(torrentDetails.infoHash);
-                _mainWindow.InfoWindow.InfoTextFields[1].Text = torrentDetails.downloadedBytes.ToString();
-                _mainWindow.InfoWindow.InfoTextFields[2].Text = torrentDetails.uploadedBytes.ToString();
-                _mainWindow.InfoWindow.InfoTextFields[3].Text = torrentDetails.missingPiecesCount.ToString();
-                _mainWindow.InfoWindow.InfoTextFields[4].Text = torrentDetails.status.ToString();
-                _mainWindow.InfoWindow.InfoTextFields[5].Text = torrentDetails.swarmSize.ToString();
-                _mainWindow.InfoWindow.InfoTextFields[6].Text = torrentDetails.deadPeers.ToString();
-                _mainWindow.InfoWindow.InfoTextFields[7].Text = torrentDetails.trackerStatus.ToString();
             });
         }
         /// <summary>
@@ -76,23 +69,9 @@ namespace ClientUI
             if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
                 File.Copy(_mainWindow.Torrent.Tc.FileName,
-                         main.SeedFileDirectory + Path.GetFileName(_mainWindow.Torrent.Tc.FileName));
+                         main.Configuration.SeedFileDirectory + Path.GetFileName(_mainWindow.Torrent.Tc.FileName));
             }
 
-        }
-        /// <summary>
-        /// Convert torrent infohash to string.
-        /// </summary>
-        /// <param name="infoHash"></param>
-        /// <returns></returns>
-        private static string InfoHashToString(byte[] infoHash)
-        {
-            StringBuilder hex = new StringBuilder(infoHash.Length * 2);
-            foreach (byte b in infoHash)
-            {
-                hex.AppendFormat("{0:x2}", b);
-            }
-            return hex.ToString().ToLower();
         }
         /// <summary>
         /// Initialise torrent
