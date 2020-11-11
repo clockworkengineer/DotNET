@@ -257,6 +257,8 @@ namespace BitTorrentLibrary
                     announceTimer.Stop();
                     announceTimer.Dispose();
                     announceTimer = null;
+                    CallBack = null;
+                    CallBackData = null;
                     trackerStatus = TrackerStatus.Stopped;
                 }
             }

@@ -77,7 +77,6 @@ namespace ClientUI
                 Height = Dim.Fill(),
                 CanFocus = true
             };
-
             Add(_seederListView);
 
             _seeders = new List<TorrentContext>();
@@ -97,13 +96,13 @@ namespace ClientUI
             _agent = agent;
             Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
 
-            foreach (var file in Directory.GetFiles(config.SeedFileDirectory, "*.torrent"))
+            foreach (var file in Directory.GetFiles(config.SeedDirectory, "*.torrent"))
             {
                 try
                 {
                     MetaInfoFile _seederFile = new MetaInfoFile(file);
                     _seederFile.Parse();
-                    tc = new TorrentContext(_seederFile, _seederSelector, _seederDiskIO, config.DestinationTorrentDirectory, config.SeedingMode);
+                    tc = new TorrentContext(_seederFile, _seederSelector, _seederDiskIO, config.DestinationDirectory, config.SeedingMode);
                     agent.AddTorrent(tc);
                     seederTracker = new Tracker(tc);
                     agent.AttachPeerSwarmQueue(seederTracker);

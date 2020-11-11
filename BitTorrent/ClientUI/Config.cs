@@ -18,14 +18,14 @@ namespace ClientUI
     public class Config
     {
         // Cofig values
-        public string SeedFileDirectory { get; set; } = "";             // Directory containign torrent files that are seeding
-        public string DestinationTorrentDirectory { get; set; } = "";   // Destination for torrents downloaded
-        public string TorrentFileDirectory { get; set; } = "";          // Default path for torrent field field
-        public bool SeedingMode { get; set; } = true;                   // == true dont check torrents disk inage on startup
-        public bool SeedingTorrents { get; set; } = true;               // == true load seeding torren
+        public string SeedDirectory { get; set; } = "";          // Directory containing torrent files that are seeding
+        public string DestinationDirectory { get; set; } = "";   // Destination for torrents downloaded
+        public string TorrentFileDirectory { get; set; } = "";   // Default path for torrent field field
+        public bool SeedingMode { get; set; } = true;            // == true dont check torrents disk inage on startup
+        public bool SeedingTorrents { get; set; } = true;        // == true load seeding torren
 
         /// <summary>
-        /// Read config settings
+        /// Load config settings
         /// </summary>
         public void Load()
         {
@@ -36,8 +36,8 @@ namespace ClientUI
                   .Build();
 
                 TorrentFileDirectory = config["TorrentFileDirectory"];
-                DestinationTorrentDirectory = config["DestinationTorrentDirectory"];
-                SeedFileDirectory = config["SeedFileDirectory"];
+                DestinationDirectory = config["DestinationTorrentDirectory"];
+                SeedDirectory = config["SeedFileDirectory"];
                 SeedingMode = bool.Parse(config["SeedingMode"]);
                 SeedingTorrents = bool.Parse(config["LoadSeedingTorrents"]);
 

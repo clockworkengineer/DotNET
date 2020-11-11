@@ -27,11 +27,11 @@ namespace ClientUI
     /// </summary>
     public class DemoTorrentApplication
     {
-        public MainApplicationWindow MainWindow { get; set; }        // Main application 
-        public Manager TorrentManager { get; set; }                  // Torrent context manager
-        public Agent DownloadAgent { get; set; }                     // Agent for handling all torrents
-        public MainStatusBar MainStatusBar { get; set; }             // Main status bar
-        public Config Configuration {get; set; }
+        public MainApplicationWindow MainWindow { get; set; }    // Main application 
+        public Manager TorrentManager { get; set; }              // Torrent context manager
+        public Agent DownloadAgent { get; set; }                 // Agent for handling all torrents
+        public MainStatusBar MainStatusBar { get; set; }         // Main status bar
+        public Config Configuration {get; set; }                 // Configuration data
 
         // 
         /// <summary>

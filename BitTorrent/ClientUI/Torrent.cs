@@ -24,11 +24,7 @@ namespace ClientUI
     public class Torrent
     {
         private readonly string _torrentFileName;   // Torrent filename
-        private MetaInfoFile _torrentFile;          // Decoded torrent file
-        private MainApplicationWindow _mainWindow;             // Main window
-        private Tracker _tracker;                   // Tracker associated with torrent
         public TorrentContext Tc { get; set; }      // Torrent download context
-        public DiskIO TorrentDiskIO { get; set; }   // Torrent DiskIO
 
         /// <summary>
         /// Update download information. This is used as the tracker callback to be invoked
@@ -47,8 +43,8 @@ namespace ClientUI
             Application.MainLoop.Invoke(() =>
             {
 
-                _mainWindow.InfoWindow.UpdatePeers(peers.ToArray());
-                _mainWindow.InfoWindow.UpdateInformation(torrentDetails);
+                main.MainWindow.InfoWindow.UpdatePeers(peers.ToArray());
+                main.MainWindow.InfoWindow.UpdateInformation(torrentDetails);
 
             });
         }
@@ -63,13 +59,13 @@ namespace ClientUI
 
             Application.MainLoop.Invoke(() =>
             {
-                _mainWindow.DownloadProgress.Fraction = (float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload);
+                main.MainWindow.DownloadProgress.Fraction = (float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload);
             });
 
             if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
-                File.Copy(_mainWindow.Torrent.Tc.FileName,
-                         main.Configuration.SeedFileDirectory + Path.GetFileName(_mainWindow.Torrent.Tc.FileName));
+                File.Copy(main.MainWindow.Torrent.Tc.FileName,
+                         main.Configuration.SeedDirectory + Path.GetFileName(main.MainWindow.Torrent.Tc.FileName));
             }
 
         }
@@ -89,34 +85,31 @@ namespace ClientUI
         {
             try
             {
-                _mainWindow = main.MainWindow;
 
                 Application.MainLoop.Invoke(() =>
                 {
                     main.MainStatusBar.Display(Status.Starting);
                 });
 
-                _torrentFile = new MetaInfoFile(_torrentFileName);
+                MetaInfoFile torrentFile = new MetaInfoFile(_torrentFileName);
 
-                _torrentFile.Parse();
+                torrentFile.Parse();
 
                 Application.MainLoop.Invoke(() =>
                 {
-                    _mainWindow.DownloadProgress.Fraction = 0;
-                    _mainWindow.InfoWindow.TrackerText.Text = _torrentFile.MetaInfoDict["announce"];
+                    main.MainWindow.DownloadProgress.Fraction = 0;
+                    main.MainWindow.InfoWindow.TrackerText.Text = torrentFile.MetaInfoDict["announce"];
                 });
 
-                TorrentDiskIO = new DiskIO()
+                Tc = new TorrentContext(torrentFile, new Selector(), new DiskIO()
                 {
                     CallBack = UpdateDownloadProgress,
                     CallBackData = main
-                };
-
-                Tc = new TorrentContext(_torrentFile, new Selector(), TorrentDiskIO, "/home/robt/utorrent");
+                }, main.Configuration.DestinationDirectory);
 
                 main.DownloadAgent.AddTorrent(Tc);
 
-                _tracker = new Tracker(Tc)
+                Tracker _tracker = new Tracker(Tc)
                 {
                     CallBack = UpdateDownloadInformation,
                     CallBackData = main

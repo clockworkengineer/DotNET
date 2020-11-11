@@ -34,7 +34,7 @@ namespace ClientUI
             _download = new StatusItem(Key.ControlD, "~^D~ Download", () =>
             {
                 main.MainWindow.Torrent = new Torrent(main.MainWindow.TorrentFileText.Text.ToString());
-                main.MainWindow.DownloadTorrentTask = Task.Run(() => main.MainWindow.Torrent.Download(main));
+                Task.Run(() => main.MainWindow.Torrent.Download(main));
             });
 
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
@@ -52,12 +52,14 @@ namespace ClientUI
                     main.MainWindow.Remove(main.MainWindow.InfoWindow);
                     main.MainWindow.Add(main.MainWindow.SeederListWindow);
                     main.MainWindow.DisplayInformationWindow = false;
+                    main.MainWindow.SeederListWindow.SetFocus();
                 }
                 else
                 {
                     main.MainWindow.Remove(main.MainWindow.SeederListWindow);
                     main.MainWindow.Add(main.MainWindow.InfoWindow);
                     main.MainWindow.DisplayInformationWindow = true;
+                    main.MainWindow.TorrentFileText.SetFocus();
                 }
             });
 

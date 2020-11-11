@@ -26,7 +26,6 @@ namespace ClientUI
         public ProgressBar DownloadProgress { get; set; }           // Downloading progress bar
         public InformationWindow InfoWindow { get; set; }           // Torrent information sub-window.
         public SeedingWindow SeederListWindow { get; set; }         // Seeding torrents sub-window (overlays information)
-        public Task DownloadTorrentTask { get; set; }               // Task for downloading torrent
         public Torrent Torrent { get; set; }                        // Currently active downloading torrent
         public bool DisplayInformationWindow { get; set; } = true;   // == true information window displayed
 
@@ -55,6 +54,7 @@ namespace ClientUI
                 Width = 50,
             };
             viewables.Add(TorrentFileText);
+            TorrentFileText.CursorPosition = TorrentFileText.ToString().Length;
 
             _progressBarBeginText = new Label("Progress : [")
             {
