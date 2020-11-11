@@ -89,7 +89,7 @@ namespace ClientUI
             };
             viewables.Add(InfoWindow);
 
-            SeederListWindow = new SeedingWindow(main, "Seeding")
+            SeederListWindow = new SeedingWindow("Seeding")
             {
                 X = Pos.Left(this),
                 Y = Pos.Bottom(_progressBarBeginText) + 1,

@@ -4,7 +4,7 @@
 // Programs: Simple console application to use BitTorrent class library.
 //
 // Description: Class containing all application configuration setting data
-// functionality.
+// and functionality.
 //
 // Copyright 2020.
 //

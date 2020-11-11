@@ -3,12 +3,11 @@
 //
 // Programs: Simple console application to use BitTorrent class library.
 //
-// Description: Top level application object.
+// Description: Top level application.
 //
 // Copyright 2020.
 //
 
-using System;
 using System.Threading.Tasks;
 using Terminal.Gui;
 using BitTorrentLibrary;
@@ -34,7 +33,7 @@ namespace ClientUI
         public MainStatusBar MainStatusBar { get; set; }             // Main status bar
         public Config Configuration {get; set; }
 
-        // }
+        // 
         /// <summary>
         /// Build and run application.
         /// </summary>
@@ -68,7 +67,7 @@ namespace ClientUI
 
             if (Configuration.SeedingTorrents)
             {
-                Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents());
+                Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents(DownloadAgent, Configuration));
             }
 
             MainWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;

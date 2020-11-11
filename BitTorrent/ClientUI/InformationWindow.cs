@@ -29,7 +29,6 @@ namespace ClientUI
         private readonly TextField[] _infoTextFields; // Torrent information window text fields
         public TextField TrackerText { get; }         // Torrent tracker text field
 
-
         /// <summary>
         /// Convert torrent infohash to string.
         /// </summary>
@@ -117,7 +116,7 @@ namespace ClientUI
             }
         }
         /// <summary>
-        /// 
+        /// Update torrent information window.
         /// </summary>
         /// <param name="torrentDetails"></param>
         public void UpdateInformation(TorrentDetails torrentDetails)

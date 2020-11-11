@@ -19,10 +19,11 @@ namespace ClientUI
 {
     public class SeedingWindow : Window
     {
-        private readonly DemoTorrentApplication _main;
-        private List<TorrentContext> _seeders;                // List of current seeding torrents
-        private readonly ListView _seederListView;            // List view to displat seeding torrent information
-        private DiskIO _seederDiskIO;                         // DiskIO for seeding torrents
+        private readonly List<TorrentContext> _seeders;  // List of current seeding torrents
+        private readonly ListView _seederListView;       // List view to displat seeding torrent information
+        private readonly DiskIO _seederDiskIO;           // DiskIO for seeding torrents
+        private readonly Selector _seederSelector;       // Piece/peer selector for seeding torrents
+        private Agent _agent;                            // Main torrent agent
 
         /// <summary>
         /// Build seeder display line for listview.
@@ -39,7 +40,7 @@ namespace ClientUI
 
         }
         /// <summary>
-        /// Update seeder listview window.
+        /// Update seeder list window.
         /// </summary>
         /// <param name="main"></param>
         /// <returns></returns>
@@ -47,7 +48,7 @@ namespace ClientUI
         {
 
             List<string> seederLines = (from seeder in _seeders
-                                        let seederDetails = _main.DownloadAgent.GetTorrentDetails(seeder)
+                                        let seederDetails = _agent.GetTorrentDetails(seeder)
                                         select BuildSeederDisplayLine(seederDetails)).ToList();
 
             if (seederLines.Count > 0)
@@ -65,9 +66,8 @@ namespace ClientUI
         /// <param name="main"></param>
         /// <param name="title"></param>
         /// <returns></returns>
-        public SeedingWindow(DemoTorrentApplication main, string title) : base(title)
+        public SeedingWindow(string title) : base(title)
         {
-            _main = main;
 
             _seederListView = new ListView()
             {
@@ -79,36 +79,36 @@ namespace ClientUI
             };
 
             Add(_seederListView);
+
+            _seeders = new List<TorrentContext>();
+            _seederDiskIO = new DiskIO();
+            _seederSelector = new Selector();
         }
 
         /// <summary>
         /// Load torrents in the seeding list.
         /// </summary>
-        public void LoadSeedingTorrents()
+        public void LoadSeedingTorrents(Agent agent, Config config)
         {
-            var token = Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
 
-            _seeders = new List<TorrentContext>();
-            _seederDiskIO = new DiskIO();
-            string[] torrentFiles = Directory.GetFiles(_main.Configuration.SeedFileDirectory, "*.torrent");
-            TorrentContext tc;
-            Tracker seederTracker;
+            TorrentContext tc = null;
+            Tracker seederTracker = null;
 
-            foreach (var file in torrentFiles)
+            _agent = agent;
+            Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
+
+            foreach (var file in Directory.GetFiles(config.SeedFileDirectory, "*.torrent"))
             {
-                seederTracker = null;
-                tc = null;
                 try
                 {
                     MetaInfoFile _seederFile = new MetaInfoFile(file);
                     _seederFile.Parse();
-                    tc = new TorrentContext(_seederFile, new Selector(), _seederDiskIO, 
-                        _main.Configuration.DestinationTorrentDirectory, _main.Configuration.SeedingMode);
-                    _main.DownloadAgent.AddTorrent(tc);
+                    tc = new TorrentContext(_seederFile, _seederSelector, _seederDiskIO, config.DestinationTorrentDirectory, config.SeedingMode);
+                    agent.AddTorrent(tc);
                     seederTracker = new Tracker(tc);
-                    _main.DownloadAgent.AttachPeerSwarmQueue(seederTracker);
+                    agent.AttachPeerSwarmQueue(seederTracker);
                     seederTracker.StartAnnouncing();
-                    _main.DownloadAgent.StartTorrent(tc);
+                    agent.StartTorrent(tc);
                     _seeders.Add(tc);
                 }
                 catch (Exception)
@@ -122,15 +122,17 @@ namespace ClientUI
                         if (seederTracker != null)
                         {
                             seederTracker.StopAnnouncing();
+                            seederTracker = null;
                         }
-                        _main.DownloadAgent.CloseTorrent(tc);
-                        _main.DownloadAgent.RemoveTorrent(tc);
+                        agent.CloseTorrent(tc);
+                        agent.RemoveTorrent(tc);
+                        tc = null;
                     }
                     continue;
                 }
             }
 
-            Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
+
 
         }
     }

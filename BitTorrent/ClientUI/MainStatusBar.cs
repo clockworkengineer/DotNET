@@ -8,7 +8,6 @@
 // Copyright 2020.
 //
 
-using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Terminal.Gui;
@@ -18,11 +17,11 @@ namespace ClientUI
     public class MainStatusBar : StatusBar
     {
 
-        private List<StatusItem> _statusBarItems;  // Status bat item list
-        private StatusItem _download;              // Item download 
-        private StatusItem _shutdown;              // Item shutwdown
-        private StatusItem _quit;                  // Items quit
-        private StatusItem _toggleSeeding;         // Item toggle information/seeding sub-window
+        private readonly List<StatusItem> _statusBarItems;  // Status bat item list
+        private readonly StatusItem _download;              // Item download 
+        private readonly StatusItem _shutdown;              // Item shutwdown
+        private readonly StatusItem _quit;                  // Items quit
+        private readonly StatusItem _toggleSeeding;         // Item toggle information/seeding sub-window
 
         /// <summary>
         /// 
