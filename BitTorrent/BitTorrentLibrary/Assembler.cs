@@ -233,6 +233,8 @@ namespace BitTorrentLibrary
                 Log.Logger.Info("Torrent seeding...");
                 tc.Status = TorrentStatus.Seeding;
                 tc.MainTracker.SetSeedingInterval(60000 * 30);
+                // Make sure get at least one more annouce before long wait
+                tc.MainTracker.ChangeStatus(TrackerEvent.None);     
                 ProcessRemotePeerRequests(tc, cancelAssemblerTask);
 
             }

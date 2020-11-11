@@ -36,7 +36,7 @@ namespace ClientUI
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public MainApplicationWindow(DemoTorrentApplication main, string name) : base(name)
+        public MainApplicationWindow(DemoTorrentApplication _, string name) : base(name)
         {
             List<View> viewables = new List<View>();
 
