@@ -28,10 +28,12 @@ namespace ClientUI
     public class DemoTorrentApplication
     {
         public MainApplicationWindow MainWindow { get; set; }    // Main application 
-        public Manager TorrentManager { get; set; }              // Torrent context manager
-        public Agent DownloadAgent { get; set; }                 // Agent for handling all torrents
+        public Manager TorrentManager { get; set; }              // Manager for all torrents
+        public Selector TorrentSelector { get; set; }            // Selector for all torrents
+        public DiskIO TorrentDiskIO { get; set; }                // DiskIO for all torrents
+        public Agent TorrentAgent { get; set; }                 // Agent for handling all torrents
         public MainStatusBar MainStatusBar { get; set; }         // Main status bar
-        public Config Configuration {get; set; }                 // Configuration data
+        public Config Configuration { get; set; }                // Configuration data
 
         // 
         /// <summary>
@@ -57,17 +59,21 @@ namespace ClientUI
 
             Application.Top.Add(MainWindow, MainStatusBar);
 
+            TorrentSelector = new Selector();
+
+            TorrentDiskIO = new DiskIO();
+
             TorrentManager = new Manager();
 
             TorrentManager.AddToDeadPeerList("192.168.1.1");
 
-            DownloadAgent = new Agent(TorrentManager, new Assembler());
+            TorrentAgent = new Agent(TorrentManager, new Assembler());
 
-            DownloadAgent.Startup();
+            TorrentAgent.Startup();
 
             if (Configuration.SeedingTorrents)
             {
-                Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents(DownloadAgent, Configuration));
+                Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents(TorrentAgent, TorrentSelector, TorrentDiskIO,  Configuration));
             }
 
             MainWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;

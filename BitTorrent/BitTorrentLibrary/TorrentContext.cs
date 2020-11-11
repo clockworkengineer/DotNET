@@ -60,6 +60,8 @@ namespace BitTorrentLibrary
         internal Task assemblerTask;                                 // Peer piece assembly task
         internal ManualResetEvent waitForPieceAssembly;              // When event set then piece has been fully assembled
         internal CancellationTokenSource cancelAssemblerTaskSource;  // Cancel assembler task token
+        public ProgessCallBack CallBack { get; set; }                // Download progress function
+        public Object CallBackData { get; set; }                     // Download progress function data
         public TorrentStatus Status { get; set; }                    // Torrent status
         public string FileName { get; set; }                         // Torrent file name
         public UInt64 TotalBytesDownloaded { get; set; }             // Total bytes downloaded

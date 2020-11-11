@@ -34,7 +34,7 @@ namespace ClientUI
         private void UpdateDownloadInformation(Object obj)
         {
             DemoTorrentApplication main = (DemoTorrentApplication)obj;
-            TorrentDetails torrentDetails = main.DownloadAgent.GetTorrentDetails(main.MainWindow.Torrent.Tc);
+            TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(main.MainWindow.Torrent.Tc);
             List<string> peers = new List<string>();
             foreach (var peer in torrentDetails.peers)
             {
@@ -101,13 +101,13 @@ namespace ClientUI
                     main.MainWindow.InfoWindow.TrackerText.Text = torrentFile.MetaInfoDict["announce"];
                 });
 
-                Tc = new TorrentContext(torrentFile, new Selector(), new DiskIO()
+                Tc = new TorrentContext(torrentFile, main.TorrentSelector, main.TorrentDiskIO, main.Configuration.DestinationDirectory)
                 {
                     CallBack = UpdateDownloadProgress,
                     CallBackData = main
-                }, main.Configuration.DestinationDirectory);
+                };
 
-                main.DownloadAgent.AddTorrent(Tc);
+                main.TorrentAgent.AddTorrent(Tc);
 
                 Tracker _tracker = new Tracker(Tc)
                 {
@@ -115,11 +115,11 @@ namespace ClientUI
                     CallBackData = main
                 };
 
-                main.DownloadAgent.AttachPeerSwarmQueue(_tracker);
+                main.TorrentAgent.AttachPeerSwarmQueue(_tracker);
 
                 _tracker.StartAnnouncing();
 
-                main.DownloadAgent.StartTorrent(Tc);
+                main.TorrentAgent.StartTorrent(Tc);
 
                 Application.MainLoop.Invoke(() =>
                 {

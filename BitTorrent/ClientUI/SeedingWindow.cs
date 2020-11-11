@@ -21,8 +21,6 @@ namespace ClientUI
     {
         private readonly List<TorrentContext> _seeders;  // List of current seeding torrents
         private readonly ListView _seederListView;       // List view to displat seeding torrent information
-        private readonly DiskIO _seederDiskIO;           // DiskIO for seeding torrents
-        private readonly Selector _seederSelector;       // Piece/peer selector for seeding torrents
         private Agent _agent;                            // Main torrent agent
 
         /// <summary>
@@ -80,14 +78,12 @@ namespace ClientUI
             Add(_seederListView);
 
             _seeders = new List<TorrentContext>();
-            _seederDiskIO = new DiskIO();
-            _seederSelector = new Selector();
         }
 
         /// <summary>
         /// Load torrents in the seeding list.
         /// </summary>
-        public void LoadSeedingTorrents(Agent agent, Config config)
+        public void LoadSeedingTorrents(Agent agent, Selector selector, DiskIO diskIO, Config config)
         {
 
             TorrentContext tc = null;
@@ -100,9 +96,9 @@ namespace ClientUI
             {
                 try
                 {
-                    MetaInfoFile _seederFile = new MetaInfoFile(file);
-                    _seederFile.Parse();
-                    tc = new TorrentContext(_seederFile, _seederSelector, _seederDiskIO, config.DestinationDirectory, config.SeedingMode);
+                    MetaInfoFile seederFile = new MetaInfoFile(file);
+                    seederFile.Parse();
+                    tc = new TorrentContext(seederFile, selector, diskIO, config.DestinationDirectory, config.SeedingMode);
                     agent.AddTorrent(tc);
                     seederTracker = new Tracker(tc);
                     agent.AttachPeerSwarmQueue(seederTracker);

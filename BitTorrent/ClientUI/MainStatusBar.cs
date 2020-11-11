@@ -39,8 +39,8 @@ namespace ClientUI
 
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
             {
-                main.DownloadAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
-                main.DownloadAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
+                main.TorrentAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
+                main.TorrentAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
                 main.MainWindow.InfoWindow.ClearData();
                 main.MainStatusBar.Display(Status.Shutdown);
             });
@@ -65,7 +65,7 @@ namespace ClientUI
 
             _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () =>
             {
-                main.DownloadAgent.ShutDown();
+                main.TorrentAgent.ShutDown();
                 Application.Top.Running = false;
             });
 

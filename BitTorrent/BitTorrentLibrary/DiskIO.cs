@@ -31,8 +31,6 @@ namespace BitTorrentLibrary
         private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
         internal AsyncQueue<PieceBuffer> pieceWriteQueue;              // Piece buffer write queue
         internal AsyncQueue<PieceRequest> pieceRequestQueue;           // Piece request read queue
-        public ProgessCallBack CallBack { get; set; }                  // Download progress function
-        public Object CallBackData { get; set; }                       // Download progress function data
 
         /// <summary>
         /// Read/Write piece buffers to/from torrent on disk.
@@ -148,7 +146,7 @@ namespace BitTorrentLibrary
                         // Make sure progress call back does not termiate the task.
                         try
                         {
-                            CallBack?.Invoke(CallBackData);
+                            pieceBuffer.Tc.CallBack?.Invoke(pieceBuffer.Tc.CallBackData);
                         }
                         catch (Exception ex)
                         {
