@@ -67,33 +67,37 @@ namespace BitTorrentLibrary
                     }
                     else if (field is BNodeList bNodeList)  // Non-compact peer list reply
                     {
-                        foreach (var listItem in (bNodeList).list)
+                        // Only send more peers once the last have been processed
+                        if (tracker.peerSwarmQueue.Count == 0)
                         {
-                            if (listItem is BNodeDictionary bNodeDictionary)
+                            foreach (var listItem in (bNodeList).list)
                             {
-                                PeerDetails peer = new PeerDetails
+                                if (listItem is BNodeDictionary bNodeDictionary)
                                 {
-                                    infoHash = tracker.InfoHash
-                                };
-                                BNodeBase peerDictionaryItem = (bNodeDictionary);
-                                BNodeBase peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "ip");
-                                if (peerField != null)
-                                {
-                                    peer.ip = Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeString)peerField).str);
-                                }
-                                if (peer.ip.Contains(":"))
-                                {
-                                    peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
-                                }
-                                peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "port");
-                                if (peerField != null)
-                                {
-                                    peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeNumber)peerField).number));
-                                }
-                                if (peer.ip != tracker.Ip) // Ignore self in peers list
-                                {
-                                    Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
-                                    decodedResponse.peers.Add(peer);
+                                    PeerDetails peer = new PeerDetails
+                                    {
+                                        infoHash = tracker.InfoHash
+                                    };
+                                    BNodeBase peerDictionaryItem = (bNodeDictionary);
+                                    BNodeBase peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "ip");
+                                    if (peerField != null)
+                                    {
+                                        peer.ip = Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeString)peerField).str);
+                                    }
+                                    if (peer.ip.Contains(":"))
+                                    {
+                                        peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
+                                    }
+                                    peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "port");
+                                    if (peerField != null)
+                                    {
+                                        peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeNumber)peerField).number));
+                                    }
+                                    if (peer.ip != tracker.Ip) // Ignore self in peers list
+                                    {
+                                        Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
+                                        decodedResponse.peers.Add(peer);
+                                    }
                                 }
                             }
                         }

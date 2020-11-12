@@ -63,7 +63,7 @@ namespace BitTorrentLibrary
         public UInt64 Downloaded => _tc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download
         public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes uploaded
-        public string StatusMessage => lastResponse.statusMessage;
+        internal string StatusMessage => lastResponse.statusMessage; // Status message from last announce.
 
         /// <summary>
         /// Log announce details.
@@ -95,14 +95,11 @@ namespace BitTorrentLibrary
 
                         if (tracker._tc.Status == TorrentStatus.Downloading)
                         {
-                            if (tracker.peerSwarmQueue.Count == 0)
+                            foreach (var peerDetails in tracker.lastResponse.peers)
                             {
-                                foreach (var peerDetails in tracker.lastResponse.peers)
-                                {
-                                    tracker.peerSwarmQueue?.Enqueue(peerDetails);
-                                }
-                                tracker.NumWanted = Math.Max(tracker._tc.maximumSwarmSize - tracker._tc.peerSwarm.Count, 0);
+                                tracker.peerSwarmQueue?.Enqueue(peerDetails);
                             }
+                            tracker.NumWanted = Math.Max(tracker._tc.maximumSwarmSize - tracker._tc.peerSwarm.Count, 0);
                         }
                         tracker.UpdateRunningStatusFromAnnounce(tracker.lastResponse);
                     }
@@ -235,7 +232,6 @@ namespace BitTorrentLibrary
                 announceTimer.Enabled = true;
 
                 trackerStatus = TrackerStatus.Running;
-                _tc.trackerStarted.Set();
                 announceTimer?.Start();
                 CallBack?.Invoke(CallBackData);
 

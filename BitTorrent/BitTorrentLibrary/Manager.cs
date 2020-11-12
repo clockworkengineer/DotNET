@@ -50,7 +50,6 @@ namespace BitTorrentLibrary
         internal bool AddTorrentContext(TorrentContext tc)
         {
             return _torrents.TryAdd(Util.InfoHashToString(tc.infoHash), tc);
-
         }
         /// <summary>
         /// Remove torrent context for an infohash.
@@ -60,6 +59,26 @@ namespace BitTorrentLibrary
         internal bool RemoveTorrentContext(TorrentContext tc)
         {
             return _torrents.TryRemove(Util.InfoHashToString(tc.infoHash), out TorrentContext _);
+        }
+        /// <summary>
+        /// Get a remote peer given its infohash and ip.
+        /// </summary>
+        /// <param name="infoHash"></param>
+        /// <param name="ip"></param>
+        /// <param name="remotePeer"></param>
+        /// <returns></returns>
+        internal bool GetPeer(byte[] infoHash, string ip, out Peer remotePeer)
+        {
+            remotePeer = null;
+            if (GetTorrentContext(infoHash, out TorrentContext tc))
+            {
+                if (tc.peerSwarm.TryGetValue(ip, out remotePeer))
+                { 
+                    return true;
+                }
+            }
+            return false;
+
         }
         /// <summary>
         /// Add peer to dead list.

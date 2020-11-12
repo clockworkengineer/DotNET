@@ -217,8 +217,6 @@ namespace BitTorrentLibrary
 
                 tc.paused.WaitOne(cancelAssemblerTask);
 
-                tc.trackerStarted.WaitOne(cancelAssemblerTask);
-
                 if (tc.MainTracker.Left != 0)
                 {
                     Log.Logger.Info("Torrent downloading...");
