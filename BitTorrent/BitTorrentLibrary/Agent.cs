@@ -92,7 +92,10 @@ namespace BitTorrentLibrary
                         {
                             PWP.Have(remotePeer, pieceNumber);
                         }
-                        PWP.Uninterested(remotePeer);
+                        if (remotePeer.Tc.Status == TorrentStatus.Seeding)
+                        {
+                            PWP.Uninterested(remotePeer);
+                        }
                         PWP.Unchoke(remotePeer);
                         Log.Logger.Info($"Peer [{remotePeer.Ip}] added to swarm.");
                         return;
@@ -129,13 +132,13 @@ namespace BitTorrentLibrary
                     catch (SocketException ex)
                     {
                         if ((ex.ErrorCode == 111) || (ex.ErrorCode == 113))
-                        {    // Connection refused
+                        {    // Connection refused    // No route to host
                             _manager.AddToDeadPeerList(peer.ip);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug(ex.Message);
+                        Log.Logger.Debug($"PeerConnectCreatorTaskAsync Error Ignored:" + ex.Message);
                     }
                 }
             }
@@ -148,7 +151,10 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Listen for remote peer connects and on success add it to swarm.
+        /// Listen for remote peer connects and on success add it to swarm. Note:
+        /// that we pass in null for tc when creating the Peer as this is attached
+        /// deeper down when we know what torrent (infohash) the remote client has
+        /// sent so can find it.
         /// </summary>
         /// <param name="_"></param>
         /// <returns></returns>
@@ -186,7 +192,7 @@ namespace BitTorrentLibrary
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug(ex.Message);
+                        Log.Logger.Debug($"PeerListenCreatorTaskAsync Error Ingored: " + ex.Message);
                     }
 
                 }
@@ -242,7 +248,6 @@ namespace BitTorrentLibrary
         {
             if (_manager.AddTorrentContext(tc))
             {
-                // tc.manager = _manager;
                 tc.assemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.cancelAssemblerTaskSource.Token));
             }
             else
@@ -324,7 +329,7 @@ namespace BitTorrentLibrary
         public void StartTorrent(TorrentContext tc)
         {
             try
-            {;
+            {
                 tc.paused.Set();
             }
             catch (Exception ex)
@@ -340,8 +345,8 @@ namespace BitTorrentLibrary
         {
             try
             {
-                tc.paused.Reset();
                 tc.Status = TorrentStatus.Paused;
+                tc.paused.Reset();
             }
             catch (Exception ex)
             {
