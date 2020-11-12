@@ -40,6 +40,7 @@ namespace BitTorrentLibrary
         private readonly Object _dcLock = new object();               // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                      // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                     // Piece information
+        internal UInt64 assemblyTimeOuts;                            // Timeouts while performing piece assembly
         internal ManualResetEvent paused;                            // == false (unset) pause downloading from peer
         internal AsyncQueue<PieceBuffer> pieceWriteQueue;            // Piece buffer disk write queue
         internal AsyncQueue<PieceRequest> pieceRequestQueue;         // Piece request queue
@@ -53,7 +54,7 @@ namespace BitTorrentLibrary
         internal byte[] infoHash;                                    // Torrent info hash
         internal string trackerURL;                                  // Main Tracker URL
         internal uint missingPiecesCount = 0;                        // Missing piece count
-        internal int maximumSwarmSize = Constants.MaximumSwarmSize; // Maximim swarm size
+        internal int maximumSwarmSize = Constants.MaximumSwarmSize;  // Maximim swarm size
         internal ConcurrentDictionary<string, Peer> peerSwarm;       // Current peer swarm
         internal Tracker MainTracker;                                // Main tracker assigned to torrent
         internal PieceBuffer assembledPiece;                         // Assembled pieces buffer
@@ -82,8 +83,8 @@ namespace BitTorrentLibrary
             Status = TorrentStatus.Initialised;
             infoHash = torrentMetaInfo.MetaInfoDict["info hash"];
             trackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
-            (var totalDownloadLength, var filesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
-            this.filesToDownload = filesToDownload;
+            (var totalDownloadLength, var allFilesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
+            filesToDownload = allFilesToDownload;
             TotalBytesToDownload = totalDownloadLength;
             pieceLength = uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
             piecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
@@ -100,7 +101,6 @@ namespace BitTorrentLibrary
             waitForPieceAssembly = new ManualResetEvent(false);
             assembledPiece = new PieceBuffer(this, pieceLength);
             cancelAssemblerTaskSource = new CancellationTokenSource();
-            //trackerStarted = new ManualResetEvent(false);
             paused = new ManualResetEvent(false);
             // In seeding mode mark eveything downloaded to save startup time
             diskIO.CreateLocalTorrentStructure(this);
@@ -245,6 +245,27 @@ namespace BitTorrentLibrary
                 }
             }
             remotePeer.BitfieldReceived.Set();
+        }
+        /// <summary>
+        /// Un-merges disconnecting peer bitfield from piece information. At
+        /// present this just involves decreasing its availability count.
+        /// Note: Need to find where to put this call.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
+        internal void UnMergePieceBitfield(Peer remotePeer)
+        {
+
+            UInt32 pieceNumber = 0;
+            for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
+            {
+                for (byte bit = 0x80; bit != 0; bit >>= 1, pieceNumber++)
+                {
+                    if ((remotePeer.RemotePieceBitfield[i] & bit) != 0)
+                    {
+                        _pieceData[pieceNumber].peerCount--;
+                    }
+                }
+            }
         }
         /// <summary>
         /// Get piece length in bytes

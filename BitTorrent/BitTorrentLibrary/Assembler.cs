@@ -37,6 +37,8 @@ namespace BitTorrentLibrary
     public class Assembler
     {
 
+        private readonly int assemberTimeout;        // Assembly timeout in seconds
+
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
         /// that they can request it if they need.
@@ -78,7 +80,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber"></param>
         /// <param name="waitHandles"></param>
         /// <returns></returns>
-        private bool GetPieceFromPeers(TorrentContext tc, uint pieceNumber, WaitHandle[] waitHandles)
+        private bool GetPieceFromPeers(TorrentContext tc, UInt32 pieceNumber, WaitHandle[] waitHandles)
         {
 
             Peer[] remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber);
@@ -115,7 +117,7 @@ namespace BitTorrentLibrary
 
                 // Wait for piece to be assembled
 
-                switch (WaitHandle.WaitAny(waitHandles, 60000))
+                switch (WaitHandle.WaitAny(waitHandles, assemberTimeout*1000))
                 {
                     //  Something has been assembled
                     case 0:
@@ -127,6 +129,7 @@ namespace BitTorrentLibrary
                     // Note: can result in blocks having to be discarded
                     case WaitHandle.WaitTimeout:
                         Log.Logger.Debug($"Timeout assembling piece {pieceNumber}.");
+                        tc.assemblyTimeOuts++;
                         continue;
                 }
 
@@ -200,8 +203,9 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by assembler.
         /// </summary>
-        public Assembler()
+        public Assembler(int assemblerTimeout = 60)
         {
+            assemberTimeout = assemblerTimeout;
         }
         /// <summary>
         /// Piece assembler task. If/once downboad is complete then start seeding the torrent until

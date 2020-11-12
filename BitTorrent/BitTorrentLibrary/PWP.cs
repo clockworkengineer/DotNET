@@ -265,7 +265,9 @@ namespace BitTorrentLibrary
             byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
 
             Int32 bytesRead = remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
-            if (bytesRead!=handshakeResponse.Length) {
+            if (bytesRead != handshakeResponse.Length)
+            {
+                manager.AddToDeadPeerList(remotePeer.Ip);
                 throw new Error("Invalid length read for intial packet exchange.");
             }
 
@@ -282,7 +284,7 @@ namespace BitTorrentLibrary
             if (!connected)
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
-                Log.Logger.Debug($"Remote peer {remotePeer.Ip} tried to connect with invalid infohash.");
+                throw new Exception($"Remote peer [{remotePeer.Ip}] tried to connect with invalid infohash.");
             }
 
             return (connected, remotePeerID);
@@ -304,7 +306,9 @@ namespace BitTorrentLibrary
             byte[] handshakeResponse = new byte[handshakePacket.Count];
 
             Int32 bytesRead = remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
-            if (bytesRead!=handshakeResponse.Length) {
+            if (bytesRead != handshakeResponse.Length)
+            {
+                manager.AddToDeadPeerList(remotePeer.Ip);
                 throw new Error("Invalid length read for intial packet exchange.");
             }
 
@@ -313,8 +317,7 @@ namespace BitTorrentLibrary
             if (!connected)
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
-                Log.Logger.Debug($"Remote peer {remotePeer.Ip} tried to connect with invalid initial handshake.");
-                Log.Logger.Debug($"Remote Peer Sent[{Encoding.ASCII.GetString(handshakeResponse)}]");
+                throw new Exception($"Remote peer [{remotePeer.Ip}] tried to connect with invalid initial handshake.");
             }
 
             return (connected, remotePeerID);

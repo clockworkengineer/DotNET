@@ -187,7 +187,7 @@ namespace BitTorrentLibrary
             }
             else
             {
-                Log.Logger.Debug($"PIECE {pieceNumber} DISCARED.");
+                Log.Logger.Debug($"PIECE {pieceNumber} DISCARDED.");
             }
         }
         /// <summary>
@@ -195,7 +195,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public void QueueForClosure()
         {
-            peerCloseQueue.Enqueue(this);
+            peerCloseQueue?.Enqueue(this);
         }
 
     }

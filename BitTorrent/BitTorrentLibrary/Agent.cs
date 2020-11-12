@@ -24,7 +24,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Agent
     {
-        private readonly Manager _manager;                                 // Torrent context/ dead peer manager
+        private readonly Manager _manager;                                 // Torrent context/dead peer manager
         private bool _agentRunning = false;                                // == true while agent is up and running.
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private Socket _listenerSocket;                                    // Connection listener socket
@@ -70,16 +70,16 @@ namespace BitTorrentLibrary
 
         }
         /// <summary>
-        /// Add Peer to swarm if it connected, is not in the dead peer list,
-        /// is not already present in the swarm and there is room enough.
+        /// Add Peer to swarm if it connected, is not already present in the swarm 
+        /// and there is room enough.
         /// </summary>
         /// <param name="remotePeer"></param>
         private void AddPeerToSwarm(Peer remotePeer)
         {
 
-            remotePeer.Connect(_manager);
-
             remotePeer.peerCloseQueue = _peerCloseQueue;
+
+            remotePeer.Connect(_manager);
 
             if (remotePeer.Connected)
             {
@@ -103,7 +103,7 @@ namespace BitTorrentLibrary
                 }
             }
 
-            remotePeer.QueueForClosure();
+            throw new Exception($"Peer [{remotePeer.Ip}] not added to swarm.");
 
         }
         /// <summary>
@@ -121,12 +121,14 @@ namespace BitTorrentLibrary
             {
                 while (_agentRunning)
                 {
+                    Peer remotePeer = null;
                     PeerDetails peer = await _peerSwarmQeue.DequeueAsync(cancelTask);
                     try
                     {
                         if (!_manager.IsPeerDead(peer.ip) && _manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
-                            AddPeerToSwarm(new Peer(peer.ip, peer.port, tc, null));
+                            remotePeer = new Peer(peer.ip, peer.port, tc, null);
+                            AddPeerToSwarm(remotePeer);
                         }
                     }
                     catch (SocketException ex)
@@ -134,11 +136,13 @@ namespace BitTorrentLibrary
                         if ((ex.ErrorCode == 111) || (ex.ErrorCode == 113))
                         {    // Connection refused    // No route to host
                             _manager.AddToDeadPeerList(peer.ip);
+                            remotePeer.QueueForClosure();
                         }
                     }
                     catch (Exception ex)
                     {
                         Log.Logger.Debug($"PeerConnectCreatorTaskAsync Error Ignored:" + ex.Message);
+                        remotePeer.QueueForClosure();
                     }
                 }
             }
@@ -169,6 +173,7 @@ namespace BitTorrentLibrary
 
                 while (_agentRunning)
                 {
+                    Peer remotePeer = null;
 
                     Log.Logger.Info("Waiting for remote peer connect...");
 
@@ -182,17 +187,19 @@ namespace BitTorrentLibrary
                             var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
                             if (!_manager.IsPeerDead(endPoint.Item1))
                             {
-                                AddPeerToSwarm(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
+                                remotePeer = new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket);
+                                AddPeerToSwarm(remotePeer);
                             }
                             else
                             {
-                                remotePeerSocket.Close();
+                                throw new Exception("Peer not added to swarm as in dead lisrt.");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         Log.Logger.Debug($"PeerListenCreatorTaskAsync Error Ingored: " + ex.Message);
+                        remotePeer?.QueueForClosure();
                     }
 
                 }
