@@ -62,7 +62,6 @@ namespace BitTorrentLibrary
 
                 if ((bytesRead <=0) || (socketError != SocketError.Success) || !PeerSocket.Connected)
                 {
-
                     remotePeer.QueueForClosure();
                     return;
                 }

@@ -25,6 +25,8 @@ namespace ClientUI
     {
         private readonly string _torrentFileName;   // Torrent filename
         public TorrentContext Tc { get; set; }      // Torrent download context
+        public Tracker TorrentTracker { get; set; } // Torrent tracker
+
 
         /// <summary>
         /// Update download information. This is used as the tracker callback to be invoked
@@ -45,8 +47,13 @@ namespace ClientUI
 
                 main.MainWindow.InfoWindow.UpdatePeers(peers.ToArray());
                 main.MainWindow.InfoWindow.UpdateInformation(torrentDetails);
+                if (torrentDetails.trackerStatus == TrackerStatus.Stalled)
+                {
+                    MessageBox.Query("Error", torrentDetails.trackerStatusMessage, "Ok");
+                }
 
             });
+
         }
         /// <summary>
         /// Update torrent download progress bar. Thie is the diskio progress callback.
@@ -109,15 +116,15 @@ namespace ClientUI
 
                 main.TorrentAgent.AddTorrent(Tc);
 
-                Tracker _tracker = new Tracker(Tc)
+                TorrentTracker = new Tracker(Tc)
                 {
                     CallBack = UpdateDownloadInformation,
                     CallBackData = main
                 };
 
-                main.TorrentAgent.AttachPeerSwarmQueue(_tracker);
+                main.TorrentAgent.AttachPeerSwarmQueue(TorrentTracker);
 
-                _tracker.StartAnnouncing();
+                TorrentTracker.StartAnnouncing();
 
                 main.TorrentAgent.StartTorrent(Tc);
 

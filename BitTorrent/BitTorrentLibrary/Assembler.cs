@@ -36,7 +36,6 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler
     {
-        internal ManualResetEvent paused;  // == false (unset) pause downloading from peer
 
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
@@ -173,7 +172,7 @@ namespace BitTorrentLibrary
                         tc.MarkPieceMissing(nextPiece, true);
                     }
                     cancelAssemblerTask.ThrowIfCancellationRequested();
-                    paused.WaitOne(cancelAssemblerTask);
+                    tc.paused.WaitOne(cancelAssemblerTask);
                 }
 
             }
@@ -200,7 +199,6 @@ namespace BitTorrentLibrary
         /// </summary>
         public Assembler()
         {
-            paused = new ManualResetEvent(false);
         }
         /// <summary>
         /// Piece assembler task. If/once downboad is complete then start seeding the torrent until
@@ -217,7 +215,7 @@ namespace BitTorrentLibrary
             try
             {
 
-                paused.WaitOne(cancelAssemblerTask);
+                tc.paused.WaitOne(cancelAssemblerTask);
 
                 tc.trackerStarted.WaitOne(cancelAssemblerTask);
 

@@ -289,8 +289,9 @@ namespace BitTorrentLibrary
         /// Perform initial handshake with remote peer that the local client connected to.
         /// </summary>
         /// <param name="remotePeer"></param>
-        /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
-        public static ValueTuple<bool, byte[]> ConnectToIntialHandshake(Peer remotePeer)
+        /// <param name="manager"></param>
+        /// <returns>Tuple<bbol, byte[]> indicating connection success and the ID of the remote client.</returns>
+        public static ValueTuple<bool, byte[]> ConnectToIntialHandshake(Peer remotePeer, Manager manager)
         {
             List<byte> handshakePacket = BuildInitialHandshake(remotePeer.Tc.infoHash);
 
@@ -301,6 +302,12 @@ namespace BitTorrentLibrary
             remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
 
             bool connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out byte[] remotePeerID);
+
+            if (!connected)
+            {
+                manager.AddToDeadPeerList(remotePeer.Ip);
+                Log.Logger.Debug($"Remote peer {remotePeer.Ip} tried to connect with invalid initial handshake.");
+            }
 
             return (connected, remotePeerID);
 

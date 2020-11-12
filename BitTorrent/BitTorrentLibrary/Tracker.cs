@@ -39,13 +39,13 @@ namespace BitTorrentLibrary
         /// Tracker Announce event types.
         /// </summary>
         public static readonly string[] EventString = { "", "started", "stopped", "completed" };
-        private AnnounceResponse _currentRespone;               // Last announce response 
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         internal Timer announceTimer;                           // Timer for sending tracker announce events
         internal AsyncQueue<PeerDetails> peerSwarmQueue;        // Peers to add to swarm queue
         internal TrackerStatus trackerStatus;                   // Current tracker status
-        public TrackerEvent Event { get; set; }                 // Current state of torrent downloading
+        internal AnnounceResponse lastResponse;                 // Last announce response 
+        internal TrackerEvent Event { get; set; }               // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID
         public uint Port { get; } = Host.DefaultPort;           // Port that client s listening on 
         public string Ip { get; set; }                          // IP of host performing announce
@@ -63,6 +63,7 @@ namespace BitTorrentLibrary
         public UInt64 Downloaded => _tc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download
         public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes uploaded
+        public string StatusMessage => lastResponse.statusMessage;
 
         /// <summary>
         /// Log announce details.
@@ -86,26 +87,28 @@ namespace BitTorrentLibrary
             {
                 if (tracker.trackerStatus != TrackerStatus.Stalled)
                 {
-                    tracker._currentRespone = tracker._announcer.Announce(tracker);
+                    tracker.lastResponse = tracker._announcer.Announce(tracker);
 
-                    if (!tracker._currentRespone.failure)
+                    if (!tracker.lastResponse.failure)
                     {
                         Log.Logger.Info("Queuing new peers for swarm ....");
 
                         if (tracker._tc.Status == TorrentStatus.Downloading)
                         {
-                            foreach (var peerDetails in tracker._currentRespone.peers)
+                            if (tracker.peerSwarmQueue.Count == 0)
                             {
-                                tracker.peerSwarmQueue?.Enqueue(peerDetails);
+                                foreach (var peerDetails in tracker.lastResponse.peers)
+                                {
+                                    tracker.peerSwarmQueue?.Enqueue(peerDetails);
+                                }
+                                tracker.NumWanted = Math.Max(tracker._tc.maximumSwarmSize - tracker._tc.peerSwarm.Count, 0);
                             }
-                            tracker.NumWanted = Math.Max(tracker._tc.maximumSwarmSize - tracker._tc.peerSwarm.Count, 0);
-
                         }
-                        tracker.UpdateRunningStatusFromAnnounce(tracker._currentRespone);
+                        tracker.UpdateRunningStatusFromAnnounce(tracker.lastResponse);
                     }
                     else
                     {
-                        throw new Exception("Remote tracker failure: " + tracker._currentRespone.statusMessage);
+                        throw new Exception("Remote tracker failure: " + tracker.lastResponse.statusMessage);
                     }
                 }
 
@@ -114,10 +117,10 @@ namespace BitTorrentLibrary
             {
                 tracker.trackerStatus = TrackerStatus.Stalled;
                 Log.Logger.Debug("BitTorrent (Tracker) Error : " + ex.Message);
-                if (!tracker._currentRespone.failure)
+                if (!tracker.lastResponse.failure)
                 {
-                    tracker._currentRespone.failure = true;
-                    tracker._currentRespone.statusMessage = ex.Message;
+                    tracker.lastResponse.failure = true;
+                    tracker.lastResponse.statusMessage = ex.Message;
                 }
             }
             tracker.announceTimer?.Start();
@@ -221,9 +224,9 @@ namespace BitTorrentLibrary
                     ChangeStatus(TrackerEvent.started);
                 }
 
-                if (_currentRespone.failure)
+                if (lastResponse.failure)
                 {
-                    throw new Exception("Tracker failure: " + _currentRespone.statusMessage);
+                    throw new Exception("Tracker failure: " + lastResponse.statusMessage);
                 }
 
                 announceTimer = new System.Timers.Timer(Interval);
@@ -232,9 +235,9 @@ namespace BitTorrentLibrary
                 announceTimer.Enabled = true;
 
                 trackerStatus = TrackerStatus.Running;
+                _tc.trackerStarted.Set();
                 announceTimer?.Start();
                 CallBack?.Invoke(CallBackData);
-                _tc.trackerStarted.Set();
 
             }
             catch (Exception ex)

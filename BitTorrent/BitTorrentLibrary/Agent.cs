@@ -128,7 +128,7 @@ namespace BitTorrentLibrary
                     }
                     catch (SocketException ex)
                     {
-                        if (ex.ErrorCode == 111)
+                        if ((ex.ErrorCode == 111)||(ex.ErrorCode==113))
                         {    // Connection refused
                             _manager.AddToDeadPeerList(peer.ip);
                         }
@@ -234,6 +234,7 @@ namespace BitTorrentLibrary
         {
             if (_manager.AddTorrentContext(tc))
             {
+                // tc.manager = _manager;
                 tc.assemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.cancelAssemblerTaskSource.Token));
             }
             else
@@ -316,7 +317,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _pieceAssembler?.paused.Set();
+                tc.paused.Set();
                 tc.Status = TorrentStatus.Initialised;
             }
             catch (Exception ex)
@@ -332,7 +333,7 @@ namespace BitTorrentLibrary
         {
             try
             {
-                _pieceAssembler?.paused.Reset();
+                tc.paused.Reset();
                 tc.Status = TorrentStatus.Paused;
             }
             catch (Exception ex)
@@ -366,8 +367,8 @@ namespace BitTorrentLibrary
                 missingPiecesCount = tc.missingPiecesCount,
                 swarmSize = (UInt32)tc.peerSwarm.Count,
                 deadPeers = (UInt32)_manager.DeadPeerCount,
-                trackerStatus = tc.MainTracker.trackerStatus
-
+                trackerStatus = tc.MainTracker.trackerStatus,
+                trackerStatusMessage = tc.MainTracker.lastResponse.statusMessage
             };
         }
         /// <summary>

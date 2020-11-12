@@ -73,7 +73,7 @@ namespace ClientUI
 
             if (Configuration.SeedingTorrents)
             {
-                Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents(TorrentAgent, TorrentSelector, TorrentDiskIO,  Configuration));
+                Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents(TorrentAgent, TorrentSelector, TorrentDiskIO, Configuration));
             }
 
             MainWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;

@@ -100,7 +100,7 @@ namespace BitTorrentLibrary
             if (_network.PeerSocket == null)
             {
                 _network.Connect(Ip, Port);
-                peerResponse = PWP.ConnectToIntialHandshake(this);
+                peerResponse = PWP.ConnectToIntialHandshake(this, manager);
             }
             else
             {

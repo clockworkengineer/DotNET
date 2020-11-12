@@ -23,7 +23,7 @@ namespace BitTorrentLibrary
     }
     public struct TorrentDetails
     {
-        public TorrentStatus status;        // Current status
+        public TorrentStatus status;        // Current torrent status
         public string fileName;             // Full file name
         public List<PeerDetails> peers;     // List of peers in its swarm
         public UInt64 uploadedBytes;        // Total bytes uploaed to peers
@@ -33,5 +33,6 @@ namespace BitTorrentLibrary
         public UInt32 deadPeers;            // Number of dead peers 
         public byte[] infoHash;             // Torrent InfoHash
         public TrackerStatus trackerStatus; // Tracker status;
+        public string trackerStatusMessage; // Message indicating why tracker has stalled
     }
 }

@@ -40,6 +40,7 @@ namespace BitTorrentLibrary
         private readonly Object _dcLock = new object();               // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                      // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                     // Piece information
+        internal ManualResetEvent paused;                            // == false (unset) pause downloading from peer
         internal AsyncQueue<PieceBuffer> pieceWriteQueue;            // Piece buffer disk write queue
         internal AsyncQueue<PieceRequest> pieceRequestQueue;         // Piece request queue
         internal uint pieceLength;                                   // Length of piece in bytese
@@ -101,6 +102,7 @@ namespace BitTorrentLibrary
             assembledPiece = new PieceBuffer(this, pieceLength);
             cancelAssemblerTaskSource = new CancellationTokenSource();
             trackerStarted = new ManualResetEvent(false);
+            paused = new ManualResetEvent(false);
             // In seeding mode mark eveything downloaded to save startup time
             diskIO.CreateLocalTorrentStructure(this);
             if (seeding)
