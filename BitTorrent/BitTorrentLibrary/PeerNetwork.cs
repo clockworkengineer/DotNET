@@ -60,7 +60,7 @@ namespace BitTorrentLibrary
             {
                 Int32 bytesRead = (Int32)PeerSocket.EndReceive(readAsyncState, out SocketError socketError);
 
-                if ((bytesRead <=0) || (socketError != SocketError.Success) || !PeerSocket.Connected)
+                if ((bytesRead <= 0) || (socketError != SocketError.Success) || !PeerSocket.Connected)
                 {
                     remotePeer.QueueForClosure();
                     return;
@@ -112,29 +112,30 @@ namespace BitTorrentLibrary
             PeerSocket = remotePeerSocket;
         }
         /// <summary>
-        /// Send packet to remote peer.
+        /// Send packet to remote peer. Again do not check for connected as used in intial handshake with peer and
+        /// when not checks happen at a higher level.
         /// </summary>
         /// <param name="buffer">Buffer.</param>
         public void Write(byte[] buffer)
         {
-            if (PeerSocket.Connected)
-            {
-                PeerSocket.Send(buffer);
-            }
+            PeerSocket.Send(buffer);
         }
         /// <summary>
-        /// Read packet from remote peer.
+        /// Read direct packet from remote peer. Note this only used in the initial handshake with a peer
+        /// so it will not been connected.
         /// </summary>
         /// <returns>The read.</returns>
         /// <param name="buffer">Buffer.</param>
         /// <param name="length">Length.</param>
         public int Read(byte[] buffer, int length)
         {
-            if (PeerSocket.Connected)
+            int bytesRead = PeerSocket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
+            if ((bytesRead <= 0) || (socketError != SocketError.Success))
             {
-                return PeerSocket.Receive(buffer, length, SocketFlags.None);
+                throw new Exception("Incorrect number of bytes read or socket error occurred.");
             }
-            return 0;
+            return bytesRead;
+
         }
         /// <summary>
         /// Start Async reading of network socket.

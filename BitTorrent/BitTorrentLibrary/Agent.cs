@@ -141,7 +141,7 @@ namespace BitTorrentLibrary
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug($"PeerConnectCreatorTaskAsync Error Ignored:" + ex.Message);
+                        Log.Logger.Debug($"PeerConnectCreatorTaskAsync Error (Ignored): " + ex.Message);
                         remotePeer.QueueForClosure();
                     }
                 }
@@ -192,13 +192,13 @@ namespace BitTorrentLibrary
                             }
                             else
                             {
-                                throw new Exception("Peer not added to swarm as in dead lisrt.");
+                                throw new Exception("Peer not added to swarm as in dead list.");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug($"PeerListenCreatorTaskAsync Error Ingored: " + ex.Message);
+                        Log.Logger.Debug($"PeerListenCreatorTaskAsync Error (Ignored): " + ex.Message);
                         remotePeer?.QueueForClosure();
                     }
 
