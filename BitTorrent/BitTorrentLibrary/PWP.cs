@@ -263,7 +263,11 @@ namespace BitTorrentLibrary
             byte[] remotePeerID = new byte[Constants.PeerIDLength];
 
             byte[] handshakeResponse = new byte[Constants.IntialHandshakeLength];
-            remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+
+            Int32 bytesRead = remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+            if (bytesRead!=handshakeResponse.Length) {
+                throw new Error("Invalid length read for intial packet exchange.");
+            }
 
             foreach (var tc in manager.TorrentList)
             {
@@ -299,7 +303,10 @@ namespace BitTorrentLibrary
 
             byte[] handshakeResponse = new byte[handshakePacket.Count];
 
-            remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+            Int32 bytesRead = remotePeer.PeerRead(handshakeResponse, handshakeResponse.Length);
+            if (bytesRead!=handshakeResponse.Length) {
+                throw new Error("Invalid length read for intial packet exchange.");
+            }
 
             bool connected = ValidatePeerConnect(handshakePacket.ToArray(), handshakeResponse, out byte[] remotePeerID);
 
@@ -307,6 +314,7 @@ namespace BitTorrentLibrary
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
                 Log.Logger.Debug($"Remote peer {remotePeer.Ip} tried to connect with invalid initial handshake.");
+                Log.Logger.Debug($"Remote Peer Sent[{Encoding.ASCII.GetString(handshakeResponse)}]")
             }
 
             return (connected, remotePeerID);

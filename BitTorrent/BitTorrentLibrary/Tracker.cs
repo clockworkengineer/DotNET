@@ -1,3 +1,4 @@
+using System.Diagnostics;
 //
 // Author: Robert Tizzard
 //
@@ -95,9 +96,11 @@ namespace BitTorrentLibrary
 
                         if (tracker._tc.Status == TorrentStatus.Downloading)
                         {
+                            UInt32 peerThreshHold = (UInt32) tracker._tc.maximumSwarmSize;
                             foreach (var peerDetails in tracker.lastResponse.peers)
                             {
                                 tracker.peerSwarmQueue?.Enqueue(peerDetails);
+                                if (peerThreshHold-- == 0) break;
                             }
                             tracker.NumWanted = Math.Max(tracker._tc.maximumSwarmSize - tracker._tc.peerSwarm.Count, 0);
                         }

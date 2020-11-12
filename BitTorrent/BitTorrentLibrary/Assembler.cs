@@ -88,6 +88,8 @@ namespace BitTorrentLibrary
                 return false;
             }
 
+            Log.Logger.Debug($"Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
+
             tc.assembledPiece.Number = pieceNumber;
             tc.assembledPiece.Reset();
             tc.assembledPiece.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
@@ -115,7 +117,7 @@ namespace BitTorrentLibrary
 
                 switch (WaitHandle.WaitAny(waitHandles, 60000))
                 {
-                     //  Something has been assembled
+                    //  Something has been assembled
                     case 0:
                         return tc.assembledPiece.AllBlocksThere;
                     // Assembly has been cancelled by external source
@@ -123,7 +125,8 @@ namespace BitTorrentLibrary
                         return false;
                     // Timeout so re-request blocks not returned
                     // Note: can result in blocks having to be discarded
-                    case WaitHandle.WaitTimeout:    
+                    case WaitHandle.WaitTimeout:
+                        Log.Logger.Debug($"Timeout assembling piece {pieceNumber}.");
                         continue;
                 }
 
@@ -230,7 +233,7 @@ namespace BitTorrentLibrary
                 tc.Status = TorrentStatus.Seeding;
                 tc.MainTracker.SetSeedingInterval(60000 * 30);
                 // Make sure get at least one more annouce before long wait
-                tc.MainTracker.ChangeStatus(TrackerEvent.None);     
+                tc.MainTracker.ChangeStatus(TrackerEvent.None);
                 ProcessRemotePeerRequests(tc, cancelAssemblerTask);
 
             }

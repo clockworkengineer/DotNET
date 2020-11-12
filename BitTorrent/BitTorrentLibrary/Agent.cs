@@ -128,7 +128,7 @@ namespace BitTorrentLibrary
                     }
                     catch (SocketException ex)
                     {
-                        if ((ex.ErrorCode == 111)||(ex.ErrorCode==113))
+                        if ((ex.ErrorCode == 111) || (ex.ErrorCode == 113))
                         {    // Connection refused
                             _manager.AddToDeadPeerList(peer.ip);
                         }
@@ -163,22 +163,30 @@ namespace BitTorrentLibrary
 
                 while (_agentRunning)
                 {
+
                     Log.Logger.Info("Waiting for remote peer connect...");
 
                     Socket remotePeerSocket = await PeerNetwork.WaitForConnectionAsync(_listenerSocket);
 
-                    if (_agentRunning)
+                    try
                     {
-                        Log.Logger.Info("Remote peer connected...");
-                        var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
-                        if (!_manager.IsPeerDead(endPoint.Item1))
+                        if (_agentRunning)
                         {
-                            AddPeerToSwarm(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
+                            Log.Logger.Info("Remote peer connected...");
+                            var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
+                            if (!_manager.IsPeerDead(endPoint.Item1))
+                            {
+                                AddPeerToSwarm(new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket));
+                            }
+                            else
+                            {
+                                remotePeerSocket.Close();
+                            }
                         }
-                        else
-                        {
-                            remotePeerSocket.Close();
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Logger.Debug(ex.Message);
                     }
 
                 }
@@ -316,9 +324,8 @@ namespace BitTorrentLibrary
         public void StartTorrent(TorrentContext tc)
         {
             try
-            {
+            {;
                 tc.paused.Set();
-                tc.Status = TorrentStatus.Initialised;
             }
             catch (Exception ex)
             {
