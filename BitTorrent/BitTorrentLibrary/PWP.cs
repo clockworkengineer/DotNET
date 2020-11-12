@@ -314,7 +314,7 @@ namespace BitTorrentLibrary
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
                 Log.Logger.Debug($"Remote peer {remotePeer.Ip} tried to connect with invalid initial handshake.");
-                Log.Logger.Debug($"Remote Peer Sent[{Encoding.ASCII.GetString(handshakeResponse)}]")
+                Log.Logger.Debug($"Remote Peer Sent[{Encoding.ASCII.GetString(handshakeResponse)}]");
             }
 
             return (connected, remotePeerID);
