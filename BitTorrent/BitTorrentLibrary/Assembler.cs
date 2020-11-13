@@ -87,10 +87,11 @@ namespace BitTorrentLibrary
 
             if (remotePeers.Length == 0)
             {
+                Log.Logger.Debug($"(Assembler) Zero peers to assemble piece {pieceNumber}.");
                 return false;
             }
 
-            Log.Logger.Debug($"Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
+            Log.Logger.Debug($"(Assembler) Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
 
             tc.assembledPiece.Number = pieceNumber;
             tc.assembledPiece.Reset();
@@ -117,7 +118,7 @@ namespace BitTorrentLibrary
 
                 // Wait for piece to be assembled
 
-                switch (WaitHandle.WaitAny(waitHandles, assemberTimeout*1000))
+                switch (WaitHandle.WaitAny(waitHandles, assemberTimeout * 1000))
                 {
                     //  Something has been assembled
                     case 0:
@@ -128,7 +129,7 @@ namespace BitTorrentLibrary
                     // Timeout so re-request blocks not returned
                     // Note: can result in blocks having to be discarded
                     case WaitHandle.WaitTimeout:
-                        Log.Logger.Debug($"Timeout assembling piece {pieceNumber}.");
+                        Log.Logger.Debug($"(Assembler) Timeout assembling piece {pieceNumber}.");
                         tc.assemblyTimeOuts++;
                         continue;
                 }
@@ -158,14 +159,14 @@ namespace BitTorrentLibrary
                         bool pieceValid = tc.CheckPieceHash(nextPiece, tc.assembledPiece.Buffer, tc.GetPieceLength(nextPiece));
                         if (pieceValid)
                         {
-                            Log.Logger.Debug($"All blocks for piece {nextPiece} received");
+                            Log.Logger.Debug($"(Assembler) All blocks for piece {nextPiece} received");
                             tc.pieceWriteQueue.Enqueue(new PieceBuffer(tc.assembledPiece));
                             tc.MarkPieceLocal(nextPiece, true);
                             SignalHaveToSwarm(tc, nextPiece);
                         }
                         else
                         {
-                            Log.Logger.Debug($"InfoHash for piece {nextPiece} corrupt.");
+                            Log.Logger.Debug($"(Assembler) InfoHash for piece {nextPiece} corrupt.");
                         }
                     }
                     else
@@ -217,7 +218,7 @@ namespace BitTorrentLibrary
         internal void AssemblePieces(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
 
-            Log.Logger.Debug($"Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
+            Log.Logger.Debug($"(Assembler) Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
 
             try
             {
@@ -246,7 +247,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
 
-            Log.Logger.Debug($"Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
+            Log.Logger.Debug($"(Assembler) Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
 
         }
     }

@@ -28,6 +28,7 @@ namespace BitTorrentLibrary
     /// </summary>
     public class DiskIO
     {
+        private readonly Manager _manager;                             // Torrent manager
         private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
         internal AsyncQueue<PieceBuffer> pieceWriteQueue;              // Piece buffer write queue
         internal AsyncQueue<PieceRequest> pieceRequestQueue;           // Piece request read queue
@@ -182,26 +183,30 @@ namespace BitTorrentLibrary
 
                 while (true)
                 {
-
+                    Peer remotePeer = null;
                     PieceRequest request = await pieceRequestQueue.DequeueAsync(cancelTask);
                     try
                     {
                         Log.Logger.Info($"Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
 
-                        PieceBuffer requestBuffer = GetPieceFromTorrent(request.remotePeer, request.pieceNumber);
-                        byte[] requestBlock = new byte[request.blockSize];
+                        if (_manager.GetPeer(request.infoHash, request.ip, out remotePeer))
+                        {
+                            PieceBuffer requestBuffer = GetPieceFromTorrent(remotePeer, request.pieceNumber);
 
-                        Array.Copy(requestBuffer.Buffer, (Int32)request.blockOffset, requestBlock, 0, (Int32)request.blockSize);
+                            byte[] requestBlock = new byte[request.blockSize];
 
-                        PWP.Piece(request.remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
+                            Array.Copy(requestBuffer.Buffer, (Int32)request.blockOffset, requestBlock, 0, (Int32)request.blockSize);
 
-                        request.remotePeer.Tc.TotalBytesUploaded += request.blockSize;
+                            PWP.Piece(remotePeer, request.pieceNumber, request.blockOffset, requestBlock);
+
+                            remotePeer.Tc.TotalBytesUploaded += request.blockSize;
+                        }
                     }
                     catch (Exception ex)
                     {
                         // Remote peer most probably closed socket so close connection
-                        Log.Logger.Debug("BitTorrent (DiskIO) Error :", ex.Message);
-                        request.remotePeer.QueueForClosure();
+                        Log.Logger.Debug("BitTorrent (DiskIO) Error (ignoring): "+ ex.Message);
+                        remotePeer?.QueueForClosure();
                     }
 
                 }
@@ -217,8 +222,9 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by DiskIO.
         /// </summary>
-        public DiskIO()
+        public DiskIO(Manager manager)
         {
+            _manager = manager;
             _cancelTaskSource = new CancellationTokenSource();
             pieceWriteQueue = new AsyncQueue<PieceBuffer>();
             pieceRequestQueue = new AsyncQueue<PieceRequest>();

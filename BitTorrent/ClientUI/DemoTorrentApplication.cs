@@ -61,9 +61,9 @@ namespace ClientUI
 
             TorrentSelector = new Selector();
 
-            TorrentDiskIO = new DiskIO();
-
             TorrentManager = new Manager();
+
+            TorrentDiskIO = new DiskIO(TorrentManager);
 
             TorrentManager.AddToDeadPeerList("192.168.1.1");
 

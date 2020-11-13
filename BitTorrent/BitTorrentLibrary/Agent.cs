@@ -41,7 +41,7 @@ namespace BitTorrentLibrary
         private async Task PeerCloseQueueTaskAsync(CancellationToken cancelTask)
         {
 
-            Log.Logger.Info("Peer close queue task started ... ");
+            Log.Logger.Info("(Agent) Peer close queue task started ... ");
 
             try
             {
@@ -56,7 +56,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
             }
 
-            Log.Logger.Info("Close remaining peers left in queue... ");
+            Log.Logger.Info("(Agent) Close remaining peers left in queue... ");
             if (_peerCloseQueue.Count > 0)
             {
                 for (UInt32 peerNo = 0; peerNo < _peerCloseQueue.Count; peerNo++)
@@ -66,7 +66,7 @@ namespace BitTorrentLibrary
                 }
             }
 
-            Log.Logger.Info("Peer close queue task terminated.");
+            Log.Logger.Info("(Agent) Peer close queue task terminated.");
 
         }
         /// <summary>
@@ -93,12 +93,12 @@ namespace BitTorrentLibrary
                         PWP.Uninterested(remotePeer);
                     }
                     PWP.Unchoke(remotePeer);
-                    Log.Logger.Info($"Peer [{remotePeer.Ip}] added to swarm.");
+                    Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
                     return;
                 }
             }
 
-            throw new Error($"Peer [{remotePeer.Ip}] not added to swarm.");
+            throw new Error($"(Agent) Peer [{remotePeer.Ip}] not added to swarm.");
 
         }
         /// <summary>
@@ -110,7 +110,7 @@ namespace BitTorrentLibrary
         private async Task PeerConnectCreatorTaskAsync(CancellationToken cancelTask)
         {
 
-            Log.Logger.Info("Remote peer connect creation task started...");
+            Log.Logger.Info("(Agent) Remote peer connect creation task started...");
 
             try
             {
@@ -139,7 +139,7 @@ namespace BitTorrentLibrary
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug($"PeerConnectCreatorTaskAsync Error (Ignored): " + ex.Message);
+                        Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
                         remotePeer?.QueueForClosure();
                     }
                 }
@@ -149,7 +149,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
             }
 
-            Log.Logger.Info("Remote peer connect creation task terminated.");
+            Log.Logger.Info("(Agent) Remote peer connect creation task terminated.");
 
         }
         /// <summary>
@@ -163,7 +163,7 @@ namespace BitTorrentLibrary
         private async Task PeerListenCreatorTaskAsync(CancellationToken _)
         {
 
-            Log.Logger.Info("Remote Peer connect listener started...");
+            Log.Logger.Info("(Agent) Remote Peer connect listener started...");
 
             try
             {
@@ -173,7 +173,7 @@ namespace BitTorrentLibrary
                 {
                     Peer remotePeer = null;
 
-                    Log.Logger.Info("Waiting for remote peer connect...");
+                    Log.Logger.Info("(Agent) Waiting for remote peer connect...");
 
                     Socket remotePeerSocket = await PeerNetwork.WaitForConnectionAsync(_listenerSocket);
 
@@ -181,7 +181,7 @@ namespace BitTorrentLibrary
                     {
                         if (_agentRunning)
                         {
-                            Log.Logger.Info("Remote peer connected...");
+                            Log.Logger.Info("(Agent) Remote peer connected...");
                             PeerDetails peerDetails = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
                             if (!_manager.IsPeerDead(peerDetails.ip))
                             {
@@ -199,7 +199,7 @@ namespace BitTorrentLibrary
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug($"PeerListenCreatorTaskAsync Error (Ignored): " + ex.Message);
+                        Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
                         remotePeer?.QueueForClosure();
                     }
 
@@ -212,7 +212,7 @@ namespace BitTorrentLibrary
 
             _listenerSocket?.Close();
 
-            Log.Logger.Info("Remote Peer connect listener terminated.");
+            Log.Logger.Info("(Agent) Remote Peer connect listener terminated.");
 
         }
         /// <summary>
@@ -235,12 +235,12 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info("Starting up Torrent Agent...");
+                Log.Logger.Info("(Agent) Starting up Torrent Agent...");
                 _agentRunning = true;
                 Task.Run(() => PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token));
                 Task.Run(() => PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token));
                 Task.Run(() => PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token));
-                Log.Logger.Info("Torrent Agent started.");
+                Log.Logger.Info("(Agent) Torrent Agent started.");
             }
             catch (Exception ex)
             {
@@ -284,7 +284,7 @@ namespace BitTorrentLibrary
             {
                 if (_agentRunning)
                 {
-                    Log.Logger.Info("Shutting down torrent agent...");
+                    Log.Logger.Info("(Agent) Shutting down torrent agent...");
                     _agentRunning = false;
                     foreach (var tc in _manager.TorrentList)
                     {
@@ -292,7 +292,7 @@ namespace BitTorrentLibrary
                     }
                     PeerNetwork.ShutdownListener();
                     _cancelWorkerTaskSource.Cancel();
-                    Log.Logger.Info("Torrent agent shutdown.");
+                    Log.Logger.Info("(Agent) Torrent agent shutdown.");
                 }
             }
             catch (Exception ex)
@@ -309,20 +309,20 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info($"Closing torrent context for {Util.InfoHashToString(tc.infoHash)}.");
+                Log.Logger.Info($"(Agent) Closing torrent context for {Util.InfoHashToString(tc.infoHash)}.");
                 tc.cancelAssemblerTaskSource.Cancel();
                 tc.MainTracker.ChangeStatus(TrackerEvent.stopped);
                 tc.MainTracker.StopAnnouncing();
                 if (tc.peerSwarm != null)
                 {
-                    Log.Logger.Info("Closing peer sockets.");
+                    Log.Logger.Info("(Agent) Closing peer sockets.");
                     foreach (var remotePeer in tc.peerSwarm.Values)
                     {
                         remotePeer.QueueForClosure();
                     }
                 }
                 tc.Status = TorrentStatus.Ended;
-                Log.Logger.Info($"Torrent context for {Util.InfoHashToString(tc.infoHash)} closed.");
+                Log.Logger.Info($"(Agent) Torrent context for {Util.InfoHashToString(tc.infoHash)} closed.");
 
             }
             catch (Exception ex)

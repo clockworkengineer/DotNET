@@ -210,7 +210,8 @@ namespace BitTorrentLibrary
 
             PieceRequest request = new PieceRequest
             {
-                remotePeer = remotePeer,
+                infoHash = remotePeer.Tc.infoHash,
+                ip = remotePeer.Ip,
                 pieceNumber = Util.UnPackUInt32(remotePeer.ReadBuffer, 1),
                 blockOffset = Util.UnPackUInt32(remotePeer.ReadBuffer, 5),
                 blockSize = Util.UnPackUInt32(remotePeer.ReadBuffer, 9)
