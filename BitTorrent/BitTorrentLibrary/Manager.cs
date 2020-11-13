@@ -13,6 +13,7 @@ using System.Net.Mime;
 //
 
 using System;
+using System.Timers;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
@@ -22,13 +23,32 @@ namespace BitTorrentLibrary
     {
         private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading
         private readonly HashSet<string> _deadPeers;                             // Dead peers list
+        private readonly UInt32 _deadPeerPurgeTimeOut;                           // Time minutes to perform dead peer purge
+        private readonly Timer _deadPeerPurgeTimer;                              // Dead peer purge timer
         internal Int32 DeadPeerCount => _deadPeers.Count;                        // Number of dead 
         internal ICollection<TorrentContext> TorrentList => _torrents.Values;    // List of torrent contexts
 
-        public Manager()
+        /// <summary>
+        /// Purge dead peers.
+        /// </summary>
+        /// <param name="manager"></param>
+        private void OnPurgeDeadTimerEvent(Manager manager)
+        {
+            Log.Logger.Info("(MANAGER) PURGING DEAD PEERS LIST.");
+            manager._deadPeers.Clear();
+        }
+        /// <summary>
+        /// Setup data and resources used by manager.
+        /// </summary>
+        public Manager(UInt32 deadPeerPurgeTimeOut = 15)
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
             _deadPeers = new HashSet<string>();
+            _deadPeerPurgeTimeOut = deadPeerPurgeTimeOut;
+            _deadPeerPurgeTimer = new System.Timers.Timer(_deadPeerPurgeTimeOut * 60 * 1000);
+            _deadPeerPurgeTimer.Elapsed += (sender, e) => OnPurgeDeadTimerEvent(this);
+            _deadPeerPurgeTimer.AutoReset = true;
+            _deadPeerPurgeTimer.Enabled = true;
         }
         /// <summary>
         /// Retrieve torrent context for infohash.
@@ -73,7 +93,7 @@ namespace BitTorrentLibrary
             if (GetTorrentContext(infoHash, out TorrentContext tc))
             {
                 if (tc.peerSwarm.TryGetValue(ip, out remotePeer))
-                { 
+                {
                     return true;
                 }
             }

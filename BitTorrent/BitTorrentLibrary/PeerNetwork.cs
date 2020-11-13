@@ -130,7 +130,7 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int Read(byte[] buffer, int length)
         {
-            return PeerSocket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
+            return PeerSocket.Receive(buffer, 0, length, SocketFlags.None);
 
         }
         /// <summary>
