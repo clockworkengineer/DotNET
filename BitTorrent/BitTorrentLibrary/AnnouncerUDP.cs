@@ -180,23 +180,20 @@ namespace BitTorrentLibrary
                         response.incomplete = Util.UnPackUInt32(announceReply, 12);
                         response.complete = Util.UnPackUInt32(announceReply, 16);
                     }
-                    // Only send more peers once the last have been processed
-                    if (tracker.peerSwarmQueue.Count == 0)
+
+                    for (var num = 20; num < announceReply.Length; num += 6)
                     {
-                        for (var num = 20; num < announceReply.Length; num += 6)
+                        PeerDetails peer = new PeerDetails
                         {
-                            PeerDetails peer = new PeerDetails
-                            {
-                                infoHash = tracker.InfoHash,
-                                peerID = String.Empty,
-                                ip = $"{announceReply[num]}.{announceReply[num + 1]}.{announceReply[num + 2]}.{announceReply[num + 3]}"
-                            };
-                            peer.port = ((UInt32)announceReply[num + 4] * 256) + announceReply[num + 5];
-                            if (peer.ip != tracker.Ip) // Ignore self in peers list
-                            {
-                                Log.Logger.Info($"Peer {peer.ip} Port {peer.port} found.");
-                                response.peers.Add(peer);
-                            }
+                            infoHash = tracker.InfoHash,
+                            peerID = String.Empty,
+                            ip = $"{announceReply[num]}.{announceReply[num + 1]}.{announceReply[num + 2]}.{announceReply[num + 3]}"
+                        };
+                        peer.port = ((UInt32)announceReply[num + 4] * 256) + announceReply[num + 5];
+                        if (peer.ip != tracker.Ip) // Ignore self in peers list
+                        {
+                            Log.Logger.Info($"Peer {peer.ip} Port {peer.port} found.");
+                            response.peers.Add(peer);
                         }
                     }
 

@@ -94,13 +94,16 @@ namespace BitTorrentLibrary
                     {
                         Log.Logger.Info("Queuing new peers for swarm ....");
 
-                        if (tracker._tc.Status == TorrentStatus.Downloading)
+                        if ((tracker._tc.Status == TorrentStatus.Downloading)&&(tracker.peerSwarmQueue.Count==0))
                         {
-                            UInt32 peerThreshHold = (UInt32) tracker._tc.maximumSwarmSize;
+                            UInt32 peerThreshHold = (UInt32)tracker._tc.maximumSwarmSize;
                             foreach (var peerDetails in tracker.lastResponse.peers)
                             {
-                                tracker.peerSwarmQueue?.Enqueue(peerDetails);
-                                if (peerThreshHold-- == 0) break;
+                                if (!tracker._tc.manager.IsPeerDead(peerDetails.ip))
+                                {
+                                    tracker.peerSwarmQueue?.Enqueue(peerDetails);
+                                    if (peerThreshHold-- == 0) break;
+                                }
                             }
                             tracker.NumWanted = Math.Max(tracker._tc.maximumSwarmSize - tracker._tc.peerSwarm.Count, 0);
                         }

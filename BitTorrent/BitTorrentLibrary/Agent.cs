@@ -77,29 +77,24 @@ namespace BitTorrentLibrary
         private void AddPeerToSwarm(Peer remotePeer)
         {
 
-            remotePeer.peerCloseQueue = _peerCloseQueue;
-
             remotePeer.Connect(_manager);
 
-            if (remotePeer.Connected)
+            if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
             {
-                if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
+                if (remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                 {
-                    if (remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
+                    remotePeer.BitfieldReceived.WaitOne();
+                    foreach (var pieceNumber in remotePeer.Tc.selector.LocalPieceSuggestions(remotePeer, 10))
                     {
-                        remotePeer.BitfieldReceived.WaitOne();
-                        foreach (var pieceNumber in remotePeer.Tc.selector.LocalPieceSuggestions(remotePeer, 10))
-                        {
-                            PWP.Have(remotePeer, pieceNumber);
-                        }
-                        if (remotePeer.Tc.Status == TorrentStatus.Seeding)
-                        {
-                            PWP.Uninterested(remotePeer);
-                        }
-                        PWP.Unchoke(remotePeer);
-                        Log.Logger.Info($"Peer [{remotePeer.Ip}] added to swarm.");
-                        return;
+                        PWP.Have(remotePeer, pieceNumber);
                     }
+                    if (remotePeer.Tc.Status == TorrentStatus.Seeding)
+                    {
+                        PWP.Uninterested(remotePeer);
+                    }
+                    PWP.Unchoke(remotePeer);
+                    Log.Logger.Info($"Peer [{remotePeer.Ip}] added to swarm.");
+                    return;
                 }
             }
 
@@ -127,22 +122,25 @@ namespace BitTorrentLibrary
                     {
                         if (!_manager.IsPeerDead(peer.ip) && _manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
-                            remotePeer = new Peer(peer.ip, peer.port, tc, null);
+                            remotePeer = new Peer(peer.ip, peer.port, tc, null)
+                            {
+                                peerCloseQueue = _peerCloseQueue
+                            };
                             AddPeerToSwarm(remotePeer);
                         }
                     }
                     catch (SocketException ex)
                     {
-                        if ((ex.ErrorCode == 111) || (ex.ErrorCode == 113))
+                        if ((ex.ErrorCode == 111) || (ex.ErrorCode == 113) || (ex.ErrorCode == (int)SocketError.TimedOut))
                         {    // Connection refused    // No route to host
                             _manager.AddToDeadPeerList(peer.ip);
-                            remotePeer.QueueForClosure();
+                            remotePeer?.QueueForClosure();
                         }
                     }
                     catch (Exception ex)
                     {
                         Log.Logger.Debug($"PeerConnectCreatorTaskAsync Error (Ignored): " + ex.Message);
-                        remotePeer.QueueForClosure();
+                        remotePeer?.QueueForClosure();
                     }
                 }
             }
@@ -184,10 +182,13 @@ namespace BitTorrentLibrary
                         if (_agentRunning)
                         {
                             Log.Logger.Info("Remote peer connected...");
-                            var endPoint = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
-                            if (!_manager.IsPeerDead(endPoint.Item1))
+                            PeerDetails peerDetails = PeerNetwork.GetConnectionEndPoint(remotePeerSocket);
+                            if (!_manager.IsPeerDead(peerDetails.ip))
                             {
-                                remotePeer = new Peer(endPoint.Item1, endPoint.Item2, null, remotePeerSocket);
+                                remotePeer = new Peer(peerDetails.ip, peerDetails.port, null, remotePeerSocket)
+                                {
+                                    peerCloseQueue = _peerCloseQueue
+                                };
                                 AddPeerToSwarm(remotePeer);
                             }
                             else
@@ -255,6 +256,7 @@ namespace BitTorrentLibrary
         {
             if (_manager.AddTorrentContext(tc))
             {
+                tc.manager = _manager;
                 tc.assemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.cancelAssemblerTaskSource.Token));
             }
             else

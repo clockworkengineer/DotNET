@@ -130,12 +130,7 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int Read(byte[] buffer, int length)
         {
-            int bytesRead = PeerSocket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
-            if ((bytesRead <= 0) || (socketError != SocketError.Success))
-            {
-                throw new Error("Incorrect number of bytes read or socket error occurred.");
-            }
-            return bytesRead;
+            return PeerSocket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
 
         }
         /// <summary>
@@ -221,12 +216,14 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="socket"></param>
         /// <returns></returns>
-        public static ValueTuple<string, UInt32> GetConnectionEndPoint(Socket socket)
+        public static PeerDetails GetConnectionEndPoint(Socket socket)
         {
-            string remotePeerIP = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString();
-            UInt32 remotePeerPort = (UInt32)((IPEndPoint)(socket.RemoteEndPoint)).Port;
+            PeerDetails peerDetails = new PeerDetails();
 
-            return (remotePeerIP, remotePeerPort);
+            peerDetails.ip = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString();
+            peerDetails.port = (UInt32)((IPEndPoint)(socket.RemoteEndPoint)).Port;
+
+            return peerDetails;
         }
 
 
