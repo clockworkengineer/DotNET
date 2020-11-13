@@ -108,7 +108,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new Exception("Remote tracker failure: " + tracker.lastResponse.statusMessage);
+                        throw new Error("Remote tracker failure: " + tracker.lastResponse.statusMessage);
                     }
                 }
 
@@ -209,7 +209,7 @@ namespace BitTorrentLibrary
                 //  Swarm queue needs to be initialised
                 if (peerSwarmQueue == null)
                 {
-                    throw new Exception("Peer swarm queue has not been set.");
+                    throw new Error("Peer swarm queue has not been set.");
                 }
 
                 // If all of torrent downloaded reset total bytes downloaded
@@ -226,7 +226,7 @@ namespace BitTorrentLibrary
 
                 if (lastResponse.failure)
                 {
-                    throw new Exception("Tracker failure: " + lastResponse.statusMessage);
+                    throw new Error("Tracker failure: " + lastResponse.statusMessage);
                 }
 
                 announceTimer = new System.Timers.Timer(Interval);

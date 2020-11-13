@@ -180,7 +180,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new Exception(httpGetResponse.StatusDescription);
+                        throw new Error(httpGetResponse.StatusDescription);
                     }
                 }
             }

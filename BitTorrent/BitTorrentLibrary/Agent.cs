@@ -103,7 +103,7 @@ namespace BitTorrentLibrary
                 }
             }
 
-            throw new Exception($"Peer [{remotePeer.Ip}] not added to swarm.");
+            throw new Error($"Peer [{remotePeer.Ip}] not added to swarm.");
 
         }
         /// <summary>
@@ -192,7 +192,7 @@ namespace BitTorrentLibrary
                             }
                             else
                             {
-                                throw new Exception("Peer not added to swarm as in dead list.");
+                                throw new Error("Peer not added to swarm as in dead list.");
                             }
                         }
                     }

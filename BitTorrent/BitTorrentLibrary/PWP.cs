@@ -284,7 +284,7 @@ namespace BitTorrentLibrary
             if (!connected)
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new Exception($"Remote peer [{remotePeer.Ip}] tried to connect with invalid infohash.");
+                throw new Error($"Remote peer [{remotePeer.Ip}] tried to connect with invalid infohash.");
             }
 
             return (connected, remotePeerID);
@@ -317,7 +317,7 @@ namespace BitTorrentLibrary
             if (!connected)
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new Exception($"Remote peer [{remotePeer.Ip}] tried to connect with invalid initial handshake.");
+                throw new Error($"Remote peer [{remotePeer.Ip}] tried to connect with invalid initial handshake.");
             }
 
             return (connected, remotePeerID);

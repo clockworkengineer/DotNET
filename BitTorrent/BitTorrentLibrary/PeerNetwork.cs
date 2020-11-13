@@ -34,6 +34,7 @@ namespace BitTorrentLibrary
             else
             {
                 socket.Close();
+                throw new SocketException((int) SocketError.TimedOut);
             }
         }
     }
@@ -132,7 +133,7 @@ namespace BitTorrentLibrary
             int bytesRead = PeerSocket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
             if ((bytesRead <= 0) || (socketError != SocketError.Success))
             {
-                throw new Exception("Incorrect number of bytes read or socket error occurred.");
+                throw new Error("Incorrect number of bytes read or socket error occurred.");
             }
             return bytesRead;
 

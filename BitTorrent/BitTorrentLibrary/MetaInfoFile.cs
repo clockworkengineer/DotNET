@@ -139,11 +139,11 @@ namespace BitTorrentLibrary
             }
             catch (System.IO.DirectoryNotFoundException)
             {
-                throw new Exception($"Could not find torrent file {TorrentFileName}");
+                throw new Error($"Could not find torrent file {TorrentFileName}");
             }
             catch (System.IO.FileNotFoundException)
             {
-                throw new Exception($"Could not find torrent file {TorrentFileName}");
+                throw new Error($"Could not find torrent file {TorrentFileName}");
             }
             catch (Exception ex)
             {
