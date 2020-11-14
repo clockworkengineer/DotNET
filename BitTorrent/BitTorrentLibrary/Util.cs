@@ -13,6 +13,17 @@ using System.Text;
 
 namespace BitTorrentLibrary
 {
+    public struct Average
+    {
+        private long _total;
+        private long _totalAdds;
+        public void Add(long addition)
+        {
+            _total += addition; _totalAdds++;
+        }
+        public long Get() => _total / _totalAdds;
+    }
+
     internal static class Util
     {
         /// <summary>

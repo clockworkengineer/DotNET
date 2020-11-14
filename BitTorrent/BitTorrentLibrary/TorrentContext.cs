@@ -23,6 +23,19 @@ namespace BitTorrentLibrary
     public delegate void DownloadCompleteCallBack(Object callbackData);  // Download completed callback
 
     /// <summary>
+    /// Piece assembly torrent context data
+    /// </summary>
+    internal struct AssemblerData
+    {
+        internal PieceBuffer pieceBuffer;                   // Assembled piece buffer
+        internal Task task;                                 // Torrent piece assembly task
+        internal ManualResetEvent waitForPieceAssembly;     // When event set then piece has been fully assembled
+        internal CancellationTokenSource cancelTaskSource;  // Cancel assembler task source
+        internal Average averageAssemblyTime;               // Average assembly time in milliseconds
+        internal UInt64 totalTimeouts;                      // Timeouts while assembling pieces 
+    }
+
+    /// <summary>
     /// Piece Information.
     /// </summary>
     internal struct PieceInfo
@@ -40,8 +53,7 @@ namespace BitTorrentLibrary
         private readonly Object _dcLock = new object();              // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                      // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                     // Piece information 
-        internal Manager manager;                                    // Torrent context manager
-        internal UInt64 assemblyTimeOuts;                            // Timeouts while performing piece assembly
+        internal Manager manager;                                    // Torrent context 
         internal ManualResetEvent paused;                            // == false (unset) pause downloading from peer
         internal AsyncQueue<PieceBuffer> pieceWriteQueue;            // Piece buffer disk write queue
         internal AsyncQueue<PieceRequest> pieceRequestQueue;         // Piece request queue
@@ -58,10 +70,7 @@ namespace BitTorrentLibrary
         internal int maximumSwarmSize = Constants.MaximumSwarmSize;  // Maximim swarm size
         internal ConcurrentDictionary<string, Peer> peerSwarm;       // Current peer swarm
         internal Tracker MainTracker;                                // Main tracker assigned to torrent
-        internal PieceBuffer assembledPiece;                         // Assembled pieces buffer
-        internal Task assemblerTask;                                 // Peer piece assembly task
-        internal ManualResetEvent waitForPieceAssembly;              // When event set then piece has been fully assembled
-        internal CancellationTokenSource cancelAssemblerTaskSource;  // Cancel assembler task token
+        internal AssemblerData assemblyData;                         // Torrent piece assemblage data
         public ProgessCallBack CallBack { get; set; }                // Download progress function
         public Object CallBackData { get; set; }                     // Download progress function data
         public TorrentStatus Status { get; set; }                    // Torrent status
@@ -99,9 +108,9 @@ namespace BitTorrentLibrary
             _piecesMissing = new byte[Bitfield.Length];
             selector = pieceSelector;
             peerSwarm = new ConcurrentDictionary<string, Peer>();
-            waitForPieceAssembly = new ManualResetEvent(false);
-            assembledPiece = new PieceBuffer(this, pieceLength);
-            cancelAssemblerTaskSource = new CancellationTokenSource();
+            assemblyData.waitForPieceAssembly = new ManualResetEvent(false);
+            assemblyData.pieceBuffer = new PieceBuffer(this, pieceLength);
+            assemblyData.cancelTaskSource = new CancellationTokenSource();
             paused = new ManualResetEvent(false);
             // In seeding mode mark eveything downloaded to save startup time
             diskIO.CreateLocalTorrentStructure(this);

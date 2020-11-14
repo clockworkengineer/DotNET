@@ -287,7 +287,7 @@ namespace BitTorrentLibrary
             StartAnnouncing();
         }
         /// <summary>
-        /// 
+        /// Set tracker announce interval for when seeding.
         /// </summary>
         /// <param name="seedingInerval"></param>
         public void SetSeedingInterval(UInt32 seedingInerval)

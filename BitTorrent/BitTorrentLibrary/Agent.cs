@@ -232,7 +232,7 @@ namespace BitTorrentLibrary
             if (_manager.AddTorrentContext(tc))
             {
                 tc.manager = _manager;
-                tc.assemblerTask = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.cancelAssemblerTaskSource.Token));
+                tc.assemblyData.task = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.assemblyData.cancelTaskSource.Token));
             }
             else
             {
@@ -284,7 +284,7 @@ namespace BitTorrentLibrary
             try
             {
                 Log.Logger.Info($"(Agent) Closing torrent context for {Util.InfoHashToString(tc.infoHash)}.");
-                tc.cancelAssemblerTaskSource.Cancel();
+                tc.assemblyData.cancelTaskSource.Cancel();
                 tc.MainTracker.ChangeStatus(TrackerEvent.stopped);
                 tc.MainTracker.StopAnnouncing();
                 if (tc.peerSwarm != null)

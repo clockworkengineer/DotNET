@@ -170,18 +170,18 @@ namespace BitTorrentLibrary
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
         {
 
-            if (pieceNumber == Tc.assembledPiece.Number)
+            if (pieceNumber == Tc.assemblyData.pieceBuffer.Number)
             {
                 UInt32 blockNumber = blockOffset / Constants.BlockSize;
 
                 Log.Logger.Trace($"(Peer) PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
 
-                Tc.assembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
+                Tc.assemblyData.pieceBuffer.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
 
-                if (Tc.assembledPiece.AllBlocksThere)
+                if (Tc.assemblyData.pieceBuffer.AllBlocksThere)
                 {
-                    Tc.assembledPiece.Number = pieceNumber;
-                    Tc.waitForPieceAssembly.Set();
+                    Tc.assemblyData.pieceBuffer.Number = pieceNumber;
+                    Tc.assemblyData.waitForPieceAssembly.Set();
                 }
             }
             else

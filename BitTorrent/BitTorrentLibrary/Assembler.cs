@@ -93,10 +93,10 @@ namespace BitTorrentLibrary
 
             Log.Logger.Debug($"(Assembler) Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
 
-            tc.assembledPiece.Number = pieceNumber;
-            tc.assembledPiece.Reset();
-            tc.assembledPiece.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
-            tc.waitForPieceAssembly.Reset();
+            tc.assemblyData.pieceBuffer.Number = pieceNumber;
+            tc.assemblyData.pieceBuffer.Reset();
+            tc.assemblyData.pieceBuffer.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
+            tc.assemblyData.waitForPieceAssembly.Reset();
 
             while (true)
             {
@@ -105,7 +105,7 @@ namespace BitTorrentLibrary
                 UInt32 currentPeer = 0;
 
                 stopwatch.Start();
-                foreach (var blockThere in tc.assembledPiece.BlocksPresent())
+                foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
                 {
                     if (!blockThere)
                     {
@@ -124,8 +124,9 @@ namespace BitTorrentLibrary
                     //  Something has been assembled
                     case 0:
                         stopwatch.Stop();
-                        Log.Logger.Debug($"(Assembler) Time to assemble piece {pieceNumber} was {stopwatch.ElapsedMilliseconds} milliseconds");
-                        return tc.assembledPiece.AllBlocksThere;
+                        tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
+                        Log.Logger.Debug($"(Assembler) Average time to assemble pieces is {tc.assemblyData.averageAssemblyTime.Get()} milliseconds");
+                        return tc.assemblyData.pieceBuffer.AllBlocksThere;
                     // Assembly has been cancelled by external source
                     case 1:
                         return false;
@@ -133,7 +134,7 @@ namespace BitTorrentLibrary
                     // Note: can result in blocks having to be discarded
                     case WaitHandle.WaitTimeout:
                         Log.Logger.Debug($"(Assembler) Timeout assembling piece {pieceNumber}.");
-                        tc.assemblyTimeOuts++;
+                        tc.assemblyData.totalTimeouts++;
                         continue;
                 }
 
@@ -151,7 +152,7 @@ namespace BitTorrentLibrary
         {
             UInt32 nextPiece = 0;
 
-            WaitHandle[] waitHandles = new WaitHandle[] { tc.waitForPieceAssembly, cancelAssemblerTask.WaitHandle };
+            WaitHandle[] waitHandles = new WaitHandle[] { tc.assemblyData.waitForPieceAssembly, cancelAssemblerTask.WaitHandle };
 
             while (!tc.downloadFinished.WaitOne(0))
             {
@@ -159,11 +160,11 @@ namespace BitTorrentLibrary
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
-                        bool pieceValid = tc.CheckPieceHash(nextPiece, tc.assembledPiece.Buffer, tc.GetPieceLength(nextPiece));
+                        bool pieceValid = tc.CheckPieceHash(nextPiece, tc.assemblyData.pieceBuffer.Buffer, tc.GetPieceLength(nextPiece));
                         if (pieceValid)
                         {
                             Log.Logger.Debug($"(Assembler) All blocks for piece {nextPiece} received");
-                            tc.pieceWriteQueue.Enqueue(new PieceBuffer(tc.assembledPiece));
+                            tc.pieceWriteQueue.Enqueue(new PieceBuffer(tc.assemblyData.pieceBuffer));
                             tc.MarkPieceLocal(nextPiece, true);
                             SignalHaveToSwarm(tc, nextPiece);
                         }
