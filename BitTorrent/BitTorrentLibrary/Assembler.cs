@@ -1,3 +1,4 @@
+
 //
 // Author: Robert Tizzard
 //
@@ -37,7 +38,8 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler
     {
-        private readonly int assemberTimeout;        // Assembly timeout in seconds
+        private readonly int _assemberTimeout;        // Assembly timeout in seconds
+        private readonly int _maximumBlockRequests;   // Maximum requests at a time
 
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
@@ -96,39 +98,53 @@ namespace BitTorrentLibrary
             tc.assemblyData.pieceBuffer.Number = pieceNumber;
             tc.assemblyData.pieceBuffer.Reset();
             tc.assemblyData.pieceBuffer.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
-            tc.assemblyData.waitForPieceAssembly.Reset();
+            tc.assemblyData.pieceFinished.Reset();
+            tc.assemblyData.blockRequestsDone.Reset();
 
             while (true)
             {
                 UInt32 blockOffset = 0;
                 UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
                 UInt32 currentPeer = 0;
+                int currentBlockRequests = 0;
 
+                tc.assemblyData.guardMutex.WaitOne();
                 stopwatch.Start();
                 foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
                 {
                     if (!blockThere)
                     {
                         Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
+                        currentBlockRequests++;
+                        if (currentBlockRequests == _maximumBlockRequests)
+                        {
+                            break;
+                        }
                     }
                     currentPeer++;
                     currentPeer %= (UInt32)remotePeers.Length;
                     blockOffset += Constants.BlockSize;
                     bytesToTransfer -= Constants.BlockSize;
                 }
+                tc.assemblyData.currentBlockRequests = currentBlockRequests;
+                tc.assemblyData.guardMutex.ReleaseMutex();
 
                 // Wait for piece to be assembled
 
-                switch (WaitHandle.WaitAny(waitHandles, assemberTimeout * 1000))
+                switch (WaitHandle.WaitAny(waitHandles, _assemberTimeout * 1000))
                 {
-                    //  Something has been assembled
+                    // Any outstanding requests have been completed
                     case 0:
+                        tc.assemblyData.blockRequestsDone.Reset();
+                        continue;
+                    //  Piece has been fully assembled
+                    case 1:
                         stopwatch.Stop();
                         tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
                         Log.Logger.Debug($"(Assembler) Average time to assemble pieces is {tc.assemblyData.averageAssemblyTime.Get()} milliseconds");
                         return tc.assemblyData.pieceBuffer.AllBlocksThere;
                     // Assembly has been cancelled by external source
-                    case 1:
+                    case 2:
                         return false;
                     // Timeout so re-request blocks not returned
                     // Note: can result in blocks having to be discarded
@@ -152,7 +168,12 @@ namespace BitTorrentLibrary
         {
             UInt32 nextPiece = 0;
 
-            WaitHandle[] waitHandles = new WaitHandle[] { tc.assemblyData.waitForPieceAssembly, cancelAssemblerTask.WaitHandle };
+            WaitHandle[] waitHandles = new WaitHandle[]
+            {
+                tc.assemblyData.blockRequestsDone,
+                tc.assemblyData.pieceFinished,
+                cancelAssemblerTask.WaitHandle
+            };
 
             while (!tc.downloadFinished.WaitOne(0))
             {
@@ -175,7 +196,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {   // if we reach here then no eligable peers in swarm so sleep a bit.
-                        Thread.Sleep(100);
+                        Thread.Sleep(1000);
                     }
                     // Signal piece to be requested in unsucessful download
                     if (!tc.IsPieceLocal(nextPiece))
@@ -207,9 +228,10 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by assembler.
         /// </summary>
-        public Assembler(int assemblerTimeout = 60)
+        public Assembler(int assemblerTimeout = 4, int maximumBlockRequests = 5)
         {
-            assemberTimeout = assemblerTimeout;
+            _assemberTimeout = assemblerTimeout;
+            _maximumBlockRequests = maximumBlockRequests;
         }
         /// <summary>
         /// Piece assembler task. If/once downboad is complete then start seeding the torrent until

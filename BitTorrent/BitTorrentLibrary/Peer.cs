@@ -172,17 +172,24 @@ namespace BitTorrentLibrary
 
             if (pieceNumber == Tc.assemblyData.pieceBuffer.Number)
             {
-                UInt32 blockNumber = blockOffset / Constants.BlockSize;
-
+                Tc.assemblyData.guardMutex.WaitOne();
                 Log.Logger.Trace($"(Peer) PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
-
+                UInt32 blockNumber = blockOffset / Constants.BlockSize;
+                if (!Tc.assemblyData.pieceBuffer.IsBlockPresent(blockNumber))
+                {
+                    Tc.assemblyData.currentBlockRequests--;
+                }
                 Tc.assemblyData.pieceBuffer.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
-
                 if (Tc.assemblyData.pieceBuffer.AllBlocksThere)
                 {
                     Tc.assemblyData.pieceBuffer.Number = pieceNumber;
-                    Tc.assemblyData.waitForPieceAssembly.Set();
+                    Tc.assemblyData.pieceFinished.Set();
                 }
+                if (Tc.assemblyData.currentBlockRequests == 0)
+                {
+                    Tc.assemblyData.blockRequestsDone.Set();
+                }
+                Tc.assemblyData.guardMutex.ReleaseMutex();
             }
             else
             {

@@ -114,6 +114,14 @@ namespace BitTorrentLibrary
         {
             return _blockPresent;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="blockNumber"></param>
+        /// <returns></returns>
+        public bool IsBlockPresent(UInt32 blockNumber) {
+            return _blockPresent[blockNumber];
+        }
 
     }
 }
