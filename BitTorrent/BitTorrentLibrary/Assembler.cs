@@ -12,6 +12,7 @@
 //
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace BitTorrentLibrary
@@ -36,7 +37,6 @@ namespace BitTorrentLibrary
     /// </summary>
     public class Assembler
     {
-
         private readonly int assemberTimeout;        // Assembly timeout in seconds
 
         /// <summary>
@@ -61,7 +61,6 @@ namespace BitTorrentLibrary
         /// <param name="blockSize"></param>
         private void Request(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
         {
-
             try
             {
                 remotePeer.CancelTaskSource.Token.ThrowIfCancellationRequested();
@@ -71,7 +70,6 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug("BitTorrent (Assembler) Error:" + ex.Message);
             }
-
         }
         /// <summary>
         /// Request a piece block by block and wait for it to be assembled.
@@ -91,6 +89,8 @@ namespace BitTorrentLibrary
                 return false;
             }
 
+            var stopwatch = new Stopwatch();
+
             Log.Logger.Debug($"(Assembler) Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
 
             tc.assembledPiece.Number = pieceNumber;
@@ -104,6 +104,7 @@ namespace BitTorrentLibrary
                 UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
                 UInt32 currentPeer = 0;
 
+                stopwatch.Start();
                 foreach (var blockThere in tc.assembledPiece.BlocksPresent())
                 {
                     if (!blockThere)
@@ -122,6 +123,8 @@ namespace BitTorrentLibrary
                 {
                     //  Something has been assembled
                     case 0:
+                        stopwatch.Stop();
+                        Log.Logger.Debug($"(Assembler) Time to assemble piece {pieceNumber} was {stopwatch.ElapsedMilliseconds} milliseconds");
                         return tc.assembledPiece.AllBlocksThere;
                     // Assembly has been cancelled by external source
                     case 1:
@@ -181,7 +184,6 @@ namespace BitTorrentLibrary
                     cancelAssemblerTask.ThrowIfCancellationRequested();
                     tc.paused.WaitOne(cancelAssemblerTask);
                 }
-
             }
         }
         /// <summary>
@@ -219,7 +221,6 @@ namespace BitTorrentLibrary
         {
 
             Log.Logger.Debug($"(Assembler) Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
-
             try
             {
 
@@ -246,7 +247,6 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
-
             Log.Logger.Debug($"(Assembler) Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
 
         }

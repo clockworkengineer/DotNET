@@ -216,7 +216,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="socket"></param>
         /// <returns></returns>
-        public static PeerDetails GetConnectionEndPoint(Socket socket)
+        public static PeerDetails GetConnectinPeerDetails(Socket socket)
         {
             PeerDetails peerDetails = new PeerDetails();
 
