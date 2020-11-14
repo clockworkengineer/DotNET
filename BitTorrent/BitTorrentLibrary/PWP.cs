@@ -57,6 +57,22 @@ namespace BitTorrentLibrary
             return "[" + Encoding.ASCII.GetString(remotePeer.RemotePeerID) + "] ";
         }
         /// <summary>
+        /// Dump out remote client connect packet information.
+        /// </summary>
+        /// <param name="packet"></param>
+        private static void DumpRemoteClientInfo(byte[] packet)  {
+            byte[] protocol = new byte[19];
+            byte[] infoHash = new byte[20];
+            byte[] clientID = new byte[20];
+            Array.Copy(packet, 1, protocol, 0, protocol.Length);
+            Array.Copy(packet, 28, infoHash, 0, protocol.Length);
+            Array.Copy(packet, 48, clientID, 0, protocol.Length);
+            Log.Logger.Debug($"(PWP) Remote Client connect : Protocol [{Encoding.ASCII.GetString(protocol)}]"+
+                             $"infoHash[{Util.InfoHashToString(infoHash)}] "+
+                             $"ClientID [{Encoding.ASCII.GetString(clientID)}]");
+        }
+
+        /// <summary>
         /// Dump bitfield to log.
         /// </summary>
         /// <param name="bitfield"></param>
@@ -271,6 +287,8 @@ namespace BitTorrentLibrary
                 manager.AddToDeadPeerList(remotePeer.Ip);
                 throw new Error("Invalid length read for intial packet exchange.");
             }
+
+            DumpRemoteClientInfo(handshakeResponse);
 
             foreach (var tc in manager.TorrentList)
             {
