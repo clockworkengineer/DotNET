@@ -92,8 +92,7 @@ namespace BitTorrentLibrary
 
                     if (!tracker.lastResponse.failure)
                     {
-                        Log.Logger.Info("Queuing new peers for swarm ....");
-
+                        Log.Logger.Info("(Tracker) Queuing new peers for swarm ....");
                         if ((tracker._tc.Status == TorrentStatus.Downloading)&&(tracker.peerSwarmQueue.Count==0))
                         {
                             UInt32 peerThreshHold = (UInt32)tracker._tc.maximumSwarmSize;
@@ -136,10 +135,8 @@ namespace BitTorrentLibrary
         /// <param name="response"></param>
         private void UpdateRunningStatusFromAnnounce(AnnounceResponse response)
         {
-
             TrackerID = response.trackerID;
             MinInterval = response.minInterval;
-
             if (_tc.Status == TorrentStatus.Downloading)
             {
                 if (response.interval > MinInterval)
@@ -176,7 +173,7 @@ namespace BitTorrentLibrary
             {
                 if (TrackerURL.StartsWith("udp://"))
                 {
-                    Log.Logger.Info("Main tracker is UDP...");
+                    Log.Logger.Info("(Tracker) Main tracker is UDP...");
                     _announcer = new AnnouncerUDP(TrackerURL);
                 }
                 else
@@ -186,7 +183,7 @@ namespace BitTorrentLibrary
             }
             else
             {
-                Log.Logger.Info("Main tracker is HTTP...");
+                Log.Logger.Info("(Tracker) Main tracker is HTTP...");
                 _announcer = new AnnouncerHTTP(TrackerURL);
             }
         }
@@ -299,7 +296,6 @@ namespace BitTorrentLibrary
             {
                 if (seedingInerval > MinInterval)
                 {
-
                     if (announceTimer != null)
                     {
                         announceTimer.Stop();

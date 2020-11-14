@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
     public class TorrentContext
     {
         private readonly SHA1 _SHA1;                                 // Object to create SHA1 piece info hash
-        private readonly Object _dcLock = new object();               // Synchronization lock for torrent context
+        private readonly Object _dcLock = new object();              // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                      // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                     // Piece information 
         internal Manager manager;                                    // Torrent context manager

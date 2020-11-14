@@ -34,7 +34,7 @@ namespace BitTorrentLibrary
         /// <param name="manager"></param>
         private void OnPurgeDeadTimerEvent(Manager manager)
         {
-            Log.Logger.Info("(MANAGER) PURGING DEAD PEERS LIST.");
+            Log.Logger.Info("(Manager) PURGING DEAD PEERS LIST.");
             manager._deadPeers.Clear();
         }
         /// <summary>
@@ -98,7 +98,6 @@ namespace BitTorrentLibrary
                 }
             }
             return false;
-
         }
         /// <summary>
         /// Add peer to dead list.

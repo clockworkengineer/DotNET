@@ -11,7 +11,6 @@ using System;
 using System.Text;
 using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace BitTorrentLibrary
 {
@@ -123,7 +122,7 @@ namespace BitTorrentLibrary
 
             if (Connected)
             {
-                Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
+                Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
                 Connected = false;
                 CancelTaskSource.Cancel();
                 BitfieldReceived.Set();
@@ -131,11 +130,11 @@ namespace BitTorrentLibrary
                 {
                     if (Tc.peerSwarm.TryRemove(Ip, out Peer _))
                     {
-                        Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
+                        Log.Logger.Info($"(Peer) Dead Peer {Ip} removed from swarm.");
                     }
                     _network.Close();
                 }
-                Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
+                Log.Logger.Info($"(Peer) Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
 
         }
@@ -175,7 +174,7 @@ namespace BitTorrentLibrary
             {
                 UInt32 blockNumber = blockOffset / Constants.BlockSize;
 
-                Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
+                Log.Logger.Trace($"(Peer) PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
 
                 Tc.assembledPiece.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
 
@@ -187,7 +186,7 @@ namespace BitTorrentLibrary
             }
             else
             {
-                Log.Logger.Debug($"PIECE {pieceNumber} DISCARDED.");
+                Log.Logger.Debug($"(Peer) PIECE {pieceNumber} DISCARDED.");
             }
         }
         /// <summary>

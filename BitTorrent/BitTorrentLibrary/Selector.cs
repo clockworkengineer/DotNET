@@ -63,18 +63,14 @@ namespace BitTorrentLibrary
         internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece, UInt32 startPiece, CancellationToken _)
         {
             bool pieceSuggested = false;
-
             Int64 suggestedPiece = GetSuggestedPiece(tc, startPiece);
-
             if (suggestedPiece != -1)
             {
                 nextPiece = (UInt32)suggestedPiece;
                 tc.MarkPieceMissing(nextPiece, false);
                 pieceSuggested = true;
             }
-
             return pieceSuggested;
-
         }
         /// <summary>
         /// Generate an array of pieces that are local but missing from the remote peer for input
@@ -88,7 +84,6 @@ namespace BitTorrentLibrary
         {
             List<UInt32> suggestions = new List<UInt32>();
             UInt32 currentPiece = startPiece;
-
             do
             {
                 if (!remotePeer.IsPieceOnRemotePeer(currentPiece) && remotePeer.Tc.IsPieceLocal(currentPiece))
@@ -99,9 +94,7 @@ namespace BitTorrentLibrary
                 currentPiece++;
                 currentPiece %= remotePeer.Tc.numberOfPieces;
             } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
-
             return (suggestions.ToArray());
-
         }
         /// <summary>
         /// Return list of peers connected that are not choked and have the piece.

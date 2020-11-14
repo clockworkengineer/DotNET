@@ -77,7 +77,7 @@ namespace BitTorrentLibrary
                         _bytesRead = 0;
                         if (PacketLength > ReadBuffer.Length)
                         {
-                            Log.Logger.Debug("Resizing readBuffer ...");
+                            Log.Logger.Debug("(PeerNetwork) Resizing readBuffer ...");
                             ReadBuffer = new byte[PacketLength];
                         }
                     }
@@ -95,7 +95,7 @@ namespace BitTorrentLibrary
             }
             catch (System.ObjectDisposedException)
             {
-                Log.Logger.Info($"ReadPacketCallBack()  {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
+                Log.Logger.Info($"(PeerNetwork) ReadPacketCallBack()  {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
                 remotePeer.QueueForClosure();
             }
             catch (Exception ex)
@@ -180,9 +180,7 @@ namespace BitTorrentLibrary
 
             listener.Bind(localEndPoint);
             listener.Listen(100);
-
             return listener;
-
         }
         /// <summary>
         /// Connect to listen port to shutdown listener task.
@@ -225,7 +223,5 @@ namespace BitTorrentLibrary
 
             return peerDetails;
         }
-
-
     }
 }
