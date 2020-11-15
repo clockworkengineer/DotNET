@@ -57,7 +57,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber"></param>
         /// <param name="remotePeers"></param>
         /// <param name="stopwatch"></param>
-        private bool GetMoreBlocks(TorrentContext tc, uint pieceNumber, Peer[] remotePeers)
+        private bool GetMoreBlocks(TorrentContext tc, UInt32 pieceNumber, Peer[] remotePeers)
         {
             tc.assemblyData.guardMutex.WaitOne();
             try
@@ -65,7 +65,7 @@ namespace BitTorrentLibrary
                 int currentBlockRequests = 0;
                 UInt32 blockOffset = 0;
                 UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
-                UInt32 currentPeer = 0;
+                int currentPeer = 0;
                 foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
                 {
                     if (!blockThere)
@@ -74,7 +74,7 @@ namespace BitTorrentLibrary
                         PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
                         if (++currentBlockRequests == _maximumBlockRequests) break;
                         currentPeer++;
-                        currentPeer %= (UInt32)remotePeers.Length;
+                        currentPeer %= (int)remotePeers.Length;
                     }
                     blockOffset += Constants.BlockSize;
                     bytesToTransfer -= Constants.BlockSize;

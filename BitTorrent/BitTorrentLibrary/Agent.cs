@@ -347,8 +347,8 @@ namespace BitTorrentLibrary
                 uploadedBytes = tc.TotalBytesUploaded,
                 infoHash = tc.infoHash,
                 missingPiecesCount = tc.missingPiecesCount,
-                swarmSize = (UInt32)tc.peerSwarm.Count,
-                deadPeers = (UInt32)_manager.DeadPeerCount,
+                swarmSize = tc.peerSwarm.Count,
+                deadPeers = _manager.DeadPeerCount,
                 trackerStatus = tc.MainTracker.trackerStatus,
                 trackerStatusMessage = tc.MainTracker.lastResponse.statusMessage
             };

@@ -30,7 +30,7 @@ namespace BitTorrentLibrary
         internal ManualResetEvent blockRequestsDone;        // When event set then piece has been fully assembled
         internal CancellationTokenSource cancelTaskSource;  // Cancel assembler task source
         internal Average averageAssemblyTime;               // Average assembly time in milliseconds
-        internal UInt64 totalTimeouts;                      // Timeouts while assembling pieces
+        internal int totalTimeouts;                      // Timeouts while assembling pieces
         internal int currentBlockRequests;                  // Current outstanding block requests
         internal Mutex guardMutex;                          
     }
@@ -39,8 +39,8 @@ namespace BitTorrentLibrary
     /// </summary>
     internal struct PieceInfo
     {
-        public UInt16 peerCount;        // Peers with the piece
-        public UInt32 pieceLength;      // Piece length in bytes
+        public int peerCount;        // Peers with the piece
+        public UInt32 pieceLength;   // Piece length in bytes
     }
     /// <summary>
     /// Torrent context for a torrent file.
@@ -55,16 +55,16 @@ namespace BitTorrentLibrary
         internal ManualResetEvent paused;                            // == false (unset) pause downloading from peer
         internal AsyncQueue<PieceBuffer> pieceWriteQueue;            // Piece buffer disk write queue
         internal AsyncQueue<PieceRequest> pieceRequestQueue;         // Piece request queue
-        internal uint pieceLength;                                   // Length of piece in bytese
+        internal UInt32 pieceLength;                                 // Length of piece in bytese
         internal byte[] piecesInfoHash;                              // Pieces infohash from torrent file
-        internal uint numberOfPieces;                                // Number of pieces into torrent
+        internal int numberOfPieces;                                // Number of pieces into torrent
         internal Selector selector;                                  // Piece selector
         internal ManualResetEvent downloadFinished;                  // == Set then download finished
         internal byte[] Bitfield;                                    // Bitfield for current torrent on disk
         internal List<FileDetails> filesToDownload;                  // Local files in torrent
         internal byte[] infoHash;                                    // Torrent info hash
         internal string trackerURL;                                  // Main Tracker URL
-        internal uint missingPiecesCount = 0;                        // Missing piece count
+        internal int missingPiecesCount = 0;                        // Missing piece count
         internal int maximumSwarmSize = Constants.MaximumSwarmSize;  // Maximim swarm size
         internal ConcurrentDictionary<string, Peer> peerSwarm;       // Current peer swarm
         internal Tracker MainTracker;                                // Main tracker assigned to torrent
@@ -93,9 +93,9 @@ namespace BitTorrentLibrary
             (var totalDownloadLength, var allFilesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
             filesToDownload = allFilesToDownload;
             TotalBytesToDownload = totalDownloadLength;
-            pieceLength = uint.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
+            pieceLength = UInt32.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
             piecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
-            numberOfPieces = ((UInt32)(piecesInfoHash.Length / Constants.HashLength));
+            numberOfPieces = ((piecesInfoHash.Length / Constants.HashLength));
             _pieceData = new PieceInfo[numberOfPieces];
             pieceWriteQueue = diskIO.pieceWriteQueue;
             pieceRequestQueue = diskIO.pieceRequestQueue;
@@ -290,16 +290,16 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber"></param>
         /// <returns></returns>
-        internal UInt32 GetBlocksInPiece(UInt32 pieceNumber)
+        internal int GetBlocksInPiece(UInt32 pieceNumber)
         {
-            UInt32 blockCount = (_pieceData[pieceNumber].pieceLength / Constants.BlockSize);
+            int blockCount = (int) (_pieceData[pieceNumber].pieceLength / Constants.BlockSize);
             if (_pieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
             {
                 blockCount++;
             }
             return blockCount;
         }
-        internal UInt32 PeersThatHavePiece(UInt32 pieceNumber)
+        internal int PeersThatHavePiece(UInt32 pieceNumber)
         {
             return _pieceData[pieceNumber].peerCount;
         }

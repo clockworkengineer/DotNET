@@ -20,7 +20,7 @@ namespace BitTorrentLibrary
     {
         private readonly ConcurrentDictionary<string, TorrentContext> _torrents; // Torrents downloading
         private readonly HashSet<string> _deadPeers;                             // Dead peers list
-        private readonly UInt32 _deadPeerPurgeTimeOut;                           // Time minutes to perform dead peer purge
+        private readonly int _deadPeerPurgeTimeOut;                              // Time minutes to perform dead peer purge
         private readonly Timer _deadPeerPurgeTimer;                              // Dead peer purge timer
         internal Int32 DeadPeerCount => _deadPeers.Count;                        // Number of dead 
         internal ICollection<TorrentContext> TorrentList => _torrents.Values;    // List of torrent contexts
@@ -36,7 +36,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources used by manager.
         /// </summary>
-        public Manager(UInt32 deadPeerPurgeTimeOut = 15)
+        public Manager(int deadPeerPurgeTimeOut = 15)
         {
             _torrents = new ConcurrentDictionary<string, TorrentContext>();
             _deadPeers = new HashSet<string>();

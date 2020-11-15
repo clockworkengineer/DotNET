@@ -36,7 +36,7 @@ namespace BitTorrentLibrary
                     return currentPiece;
                 }
                 currentPiece++;
-                currentPiece %= tc.numberOfPieces;
+                currentPiece %= (UInt32) tc.numberOfPieces;
             } while (startPiece != currentPiece);
             return -1;
         }
@@ -75,7 +75,7 @@ namespace BitTorrentLibrary
         /// <param name="numberOfSuggestions"></param>
         /// <param name="startPiece"></param>
         /// <returns></returns>
-        internal UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, uint startPiece = 0)
+        internal UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, UInt32 startPiece = 0)
         {
             List<UInt32> suggestions = new List<UInt32>();
             UInt32 currentPiece = startPiece;
@@ -87,7 +87,7 @@ namespace BitTorrentLibrary
                     numberOfSuggestions--;
                 }
                 currentPiece++;
-                currentPiece %= remotePeer.Tc.numberOfPieces;
+                currentPiece %= (UInt32) remotePeer.Tc.numberOfPieces;
             } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
             return (suggestions.ToArray());
         }

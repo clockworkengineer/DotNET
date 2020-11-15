@@ -28,16 +28,16 @@ namespace BitTorrentLibrary
         public TorrentContext Tc { get; set; }                           // Torrent torrent context
         public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
         public string Ip { get; }                                        // Remote peer ip
-        public uint Port { get; }                                        // peer Port
+        public int Port { get; }                                        // peer Port
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
         public bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
         public ManualResetEvent PeerChoking { get; }                     // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
         public ManualResetEvent BitfieldReceived { get; }                // When event set then peer has recieved bitfield from remote peer
-        public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
+        public int NumberOfMissingPieces { get; set; }                   // Number of missing pieces from a remote peers torrent
         public byte[] ReadBuffer => _network.ReadBuffer;                 // Network read buffer
-        public UInt32 PacketLength => _network.PacketLength;             // Current read packet length
+        public int PacketLength => _network.PacketLength;                // Current read packet length
         /// <summary>
         /// Setup data and resources needed by peer.
         /// </summary>
@@ -46,7 +46,7 @@ namespace BitTorrentLibrary
         /// <param name="infoHash">Info hash.</param>
         /// <param name="tc">torrent context.</param>
         /// 
-        public Peer(string ip, UInt32 port, TorrentContext tc, Socket socket)
+        public Peer(string ip, int port, TorrentContext tc, Socket socket)
         {
             Ip = ip;
             Port = port;

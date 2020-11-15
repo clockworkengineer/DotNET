@@ -20,11 +20,11 @@ namespace BitTorrentLibrary
     {
         private readonly Mutex _bufferMutex;            // Piece buffer guard mutex
         private bool[] _blockPresent;                   // == true then block present
-        private uint _blockCount;                       // Unfilled block spaces in buffer
+        private int _blockCount;                        // Unfilled block spaces in buffer
         public TorrentContext Tc { get; }               // Torrent context
-        public uint Length { get; }                     // Piece Length
+        public UInt32 Length { get; }                   // Piece Length
         public byte[] Buffer { get; }                   // Piece Buffer
-        public uint Number { get; set; }                // Piece Number
+        public UInt32 Number { get; set; }              // Piece Number
         public bool AllBlocksThere => _blockCount == 0; // == true All blocks have been downloaded
         /// <summary>
         /// Create an empty piece buffer.
@@ -36,7 +36,7 @@ namespace BitTorrentLibrary
             Number = 0;
             Length = length;
             Buffer = new byte[Length];
-            _blockCount = length / Constants.BlockSize;
+            _blockCount = (int) length / Constants.BlockSize;
             _blockPresent = new bool[_blockCount];
             _bufferMutex = new Mutex();
         }
@@ -85,7 +85,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Reset()
         {
-            _blockCount = (uint)_blockPresent.Length;
+            _blockCount = _blockPresent.Length;
             _blockPresent = Enumerable.Repeat(false, (int)_blockCount).ToArray();
         }
         /// <summary>
@@ -94,7 +94,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceLength"></param>
         public void SetBlocksPresent(UInt32 pieceLength)
         {
-            _blockCount = (pieceLength / Constants.BlockSize);
+            _blockCount = (int) (pieceLength / Constants.BlockSize);
             if (pieceLength % Constants.BlockSize != 0)
             {
                 _blockCount++;

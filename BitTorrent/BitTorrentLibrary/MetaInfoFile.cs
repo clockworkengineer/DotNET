@@ -42,7 +42,7 @@ namespace BitTorrentLibrary
             BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
             if (fieldBytes is BNodeList bNodeList)
             {
-                UInt32 fileNo = 0;
+                int fileNo = 0;
                 foreach (var listItem in (bNodeList).list)
                 {
                     if (listItem is BNodeDictionary bNodeDictionary)
@@ -185,7 +185,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    UInt32 fileNo = 0;
+                    int fileNo = 0;
                     string name = Encoding.ASCII.GetString(MetaInfoDict["name"]);
                     while (MetaInfoDict.ContainsKey(fileNo.ToString()))
                     {

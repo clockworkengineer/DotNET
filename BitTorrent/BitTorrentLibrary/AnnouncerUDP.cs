@@ -42,7 +42,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private byte[] SendCommand(byte[] command)
         {
-            UInt32 retries = 0;
+            int retries = 0;
             while (true)
             {
                 try
@@ -72,11 +72,11 @@ namespace BitTorrentLibrary
         {
             try
             {
-                UInt32 transactionID = (UInt32)_transIDGenerator.Next();
+                int transactionID = (int)_transIDGenerator.Next();
                 List<byte> connectPacket = new List<byte>();
                 connectPacket.AddRange(Util.PackUInt64(0x41727101980));
                 connectPacket.AddRange(Util.PackUInt32((UInt32)UDPAction.Connect));
-                connectPacket.AddRange(Util.PackUInt32(transactionID));
+                connectPacket.AddRange(Util.PackUInt32((UInt32)transactionID));
                 var connectReply = SendCommand(connectPacket.ToArray());
                 if (connectReply.Length == 16)
                 {
@@ -154,16 +154,16 @@ namespace BitTorrentLibrary
                 announcePacket.AddRange(Util.PackUInt32(0));                          // ip
                 announcePacket.AddRange(Util.PackUInt32(0));                          // key
                 announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.NumWanted));
-                announcePacket.AddRange(Util.PackUInt32(tracker.Port));
+                announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.Port));
                 announcePacket.AddRange(Util.PackUInt32(0));                          // Extensions.
                 var announceReply = SendCommand(announcePacket.ToArray());
                 if (Util.UnPackUInt32(announceReply, 0) == (UInt32)UDPAction.Announce)
                 {
                     if (transactionID == Util.UnPackUInt32(announceReply, 4))
                     {
-                        response.interval = Util.UnPackUInt32(announceReply, 8);
-                        response.incomplete = Util.UnPackUInt32(announceReply, 12);
-                        response.complete = Util.UnPackUInt32(announceReply, 16);
+                        response.interval = (int) Util.UnPackUInt32(announceReply, 8);
+                        response.incomplete = (int) Util.UnPackUInt32(announceReply, 12);
+                        response.complete = (int) Util.UnPackUInt32(announceReply, 16);
                     }
                     for (var num = 20; num < announceReply.Length; num += 6)
                     {
@@ -173,7 +173,7 @@ namespace BitTorrentLibrary
                             peerID = String.Empty,
                             ip = $"{announceReply[num]}.{announceReply[num + 1]}.{announceReply[num + 2]}.{announceReply[num + 3]}"
                         };
-                        peer.port = ((UInt32)announceReply[num + 4] * 256) + announceReply[num + 5];
+                        peer.port = ((int)announceReply[num + 4] * 256) + announceReply[num + 5];
                         if (peer.ip != tracker.Ip) // Ignore self in peers list
                         {
                             Log.Logger.Info($"Peer {peer.ip} Port {peer.port} found.");

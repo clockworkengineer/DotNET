@@ -42,10 +42,10 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class PeerNetwork
     {
-        private UInt32 _bytesRead;              // Bytes read in read request
+        private int _bytesRead;                 // Bytes read in read request
         private bool _lengthRead;               // == true packet length has been read
         public byte[] ReadBuffer { get; set; }  // Read buffer
-        public uint PacketLength { get; set; }  // Current packet length
+        public int PacketLength { get; set; }  // Current packet length
         public Socket PeerSocket { get; set; }  // Socket for I/O
         /// <summary>
         /// Peer read packet asynchronous callback.
@@ -62,12 +62,12 @@ namespace BitTorrentLibrary
                     remotePeer.QueueForClosure();
                     return;
                 }
-                _bytesRead += (UInt32)bytesRead;
+                _bytesRead += bytesRead;
                 if (!_lengthRead)
                 {
                     if (_bytesRead == Constants.SizeOfUInt32)
                     {
-                        PacketLength = Util.UnPackUInt32(ReadBuffer, 0);
+                        PacketLength = (int) Util.UnPackUInt32(ReadBuffer, 0);
                         _lengthRead = true;
                         _bytesRead = 0;
                         if (PacketLength > ReadBuffer.Length)
@@ -141,7 +141,7 @@ namespace BitTorrentLibrary
         /// Connect to remote peer and return connection socket.
         /// </summary>
         /// <param name="remotePeer"></param>
-        public void Connect(string ip, uint port)
+        public void Connect(string ip, int port)
         {
             IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
             IPAddress remotePeerIP = System.Net.IPAddress.Parse(ip);
@@ -203,9 +203,11 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         public static PeerDetails GetConnectinPeerDetails(Socket socket)
         {
-            PeerDetails peerDetails = new PeerDetails();
-            peerDetails.ip = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString();
-            peerDetails.port = (UInt32)((IPEndPoint)(socket.RemoteEndPoint)).Port;
+            PeerDetails peerDetails = new PeerDetails
+            {
+                ip = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString(),
+                port = ((IPEndPoint)(socket.RemoteEndPoint)).Port
+            };
             return peerDetails;
         }
     }

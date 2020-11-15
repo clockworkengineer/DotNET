@@ -35,8 +35,8 @@ namespace BitTorrentLibrary
                     decodedResponse.failure = true;
                     return; // If failure present then ignore rest of reply.
                 }
-                UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "complete"), out decodedResponse.complete);
-                UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "incomplete"), out decodedResponse.incomplete);
+                int.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "complete"), out decodedResponse.complete);
+                int.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "incomplete"), out decodedResponse.incomplete);
                 BNodeBase field = Bencoding.GetDictionaryEntry(decodedAnnounce, "peers");
                 if (field != null)
                 {
@@ -52,7 +52,7 @@ namespace BitTorrentLibrary
                                 peerID = String.Empty,
                                 ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}"
                             };
-                            peer.port = ((UInt32)peers[num + 4] * 256) + peers[num + 5];
+                            peer.port = ((int)peers[num + 4] * 256) + peers[num + 5];
                             if (peer.ip != tracker.Ip) // Ignore self in peers list
                             {
                                 Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
@@ -83,7 +83,7 @@ namespace BitTorrentLibrary
                                 peerField = Bencoding.GetDictionaryEntry(peerDictionaryItem, "port");
                                 if (peerField != null)
                                 {
-                                    peer.port = UInt32.Parse(Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeNumber)peerField).number));
+                                    peer.port = int.Parse(Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeNumber)peerField).number));
                                 }
                                 if (peer.ip != tracker.Ip) // Ignore self in peers list
                                 {
@@ -94,8 +94,8 @@ namespace BitTorrentLibrary
                         }
                     }
                 }
-                UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "interval"), out decodedResponse.interval);
-                UInt32.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "min interval"), out decodedResponse.minInterval);
+                int.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "interval"), out decodedResponse.interval);
+                int.TryParse(Bencoding.GetDictionaryEntryString(decodedAnnounce, "min interval"), out decodedResponse.minInterval);
                 decodedResponse.trackerID = Bencoding.GetDictionaryEntryString(decodedAnnounce, "tracker id");
                 decodedResponse.statusMessage = Bencoding.GetDictionaryEntryString(decodedAnnounce, "warning message");
                 decodedResponse.announceCount++;

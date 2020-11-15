@@ -21,21 +21,21 @@ namespace BitTorrentLibrary
         public byte[] infoHash; // Torrent infohash
         public string peerID;   // ID (optional)
         public string ip;       // IP Address
-        public UInt32 port;     // Port
+        public int port;        // Port
     }
     /// <summary>
     /// Announce response.
     /// </summary>
     internal struct AnnounceResponse
     {
-        public UInt32 announceCount;    // Announce counter
+        public int announceCount;       // Announce counter
         public bool failure;            // == true tracker failure message returned
         public string statusMessage;    // Returned failure/warning message message
-        public UInt32 interval;         // Poll time between annouces in milliseconds
-        public UInt32 minInterval;      // Minimum poll time
+        public int interval;            // Poll time between annouces in milliseconds
+        public int minInterval;         // Minimum poll time
         public string trackerID;        // Track ID (optional)
-        public UInt32 complete;         // Number of seeders for torrent (optional)
-        public UInt32 incomplete;       // Number of non-seeder peers (leeches) (optional)
+        public int complete;            // Number of seeders for torrent (optional)
+        public int incomplete;          // Number of non-seeder peers (leeches) (optional)
         public List<PeerDetails> peers; // Number of peers in swarm
     };
 }

@@ -18,7 +18,7 @@ namespace BitTorrentLibrary
     {
         private readonly SemaphoreSlim _queueSemaphore;
         private readonly ConcurrentQueue<T> _queue;
-        public UInt32 Count => (UInt32)_queue.Count;
+        public int Count => _queue.Count;
         /// <summary>
         /// Initialise
         /// </summary>
