@@ -28,6 +28,7 @@ namespace BitTorrentLibrary
         private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
         private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;           // Queue of peers to add to swarm
         private readonly AsyncQueue<Peer> _peerCloseQueue;                 // Peer close queue
+        public bool Running { get => _agentRunning; }                 // == true then agent running
         /// <summary>
         /// Peer close processing task. Peers can be closed from differene threads and
         /// contexts and having a queue and only one place that they are closed solves
@@ -84,7 +85,7 @@ namespace BitTorrentLibrary
                     PWP.Unchoke(remotePeer);
                     Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
                     return;
-                } 
+                }
             }
             throw new Error($"Failure peer [{remotePeer.Ip}] not added to swarm.");
         }
@@ -188,8 +189,8 @@ namespace BitTorrentLibrary
         /// <param name="downloadPath">Download path.</param>
         public Agent(Manager manager, Assembler pieceAssembler)
         {
-            _manager = manager;
-            _pieceAssembler = pieceAssembler;
+            _manager = manager ?? throw new ArgumentNullException(nameof(manager));
+            _pieceAssembler = pieceAssembler ?? throw new ArgumentNullException(nameof(pieceAssembler));
             _peerSwarmQeue = new AsyncQueue<PeerDetails>();
             _cancelWorkerTaskSource = new CancellationTokenSource();
             _peerCloseQueue = new AsyncQueue<Peer>();
@@ -201,12 +202,19 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info("(Agent) Starting up Torrent Agent...");
-                _agentRunning = true;
-                Task.Run(() => PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token));
-                Task.Run(() => PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token));
-                Task.Run(() => PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token));
-                Log.Logger.Info("(Agent) Torrent Agent started.");
+                if (!_agentRunning)
+                {
+                    Log.Logger.Info("(Agent) Starting up Torrent Agent...");
+                    _agentRunning = true;
+                    Task.Run(() => PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token));
+                    Task.Run(() => PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token));
+                    Task.Run(() => PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token));
+                    Log.Logger.Info("(Agent) Torrent Agent started.");
+                }
+                else
+                {
+                    throw new Exception("Agent is already running.");
+                }
             }
             catch (Exception ex)
             {
@@ -220,6 +228,10 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public void AddTorrent(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
             if (_manager.AddTorrentContext(tc))
             {
                 tc.manager = _manager;
@@ -236,9 +248,13 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public void RemoveTorrent(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
             if (!_manager.RemoveTorrentContext(tc))
             {
-                throw new Error("BitTorrent (Agent) Error : Failed to remove torrent context. ");
+                throw new Error("BitTorrent (Agent) Error : Failed to remove torrent context.");
             }
         }
         /// <summary>
@@ -260,6 +276,10 @@ namespace BitTorrentLibrary
                     _cancelWorkerTaskSource.Cancel();
                     Log.Logger.Info("(Agent) Torrent agent shutdown.");
                 }
+                else
+                {
+                    throw new Exception("Agent already shutdown.");
+                }
             }
             catch (Exception ex)
             {
@@ -272,6 +292,11 @@ namespace BitTorrentLibrary
         /// </summary>
         public void CloseTorrent(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
+
             try
             {
                 Log.Logger.Info($"(Agent) Closing torrent context for {Util.InfoHashToString(tc.infoHash)}.");
@@ -301,9 +326,19 @@ namespace BitTorrentLibrary
         /// </summary>
         public void StartTorrent(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
+
             try
             {
-                tc.paused.Set();
+                if (_manager.GetTorrentContext(tc.infoHash, out TorrentContext _))
+                {
+                    tc.paused.Set();
+                } else {
+                    throw new Exception("Torrent hasnt been added to agent.");
+                }
             }
             catch (Exception ex)
             {
