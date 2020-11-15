@@ -67,7 +67,7 @@ namespace BitTorrentLibrary
         public void SetTorrentContext(TorrentContext tc)
         {
             Tc = tc;
-            NumberOfMissingPieces = Tc.numberOfPieces;
+            NumberOfMissingPieces = (int) Tc.numberOfPieces;
             RemotePieceBitfield = new byte[tc.Bitfield.Length];
         }
         /// <summary>

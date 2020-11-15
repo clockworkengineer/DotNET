@@ -50,18 +50,33 @@ namespace BitTorrentLibrary
         {
             return "[" + Encoding.ASCII.GetString(remotePeer.RemotePeerID) + "] ";
         }
+        /// <summary>
+        /// Extract protocol field from initial packet.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
         private static byte[] GetProtocol(byte[] packet)
         {
             byte[] protocol = new byte[19];
             Array.Copy(packet, 1, protocol, 0, protocol.Length);
             return protocol;
         }
+        /// <summary>
+        /// Extract infohash field from initial packet.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
         private static byte[] GetInfoHash(byte[] packet)
         {
             byte[] infoHash = new byte[20];
             Array.Copy(packet, 28, infoHash, 0, infoHash.Length);
             return infoHash;
         }
+        /// <summary>
+        /// Extract peerID field from initial packet.
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <returns></returns>
         private static byte[] GetClientID(byte[] packet)
         {
             byte[] clientID = new byte[20];
@@ -84,7 +99,7 @@ namespace BitTorrentLibrary
         /// <param name="bitfield"></param>
         private static void DumpBitfield(byte[] bitfield)
         {
-            Log.Logger.Info("(PWP) Usage Map\n---------------\n");
+            Log.Logger.Info("(PWP) Usage Map\n");
             StringBuilder hex = new StringBuilder(bitfield.Length);
             int byteCOunt = 0;
             foreach (byte b in bitfield)
@@ -138,8 +153,8 @@ namespace BitTorrentLibrary
                     return false;
                 }
             }
-            remotePeerID = new byte[Constants.PeerIDLength];
-            Buffer.BlockCopy(remotePacket, _protocolName.Length + 29, remotePeerID, 0, remotePeerID.Length);
+            remotePeerID = GetClientID(remotePacket);
+
             return true;
         }
         /// <summary>
