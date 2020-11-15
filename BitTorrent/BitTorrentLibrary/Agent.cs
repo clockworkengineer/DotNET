@@ -28,7 +28,7 @@ namespace BitTorrentLibrary
         private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
         private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;           // Queue of peers to add to swarm
         private readonly AsyncQueue<Peer> _peerCloseQueue;                 // Peer close queue
-        public bool Running { get => _agentRunning; }                 // == true then agent running
+        public bool Running { get => _agentRunning; }                      // == true then agent running
         /// <summary>
         /// Peer close processing task. Peers can be closed from differene threads and
         /// contexts and having a queue and only one place that they are closed solves
@@ -296,7 +296,6 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(tc));
             }
-
             try
             {
                 Log.Logger.Info($"(Agent) Closing torrent context for {Util.InfoHashToString(tc.infoHash)}.");
@@ -330,7 +329,6 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(tc));
             }
-
             try
             {
                 if (_manager.GetTorrentContext(tc.infoHash, out TorrentContext _))

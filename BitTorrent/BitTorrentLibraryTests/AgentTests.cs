@@ -98,13 +98,13 @@ namespace BitTorrentLibraryTests
             Error error = Assert.Throws<Error>(() => agent.RemoveTorrent(tc));
             Assert.Equal("BitTorrent (Agent) Error : Failed to remove torrent context.", error.Message);
         }
-                [Fact]
+        [Fact]
         public void TestNullStartTorrentInAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());;
+            Agent agent = new Agent(new Manager(), new Assembler()); ;
             Assert.Throws<ArgumentNullException>(() => agent.StartTorrent(null));
         }
-               [Fact]
+        [Fact]
         public void TestStartTorrentNotAddedToAgent()
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
