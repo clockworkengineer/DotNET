@@ -97,7 +97,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private bool GetPieceFromPeers(TorrentContext tc, UInt32 pieceNumber, WaitHandle[] waitHandles)
         {
-            Peer[] remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber);
+            Peer[] remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
             if (remotePeers.Length == 0)
             {
                 Log.Logger.Debug($"(Assembler) Zero peers to assemble piece {pieceNumber}.");

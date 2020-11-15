@@ -94,12 +94,13 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Return list of peers connected that are not choked and have the piece. They
         /// are sorted in ascending order of average reponse time for a peer request packet
-        /// and but off at the maximum number of requests the assembler issues at once.
+        /// reponse and limited by the value of maxPeers.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="pieceNumber"></param>
+        /// <param name="maxPeers"></param>
         /// <returns></returns>
-        internal Peer[] GetListOfPeers(TorrentContext tc, UInt32 pieceNumber)
+        internal Peer[] GetListOfPeers(TorrentContext tc, UInt32 pieceNumber, int maxPeers)
         {
             List<Peer> peers = new List<Peer>();
             foreach (var peer in tc.peerSwarm.Values)
@@ -111,7 +112,7 @@ namespace BitTorrentLibrary
                     peers.Add(peer);
                 }
             }
-            return peers.OrderBy(peer => peer.averagePacketResponse.Get()).ToList().Take(5).ToArray();
+            return peers.OrderBy(peer => peer.averagePacketResponse.Get()).ToList().Take(maxPeers).ToArray();
         }
     }
 }
