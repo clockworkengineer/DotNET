@@ -13,16 +13,13 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Security.Cryptography;
-
 namespace BitTorrentLibrary
 {
-
     /// <summary>
     /// Meta Info File class.
     /// </summary>
@@ -31,7 +28,6 @@ namespace BitTorrentLibrary
         private byte[] _metaInfoData;                           // Raw data of torrent file
         public Dictionary<string, byte[]> MetaInfoDict { get; } // Dictionary of torrent file contents
         public string TorrentFileName { get; }                  // Torrent file name
-
         /// <summary>
         /// Get a list of dictionaries from metainfo file that have been come under the main level dictionary
         /// key of "files". The output being a entry in the internal dictionary that contains a comma
@@ -44,7 +40,6 @@ namespace BitTorrentLibrary
         private void GetListOfDictionarys(BNodeBase bNodeRoot, string field)
         {
             BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
-
             if (fieldBytes is BNodeList bNodeList)
             {
                 UInt32 fileNo = 0;
@@ -191,7 +186,6 @@ namespace BitTorrentLibrary
                 else
                 {
                     UInt32 fileNo = 0;
-
                     string name = Encoding.ASCII.GetString(MetaInfoDict["name"]);
                     while (MetaInfoDict.ContainsKey(fileNo.ToString()))
                     {
@@ -225,7 +219,6 @@ namespace BitTorrentLibrary
             try
             {
                 BNodeBase bNodeRoot = Bencoding.Decode(_metaInfoData);
-
                 GetStringOrNumeric(bNodeRoot, "announce");
                 GetListOfStrings(bNodeRoot, "announce-list");
                 GetStringOrNumeric(bNodeRoot, "comment");
@@ -236,7 +229,6 @@ namespace BitTorrentLibrary
                 GetStringOrNumeric(bNodeRoot, "pieces");
                 GetStringOrNumeric(bNodeRoot, "private");
                 GetStringOrNumeric(bNodeRoot, "url-list");
-
                 if (Bencoding.GetDictionaryEntry(bNodeRoot, "files") == null)
                 {
                     GetStringOrNumeric(bNodeRoot, "length");
@@ -246,9 +238,7 @@ namespace BitTorrentLibrary
                 {
                     GetListOfDictionarys(bNodeRoot, "files");
                 }
-
                 CalculateInfoHash(bNodeRoot);
-
                 foreach (var key in MetaInfoDict.Keys)
                 {
                     if ((key != "pieces") && (key != "info") && (key != "info hash"))
@@ -263,6 +253,5 @@ namespace BitTorrentLibrary
                 throw new Error($"BitTorrent (MetaInfoFile) Error:" + ex.Message);
             }
         }
-
     }
 }

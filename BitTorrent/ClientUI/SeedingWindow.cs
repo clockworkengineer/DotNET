@@ -7,14 +7,12 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using BitTorrentLibrary;
 using Terminal.Gui;
-
 namespace ClientUI
 {
     public class SeedingWindow : Window
@@ -22,7 +20,6 @@ namespace ClientUI
         private readonly List<TorrentContext> _seeders;  // List of current seeding torrents
         private readonly ListView _seederListView;       // List view to displat seeding torrent information
         private Agent _agent;                            // Main torrent agent
-
         /// <summary>
         /// Build seeder display line for listview.
         /// </summary>
@@ -35,7 +32,6 @@ namespace ClientUI
                    seederDetails.trackerStatus.ToString().Substring(0, 3),
                    seederDetails.status.ToString().Substring(0, 1),
                    seederDetails.uploadedBytes, seederDetails.swarmSize);
-
         }
         /// <summary>
         /// Update seeder list window.
@@ -44,18 +40,15 @@ namespace ClientUI
         /// <returns></returns>
         private bool UpdateSeederList(MainLoop main)
         {
-
             List<string> seederLines = (from seeder in _seeders
                                         let seederDetails = _agent.GetTorrentDetails(seeder)
                                         select BuildSeederDisplayLine(seederDetails)).ToList();
-
             if (seederLines.Count > 0)
             {
                 var item = _seederListView.SelectedItem;
                 _seederListView.SetSource(seederLines.ToArray());
                 _seederListView.SelectedItem = item;
             }
-
             return true;
         }
         /// <summary>
@@ -66,7 +59,6 @@ namespace ClientUI
         /// <returns></returns>
         public SeedingWindow(string title) : base(title)
         {
-
             _seederListView = new ListView()
             {
                 X = 0,
@@ -76,22 +68,17 @@ namespace ClientUI
                 CanFocus = true
             };
             Add(_seederListView);
-
             _seeders = new List<TorrentContext>();
         }
-
         /// <summary>
         /// Load torrents in the seeding list.
         /// </summary>
         public void LoadSeedingTorrents(Agent agent, Selector selector, DiskIO diskIO, Config config)
         {
-
             TorrentContext tc = null;
             Tracker seederTracker = null;
-
             _agent = agent;
             Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
-
             foreach (var file in Directory.GetFiles(config.SeedDirectory, "*.torrent"))
             {
                 try
@@ -126,9 +113,6 @@ namespace ClientUI
                     continue;
                 }
             }
-
-
-
         }
     }
 }

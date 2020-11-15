@@ -7,11 +7,9 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Net;
 using System.Net.Sockets;
-
 namespace BitTorrentLibrary
 {
     internal static class Host
@@ -21,7 +19,6 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <returns></returns>
         public static UInt32 DefaultPort => (6881);
-
         /// <summary>
         /// Gets the local host ip.
         /// </summary>

@@ -7,10 +7,8 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Text;
-
 namespace BitTorrentLibrary
 {
     public struct Average
@@ -23,7 +21,6 @@ namespace BitTorrentLibrary
         }
         public long Get() => _total / _totalAdds;
     }
-
     internal static class Util
     {
         /// <summary>
@@ -34,7 +31,6 @@ namespace BitTorrentLibrary
         public static byte[] PackUInt64(UInt64 uInt64value)
         {
             byte[] packedUInt64 = new byte[Constants.SizeOfUInt32 * 2];
-
             packedUInt64[0] = (byte)(uInt64value >> 56);
             packedUInt64[1] = (byte)(uInt64value >> 48);
             packedUInt64[2] = (byte)(uInt64value >> 40);
@@ -43,7 +39,6 @@ namespace BitTorrentLibrary
             packedUInt64[5] = (byte)(uInt64value >> 16);
             packedUInt64[6] = (byte)(uInt64value >> 8);
             packedUInt64[7] = (byte)(uInt64value);
-
             return packedUInt64;
         }
         /// <summary>
@@ -58,7 +53,6 @@ namespace BitTorrentLibrary
             packedUInt32[1] = (byte)(uInt32value >> 16);
             packedUInt32[2] = (byte)(uInt32value >> 8);
             packedUInt32[3] = (byte)(uInt32value);
-
             return packedUInt32;
         }
         /// <summary>

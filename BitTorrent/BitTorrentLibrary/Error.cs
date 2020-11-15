@@ -8,10 +8,8 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Runtime.Serialization;
-
 namespace BitTorrentLibrary
 {
     public class Error : Exception
@@ -19,7 +17,6 @@ namespace BitTorrentLibrary
         public Error()
         {
         }
-
         /// <summary>
         /// Create with a specific error message
         /// </summary>
@@ -27,7 +24,6 @@ namespace BitTorrentLibrary
         public Error(string message) : base(message)
         {
         }
-
         /// <summary>
         /// Create with inner exceptions stored away.
         /// </summary>
@@ -36,7 +32,6 @@ namespace BitTorrentLibrary
         public Error(string message, Exception innerException) : base(message, innerException)
         {
         }
-
         /// <summary>
         /// BitTorrent Error class for serialization purposes.
         /// </summary>

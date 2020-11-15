@@ -7,11 +7,9 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Collections.Generic;
 using NLog;
-
 namespace BitTorrentLibrary
 {
     public static class Log

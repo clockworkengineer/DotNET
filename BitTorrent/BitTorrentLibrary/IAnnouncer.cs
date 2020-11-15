@@ -8,10 +8,8 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Threading.Tasks;
-
 namespace BitTorrentLibrary
 {
     internal interface IAnnouncer

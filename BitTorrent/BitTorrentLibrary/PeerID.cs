@@ -7,9 +7,7 @@
 //
 // Copyright 2020.
 //
-
 using System;
-
 namespace BitTorrentLibrary
 {
     public static class PeerID
@@ -19,7 +17,6 @@ namespace BitTorrentLibrary
         {
             return _peerID;
         }
-
         static public void SetPeerID(string peerID)
         {
             _peerID = peerID.Substring(0, 20);

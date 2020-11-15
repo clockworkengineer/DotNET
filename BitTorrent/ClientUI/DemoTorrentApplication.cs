@@ -7,11 +7,9 @@
 //
 // Copyright 2020.
 //
-
 using System.Threading.Tasks;
 using Terminal.Gui;
 using BitTorrentLibrary;
-
 namespace ClientUI
 {
     // Current application status
@@ -21,7 +19,6 @@ namespace ClientUI
         Downloading,
         Shutdown
     };
-
     /// <summary>
     /// Torrent Demo Application.
     /// </summary>
@@ -34,19 +31,15 @@ namespace ClientUI
         public Agent TorrentAgent { get; set; }                 // Agent for handling all torrents
         public MainStatusBar MainStatusBar { get; set; }         // Main status bar
         public Config Configuration { get; set; }                // Configuration data
-
         // 
         /// <summary>
         /// Build and run application.
         /// </summary>
         public DemoTorrentApplication()
         {
-
             Application.Init();
-
             Configuration = new Config();
             Configuration.Load();
-
             MainWindow = new MainApplicationWindow(this, "BitTorrent Demo Application")
             {
                 X = 0,
@@ -54,30 +47,19 @@ namespace ClientUI
                 Width = Dim.Fill(),
                 Height = Dim.Fill()
             };
-
             MainStatusBar = new MainStatusBar(this);
-
             Application.Top.Add(MainWindow, MainStatusBar);
-
             TorrentSelector = new Selector();
-
             TorrentManager = new Manager();
-
             TorrentDiskIO = new DiskIO(TorrentManager);
-
             TorrentManager.AddToDeadPeerList("192.168.1.1");
-
             TorrentAgent = new Agent(TorrentManager, new Assembler());
-
             TorrentAgent.Startup();
-
             if (Configuration.SeedingTorrents)
             {
                 Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents(TorrentAgent, TorrentSelector, TorrentDiskIO, Configuration));
             }
-
             MainWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;
-
         }
         public void Run()
         {

@@ -11,7 +11,6 @@ using System;
 using System.Text;
 using System.Net.Sockets;
 using System.Threading;
-
 namespace BitTorrentLibrary
 {
     /// <summary>
@@ -36,7 +35,6 @@ namespace BitTorrentLibrary
         public UInt32 NumberOfMissingPieces { get; set; }                // Number of missing pieces from a remote peers torrent
         public byte[] ReadBuffer => _network.ReadBuffer;                 // Network read buffer
         public UInt32 PacketLength => _network.PacketLength;             // Current read packet length
-
         /// <summary>
         /// Setup data and resources needed by peer.
         /// </summary>
@@ -76,7 +74,6 @@ namespace BitTorrentLibrary
         {
             _network.Write(buffer);
         }
-
         /// <summary>
         /// Read packet from remote peer.
         /// </summary>
@@ -94,7 +91,6 @@ namespace BitTorrentLibrary
         public void Connect(Manager manager)
         {
             ValueTuple<bool, byte[]> peerResponse;
-
             // No socket passed to constructor so need to connect to get it
             if (_network.PeerSocket == null)
             {
@@ -112,14 +108,12 @@ namespace BitTorrentLibrary
                 Connected = true;
                 _network.StartReads(this);
             }
-
         }
         /// <summary>
         /// Release  any peer class resources.
         /// </summary>
         public void Close()
         {
-
             if (Connected)
             {
                 Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
@@ -136,7 +130,6 @@ namespace BitTorrentLibrary
                 }
                 Log.Logger.Info($"(Peer) Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
-
         }
         /// <summary>
         /// Check downloaded bitfield to see if a piece is present on a remote peer.
@@ -153,14 +146,12 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public void SetPieceOnRemotePeer(UInt32 pieceNumber)
         {
-
             if (!IsPieceOnRemotePeer(pieceNumber))
             {
                 RemotePieceBitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
                 Tc.IncrementPeerCount(pieceNumber);
                 NumberOfMissingPieces--;
             }
-
         }
         /// <summary>
         /// Place a block into the current piece being assembled.
@@ -169,7 +160,6 @@ namespace BitTorrentLibrary
         /// <param name="blockOffset">Block offset.</param>
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
         {
-
             if (pieceNumber == Tc.assemblyData.pieceBuffer.Number)
             {
                 Tc.assemblyData.guardMutex.WaitOne();
@@ -203,6 +193,5 @@ namespace BitTorrentLibrary
         {
             peerCloseQueue?.Enqueue(this);
         }
-
     }
 }

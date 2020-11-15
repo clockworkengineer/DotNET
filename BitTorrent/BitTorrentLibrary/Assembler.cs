@@ -1,4 +1,3 @@
-
 //
 // Author: Robert Tizzard
 //
@@ -11,11 +10,9 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Diagnostics;
 using System.Threading;
-
 namespace BitTorrentLibrary
 {
     internal static class ManualResetEventExtensions
@@ -40,7 +37,6 @@ namespace BitTorrentLibrary
     {
         private readonly int _assemberTimeout;        // Assembly timeout in seconds
         private readonly int _maximumBlockRequests;   // Maximum requests at a time
-
         /// <summary>
         /// Signal to all peers in swarm that we now have the piece local so
         /// that they can request it if they need.
@@ -82,32 +78,25 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private bool GetPieceFromPeers(TorrentContext tc, UInt32 pieceNumber, WaitHandle[] waitHandles)
         {
-
             Peer[] remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber);
-
             if (remotePeers.Length == 0)
             {
                 Log.Logger.Debug($"(Assembler) Zero peers to assemble piece {pieceNumber}.");
                 return false;
             }
-
             var stopwatch = new Stopwatch();
-
             Log.Logger.Debug($"(Assembler) Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
-
             tc.assemblyData.pieceBuffer.Number = pieceNumber;
             tc.assemblyData.pieceBuffer.Reset();
             tc.assemblyData.pieceBuffer.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
             tc.assemblyData.pieceFinished.Reset();
             tc.assemblyData.blockRequestsDone.Reset();
-
             while (true)
             {
                 UInt32 blockOffset = 0;
                 UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
                 UInt32 currentPeer = 0;
                 int currentBlockRequests = 0;
-
                 tc.assemblyData.guardMutex.WaitOne();
                 stopwatch.Start();
                 foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
@@ -128,9 +117,7 @@ namespace BitTorrentLibrary
                 }
                 tc.assemblyData.currentBlockRequests = currentBlockRequests;
                 tc.assemblyData.guardMutex.ReleaseMutex();
-
                 // Wait for piece to be assembled
-
                 switch (WaitHandle.WaitAny(waitHandles, _assemberTimeout * 1000))
                 {
                     // Any outstanding requests have been completed
@@ -153,9 +140,7 @@ namespace BitTorrentLibrary
                         tc.assemblyData.totalTimeouts++;
                         continue;
                 }
-
             }
-
         }
         /// <summary>
         /// Loop for all pieces assembling them block by block until the download is
@@ -167,14 +152,12 @@ namespace BitTorrentLibrary
         private void AssembleMissingPieces(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
             UInt32 nextPiece = 0;
-
             WaitHandle[] waitHandles = new WaitHandle[]
             {
                 tc.assemblyData.blockRequestsDone,
                 tc.assemblyData.pieceFinished,
                 cancelAssemblerTask.WaitHandle
             };
-
             while (!tc.downloadFinished.WaitOne(0))
             {
                 while (tc.selector.NextPiece(tc, ref nextPiece, nextPiece, cancelAssemblerTask))
@@ -215,7 +198,6 @@ namespace BitTorrentLibrary
         /// <param name="cancelTask"></param>
         private void ProcessRemotePeerRequests(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
-
             WaitHandle[] waitHandles = new WaitHandle[] { cancelAssemblerTask.WaitHandle };
             foreach (var remotePeer in tc.peerSwarm.Values)
             {
@@ -223,7 +205,6 @@ namespace BitTorrentLibrary
                 PWP.Unchoke(remotePeer);
             }
             WaitHandle.WaitAll(waitHandles);
-
         }
         /// <summary>
         /// Setup data and resources needed by assembler.
@@ -242,13 +223,10 @@ namespace BitTorrentLibrary
         /// <param name="cancelAssemblerTask"></param>
         internal void AssemblePieces(TorrentContext tc, CancellationToken cancelAssemblerTask)
         {
-
             Log.Logger.Debug($"(Assembler) Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
             try
             {
-
                 tc.paused.WaitOne(cancelAssemblerTask);
-
                 if (tc.MainTracker.Left != 0)
                 {
                     Log.Logger.Info("Torrent downloading...");
@@ -257,21 +235,18 @@ namespace BitTorrentLibrary
                     tc.MainTracker.ChangeStatus(TrackerEvent.completed);
                     Log.Logger.Info("Whole Torrent finished downloading.");
                 }
-
                 Log.Logger.Info("Torrent seeding...");
                 tc.Status = TorrentStatus.Seeding;
                 tc.MainTracker.SetSeedingInterval(60000 * 30);
                 // Make sure get at least one more annouce before long wait
                 tc.MainTracker.ChangeStatus(TrackerEvent.None);
                 ProcessRemotePeerRequests(tc, cancelAssemblerTask);
-
             }
             catch (Exception ex)
             {
                 Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
             Log.Logger.Debug($"(Assembler) Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
-
         }
     }
 }

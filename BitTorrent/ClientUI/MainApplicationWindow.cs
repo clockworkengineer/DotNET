@@ -7,11 +7,9 @@
 //
 // Copyright 2020.
 //
-
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Terminal.Gui;
-
 namespace ClientUI
 {
     /// <summary>
@@ -28,7 +26,6 @@ namespace ClientUI
         public SeedingWindow SeederListWindow { get; set; }         // Seeding torrents sub-window (overlays information)
         public Torrent Torrent { get; set; }                        // Currently active downloading torrent
         public bool DisplayInformationWindow { get; set; } = true;   // == true information window displayed
-
         /// <summary>
         /// Build main application window including the information
         /// and seeding windows which overlay each other depending which
@@ -39,14 +36,12 @@ namespace ClientUI
         public MainApplicationWindow(DemoTorrentApplication _, string name) : base(name)
         {
             List<View> viewables = new List<View>();
-
             torrentFileLabel = new Label("Torrent File: ")
             {
                 X = 1,
                 Y = 1
             };
             viewables.Add(torrentFileLabel);
-
             TorrentFileText = new TextField()
             {
                 X = Pos.Right(torrentFileLabel),
@@ -55,14 +50,12 @@ namespace ClientUI
             };
             viewables.Add(TorrentFileText);
             TorrentFileText.CursorPosition = TorrentFileText.ToString().Length;
-
             _progressBarBeginText = new Label("Progress : [")
             {
                 X = Pos.Left(torrentFileLabel),
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
             viewables.Add(_progressBarBeginText);
-
             DownloadProgress = new ProgressBar()
             {
                 X = Pos.Right(_progressBarBeginText),
@@ -71,14 +64,12 @@ namespace ClientUI
                 Height = 1
             };
             viewables.Add(DownloadProgress);
-
             _progressBarEndText = new Label("]")
             {
                 X = Pos.Right(DownloadProgress) - 1,
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
             viewables.Add(_progressBarEndText);
-
             InfoWindow = new InformationWindow("Information")
             {
                 X = Pos.Left(this),
@@ -88,7 +79,6 @@ namespace ClientUI
                 CanFocus = false
             };
             viewables.Add(InfoWindow);
-
             SeederListWindow = new SeedingWindow("Seeding")
             {
                 X = Pos.Left(this),
@@ -97,12 +87,10 @@ namespace ClientUI
                 Height = Dim.Fill(),
                 CanFocus = false
             };
-
             foreach (var viewable in viewables)
             {
                 Add(viewable);
             }
-
         }
     }
 }

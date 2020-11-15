@@ -9,16 +9,13 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Net.Sockets;
-
 namespace BitTorrentLibrary
 {
-
     /// <summary>
     /// Agent class definition.
     /// </summary>
@@ -31,7 +28,6 @@ namespace BitTorrentLibrary
         private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
         private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;           // Queue of peers to add to swarm
         private readonly AsyncQueue<Peer> _peerCloseQueue;                 // Peer close queue
-
         /// <summary>
         /// Peer close processing task. Peers can be closed from differene threads and
         /// contexts and having a queue and only one place that they are closed solves
@@ -40,7 +36,6 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private async Task PeerCloseQueueTaskAsync(CancellationToken cancelTask)
         {
-
             Log.Logger.Info("(Agent) Peer close queue task started ... ");
             try
             {
@@ -54,9 +49,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
             }
-
             Log.Logger.Info("(Agent) Close remaining peers left in queue... ");
-
             if (_peerCloseQueue.Count > 0)
             {
                 for (UInt32 peerNo = 0; peerNo < _peerCloseQueue.Count; peerNo++)
@@ -74,7 +67,6 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         private void AddPeerToSwarm(Peer remotePeer)
         {
-
             remotePeer.Connect(_manager);
             if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
             {
@@ -167,7 +159,6 @@ namespace BitTorrentLibrary
                         if (_agentRunning)
                         {
                             Log.Logger.Info("(Agent) Remote peer connected...");
-
                             PeerDetails peerDetails = PeerNetwork.GetConnectinPeerDetails(remotePeerSocket);
                             remotePeer = new Peer(peerDetails.ip, peerDetails.port, null, remotePeerSocket)
                             {
@@ -346,14 +337,12 @@ namespace BitTorrentLibrary
             {
                 fileName = tc.FileName,
                 status = tc.Status,
-
                 peers = (from peer in tc.peerSwarm.Values
                          select new PeerDetails
                          {
                              ip = peer.Ip,
                              port = peer.Port
                          }).ToList(),
-
                 downloadedBytes = tc.TotalBytesDownloaded,
                 uploadedBytes = tc.TotalBytesUploaded,
                 infoHash = tc.infoHash,

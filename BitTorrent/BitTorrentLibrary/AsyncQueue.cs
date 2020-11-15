@@ -7,7 +7,6 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,13 +14,11 @@ using System.Threading;
 using System.Threading.Tasks;
 namespace BitTorrentLibrary
 {
-
     internal class AsyncQueue<T>
     {
         private readonly SemaphoreSlim _queueSemaphore;
         private readonly ConcurrentQueue<T> _queue;
         public UInt32 Count => (UInt32)_queue.Count;
-
         /// <summary>
         /// Initialise
         /// </summary>
@@ -62,7 +59,6 @@ namespace BitTorrentLibrary
             while (true)
             {
                 await _queueSemaphore.WaitAsync(cancellationToken);
-
                 if (_queue.TryDequeue(out T item))
                 {
                     return item;

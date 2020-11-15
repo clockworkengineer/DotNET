@@ -9,13 +9,10 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Linq;
-
 namespace BitTorrentLibrary
 {
-
     /// <summary>
     /// Assembled piece buffer.
     /// </summary>
@@ -29,7 +26,6 @@ namespace BitTorrentLibrary
         public byte[] Buffer { get; }                   // Piece Buffer
         public uint Number { get; set; }                // Piece Number
         public bool AllBlocksThere => _blockCount == 0; // == true All blocks have been downloaded
-
         /// <summary>
         /// Create an empty piece buffer.
         /// </summary>
@@ -43,7 +39,6 @@ namespace BitTorrentLibrary
             _blockCount = length / Constants.BlockSize;
             _blockPresent = new bool[_blockCount];
             _bufferMutex = new Mutex();
-
         }
         /// <summary>
         /// Create an empty piece buffer.
@@ -84,7 +79,6 @@ namespace BitTorrentLibrary
                 _blockCount--;
             }
             _bufferMutex.ReleaseMutex();
-
         }
         /// <summary>
         /// Reset piece so can be refilled
@@ -122,6 +116,5 @@ namespace BitTorrentLibrary
         public bool IsBlockPresent(UInt32 blockNumber) {
             return _blockPresent[blockNumber];
         }
-
     }
 }

@@ -12,16 +12,13 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Collections.Generic;
 using System.Threading;
-
 namespace BitTorrentLibrary
 {
     public class Selector
     {
-
         /// <summary>
         /// Return next suggested piece to download.
         /// </summary>
@@ -30,7 +27,6 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private Int64 GetSuggestedPiece(TorrentContext tc, UInt32 startPiece)
         {
-
             UInt32 currentPiece = startPiece;
             do
             {
@@ -41,9 +37,7 @@ namespace BitTorrentLibrary
                 currentPiece++;
                 currentPiece %= tc.numberOfPieces;
             } while (startPiece != currentPiece);
-
             return -1;
-
         }
         /// <summary>
         /// Setup data and resources needed by selector.
@@ -117,5 +111,4 @@ namespace BitTorrentLibrary
             return (peers.ToArray());
         }
     }
-
 }

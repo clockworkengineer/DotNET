@@ -9,7 +9,6 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,11 +16,9 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Threading;
-
 namespace BitTorrentLibrary
 {
     public delegate void DownloadCompleteCallBack(Object callbackData);  // Download completed callback
-
     /// <summary>
     /// Piece assembly torrent context data
     /// </summary>
@@ -37,7 +34,6 @@ namespace BitTorrentLibrary
         internal int currentBlockRequests;                  // Current outstanding block requests
         internal Mutex guardMutex;                          
     }
-
     /// <summary>
     /// Piece Information.
     /// </summary>
@@ -46,7 +42,6 @@ namespace BitTorrentLibrary
         public UInt16 peerCount;        // Peers with the piece
         public UInt32 pieceLength;      // Piece length in bytes
     }
-
     /// <summary>
     /// Torrent context for a torrent file.
     /// </summary>
@@ -81,7 +76,6 @@ namespace BitTorrentLibrary
         public UInt64 TotalBytesDownloaded { get; set; }             // Total bytes downloaded
         public UInt64 TotalBytesToDownload { get; set; }             // Total bytes in torrent
         public UInt64 TotalBytesUploaded { get; set; }               // Total bytes uploaded to all peers from torrent
-
         /// <summary>
         /// Setup data and resources needed by torrent context.
         /// </summary>
@@ -130,7 +124,6 @@ namespace BitTorrentLibrary
                 TotalBytesToDownload -= TotalBytesDownloaded;
                 TotalBytesDownloaded = 0;
             }
-
         }
         /// <summary>
         /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.
@@ -141,7 +134,6 @@ namespace BitTorrentLibrary
         /// <param name="numberOfBytes">Number of bytes.</param>
         internal bool CheckPieceHash(UInt32 pieceNumber, byte[] pieceBuffer, UInt32 numberOfBytes)
         {
-
             byte[] hash = _SHA1.ComputeHash(pieceBuffer, 0, (Int32)numberOfBytes);
             UInt32 pieceOffset = pieceNumber * Constants.HashLength;
             for (var byteNumber = 0; byteNumber < Constants.HashLength; byteNumber++)
@@ -172,7 +164,6 @@ namespace BitTorrentLibrary
         /// <param name="local">If set to <c>true</c> piece has been downloaded.</param>
         internal void MarkPieceLocal(UInt32 pieceNumber, bool local)
         {
-
             lock (_dcLock)
             {
                 if (local)
@@ -184,7 +175,6 @@ namespace BitTorrentLibrary
                     Bitfield[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
                 }
             }
-
         }
         /// <summary>
         /// Has a piece been fully downloaded.
@@ -205,7 +195,6 @@ namespace BitTorrentLibrary
         /// <param name="missing"></param>
         internal void MarkPieceMissing(UInt32 pieceNumber, bool missing)
         {
-
             lock (_dcLock)
             {
                 if (missing)
@@ -226,7 +215,6 @@ namespace BitTorrentLibrary
                 }
             }
         }
-
         /// <summary>
         /// Is a piece missing from local peer.
         /// </summary>
@@ -234,7 +222,6 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool IsPieceMissing(UInt32 pieceNumber)
         {
-
             lock (_dcLock)
             {
                 return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
@@ -246,7 +233,6 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         internal void MergePieceBitfield(Peer remotePeer)
         {
-
             UInt32 pieceNumber = 0;
             for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
             {
@@ -269,7 +255,6 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer">Remote peer.</param>
         internal void UnMergePieceBitfield(Peer remotePeer)
         {
-
             UInt32 pieceNumber = 0;
             for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
             {
@@ -335,6 +320,5 @@ namespace BitTorrentLibrary
         {
             _pieceData[pieceNumber].peerCount++;
         }
-
     }
 }

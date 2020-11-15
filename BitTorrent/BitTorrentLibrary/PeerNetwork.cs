@@ -25,7 +25,6 @@ namespace BitTorrentLibrary
         public static void Connect(this Socket socket, EndPoint endpoint, TimeSpan timeout)
         {
             var result = socket.BeginConnect(endpoint, null, null);
-
             bool success = result.AsyncWaitHandle.WaitOne(timeout, true);
             if (success)
             {
@@ -38,7 +37,6 @@ namespace BitTorrentLibrary
             }
         }
     }
-
     /// <summary>
     /// Peer to peer network IO code.
     /// </summary>
@@ -49,7 +47,6 @@ namespace BitTorrentLibrary
         public byte[] ReadBuffer { get; set; }  // Read buffer
         public uint PacketLength { get; set; }  // Current packet length
         public Socket PeerSocket { get; set; }  // Socket for I/O
-
         /// <summary>
         /// Peer read packet asynchronous callback.
         /// </summary>
@@ -60,13 +57,11 @@ namespace BitTorrentLibrary
             try
             {
                 Int32 bytesRead = (Int32)PeerSocket.EndReceive(readAsyncState, out SocketError socketError);
-
                 if ((bytesRead <= 0) || (socketError != SocketError.Success) || !PeerSocket.Connected)
                 {
                     remotePeer.QueueForClosure();
                     return;
                 }
-
                 _bytesRead += (UInt32)bytesRead;
                 if (!_lengthRead)
                 {
@@ -89,7 +84,6 @@ namespace BitTorrentLibrary
                     _bytesRead = 0;
                     PacketLength = Constants.SizeOfUInt32;
                 }
-
                 PeerSocket.BeginReceive(ReadBuffer, (Int32)_bytesRead,
                                (Int32)(PacketLength - _bytesRead), 0, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
             }
@@ -131,7 +125,6 @@ namespace BitTorrentLibrary
         public int Read(byte[] buffer, int length)
         {
             return PeerSocket.Receive(buffer, 0, length, SocketFlags.None);
-
         }
         /// <summary>
         /// Start Async reading of network socket.
@@ -152,11 +145,8 @@ namespace BitTorrentLibrary
         {
             IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
             IPAddress remotePeerIP = System.Net.IPAddress.Parse(ip);
-
             PeerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
             PeerSocket.Connect(new IPEndPoint(remotePeerIP, (Int32)port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
-
         }
         /// <summary>
         /// Close socket connection
@@ -177,7 +167,6 @@ namespace BitTorrentLibrary
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Host.GetIP());
             IPEndPoint localEndPoint = new IPEndPoint(ipHostInfo.AddressList[0], (int)Host.DefaultPort);
             Socket listener = new Socket(ipHostInfo.AddressList[0].AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
             listener.Bind(localEndPoint);
             listener.Listen(100);
             return listener;
@@ -187,7 +176,6 @@ namespace BitTorrentLibrary
         /// </summary>
         public static void ShutdownListener()
         {
-
             try
             {
                 IPAddress localPeerIP = Dns.GetHostEntry(Host.GetIP()).AddressList[0];
@@ -198,7 +186,6 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex.Message);
             }
-
         }
         /// <summary>
         /// Wait for remote connection on socket.
@@ -217,10 +204,8 @@ namespace BitTorrentLibrary
         public static PeerDetails GetConnectinPeerDetails(Socket socket)
         {
             PeerDetails peerDetails = new PeerDetails();
-
             peerDetails.ip = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString();
             peerDetails.port = (UInt32)((IPEndPoint)(socket.RemoteEndPoint)).Port;
-
             return peerDetails;
         }
     }

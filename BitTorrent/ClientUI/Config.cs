@@ -8,11 +8,9 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using Microsoft.Extensions.Configuration;
 using BitTorrentLibrary;
-
 namespace ClientUI
 {
     public class Config
@@ -23,7 +21,6 @@ namespace ClientUI
         public string TorrentFileDirectory { get; set; } = "";   // Default path for torrent field field
         public bool SeedingMode { get; set; } = true;            // == true dont check torrents disk inage on startup
         public bool SeedingTorrents { get; set; } = true;        // == true load seeding torren
-
         /// <summary>
         /// Load config settings
         /// </summary>
@@ -34,21 +31,16 @@ namespace ClientUI
                 IConfiguration config = new ConfigurationBuilder()
                   .AddJsonFile("appsettings.json", true, true)
                   .Build();
-
                 TorrentFileDirectory = config["TorrentFileDirectory"];
                 DestinationDirectory = config["DestinationTorrentDirectory"];
                 SeedDirectory = config["SeedFileDirectory"];
                 SeedingMode = bool.Parse(config["SeedingMode"]);
                 SeedingTorrents = bool.Parse(config["LoadSeedingTorrents"]);
-
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug("Application Error : " + ex.Message);
             }
-
-
         }
-
     }
 }

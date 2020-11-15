@@ -9,7 +9,6 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Collections.Generic;
 namespace BitTorrentLibrary
@@ -24,7 +23,6 @@ namespace BitTorrentLibrary
         public string ip;       // IP Address
         public UInt32 port;     // Port
     }
-
     /// <summary>
     /// Announce response.
     /// </summary>

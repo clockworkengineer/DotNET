@@ -1,5 +1,4 @@
 using System.Net.Mime;
-
 //
 // Author: Robert Tizzard
 //
@@ -11,12 +10,10 @@ using System.Net.Mime;
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Timers;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-
 namespace BitTorrentLibrary
 {
     public class Manager
@@ -27,7 +24,6 @@ namespace BitTorrentLibrary
         private readonly Timer _deadPeerPurgeTimer;                              // Dead peer purge timer
         internal Int32 DeadPeerCount => _deadPeers.Count;                        // Number of dead 
         internal ICollection<TorrentContext> TorrentList => _torrents.Values;    // List of torrent contexts
-
         /// <summary>
         /// Purge dead peers.
         /// </summary>

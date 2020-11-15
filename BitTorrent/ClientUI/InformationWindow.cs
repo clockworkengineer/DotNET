@@ -8,12 +8,10 @@
 //
 // Copyright 2020.
 //
-
 using System.Collections.Generic;
 using System.Text;
 using BitTorrentLibrary;
 using Terminal.Gui;
-
 namespace ClientUI
 {
     /// <summary>
@@ -26,7 +24,6 @@ namespace ClientUI
         private readonly Window _peersWindow;         // Peer swarm list sub-window
         private readonly TextField[] _infoTextFields; // Torrent information window text fields
         public TextField TrackerText { get; }         // Torrent tracker text field
-
         /// <summary>
         /// Convert torrent infohash to string.
         /// </summary>
@@ -41,7 +38,6 @@ namespace ClientUI
             }
             return hex.ToString().ToLower();
         }
-
         /// <summary>
         /// Build information window.
         /// </summary>
@@ -50,7 +46,6 @@ namespace ClientUI
         public InformationWindow(string name) : base(name)
         {
             List<View> viewables = new List<View>();
-
             _trackerLabel = new Label("Tracker : ")
             {
                 X = 1,
@@ -73,7 +68,6 @@ namespace ClientUI
                 Height = Dim.Fill(),
             };
             viewables.Add(_peersWindow);
-
             _peersListView = new ListView()
             {
                 X = 0,
@@ -83,11 +77,8 @@ namespace ClientUI
                 CanFocus = false
             };
             _peersWindow.Add(_peersListView);
-
             string[] labels = { "InfoHash:", "Downloaded:", "Uploaded:", "Missing:", "Status:", "Swarm:", "Dead:", "Tracker:" };
-
             _infoTextFields = new TextField[labels.Length];
-
             int pos = 0;
             foreach (var label in labels)
             {
@@ -107,7 +98,6 @@ namespace ClientUI
                 viewables.Add(_infoTextFields[pos]);
                 pos++;
             }
-
             foreach (var viewable in viewables)
             {
                 Add(viewable);
@@ -145,7 +135,6 @@ namespace ClientUI
                                   _infoTextFields[7].Text = "";
                                   _peersListView.SetSource(null);
                               });
-
         }
         /// <summary>
         /// Update peers in peer swarm listview.
@@ -155,6 +144,5 @@ namespace ClientUI
         {
             _peersListView.SetSource(peersList);
         }
-
     }
 }

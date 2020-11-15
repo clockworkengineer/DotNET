@@ -1,5 +1,4 @@
-﻿
-//
+﻿//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -13,16 +12,13 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
 namespace BitTorrentLibrary
 {
     public delegate void ProgessCallBack(Object callBackData); // Download progress callback
-
     /// <summary>
     /// Torrent Disk IO subsystem.
     /// </summary>
@@ -32,7 +28,6 @@ namespace BitTorrentLibrary
         private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
         internal AsyncQueue<PieceBuffer> pieceWriteQueue;              // Piece buffer write queue
         internal AsyncQueue<PieceRequest> pieceRequestQueue;           // Piece request read queue
-
         /// <summary>
         /// Read/Write piece buffers to/from torrent on disk.
         /// </summary>
@@ -45,7 +40,6 @@ namespace BitTorrentLibrary
             int bytesTransferred = 0;
             UInt64 startOffset = transferBuffer.Number * tc.pieceLength;
             UInt64 endOffset = startOffset + tc.pieceLength;
-
             foreach (var file in tc.filesToDownload)
             {
                 if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
@@ -102,15 +96,10 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private PieceBuffer GetPieceFromTorrent(Peer remotePeer, UInt32 pieceNumber)
         {
-
             PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.Tc, pieceNumber, remotePeer.Tc.GetPieceLength(pieceNumber));
-
             Log.Logger.Debug($"(DiskIO) Read piece ({pieceBuffer.Number}) from file.");
-
             TransferPiece(remotePeer.Tc, pieceBuffer, true);
-
             Log.Logger.Debug($"(DiskIO) Piece ({pieceBuffer.Number}) read from file.");
-
             return pieceBuffer;
         }
         /// <summary>
@@ -131,16 +120,13 @@ namespace BitTorrentLibrary
                     if (!pieceBuffer.Tc.downloadFinished.WaitOne(0))
                     {
                         TransferPiece(pieceBuffer.Tc, pieceBuffer, false);
-
                         pieceBuffer.Tc.TotalBytesDownloaded += pieceBuffer.Tc.GetPieceLength((pieceBuffer.Number));
                         Log.Logger.Info("(DiskIO) "+(pieceBuffer.Tc.TotalBytesDownloaded / (double)pieceBuffer.Tc.TotalBytesToDownload).ToString("0.00%"));
                         Log.Logger.Debug($"(DiskIO) Piece ({pieceBuffer.Number}) written to file.");
-
                         if (pieceBuffer.Tc.BytesLeftToDownload() == 0)
                         {
                             pieceBuffer.Tc.downloadFinished.Set();
                         }
-
                         // Make sure progress call back does not termiate the task.
                         try
                         {
@@ -180,7 +166,6 @@ namespace BitTorrentLibrary
                     try
                     {
                         Log.Logger.Info($"(DiskIO) Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
-
                         if (_manager.GetPeer(request.infoHash, request.ip, out remotePeer))
                         {
                             PieceBuffer requestBuffer = GetPieceFromTorrent(remotePeer, request.pieceNumber);
@@ -202,9 +187,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug("BitTorrent (DiskIO) Error :", ex.Message);
             }
-
             Log.Logger.Info("(DiskIO) Piece request processing task terminated.");
-
         }
         /// <summary>
         /// Setup data and resources needed by DiskIO.
@@ -234,7 +217,6 @@ namespace BitTorrentLibrary
         internal void CreateLocalTorrentStructure(TorrentContext tc)
         {
             Log.Logger.Debug("(DiskIO) Creating empty files as placeholders for downloading ...");
-
             foreach (var file in tc.filesToDownload)
             {
                 if (!System.IO.File.Exists(file.name))
@@ -263,13 +245,11 @@ namespace BitTorrentLibrary
             foreach (var file in tc.filesToDownload)
             {
                 Log.Logger.Debug($"(DiskIO) File: {file.name}");
-
                 using (var inFileSteam = new FileStream(file.name, FileMode.Open))
                 {
                     while ((bytesRead = inFileSteam.Read(pieceBuffer, (Int32)bytesInBuffer, pieceBuffer.Length - (Int32)bytesInBuffer)) > 0)
                     {
                         bytesInBuffer += (UInt32)bytesRead;
-
                         if (bytesInBuffer == tc.pieceLength)
                         {
                             UpdateBitfieldFromBuffer(tc, pieceNumber, pieceBuffer, bytesInBuffer);
@@ -308,8 +288,6 @@ namespace BitTorrentLibrary
                 }
                 totalBytesToDownload -= Constants.BlockSize;
             }
-
         }
     }
-
 }

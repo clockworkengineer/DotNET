@@ -7,9 +7,7 @@
 //
 // Copyright 2020.
 //
-
 using System;
-
 namespace BitTorrentLibrary
 {
     internal struct FileDetails

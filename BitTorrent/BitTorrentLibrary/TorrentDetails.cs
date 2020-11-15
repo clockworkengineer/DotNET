@@ -7,10 +7,8 @@
 //
 // Copyright 2020.
 //
-
 using System;
 using System.Collections.Generic;
-
 namespace BitTorrentLibrary
 {
     public enum TorrentStatus

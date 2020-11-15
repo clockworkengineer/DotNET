@@ -7,14 +7,11 @@
 //
 // Copyright 2020.
 //
-
 using Terminal.Gui;
-
 namespace ClientUI
 {
     class App
     {
-
         /// <summary>
         /// Creat application object and run it.
         /// </summary>

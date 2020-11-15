@@ -15,10 +15,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-
 namespace BitTorrentLibrary
 {
-
     /// <summary>
     /// UDP Announcer
     /// </summary>
@@ -31,13 +29,11 @@ namespace BitTorrentLibrary
             Scrape,
             Error
         }
-
         private readonly Random _transIDGenerator = new Random();   // Transaction ID generator
         private bool _connected = false;                            // == true connected
         private UInt64 _connectionID;                               // Returned connection ID
         private readonly UdpClient _trackerConnection;              // Tracker UDP connection
         private IPEndPoint _trackerEndPoint;                       // Tracker enpoint
-
         /// <summary>
         /// Send and recieve command to UDP tracker. If we get a timeout then the
         /// standard says keep retrying for 60 seconds.
@@ -46,7 +42,6 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private byte[] SendCommand(byte[] command)
         {
-
             UInt32 retries = 0;
             while (true)
             {
@@ -79,11 +74,9 @@ namespace BitTorrentLibrary
             {
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
                 List<byte> connectPacket = new List<byte>();
-
                 connectPacket.AddRange(Util.PackUInt64(0x41727101980));
                 connectPacket.AddRange(Util.PackUInt32((UInt32)UDPAction.Connect));
                 connectPacket.AddRange(Util.PackUInt32(transactionID));
-
                 var connectReply = SendCommand(connectPacket.ToArray());
                 if (connectReply.Length == 16)
                 {
@@ -106,7 +99,6 @@ namespace BitTorrentLibrary
                         }
                     }
                 }
-
                 if (!_connected)
                 {
                     throw new Error("Could not connect to UDP tracker server.");
@@ -116,7 +108,6 @@ namespace BitTorrentLibrary
             {
                 throw;
             }
-
         }
         /// <summary>
         /// Setup data and resources needed by UDP tracker.
@@ -139,22 +130,18 @@ namespace BitTorrentLibrary
         public AnnounceResponse Announce(Tracker tracker)
         {
             Tracker.LogAnnouce(tracker);
-
             AnnounceResponse response = new AnnounceResponse
             {
                 peers = new List<PeerDetails>()
             };
-
             try
             {
                 if (!_connected)
                 {
                     Connect();
                 }
-
                 List<byte> announcePacket = new List<byte>();
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
-
                 announcePacket.AddRange(Util.PackUInt64(_connectionID));
                 announcePacket.AddRange(Util.PackUInt32((UInt32)UDPAction.Announce));
                 announcePacket.AddRange(Util.PackUInt32(transactionID));
@@ -169,9 +156,7 @@ namespace BitTorrentLibrary
                 announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.NumWanted));
                 announcePacket.AddRange(Util.PackUInt32(tracker.Port));
                 announcePacket.AddRange(Util.PackUInt32(0));                          // Extensions.
-
                 var announceReply = SendCommand(announcePacket.ToArray());
-
                 if (Util.UnPackUInt32(announceReply, 0) == (UInt32)UDPAction.Announce)
                 {
                     if (transactionID == Util.UnPackUInt32(announceReply, 4))
@@ -180,7 +165,6 @@ namespace BitTorrentLibrary
                         response.incomplete = Util.UnPackUInt32(announceReply, 12);
                         response.complete = Util.UnPackUInt32(announceReply, 16);
                     }
-
                     for (var num = 20; num < announceReply.Length; num += 6)
                     {
                         PeerDetails peer = new PeerDetails
@@ -196,7 +180,6 @@ namespace BitTorrentLibrary
                             response.peers.Add(peer);
                         }
                     }
-
                 }
                 else if (Util.UnPackUInt32(announceReply, 0) == (UInt32)UDPAction.Error)
                 {
@@ -213,13 +196,11 @@ namespace BitTorrentLibrary
                     throw new Error($"Invalid announce response {Util.UnPackUInt32(announceReply, 0)}.");
                 }
             }
-
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex.Message);
                 throw;
             }
-
             return response;
         }
     }
