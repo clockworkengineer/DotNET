@@ -51,23 +51,42 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Request block piece from a peer.
+        /// 
         /// </summary>
-        /// <param name="peers"></param>
+        /// <param name="tc"></param>
         /// <param name="pieceNumber"></param>
-        /// <param name="blockOffset"></param>
-        /// <param name="blockSize"></param>
-        private void Request(Peer remotePeer, UInt32 pieceNumber, UInt32 blockOffset, UInt32 blockSize)
+        /// <param name="remotePeers"></param>
+        /// <param name="stopwatch"></param>
+        private bool GetMoreBlocks(TorrentContext tc, uint pieceNumber, Peer[] remotePeers)
         {
+            tc.assemblyData.guardMutex.WaitOne();
             try
             {
-                remotePeer.CancelTaskSource.Token.ThrowIfCancellationRequested();
-                PWP.Request(remotePeer, pieceNumber, blockOffset, blockSize);
+                int currentBlockRequests = 0;
+                UInt32 blockOffset = 0;
+                UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
+                UInt32 currentPeer = 0;
+                foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
+                {
+                    if (!blockThere)
+                    {
+                        remotePeers[currentPeer].CancelTaskSource.Token.ThrowIfCancellationRequested();
+                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
+                        if (++currentBlockRequests == _maximumBlockRequests) break;
+                        currentPeer++;
+                        currentPeer %= (UInt32)remotePeers.Length;
+                    }
+                    blockOffset += Constants.BlockSize;
+                    bytesToTransfer -= Constants.BlockSize;
+                }
+                tc.assemblyData.currentBlockRequests = currentBlockRequests;
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug("BitTorrent (Assembler) Error:" + ex.Message);
             }
+            tc.assemblyData.guardMutex.ReleaseMutex();
+            return true;
         }
         /// <summary>
         /// Request a piece block by block and wait for it to be assembled.
@@ -91,33 +110,12 @@ namespace BitTorrentLibrary
             tc.assemblyData.pieceBuffer.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
             tc.assemblyData.pieceFinished.Reset();
             tc.assemblyData.blockRequestsDone.Reset();
-            while (true)
+            while (GetMoreBlocks(tc, pieceNumber, remotePeers))
             {
-                UInt32 blockOffset = 0;
-                UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
-                UInt32 currentPeer = 0;
-                int currentBlockRequests = 0;
-                tc.assemblyData.guardMutex.WaitOne();
+                //
+                // Wait for blocks to arrive
+                //
                 stopwatch.Start();
-                foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
-                {
-                    if (!blockThere)
-                    {
-                        Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
-                        currentBlockRequests++;
-                        if (currentBlockRequests == _maximumBlockRequests)
-                        {
-                            break;
-                        }
-                    }
-                    currentPeer++;
-                    currentPeer %= (UInt32)remotePeers.Length;
-                    blockOffset += Constants.BlockSize;
-                    bytesToTransfer -= Constants.BlockSize;
-                }
-                tc.assemblyData.currentBlockRequests = currentBlockRequests;
-                tc.assemblyData.guardMutex.ReleaseMutex();
-                // Wait for piece to be assembled
                 switch (WaitHandle.WaitAny(waitHandles, _assemberTimeout * 1000))
                 {
                     // Any outstanding requests have been completed
@@ -128,7 +126,7 @@ namespace BitTorrentLibrary
                     case 1:
                         stopwatch.Stop();
                         tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
-                        Log.Logger.Debug($"(Assembler) Average time to assemble pieces is {tc.assemblyData.averageAssemblyTime.Get()} milliseconds");
+                        Log.Logger.Debug($"(Assembler) Average time {tc.assemblyData.averageAssemblyTime.Get()} ms.");
                         return tc.assemblyData.pieceBuffer.AllBlocksThere;
                     // Assembly has been cancelled by external source
                     case 2:
@@ -141,6 +139,7 @@ namespace BitTorrentLibrary
                         continue;
                 }
             }
+            return false;
         }
         /// <summary>
         /// Loop for all pieces assembling them block by block until the download is
