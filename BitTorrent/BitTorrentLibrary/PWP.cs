@@ -239,6 +239,11 @@ namespace BitTorrentLibrary
             UInt32 blockOffset = Util.UnPackUInt32(remotePeer.ReadBuffer, 5);
             Log.Logger.Info($"(PWP) {RemotePeerID(remotePeer)}RX PIECE {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}\n");
             remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
+            if (remotePeer.packetResponseTimer.IsRunning)
+            {
+                remotePeer.packetResponseTimer.Stop();
+                remotePeer.averagePacketResponse.Add(remotePeer.packetResponseTimer.ElapsedMilliseconds);
+            }
         }
         /// <summary>
         /// Handles cancel command from remote peer.
@@ -462,6 +467,10 @@ namespace BitTorrentLibrary
                 requestPacket.AddRange(Util.PackUInt32(blockOffset));
                 requestPacket.AddRange(Util.PackUInt32(blockSize));
                 remotePeer.PeerWrite(requestPacket.ToArray());
+                if (!remotePeer.packetResponseTimer.IsRunning)
+                {
+                    remotePeer.packetResponseTimer.Start();
+                }
             }
         }
         /// <summary>

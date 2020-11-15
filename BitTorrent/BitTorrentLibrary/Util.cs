@@ -19,7 +19,14 @@ namespace BitTorrentLibrary
         {
             _total += addition; _totalAdds++;
         }
-        public long Get() => _total / _totalAdds;
+        public long Get()
+        {
+            if (_totalAdds != 0)
+            {
+                return _total / _totalAdds;
+            }
+            return 0;
+        }
     }
     internal static class Util
     {

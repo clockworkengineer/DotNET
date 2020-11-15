@@ -13,6 +13,7 @@
 // Copyright 2020.
 //
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 namespace BitTorrentLibrary
@@ -91,7 +92,9 @@ namespace BitTorrentLibrary
             return (suggestions.ToArray());
         }
         /// <summary>
-        /// Return list of peers connected that are not choked and have the piece.
+        /// Return list of peers connected that are not choked and have the piece. They
+        /// are sorted in ascending order of average reponse time for a peer request packet
+        /// and but off at the maximum number of requests the assembler issues at once.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="pieceNumber"></param>
@@ -108,7 +111,7 @@ namespace BitTorrentLibrary
                     peers.Add(peer);
                 }
             }
-            return (peers.ToArray());
+            return peers.OrderBy(peer => peer.averagePacketResponse.Get()).ToList().Take(5).ToArray();
         }
     }
 }

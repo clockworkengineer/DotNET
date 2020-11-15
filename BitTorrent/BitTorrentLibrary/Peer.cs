@@ -11,6 +11,7 @@ using System;
 using System.Text;
 using System.Net.Sockets;
 using System.Threading;
+using System.Diagnostics;
 namespace BitTorrentLibrary
 {
     /// <summary>
@@ -19,6 +20,8 @@ namespace BitTorrentLibrary
     internal class Peer
     {
         private readonly PeerNetwork _network;                           // Network layer
+        internal readonly Stopwatch packetResponseTimer;                 // Packet reponse timer
+        internal Average averagePacketResponse;                          // Average packet reponse time
         internal AsyncQueue<Peer> peerCloseQueue;                        // Peer close queue
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
@@ -48,6 +51,7 @@ namespace BitTorrentLibrary
             Ip = ip;
             Port = port;
             _network = new PeerNetwork(socket);
+            packetResponseTimer = new Stopwatch();
             PeerChoking = new ManualResetEvent(false);
             BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
