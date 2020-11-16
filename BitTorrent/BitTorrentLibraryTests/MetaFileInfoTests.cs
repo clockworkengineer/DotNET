@@ -2,7 +2,6 @@ using System;
 using System.Text;
 using Xunit;
 using BitTorrentLibrary;
-
 namespace BitTorrentLibraryTests
 {
     public class MetaFileInfoTests
@@ -10,10 +9,8 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestExceptionOnFileNotExisting()
         {
-
             Assert.Throws<BitTorrentException>(() =>  { MetaInfoFile torrentFile = new MetaInfoFile("s" + Constants.SingleFileTorrent);} );
         }
-
         [Theory]
         [InlineData("announce")]
         [InlineData("comment")]
@@ -29,12 +26,9 @@ namespace BitTorrentLibraryTests
          public void TestSingleFileTorrentContainsValidKey(string key)
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
-
             torrentFile.Parse();
-
             Assert.True(torrentFile.MetaInfoDict.ContainsKey(key));
         }
-
         [Theory]
         [InlineData("announce")]
         [InlineData("comment")]
@@ -54,12 +48,9 @@ namespace BitTorrentLibraryTests
         public void TestMultiFileTorrentContainsValidKey(string key)
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.MultiFileTorrent);
-
             torrentFile.Parse();
-
             Assert.True(torrentFile.MetaInfoDict.ContainsKey(key));
         }
-
         [Theory]
         [InlineData("announce", "http://192.168.1.215:9005/announce")]
         [InlineData("comment", "Just a large jpeg image torrent.")]
@@ -73,14 +64,10 @@ namespace BitTorrentLibraryTests
         public void TestSingleFileTorrentCheckKeyContents(string key, string expected)
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
-            
             torrentFile.Parse();
-
             string actual = System.Text.Encoding.UTF8.GetString(torrentFile.MetaInfoDict[key]);
-
             Assert.Equal(actual, expected);
         }
-
         [Theory]
         [InlineData("announce","http://192.168.1.215:9005/announce")]
         [InlineData("comment","Just a large jpeg image torrent.")]
@@ -98,31 +85,23 @@ namespace BitTorrentLibraryTests
         public void TestMultiFileTorrentCheckKeyContents(string key, string expected)
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.MultiFileTorrent);
-
             torrentFile.Parse();
-
             string actual = System.Text.Encoding.UTF8.GetString(torrentFile.MetaInfoDict[key]);
-
             Assert.Equal(actual, expected);
         }
-
         [Theory]
         [InlineData(Constants.SingleFileTorrent, "7fd1a2631b385a4cc68bf15040fa375c8e68cb7e")]
         [InlineData(Constants.MultiFileTorrent, "c28bf4c5ab095923eecad46701d09408912928e7")]
         public void TestTorrentCheckInfoHash(string file, string expected)
         {
             MetaInfoFile torrentFile = new MetaInfoFile(file);
-
             torrentFile.Parse();
-
             byte[] infoHash = torrentFile.MetaInfoDict["info hash"];
-
             StringBuilder actual = new StringBuilder(infoHash.Length);
             foreach (byte b in infoHash)
             {
                 actual.AppendFormat("{0:x2}", b);
             }
-
             Assert.Equal(actual.ToString(), expected);
         }
     }

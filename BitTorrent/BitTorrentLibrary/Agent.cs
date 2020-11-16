@@ -256,7 +256,6 @@ namespace BitTorrentLibrary
                 throw new BitTorrentException("BitTorrent (Agent) Error : Failed to add torrent context." + ex.Message);
             }
         }
-
         /// <summary>
         /// Remove torrent context from managers database.
         /// </summary>
@@ -267,9 +266,16 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(tc));
             }
-            if (!_manager.RemoveTorrentContext(tc))
+            try
             {
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failed to remove torrent context.");
+                if (!_manager.RemoveTorrentContext(tc))
+                {
+                    throw new Exception("It probably has been removed alrady or never added.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new BitTorrentException("BitTorrent (Agent) Error : Failed to remove torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -332,7 +338,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    throw new Exception("Torrent hasnt been added to agent.");
+                    throw new Exception("Torrent hasnt been added to agent or may already have been closed.");
                 }
             }
             catch (Exception ex)
@@ -385,7 +391,6 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(tc));
             }
-
             try
             {
                 if (_manager.GetTorrentContext(tc.infoHash, out TorrentContext _))
@@ -417,25 +422,44 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         public TorrentDetails GetTorrentDetails(TorrentContext tc)
         {
-            return new TorrentDetails
+            if (tc is null)
             {
-                fileName = tc.FileName,
-                status = tc.Status,
-                peers = (from peer in tc.peerSwarm.Values
-                         select new PeerDetails
-                         {
-                             ip = peer.Ip,
-                             port = peer.Port
-                         }).ToList(),
-                downloadedBytes = tc.TotalBytesDownloaded,
-                uploadedBytes = tc.TotalBytesUploaded,
-                infoHash = tc.infoHash,
-                missingPiecesCount = tc.missingPiecesCount,
-                swarmSize = tc.peerSwarm.Count,
-                deadPeers = _manager.DeadPeerCount,
-                trackerStatus = tc.MainTracker.trackerStatus,
-                trackerStatusMessage = tc.MainTracker.lastResponse.statusMessage
-            };
+                throw new ArgumentNullException(nameof(tc));
+            }
+            try
+            {
+                if (_manager.GetTorrentContext(tc.infoHash, out TorrentContext _))
+                {
+                    return new TorrentDetails
+                    {
+                        fileName = tc.FileName,
+                        status = tc.Status,
+                        peers = (from peer in tc.peerSwarm.Values
+                                 select new PeerDetails
+                                 {
+                                     ip = peer.Ip,
+                                     port = peer.Port
+                                 }).ToList(),
+                        downloadedBytes = tc.TotalBytesDownloaded,
+                        uploadedBytes = tc.TotalBytesUploaded,
+                        infoHash = tc.infoHash,
+                        missingPiecesCount = tc.missingPiecesCount,
+                        swarmSize = tc.peerSwarm.Count,
+                        deadPeers = _manager.DeadPeerCount,
+                        trackerStatus = tc.MainTracker.trackerStatus,
+                        trackerStatusMessage = tc.MainTracker.lastResponse.statusMessage
+                    };
+                }
+                else
+                {
+                    throw new Exception("Torrent hasnt been added to agent.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new BitTorrentException("BitTorrent (Agent) Error : Failure to get torrent details." + ex.Message);
+            }
         }
         /// <summary>
         /// Attach peer swarm queue to start recieving peers.

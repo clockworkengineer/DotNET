@@ -104,7 +104,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new BitTorrentException("Remote tracker failure: " + tracker.lastResponse.statusMessage);
+                        throw new Exception("(Tracker) Remote tracker failure: " + tracker.lastResponse.statusMessage);
                     }
                 }
             }
@@ -256,13 +256,6 @@ namespace BitTorrentLibrary
                 trackerStatus = TrackerStatus.Stalled;
                 throw new BitTorrentException("BitTorrent (Tracker) Error: " + ex.Message);
             }
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        public void StartAnnouncingAsync()
-        {
-            Task.Run(() => StartAnnouncing());
         }
         /// <summary>
         /// Restart a stalled tracker. 
