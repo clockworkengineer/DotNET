@@ -87,7 +87,7 @@ namespace BitTorrentLibrary
                     return;
                 }
             }
-            throw new BitTorrentException($"Failure peer [{remotePeer.Ip}] not added to swarm.");
+            throw new Exception($"Failure peer [{remotePeer.Ip}] not added to swarm.");
         }
         /// <summary>
         /// Inspect peer queue added to by tracker, connect to the peer and add it to swarm
@@ -402,7 +402,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new BitTorrentException("The torrent is currentlu not in a running state.");
+                        throw new Exception("The torrent is currently not in a running state.");
                     }
                 }
                 else

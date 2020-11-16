@@ -164,7 +164,7 @@ namespace BitTorrentLibraryTests
             Tracker tracker = new Tracker(tc);
             agent.AddTorrent(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.PauseTorrent(tc));
-            Assert.Equal("BitTorrent (Agent) Error : Failure to pause torrent context.The torrent is currentlu not in a running state.", error.Message);
+            Assert.Equal("BitTorrent (Agent) Error : Failure to pause torrent context.The torrent is currently not in a running state.", error.Message);
         }
         [Fact]
         public void TestStartAddedTorrent()
