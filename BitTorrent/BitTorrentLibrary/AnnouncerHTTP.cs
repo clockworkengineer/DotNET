@@ -55,7 +55,7 @@ namespace BitTorrentLibrary
                             peer.port = ((int)peers[num + 4] * 256) + peers[num + 5];
                             if (peer.ip != tracker.Ip) // Ignore self in peers list
                             {
-                                Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
+                                Log.Logger.Trace($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
                                 decodedResponse.peers.Add(peer);
                             }
                         }
@@ -87,7 +87,7 @@ namespace BitTorrentLibrary
                                 }
                                 if (peer.ip != tracker.Ip) // Ignore self in peers list
                                 {
-                                    Log.Logger.Trace($"Peer {peer.ip} Port {peer.port} found.");
+                                    Log.Logger.Trace($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
                                     decodedResponse.peers.Add(peer);
                                 }
                             }
@@ -157,7 +157,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new Error(httpGetResponse.StatusDescription);
+                        throw new BitTorrentError(httpGetResponse.StatusDescription);
                     }
                 }
             }

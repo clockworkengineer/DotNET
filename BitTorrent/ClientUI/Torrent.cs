@@ -114,13 +114,13 @@ namespace ClientUI
                     CallBackData = main
                 };
 
-                main.TorrentAgent.AddTorrent(Tc);
-
                 TorrentTracker = new Tracker(Tc)
                 {
                     CallBack = UpdateDownloadInformation,
                     CallBackData = main
                 };
+
+                main.TorrentAgent.AddTorrent(Tc);
 
                 main.TorrentAgent.AttachPeerSwarmQueue(TorrentTracker);
 

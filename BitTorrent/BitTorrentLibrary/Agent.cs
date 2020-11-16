@@ -48,7 +48,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
+                Log.Logger.Debug("(Agent) Error :" + ex.Message);
             }
             Log.Logger.Info("(Agent) Close remaining peers left in queue... ");
             if (_peerCloseQueue.Count > 0)
@@ -87,7 +87,7 @@ namespace BitTorrentLibrary
                     return;
                 }
             }
-            throw new Error($"Failure peer [{remotePeer.Ip}] not added to swarm.");
+            throw new BitTorrentError($"Failure peer [{remotePeer.Ip}] not added to swarm.");
         }
         /// <summary>
         /// Inspect peer queue added to by tracker, connect to the peer and add it to swarm
@@ -125,14 +125,14 @@ namespace BitTorrentLibrary
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
+                        Log.Logger.Debug($"(Agent) Error (Ignored): " + ex.Message);
                         remotePeer?.QueueForClosure();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
+                Log.Logger.Debug("(Agent) Error :" + ex.Message);
             }
             Log.Logger.Info("(Agent) Remote peer connect creation task terminated.");
         }
@@ -170,14 +170,14 @@ namespace BitTorrentLibrary
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
+                        Log.Logger.Debug($"(Agent) Error (Ignored): " + ex.Message);
                         remotePeer?.QueueForClosure();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
+                Log.Logger.Debug("(Agent) Error :" + ex.Message);
             }
             _listenerSocket?.Close();
             Log.Logger.Info("(Agent) Remote Peer connect listener terminated.");
@@ -219,7 +219,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failure to startup agent." + ex.Message);
+                throw new BitTorrentError("(Agent) Error : Failure to startup agent." + ex.Message);
             }
         }
         /// <summary>
@@ -253,7 +253,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                throw new Error("BitTorrent (Agent) Error : Failed to add torrent context." + ex.Message);
+                throw new BitTorrentError("(Agent) Error : Failed to add torrent context." + ex.Message);
             }
         }
 
@@ -269,7 +269,7 @@ namespace BitTorrentLibrary
             }
             if (!_manager.RemoveTorrentContext(tc))
             {
-                throw new Error("BitTorrent (Agent) Error : Failed to remove torrent context.");
+                throw new BitTorrentError("(Agent) Error : Failed to remove torrent context.");
             }
         }
         /// <summary>
@@ -299,7 +299,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failed to shutdown agent." + ex.Message);
+                throw new BitTorrentError("(Agent) Error : Failed to shutdown agent." + ex.Message);
             }
         }
         /// <summary>
@@ -338,7 +338,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failure to close torrent context." + ex.Message);
+                throw new BitTorrentError("(Agent) Error : Failure to close torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -373,7 +373,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failure to start torrent context." + ex.Message);
+                throw new BitTorrentError("(Agent) Error : Failure to start torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -397,7 +397,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new Error("The torrent is currentlu not in a running state.");
+                        throw new Exception("The torrent is currently not in a running state.");
                     }
                 }
                 else
@@ -408,7 +408,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failure to pause torrent context." + ex.Message);
+                throw new BitTorrentError("(Agent) Error : Failure to pause torrent context." + ex.Message);
             }
         }
         /// <summary>
