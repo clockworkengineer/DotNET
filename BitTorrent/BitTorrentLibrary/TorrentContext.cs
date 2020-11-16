@@ -88,13 +88,13 @@ namespace BitTorrentLibrary
         {
             FileName = torrentMetaInfo.TorrentFileName;
             Status = TorrentStatus.Initialised;
-            infoHash = torrentMetaInfo.MetaInfoDict["info hash"];
-            trackerURL = Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["announce"]);
+            infoHash = torrentMetaInfo.GetInfoHash();
+            trackerURL = torrentMetaInfo.GetTracker();
             (var totalDownloadLength, var allFilesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
             filesToDownload = allFilesToDownload;
             TotalBytesToDownload = totalDownloadLength;
-            pieceLength = UInt32.Parse(Encoding.ASCII.GetString(torrentMetaInfo.MetaInfoDict["piece length"]));
-            piecesInfoHash = torrentMetaInfo.MetaInfoDict["pieces"];
+            pieceLength =  torrentMetaInfo.GetPieceLength();
+            piecesInfoHash = torrentMetaInfo.GetPiecesInfoHash();
             numberOfPieces = ((piecesInfoHash.Length / Constants.HashLength));
             _pieceData = new PieceInfo[numberOfPieces];
             pieceWriteQueue = diskIO.pieceWriteQueue;

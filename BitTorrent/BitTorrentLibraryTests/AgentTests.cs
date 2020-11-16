@@ -217,7 +217,7 @@ namespace BitTorrentLibraryTests
             Assert.Equal(0, details.deadPeers);
             Assert.Equal(0, (int)details.downloadedBytes);
             Assert.Equal("singlefile.torrent", details.fileName);
-            Assert.Equal(file.MetaInfoDict["info hash"], details.infoHash);
+            Assert.Equal(file.GetInfoHash(), details.infoHash);
             Assert.Equal(22, details.missingPiecesCount);
             Assert.Equal(0, (int)details.peers.Count);
             Assert.Equal(TorrentStatus.Initialised, details.status);

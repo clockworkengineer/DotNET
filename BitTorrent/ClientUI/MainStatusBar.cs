@@ -33,8 +33,8 @@ namespace ClientUI
             });
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
             {
-                main.TorrentAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
                 main.TorrentAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
+                main.TorrentAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
                 main.MainWindow.InfoWindow.ClearData();
                 main.MainStatusBar.Display(Status.Shutdown);
             });

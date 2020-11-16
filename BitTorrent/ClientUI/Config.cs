@@ -20,7 +20,7 @@ namespace ClientUI
         public string DestinationDirectory { get; set; } = "";   // Destination for torrents downloaded
         public string TorrentFileDirectory { get; set; } = "";   // Default path for torrent field field
         public bool SeedingMode { get; set; } = true;            // == true dont check torrents disk inage on startup
-        public bool SeedingTorrents { get; set; } = true;        // == true load seeding torren
+        public bool SeedingTorrents { get; set; } = true;        // == true load seeding torrent
         /// <summary>
         /// Load config settings
         /// </summary>

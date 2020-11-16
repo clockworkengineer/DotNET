@@ -26,7 +26,7 @@ namespace BitTorrentLibrary
     public class MetaInfoFile
     {
         private byte[] _metaInfoData;                           // Raw data of torrent file
-        public Dictionary<string, byte[]> MetaInfoDict { get; } // Dictionary of torrent file contents
+        internal Dictionary<string, byte[]> metaInfoDict;       // Dictionary of torrent file contents
         public string TorrentFileName { get; }                  // Torrent file name
         /// <summary>
         /// Get a list of dictionaries from metainfo file that have been come under the main level dictionary
@@ -64,7 +64,7 @@ namespace BitTorrentLibrary
                         fileEntry += Bencoding.GetDictionaryEntryString(fileDictionaryItem, "length");
                         fileEntry += ",";
                         fileEntry += Bencoding.GetDictionaryEntryString(fileDictionaryItem, "md5string");
-                        MetaInfoDict[fileNo.ToString()] = Encoding.ASCII.GetBytes(fileEntry);
+                        metaInfoDict[fileNo.ToString()] = Encoding.ASCII.GetBytes(fileEntry);
                         fileNo++;
                     }
                 }
@@ -80,11 +80,11 @@ namespace BitTorrentLibrary
             BNodeBase fieldBytes = Bencoding.GetDictionaryEntry(bNodeRoot, field);
             if (fieldBytes is BNodeNumber bNodeNumber)
             {
-                MetaInfoDict[field] = (bNodeNumber).number;
+                metaInfoDict[field] = (bNodeNumber).number;
             }
             else if (fieldBytes is BNodeString bNodeString)
             {
-                MetaInfoDict[field] = (bNodeString).str;
+                metaInfoDict[field] = (bNodeString).str;
             }
         }
         /// <summary>
@@ -107,7 +107,7 @@ namespace BitTorrentLibrary
                         listString.Add(Encoding.ASCII.GetString(stringItem.str));
                     }
                 }
-                MetaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",", listString));
+                metaInfoDict[field] = Encoding.ASCII.GetBytes(string.Join(",", listString));
             }
         }
         /// <summary>
@@ -119,7 +119,7 @@ namespace BitTorrentLibrary
             BNodeBase infoEncodedBytes = Bencoding.GetDictionaryEntry(bNodeRoot, "info");
             if (infoEncodedBytes != null)
             {
-                MetaInfoDict["info hash"] = new SHA1CryptoServiceProvider().ComputeHash(Bencoding.Encode(infoEncodedBytes));
+                metaInfoDict["info hash"] = new SHA1CryptoServiceProvider().ComputeHash(Bencoding.Encode(infoEncodedBytes));
             }
         }
         /// <summary>
@@ -154,7 +154,7 @@ namespace BitTorrentLibrary
             try
             {
                 TorrentFileName = fileName;
-                MetaInfoDict = new Dictionary<string, byte[]>();
+                metaInfoDict = new Dictionary<string, byte[]>();
                 Load();
             }
             catch (Exception ex)
@@ -172,12 +172,12 @@ namespace BitTorrentLibrary
             UInt64 totalBytes = 0;
             try
             {
-                if (!MetaInfoDict.ContainsKey("0"))
+                if (!metaInfoDict.ContainsKey("0"))
                 {
                     FileDetails fileDetail = new FileDetails
                     {
-                        name = downloadPath + $"{Path.DirectorySeparatorChar}" + Encoding.ASCII.GetString(MetaInfoDict["name"]),
-                        length = UInt64.Parse(Encoding.ASCII.GetString(MetaInfoDict["length"])),
+                        name = downloadPath + $"{Path.DirectorySeparatorChar}" + Encoding.ASCII.GetString(metaInfoDict["name"]),
+                        length = UInt64.Parse(Encoding.ASCII.GetString(metaInfoDict["length"])),
                         offset = 0
                     };
                     filesToDownload.Add(fileDetail);
@@ -186,10 +186,10 @@ namespace BitTorrentLibrary
                 else
                 {
                     int fileNo = 0;
-                    string name = Encoding.ASCII.GetString(MetaInfoDict["name"]);
-                    while (MetaInfoDict.ContainsKey(fileNo.ToString()))
+                    string name = Encoding.ASCII.GetString(metaInfoDict["name"]);
+                    while (metaInfoDict.ContainsKey(fileNo.ToString()))
                     {
-                        string[] details = Encoding.ASCII.GetString(MetaInfoDict[fileNo.ToString()]).Split(',');
+                        string[] details = Encoding.ASCII.GetString(metaInfoDict[fileNo.ToString()]).Split(',');
                         FileDetails fileDetail = new FileDetails
                         {
                             name = downloadPath + $"{Path.DirectorySeparatorChar}" + name + details[0],
@@ -239,11 +239,11 @@ namespace BitTorrentLibrary
                     GetListOfDictionarys(bNodeRoot, "files");
                 }
                 CalculateInfoHash(bNodeRoot);
-                foreach (var key in MetaInfoDict.Keys)
+                foreach (var key in metaInfoDict.Keys)
                 {
                     if ((key != "pieces") && (key != "info") && (key != "info hash"))
                     {
-                        Log.Logger.Debug($"{key}={Encoding.ASCII.GetString(MetaInfoDict[key])}");
+                        Log.Logger.Debug($"{key}={Encoding.ASCII.GetString(metaInfoDict[key])}");
                     }
                 }
             }
@@ -251,6 +251,66 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex);
                 throw new BitTorrentException($"BitTorrent (MetaInfoFile) Error:" + ex.Message);
+            }
+        }
+        /// <summary>
+        /// Get URL of tracker to announce too.
+        /// </summary>
+        /// <returns></returns>
+        public string GetTracker()
+        {
+            try
+            {
+                return Encoding.ASCII.GetString(metaInfoDict["announce"]);
+            }
+            catch (Exception)
+            {
+                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error : File has not been parsed.");
+            }
+        }
+        /// <summary>
+        /// Get torrent info hash.
+        /// </summary>
+        /// <returns></returns>
+        public byte[] GetInfoHash()
+        {
+            try
+            {
+                return metaInfoDict["info hash"];
+            }
+            catch (Exception)
+            {
+                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error : File has not been parsed.");
+            }
+        }
+        /// <summary>
+        /// Get torrent piece length.
+        /// </summary>
+        /// <returns></returns>
+        public UInt32 GetPieceLength()
+        {
+            try
+            {
+                return UInt32.Parse(Encoding.ASCII.GetString(metaInfoDict["piece length"]));
+            }
+            catch (Exception)
+            {
+                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error : File has not been parsed.");
+            }
+        }
+        /// <summary>
+        /// Get piece info hash table. 
+        /// </summary>
+        /// <returns></returns>
+        public byte[] GetPiecesInfoHash()
+        {
+            try
+            {
+                return metaInfoDict["pieces"];
+            }
+            catch (Exception)
+            {
+                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error : File has not been parsed.");
             }
         }
     }

@@ -90,7 +90,7 @@ namespace ClientUI
                 Application.MainLoop.Invoke(() =>
                 {
                     main.MainWindow.DownloadProgress.Fraction = 0;
-                    main.MainWindow.InfoWindow.TrackerText.Text = torrentFile.MetaInfoDict["announce"];
+                    main.MainWindow.InfoWindow.TrackerText.Text = torrentFile.GetTracker();
                 });
                 Tc = new TorrentContext(torrentFile, main.TorrentSelector, main.TorrentDiskIO, main.Configuration.DestinationDirectory)
                 {
