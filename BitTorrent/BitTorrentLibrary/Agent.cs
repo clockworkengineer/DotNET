@@ -232,16 +232,31 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(tc));
             }
-            if (_manager.AddTorrentContext(tc))
+            try
             {
-                tc.manager = _manager;
-                tc.assemblyData.task = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.assemblyData.cancelTaskSource.Token));
+                if (_manager.AddTorrentContext(tc))
+                {
+                    if (tc.MainTracker != null)
+                    {
+                        tc.manager = _manager;
+                        tc.assemblyData.task = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.assemblyData.cancelTaskSource.Token));
+                    }
+                    else
+                    {
+                        throw new Exception("Torrent does not have a tracker associated with it.");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Torrent most probably has already been added.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                throw new Error("BitTorrent (Agent) Error : Failed to add torrent context.");
+                throw new Error("BitTorrent (Agent) Error : Failed to add torrent context." + ex.Message);
             }
         }
+
         /// <summary>
         /// Remove torrent context from managers database.
         /// </summary>
@@ -298,25 +313,32 @@ namespace BitTorrentLibrary
             }
             try
             {
-                Log.Logger.Info($"(Agent) Closing torrent context for {Util.InfoHashToString(tc.infoHash)}.");
-                tc.assemblyData.cancelTaskSource.Cancel();
-                tc.MainTracker.ChangeStatus(TrackerEvent.stopped);
-                tc.MainTracker.StopAnnouncing();
-                if (tc.peerSwarm != null)
+                if (_manager.GetTorrentContext(tc.infoHash, out TorrentContext _))
                 {
-                    Log.Logger.Info("(Agent) Closing peer sockets.");
-                    foreach (var remotePeer in tc.peerSwarm.Values)
+                    Log.Logger.Info($"(Agent) Closing torrent context for {Util.InfoHashToString(tc.infoHash)}.");
+                    tc.assemblyData.cancelTaskSource.Cancel();
+                    tc.MainTracker.ChangeStatus(TrackerEvent.stopped);
+                    tc.MainTracker.StopAnnouncing();
+                    if (tc.peerSwarm != null)
                     {
-                        remotePeer.QueueForClosure();
+                        Log.Logger.Info("(Agent) Closing peer sockets.");
+                        foreach (var remotePeer in tc.peerSwarm.Values)
+                        {
+                            remotePeer.QueueForClosure();
+                        }
                     }
+                    tc.Status = TorrentStatus.Ended;
+                    Log.Logger.Info($"(Agent) Torrent context for {Util.InfoHashToString(tc.infoHash)} closed.");
                 }
-                tc.Status = TorrentStatus.Ended;
-                Log.Logger.Info($"(Agent) Torrent context for {Util.InfoHashToString(tc.infoHash)} closed.");
+                else
+                {
+                    throw new Exception("Torrent hasnt been added to agent.");
+                }
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (Agent) Error : Failure to close torrent context" + ex.Message);
+                throw new Error("BitTorrent (Agent) Error : Failure to close torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -334,7 +356,17 @@ namespace BitTorrentLibrary
                 if (_manager.GetTorrentContext(tc.infoHash, out TorrentContext _))
                 {
                     tc.paused.Set();
-                } else {
+                    if (tc.MainTracker.Left > 0)
+                    {
+                        tc.Status = TorrentStatus.Downloading;
+                    }
+                    else
+                    {
+                        tc.Status = TorrentStatus.Seeding;
+                    }
+                }
+                else
+                {
                     throw new Exception("Torrent hasnt been added to agent.");
                 }
             }
@@ -349,10 +381,29 @@ namespace BitTorrentLibrary
         /// </summary>
         public void PauseTorrent(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
+
             try
             {
-                tc.Status = TorrentStatus.Paused;
-                tc.paused.Reset();
+                if (_manager.GetTorrentContext(tc.infoHash, out TorrentContext _))
+                {
+                    if (tc.Status == TorrentStatus.Downloading || (tc.Status == TorrentStatus.Seeding))
+                    {
+                        tc.Status = TorrentStatus.Paused;
+                        tc.paused.Reset();
+                    }
+                    else
+                    {
+                        throw new Error("The torrent is currentlu not in a running state.");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Torrent hasnt been added to agent.");
+                }
             }
             catch (Exception ex)
             {
