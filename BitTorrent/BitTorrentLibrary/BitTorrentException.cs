@@ -12,16 +12,16 @@ using System;
 using System.Runtime.Serialization;
 namespace BitTorrentLibrary
 {
-    public class Error : Exception
+    public class BitTorrentException : Exception
     {
-        public Error()
+        public BitTorrentException()
         {
         }
         /// <summary>
         /// Create with a specific error message
         /// </summary>
         /// <param name="message">Message.</param>
-        public Error(string message) : base(message)
+        public BitTorrentException(string message) : base(message)
         {
         }
         /// <summary>
@@ -29,7 +29,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="message">Message.</param>
         /// <param name="innerException">Inner exception.</param>
-        public Error(string message, Exception innerException) : base(message, innerException)
+        public BitTorrentException(string message, Exception innerException) : base(message, innerException)
         {
         }
         /// <summary>
@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="info">Info.</param>
         /// <param name="context">Context.</param>
-        protected Error(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected BitTorrentException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

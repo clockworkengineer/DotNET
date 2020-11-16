@@ -95,13 +95,13 @@ namespace BitTorrentLibrary
                         {
                             byte[] errorMessage = new byte[connectReply.Length - 4];
                             connectReply.CopyTo(errorMessage, 4);
-                            throw new Error("UDP connect returned error : " + errorMessage.ToString());
+                            throw new BitTorrentException("UDP connect returned error : " + errorMessage.ToString());
                         }
                     }
                 }
                 if (!_connected)
                 {
-                    throw new Error("Could not connect to UDP tracker server.");
+                    throw new BitTorrentException("Could not connect to UDP tracker server.");
                 }
             }
             catch (Exception)
@@ -193,7 +193,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    throw new Error($"Invalid announce response {Util.UnPackUInt32(announceReply, 0)}.");
+                    throw new BitTorrentException($"Invalid announce response {Util.UnPackUInt32(announceReply, 0)}.");
                 }
             }
             catch (Exception ex)

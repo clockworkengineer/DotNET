@@ -243,7 +243,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (BEncoding) Error: Failure on decoding torrent file into BNode tree."+ex.Message);
+                throw new BitTorrentException("BitTorrent (BEncoding) Error: Failure on decoding torrent file into BNode tree."+ex.Message);
             }
             return bNodeRoot;
         }
@@ -291,7 +291,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (BEncoding) Error: Failure to encode BNode Tree."+ex.Message);
+                throw new BitTorrentException("BitTorrent (BEncoding) Error: Failure to encode BNode Tree."+ex.Message);
             }
             return result.ToArray();
         }
@@ -331,7 +331,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (BEncoding) Error: Could not get dictionary from BNode tree."+ex.Message);
+                throw new BitTorrentException("BitTorrent (BEncoding) Error: Could not get dictionary from BNode tree."+ex.Message);
             }
             return bNodeEntry;
         }
@@ -362,7 +362,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Error("BitTorrent (BEncoding) Error: Could not get string from BNode tree."+ex.Message);
+                throw new BitTorrentException("BitTorrent (BEncoding) Error: Could not get string from BNode tree."+ex.Message);
             }
             return "";
         }

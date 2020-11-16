@@ -157,7 +157,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new Error(httpGetResponse.StatusDescription);
+                        throw new BitTorrentException(httpGetResponse.StatusDescription);
                     }
                 }
             }

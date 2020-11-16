@@ -104,7 +104,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new Error("Remote tracker failure: " + tracker.lastResponse.statusMessage);
+                        throw new BitTorrentException("Remote tracker failure: " + tracker.lastResponse.statusMessage);
                     }
                 }
             }
@@ -169,7 +169,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    throw new Error("BitTorrent (Tracker) Error: Invalid tracker URL.");
+                    throw new BitTorrentException("BitTorrent (Tracker) Error: Invalid tracker URL.");
                 }
             }
             else
@@ -200,7 +200,7 @@ namespace BitTorrentLibrary
                 //  Swarm queue needs to be initialised
                 if (peerSwarmQueue == null)
                 {
-                    throw new Error("Peer swarm queue has not been set.");
+                    throw new BitTorrentException("Peer swarm queue has not been set.");
                 }
                 // If all of torrent downloaded reset total bytes downloaded
                 if (Left == 0)
@@ -215,7 +215,7 @@ namespace BitTorrentLibrary
                 }
                 if (lastResponse.failure)
                 {
-                    throw new Error("Tracker failure: " + lastResponse.statusMessage);
+                    throw new BitTorrentException("Tracker failure: " + lastResponse.statusMessage);
                 }
                 announceTimer = new System.Timers.Timer(Interval);
                 announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
@@ -230,7 +230,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Debug(ex);
                 trackerStatus = TrackerStatus.Stalled;
                 CallBack?.Invoke(CallBackData);
-                throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
+                throw new BitTorrentException("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
         /// <summary>
@@ -254,7 +254,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex);
                 trackerStatus = TrackerStatus.Stalled;
-                throw new Error("BitTorrent (Tracker) Error: " + ex.Message);
+                throw new BitTorrentException("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
         /// <summary>

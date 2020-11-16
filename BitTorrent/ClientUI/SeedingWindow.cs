@@ -86,8 +86,8 @@ namespace ClientUI
                     MetaInfoFile seederFile = new MetaInfoFile(file);
                     seederFile.Parse();
                     tc = new TorrentContext(seederFile, selector, diskIO, config.DestinationDirectory, config.SeedingMode);
-                    agent.AddTorrent(tc);
                     seederTracker = new Tracker(tc);
+                    agent.AddTorrent(tc);
                     agent.AttachPeerSwarmQueue(seederTracker);
                     seederTracker.StartAnnouncing();
                     agent.StartTorrent(tc);
