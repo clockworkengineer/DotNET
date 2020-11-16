@@ -98,7 +98,7 @@ namespace BitTorrentLibraryTests
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.RemoveTorrent(tc));
-            Assert.Equal("BitTorrent (Agent) Error : Failed to remove torrent context.", error.Message);
+            Assert.Equal("BitTorrent (Agent) Error : Failed to remove torrent context.It probably has been removed alrady or never added.", error.Message);
         }
         [Fact]
         public void TestNullTorrentContextPassedStartTorrent()
