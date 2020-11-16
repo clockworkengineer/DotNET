@@ -11,7 +11,7 @@ namespace BitTorrentLibraryTests
         public void TestExceptionOnFileNotExisting()
         {
 
-            Assert.Throws<BitTorrentError>(() =>  { MetaInfoFile torrentFile = new MetaInfoFile("s" + Constants.SingleFileTorrent);} );
+            Assert.Throws<Error>(() =>  { MetaInfoFile torrentFile = new MetaInfoFile("s" + Constants.SingleFileTorrent);} );
         }
 
         [Theory]

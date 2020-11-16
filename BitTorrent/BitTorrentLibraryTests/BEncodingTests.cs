@@ -37,7 +37,7 @@ namespace BitTorrentLibraryTests
         {
             byte[] expected = System.IO.File.ReadAllBytes(Constants.SingleFileWithErrorTorrent);
 
-            Assert.Throws<BitTorrentError>(() =>  { BNodeBase torrentBase = Bencoding.Decode(expected); });
+            Assert.Throws<Error>(() =>  { BNodeBase torrentBase = Bencoding.Decode(expected); });
         }
 
         [Fact]
@@ -45,7 +45,7 @@ namespace BitTorrentLibraryTests
         {
             byte[] expected = System.IO.File.ReadAllBytes(Constants.MultiFileWithErrorTorrent);
 
-            Assert.Throws<BitTorrentError>(() =>  { BNodeBase torrentBase = Bencoding.Decode(expected); });
+            Assert.Throws<Error>(() =>  { BNodeBase torrentBase = Bencoding.Decode(expected); });
         }
     }
 }

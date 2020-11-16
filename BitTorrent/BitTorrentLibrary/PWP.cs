@@ -40,7 +40,7 @@ namespace BitTorrentLibrary
         private const byte REQUEST = 6;
         private const byte PIECE = 7;
         private const byte CANCEL = 8;
-        private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("protocol");
+        private static readonly byte[] _protocolName = Encoding.ASCII.GetBytes("BitTorrent protocol");
         /// <summary>
         /// Convert remote peer ID to string
         /// </summary>
@@ -288,7 +288,7 @@ namespace BitTorrentLibrary
             if (bytesRead != remotePacket.Length)
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new BitTorrentError("Invalid length read for intial packet exchange.");
+                throw new Error("Invalid length read for intial packet exchange.");
             }
             DumpRemoteClientInfo(remotePacket);
             foreach (var tc in manager.TorrentList)
@@ -304,7 +304,7 @@ namespace BitTorrentLibrary
             if (!connected)
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new BitTorrentError($"Remote peer [{remotePeer.Ip}] tried to connect with invalid infohash.");
+                throw new Error($"Remote peer [{remotePeer.Ip}] tried to connect with invalid infohash.");
             }
             return (connected, remotePeerID);
         }
@@ -323,13 +323,13 @@ namespace BitTorrentLibrary
             if (bytesRead != remotePacket.Length)
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new BitTorrentError("Invalid length read for intial packet exchange.");
+                throw new Error("Invalid length read for intial packet exchange.");
             }
             bool connected = ValidatePeerConnect(localPacket.ToArray(), remotePacket, out byte[] remotePeerID);
             if (!connected)
             {
                 manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new BitTorrentError($"Remote peer [{remotePeer.Ip}] tried to connect with invalid initial handshake.");
+                throw new Error($"Remote peer [{remotePeer.Ip}] tried to connect with invalid initial handshake.");
             }
             return (connected, remotePeerID);
         }

@@ -86,7 +86,7 @@ namespace BitTorrentLibrary
                         {
                             _connectionID = Util.UnPackUInt64(connectReply, 8);
                             _connected = true;
-                            Log.Logger.Info("(Tracker) Connected to UDP Tracker.");
+                            Log.Logger.Info("Connected to UDP Tracker.");
                         }
                     }
                     else if (Util.UnPackUInt32(connectReply, 0) == (UInt32)UDPAction.Error)
@@ -95,13 +95,13 @@ namespace BitTorrentLibrary
                         {
                             byte[] errorMessage = new byte[connectReply.Length - 4];
                             connectReply.CopyTo(errorMessage, 4);
-                            throw new BitTorrentError("(Tracker) UDP connect returned error : " + errorMessage.ToString());
+                            throw new Error("UDP connect returned error : " + errorMessage.ToString());
                         }
                     }
                 }
                 if (!_connected)
                 {
-                    throw new BitTorrentError("(Tracker) Could not connect to UDP tracker server.");
+                    throw new Error("Could not connect to UDP tracker server.");
                 }
             }
             catch (Exception)
@@ -176,7 +176,7 @@ namespace BitTorrentLibrary
                         peer.port = ((int)announceReply[num + 4] * 256) + announceReply[num + 5];
                         if (peer.ip != tracker.Ip) // Ignore self in peers list
                         {
-                            Log.Logger.Info($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
+                            Log.Logger.Info($"Peer {peer.ip} Port {peer.port} found.");
                             response.peers.Add(peer);
                         }
                     }
@@ -193,7 +193,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    throw new BitTorrentError($"(Tracker) Invalid announce response {Util.UnPackUInt32(announceReply, 0)}.");
+                    throw new Error($"Invalid announce response {Util.UnPackUInt32(announceReply, 0)}.");
                 }
             }
             catch (Exception ex)

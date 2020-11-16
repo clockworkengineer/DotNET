@@ -40,7 +40,7 @@ namespace ClientUI
             Application.Init();
             Configuration = new Config();
             Configuration.Load();
-            MainWindow = new MainApplicationWindow(this, "Demo Application")
+            MainWindow = new MainApplicationWindow(this, "BitTorrent Demo Application")
             {
                 X = 0,
                 Y = 0,

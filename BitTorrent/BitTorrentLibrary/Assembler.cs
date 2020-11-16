@@ -83,7 +83,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("(Assembler) Error:" + ex.Message);
+                Log.Logger.Debug("BitTorrent (Assembler) Error:" + ex.Message);
             }
             tc.assemblyData.guardMutex.ReleaseMutex();
             return true;
@@ -243,7 +243,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Error("(Assembler) Error: " + ex.Message);
+                Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
             Log.Logger.Debug($"(Assembler) Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
         }
