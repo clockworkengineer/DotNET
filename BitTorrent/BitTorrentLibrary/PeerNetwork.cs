@@ -33,7 +33,7 @@ namespace BitTorrentLibrary
             else
             {
                 socket.Close();
-                throw new SocketException((int) SocketError.TimedOut);
+                throw new SocketException((int)SocketError.TimedOut);
             }
         }
     }
@@ -42,11 +42,33 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class PeerNetwork
     {
+        private static Socket _listenerSocket;
         private int _bytesRead;                 // Bytes read in read request
         private bool _lengthRead;               // == true packet length has been read
         public byte[] ReadBuffer { get; set; }  // Read buffer
-        public int PacketLength { get; set; }  // Current packet length
+        public int PacketLength { get; set; }   // Current packet length
         public Socket PeerSocket { get; set; }  // Socket for I/O
+        /// <summary>
+        /// Asynchronous remote peer connection callback. When a remote connection
+        /// arrives try to add it to the swarm then prime the callback for the next
+        /// peers connection attempt.
+        /// </summary>
+        /// <param name="ar"></param>
+        public static void AcceptConnectionAsyncHandler(IAsyncResult ar)
+        {
+            Agent agent = (Agent)ar.AsyncState;
+            try
+            {
+                Socket acceptedSocket = _listenerSocket.EndAccept(ar);
+                agent.AddRemoteConnectedPeerToSpawn(acceptedSocket);
+                _listenerSocket.BeginAccept(AcceptConnectionAsyncHandler, agent);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex.Message);
+                Log.Logger.Info("(PeerNetwork) Port connection listener terminated.");
+            }
+        }
         /// <summary>
         /// Peer read packet asynchronous callback.
         /// </summary>
@@ -67,7 +89,7 @@ namespace BitTorrentLibrary
                 {
                     if (_bytesRead == Constants.SizeOfUInt32)
                     {
-                        PacketLength = (int) Util.UnPackUInt32(ReadBuffer, 0);
+                        PacketLength = (int)Util.UnPackUInt32(ReadBuffer, 0);
                         _lengthRead = true;
                         _bytesRead = 0;
                         if (PacketLength > ReadBuffer.Length)
@@ -159,44 +181,6 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Get an local endpoint socket to listen for connections on 
-        /// </summary>
-        /// <returns></returns>
-        public static Socket GetListeningConnection()
-        {
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(Host.GetIP());
-            IPEndPoint localEndPoint = new IPEndPoint(ipHostInfo.AddressList[0], (int)Host.DefaultPort);
-            Socket listener = new Socket(ipHostInfo.AddressList[0].AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listener.Bind(localEndPoint);
-            listener.Listen(100);
-            return listener;
-        }
-        /// <summary>
-        /// Connect to listen port to shutdown listener task.
-        /// </summary>
-        public static void ShutdownListener()
-        {
-            try
-            {
-                IPAddress localPeerIP = Dns.GetHostEntry(Host.GetIP()).AddressList[0];
-                Socket socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                socket.Connect(new IPEndPoint(localPeerIP, (Int32)Host.DefaultPort));
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex.Message);
-            }
-        }
-        /// <summary>
-        /// Wait for remote connection on socket.
-        /// </summary>
-        /// <param name="listener"></param>
-        /// <returns></returns>
-        public static async Task<Socket> WaitForConnectionAsync(Socket listener)
-        {
-            return await listener.AcceptAsync();
-        }
-        /// <summary>
         /// Return IP and Port of remote connection.
         /// </summary>
         /// <param name="socket"></param>
@@ -209,6 +193,42 @@ namespace BitTorrentLibrary
                 port = ((IPEndPoint)(socket.RemoteEndPoint)).Port
             };
             return peerDetails;
+        }
+        /// <summary>
+        /// Start asychronouse peer port connection listener.
+        /// </summary>
+        /// <param name="agent"></param>
+        /// <param name="port"></param>
+        public static void StartListening(Agent agent, int port)
+        {
+            try
+            {
+                _listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, port));
+                _listenerSocket.Listen(100);
+                _listenerSocket.BeginAccept(AcceptConnectionAsyncHandler, agent);
+                Log.Logger.Info("(PeerNetwork) Port connection listener started.");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("BitTorrent (PeerNetwork) Error:" + ex);
+            }
+        }
+        /// <summary>
+        /// Connect to listen port to shutdown listener task.
+        /// </summary>
+        public static void ShutdownListener(int port)
+        {
+            try
+            {
+                IPAddress localPeerIP = Dns.GetHostEntry(Host.GetIP()).AddressList[0];
+                Socket socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                socket.Connect(new IPEndPoint(localPeerIP, port));
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex.Message);
+            }
         }
     }
 }

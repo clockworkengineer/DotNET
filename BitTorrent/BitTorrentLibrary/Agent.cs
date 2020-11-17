@@ -24,7 +24,6 @@ namespace BitTorrentLibrary
         private readonly Manager _manager;                                 // Torrent context/dead peer manager
         private bool _agentRunning = false;                                // == true while agent is up and running.
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
-        private Socket _listenerSocket;                                    // Connection listener socket
         private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
         private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;           // Queue of peers to add to swarm
         private readonly AsyncQueue<Peer> _peerCloseQueue;                 // Peer close queue
@@ -137,50 +136,32 @@ namespace BitTorrentLibrary
             Log.Logger.Info("(Agent) Remote peer connect creation task terminated.");
         }
         /// <summary>
-        /// Listen for remote peer connects and on success add it to swarm. Note:
-        /// that we pass in null for tc when creating the Peer as this is attached
-        /// deeper down when we know what torrent (infohash) the remote client has
-        /// sent so can find it.
+        /// Called from asychronous connection listener when a peer connects to its port. 
+        /// An attempt is then made to handshake with the peer and add it to the peer 
+        /// swarm on success. On entry into the method we check a cancel source and throw
+        /// an exception that will terminate the listener.
         /// </summary>
-        /// <param name="_"></param>
-        /// <returns></returns>
-        private async Task PeerListenCreatorTaskAsync(CancellationToken _)
+        /// <param name="remotePeerSocket"></param>
+        internal void AddRemoteConnectedPeerToSpawn(Socket remotePeerSocket)
         {
-            Log.Logger.Info("(Agent) Remote Peer connect listener started...");
+            _cancelWorkerTaskSource.Token.ThrowIfCancellationRequested();
+            Peer remotePeer = null;
             try
             {
-                _listenerSocket = PeerNetwork.GetListeningConnection();
-                while (_agentRunning)
+                Log.Logger.Info("(Agent) Remote peer connected...");
+                PeerDetails peerDetails = PeerNetwork.GetConnectinPeerDetails(remotePeerSocket);
+                remotePeer = new Peer(peerDetails.ip, peerDetails.port, null, remotePeerSocket)
                 {
-                    Log.Logger.Info("(Agent) Waiting for remote peer connect...");
-                    Peer remotePeer = null;
-                    Socket remotePeerSocket = await PeerNetwork.WaitForConnectionAsync(_listenerSocket);
-                    try
-                    {
-                        if (_agentRunning)
-                        {
-                            Log.Logger.Info("(Agent) Remote peer connected...");
-                            PeerDetails peerDetails = PeerNetwork.GetConnectinPeerDetails(remotePeerSocket);
-                            remotePeer = new Peer(peerDetails.ip, peerDetails.port, null, remotePeerSocket)
-                            {
-                                peerCloseQueue = _peerCloseQueue
-                            };
-                            AddPeerToSwarm(remotePeer);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
-                        remotePeer?.QueueForClosure();
-                    }
-                }
+                    peerCloseQueue = _peerCloseQueue
+                };
+                AddPeerToSwarm(remotePeer);
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
+                Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
+                remotePeer?.QueueForClosure();
+                remotePeerSocket?.Close();
             }
-            _listenerSocket?.Close();
-            Log.Logger.Info("(Agent) Remote Peer connect listener terminated.");
         }
         /// <summary>
         /// Setup data and resources needed by agent.
@@ -207,8 +188,8 @@ namespace BitTorrentLibrary
                     Log.Logger.Info("(Agent) Starting up Torrent Agent...");
                     _agentRunning = true;
                     Task.Run(() => PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token));
-                    Task.Run(() => PeerListenCreatorTaskAsync(_cancelWorkerTaskSource.Token));
                     Task.Run(() => PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token));
+                    PeerNetwork.StartListening(this, Host.DefaultPort);
                     Log.Logger.Info("(Agent) Torrent Agent started.");
                 }
                 else
@@ -293,7 +274,7 @@ namespace BitTorrentLibrary
                     {
                         CloseTorrent(tc);
                     }
-                    PeerNetwork.ShutdownListener();
+                    PeerNetwork.ShutdownListener(Host.DefaultPort);
                     _cancelWorkerTaskSource.Cancel();
                     Log.Logger.Info("(Agent) Torrent agent shutdown.");
                 }

@@ -67,7 +67,7 @@ namespace BitTorrentLibrary
         public void SetTorrentContext(TorrentContext tc)
         {
             Tc = tc;
-            NumberOfMissingPieces = (int) Tc.numberOfPieces;
+            NumberOfMissingPieces = (int)Tc.numberOfPieces;
             RemotePieceBitfield = new byte[tc.Bitfield.Length];
         }
         /// <summary>
@@ -121,7 +121,6 @@ namespace BitTorrentLibrary
             if (Connected)
             {
                 Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
-                Connected = false;
                 CancelTaskSource.Cancel();
                 BitfieldReceived.Set();
                 if (Tc.peerSwarm.ContainsKey(Ip))
@@ -132,6 +131,7 @@ namespace BitTorrentLibrary
                     }
                     _network.Close();
                 }
+                Connected = false;
                 Log.Logger.Info($"(Peer) Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
         }
@@ -195,7 +195,14 @@ namespace BitTorrentLibrary
         /// </summary>
         public void QueueForClosure()
         {
-            peerCloseQueue?.Enqueue(this);
+            if (peerCloseQueue != null)
+            {
+                peerCloseQueue?.Enqueue(this);
+            }
+            else
+            {
+                Close();
+            }
         }
     }
 }
