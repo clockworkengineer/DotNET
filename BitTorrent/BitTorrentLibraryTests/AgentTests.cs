@@ -174,7 +174,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler());
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
-            Tracker tracker = new Tracker(tc);
+            _ = new Tracker(tc);
             agent.AddTorrent(tc);
             agent.StartTorrent(tc);
             Assert.True(tc.Status == TorrentStatus.Downloading || tc.Status == TorrentStatus.Seeding);
@@ -211,7 +211,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler());
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
-            Tracker tracker = new Tracker(tc);
+            _ = new Tracker(tc);
             agent.AddTorrent(tc);
             TorrentDetails details = agent.GetTorrentDetails(tc);
             Assert.Equal(0, details.deadPeers);
