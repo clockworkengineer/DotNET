@@ -45,10 +45,10 @@ namespace BitTorrentLibrary
         internal AnnounceResponse lastResponse;                 // Last announce response 
         internal TrackerEvent Event { get; set; }               // Current state of torrent downloading
         public string PeerID { get; }                           // Peers unique ID
-        public int Port { get; } = Host.DefaultPort;           // Port that client s listening on 
+        public int Port { get; } = PeerNetwork.listenPort;      // Port that client s listening on 
         public string Ip { get; set; }                          // IP of host performing announce
-        public int Compact { get; } = 1;                       // Is the returned peer list compressed (1=yes,0=no)
-        public int NoPeerID { get; }                           // Unique peer ID for downloader
+        public int Compact { get; } = 1;                        // Is the returned peer list compressed (1=yes,0=no)
+        public int NoPeerID { get; }                            // Unique peer ID for downloader
         public string Key { get; }                              // An additional identification that is not shared with any other peers (optional)
         public string TrackerID { get; set; }                   // String that the client should send back on its next announcements. (optional).
         public int NumWanted { get; set; } = 5;                 // Number of required download clients

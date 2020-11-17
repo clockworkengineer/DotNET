@@ -168,8 +168,10 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="manager">Torrent context manager</param>
         /// <param name="downloadPath">Download path.</param>
-        public Agent(Manager manager, Assembler pieceAssembler)
+        /// <param name="listenPort"></param>
+        public Agent(Manager manager, Assembler pieceAssembler, int listenPort=Host.DefaultPort)
         {
+            PeerNetwork.listenPort = listenPort;
             _manager = manager ?? throw new ArgumentNullException(nameof(manager));
             _pieceAssembler = pieceAssembler ?? throw new ArgumentNullException(nameof(pieceAssembler));
             _peerSwarmQeue = new AsyncQueue<PeerDetails>();
@@ -189,7 +191,7 @@ namespace BitTorrentLibrary
                     _agentRunning = true;
                     Task.Run(() => PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token));
                     Task.Run(() => PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token));
-                    PeerNetwork.StartListening(this, Host.DefaultPort);
+                    PeerNetwork.StartListening(this);
                     Log.Logger.Info("(Agent) Torrent Agent started.");
                 }
                 else

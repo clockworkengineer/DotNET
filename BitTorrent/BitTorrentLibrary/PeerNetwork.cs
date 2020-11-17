@@ -42,12 +42,13 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class PeerNetwork
     {
-        private static Socket _listenerSocket;
-        private int _bytesRead;                 // Bytes read in read request
-        private bool _lengthRead;               // == true packet length has been read
-        public byte[] ReadBuffer { get; set; }  // Read buffer
-        public int PacketLength { get; set; }   // Current packet length
-        public Socket PeerSocket { get; set; }  // Socket for I/O
+        private static Socket _listenerSocket;                  // Connection listener socket
+        private int _bytesRead;                                 // Bytes read in read request
+        private bool _lengthRead;                               // == true packet length has been read
+        internal static int listenPort = Host.DefaultPort;      // Listener port
+        public byte[] ReadBuffer { get; set; }                  // Read buffer
+        public int PacketLength { get; set; }                   // Current packet length
+        public Socket PeerSocket { get; set; }                  // Socket for I/O
         /// <summary>
         /// Asynchronous remote peer connection callback. When a remote connection
         /// arrives try to add it to the swarm then prime the callback for the next
@@ -199,12 +200,12 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="agent"></param>
         /// <param name="port"></param>
-        public static void StartListening(Agent agent, int port)
+        public static void StartListening(Agent agent)
         {
             try
             {
                 _listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, port));
+                _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
                 _listenerSocket.Listen(100);
                 _listenerSocket.BeginAccept(AcceptConnectionAsyncHandler, agent);
                 Log.Logger.Info("(PeerNetwork) Port connection listener started.");

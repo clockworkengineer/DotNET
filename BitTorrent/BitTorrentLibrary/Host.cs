@@ -18,7 +18,7 @@ namespace BitTorrentLibrary
         /// The default port remote peers connect for uploads.
         /// </summary>
         /// <returns></returns>
-        public static int DefaultPort => (6881);
+        public const int DefaultPort = (6881);
         /// <summary>
         /// Gets the local host ip.
         /// </summary>

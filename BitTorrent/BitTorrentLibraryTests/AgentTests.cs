@@ -25,14 +25,14 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStartupAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6884);
             agent.Startup();
             Assert.True(agent.Running);
         }
         [Fact]
         public void TestStartupThenShutDownAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6886);
             agent.Startup();
             agent.ShutDown();
             Assert.False(agent.Running);
@@ -40,7 +40,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStartupAlreadyStartedAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6885);
             agent.Startup();
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { agent.Startup(); });
             Assert.Equal("BitTorrent (Agent) Error : Failure to startup agent.Agent is already running.", error.Message);
@@ -57,21 +57,21 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestNullPassedToAddTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6882);
             agent.Startup();
             Assert.Throws<ArgumentNullException>(() => agent.AddTorrent(null));
         }
         [Fact]
         public void TestNullPassedToRemoveTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6887);
             agent.Startup();
             Assert.Throws<ArgumentNullException>(() => agent.RemoveTorrent(null));
         }
         [Fact]
         public void TestNullPassedToCloseTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6883);
             agent.Startup();
             Assert.Throws<ArgumentNullException>(() => agent.CloseTorrent(null));
         }
