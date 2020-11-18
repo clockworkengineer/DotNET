@@ -98,7 +98,7 @@ namespace BitTorrentLibrary
             try
             {
                 int bytesRead = PeerSocket.EndReceive(readAsyncState, out SocketError socketError);
-                ThrowOnError("(PeerNetwork) Socket recieve error.", (bytesRead <= 0)||!PeerSocket.Connected, socketError);
+                ThrowOnError("(PeerNetwork) Socket recieve error.", (bytesRead <= 0) || !PeerSocket.Connected, socketError);
                 _bytesRead += bytesRead;
                 if (!_lengthRead)
                 {
@@ -121,7 +121,7 @@ namespace BitTorrentLibrary
                     _bytesRead = 0;
                     PacketLength = Constants.SizeOfUInt32;
                 }
-                PeerSocket.BeginReceive(ReadBuffer,_bytesRead,(PacketLength-_bytesRead), SocketFlags.None, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
+                PeerSocket.BeginReceive(ReadBuffer, _bytesRead, (PacketLength - _bytesRead), SocketFlags.None, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
             }
             catch (Exception ex)
             {
@@ -139,6 +139,20 @@ namespace BitTorrentLibrary
             PeerSocket = remotePeerSocket;
         }
         /// <summary>
+        /// Connect with remote peer and return the socket.
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        public static Socket Connect(string ip, int port)
+        {
+            IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
+            IPAddress remotePeerIP = System.Net.IPAddress.Parse(ip);
+            Socket socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(new IPEndPoint(remotePeerIP, port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
+            return socket;
+        }
+        /// <summary>
         /// Send packet to remote peer. Again do not check for connected as used in intial handshake with peer and
         /// when not checks happen at a higher level.
         /// </summary>
@@ -146,7 +160,7 @@ namespace BitTorrentLibrary
         public void Write(byte[] buffer)
         {
             int bytesWritten = PeerSocket.Send(buffer, 0, buffer.Length, SocketFlags.None, out SocketError socketError);
-            ThrowOnError("(PeerNetwork) Socket send error.",(bytesWritten <= 0)||!PeerSocket.Connected, socketError);
+            ThrowOnError("(PeerNetwork) Socket send error.", (bytesWritten <= 0) || !PeerSocket.Connected, socketError);
         }
         /// <summary>
         /// Read direct packet from remote peer. Note this only used in the initial handshake with a peer
@@ -158,7 +172,7 @@ namespace BitTorrentLibrary
         public int Read(byte[] buffer, int length)
         {
             int bytesRead = PeerSocket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
-            ThrowOnError("(PeerNetwork) Socket recieve error.", (bytesRead <= 0)||!PeerSocket.Connected, socketError);
+            ThrowOnError("(PeerNetwork) Socket recieve error.", (bytesRead <= 0) || !PeerSocket.Connected, socketError);
             return bytesRead;
         }
         /// <summary>
@@ -169,17 +183,6 @@ namespace BitTorrentLibrary
         {
             Log.Logger.Info($"(PeerNetwork) Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} started...");
             PeerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, SocketFlags.None, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
-        }
-        /// <summary>
-        /// Connect to remote peer and return connection socket.
-        /// </summary>
-        /// <param name="remotePeer"></param>
-        public void Connect(string ip, int port)
-        {
-            IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
-            IPAddress remotePeerIP = System.Net.IPAddress.Parse(ip);
-            PeerSocket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            PeerSocket.Connect(new IPEndPoint(remotePeerIP, port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
         }
         /// <summary>
         /// Close socket connection

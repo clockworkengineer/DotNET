@@ -67,7 +67,7 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         private void AddPeerToSwarm(Peer remotePeer)
         {
-            remotePeer.Connect(_manager);
+            remotePeer.Handshake(_manager);
             if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
             {
                 if (remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
@@ -101,17 +101,20 @@ namespace BitTorrentLibrary
             {
                 while (_agentRunning)
                 {
+                    Socket remotePeerSocket = null;
                     Peer remotePeer = null;
                     PeerDetails peer = await _peerSwarmQeue.DequeueAsync(cancelTask);
                     try
                     {
+                        remotePeerSocket = PeerNetwork.Connect(peer.ip, peer.port);
                         if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
-                            remotePeer = new Peer(peer.ip, peer.port, tc, null)
+                            remotePeer = new Peer(peer.ip, peer.port, tc, remotePeerSocket)
                             {
                                 peerCloseQueue = _peerCloseQueue
                             };
                             AddPeerToSwarm(remotePeer);
+                            remotePeerSocket = null;
                         }
                     }
                     catch (SocketException ex)
@@ -119,12 +122,14 @@ namespace BitTorrentLibrary
                         if ((ex.ErrorCode == 111) || (ex.ErrorCode == 113) || (ex.ErrorCode == (int)SocketError.TimedOut))
                         {    // Connection refused    // No route to host
                             _manager.AddToDeadPeerList(peer.ip);
+                            remotePeerSocket?.Close();
                             remotePeer?.QueueForClosure();
                         }
                     }
                     catch (Exception ex)
                     {
                         Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
+                        remotePeerSocket?.Close();
                         remotePeer?.QueueForClosure();
                     }
                 }
@@ -169,7 +174,7 @@ namespace BitTorrentLibrary
         /// <param name="manager">Torrent context manager</param>
         /// <param name="downloadPath">Download path.</param>
         /// <param name="listenPort"></param>
-        public Agent(Manager manager, Assembler pieceAssembler, int listenPort=Host.DefaultPort)
+        public Agent(Manager manager, Assembler pieceAssembler, int listenPort = Host.DefaultPort)
         {
             PeerNetwork.listenPort = listenPort;
             _manager = manager ?? throw new ArgumentNullException(nameof(manager));

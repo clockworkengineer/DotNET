@@ -89,16 +89,16 @@ namespace BitTorrentLibrary
             return _network.Read(buffer, length);
         }
         /// <summary>
-        ///  Connect to remote peer.
+        ///  Perform intial handsake with remote peer
         /// </summary>
         /// <param name="manager"></param>
-        public void Connect(Manager manager)
+        public void Handshake(Manager manager)
         {
             ValueTuple<bool, byte[]> peerResponse;
-            // No socket passed to constructor so need to connect to get it
-            if (_network.PeerSocket == null)
+            // Whether we have a torrent context determines whether we have connected to or
+            // been connected from a remote peer
+            if (Tc!=null)
             {
-                _network.Connect(Ip, Port);
                 peerResponse = PWP.ConnectToIntialHandshake(this, manager);
             }
             else
