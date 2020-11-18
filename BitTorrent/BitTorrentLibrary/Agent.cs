@@ -1,4 +1,5 @@
-﻿//
+﻿using System.Collections.Concurrent;
+//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -25,8 +26,8 @@ namespace BitTorrentLibrary
         private bool _agentRunning = false;                                // == true while agent is up and running.
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
-        private readonly AsyncQueue<PeerDetails> _peerSwarmQeue;           // Queue of peers to add to swarm
-        private readonly AsyncQueue<Peer> _peerCloseQueue;                 // Peer close queue
+        private readonly BlockingCollection<PeerDetails> _peerSwarmQeue;      // Queue of peers to add to swarm
+        private readonly BlockingCollection<Peer> _peerCloseQueue;            // Peer close queue
         public bool Running { get => _agentRunning; }                      // == true then agent running
         /// <summary>
         /// Peer close processing task. Peers can be closed from differene threads and
@@ -34,14 +35,14 @@ namespace BitTorrentLibrary
         /// any mutual exlusion issues.
         /// <param name="cancelTask"></param>
         /// <returns></returns>
-        private async Task PeerCloseQueueTaskAsync(CancellationToken cancelTask)
+        private void PeerCloseQueueTask(CancellationToken cancelTask)
         {
             Log.Logger.Info("(Agent) Peer close queue task started ... ");
             try
             {
                 while (_agentRunning)
                 {
-                    Peer peer = await _peerCloseQueue.DequeueAsync(cancelTask);
+                    Peer peer = _peerCloseQueue.Take(cancelTask);
                     peer.Close();
                 }
             }
@@ -52,11 +53,12 @@ namespace BitTorrentLibrary
             Log.Logger.Info("(Agent) Close remaining peers left in queue... ");
             if (_peerCloseQueue.Count > 0)
             {
-                for (UInt32 peerNo = 0; peerNo < _peerCloseQueue.Count; peerNo++)
+
+                while (_peerCloseQueue.TryTake(out Peer peer))
                 {
-                    Peer peer = await _peerCloseQueue.DequeueAsync();
                     peer.Close();
                 }
+
             }
             Log.Logger.Info("(Agent) Peer close queue task terminated.");
         }
@@ -94,7 +96,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="cancelTask"></param>
         /// <returns></returns>
-        private async Task PeerConnectCreatorTaskAsync(CancellationToken cancelTask)
+        private void PeerConnectCreatorTask(CancellationToken cancelTask)
         {
             Log.Logger.Info("(Agent) Remote peer connect creation task started...");
             try
@@ -103,7 +105,7 @@ namespace BitTorrentLibrary
                 {
                     Socket remotePeerSocket = null;
                     Peer remotePeer = null;
-                    PeerDetails peer = await _peerSwarmQeue.DequeueAsync(cancelTask);
+                    PeerDetails peer = _peerSwarmQeue.Take(cancelTask);
                     try
                     {
                         remotePeerSocket = PeerNetwork.Connect(peer.ip, peer.port);
@@ -178,9 +180,9 @@ namespace BitTorrentLibrary
             PeerNetwork.listenPort = listenPort;
             _manager = manager ?? throw new ArgumentNullException(nameof(manager));
             _pieceAssembler = pieceAssembler ?? throw new ArgumentNullException(nameof(pieceAssembler));
-            _peerSwarmQeue = new AsyncQueue<PeerDetails>();
+            _peerSwarmQeue = new BlockingCollection<PeerDetails>();
             _cancelWorkerTaskSource = new CancellationTokenSource();
-            _peerCloseQueue = new AsyncQueue<Peer>();
+            _peerCloseQueue = new BlockingCollection<Peer>();
         }
         /// <summary>
         /// Startup worker tasks needed by the agent.
@@ -193,8 +195,8 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Info("(Agent) Starting up Torrent Agent...");
                     _agentRunning = true;
-                    Task.Run(() => PeerConnectCreatorTaskAsync(_cancelWorkerTaskSource.Token));
-                    Task.Run(() => PeerCloseQueueTaskAsync(_cancelWorkerTaskSource.Token));
+                    Task.Run(() => PeerConnectCreatorTask(_cancelWorkerTaskSource.Token));
+                    Task.Run(() => PeerCloseQueueTask(_cancelWorkerTaskSource.Token));
                     PeerNetwork.StartListening(this);
                     Log.Logger.Info("(Agent) Torrent Agent started.");
                 }

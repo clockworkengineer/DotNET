@@ -1,4 +1,5 @@
-﻿//
+﻿using System.Collections.Concurrent;
+//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -26,8 +27,8 @@ namespace BitTorrentLibrary
     {
         private readonly Manager _manager;                             // Torrent manager
         private readonly CancellationTokenSource _cancelTaskSource;    // Task cancellation source
-        internal AsyncQueue<PieceBuffer> pieceWriteQueue;              // Piece buffer write queue
-        internal AsyncQueue<PieceRequest> pieceRequestQueue;           // Piece request read queue
+        internal BlockingCollection<PieceBuffer> pieceWriteQueue;      // Piece buffer write queue
+        internal BlockingCollection<PieceRequest> pieceRequestQueue;   // Piece request read queue
         /// <summary>
         /// Read/Write piece buffers to/from torrent on disk.
         /// </summary>
@@ -108,14 +109,14 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="cancelTask"></param>
         /// <returns></returns>
-        private async Task PieceBufferDiskWriterAsync(CancellationToken cancelTask)
+        private void PieceBufferDiskWriter(CancellationToken cancelTask)
         {
             try
             {
                 Log.Logger.Info("(DiskIO) Piece Buffer disk writer task starting...");
                 while (true)
                 {
-                    PieceBuffer pieceBuffer = await pieceWriteQueue.DequeueAsync(cancelTask);
+                    PieceBuffer pieceBuffer = pieceWriteQueue.Take(cancelTask);
                     Log.Logger.Debug($"(DiskIO) Write piece ({pieceBuffer.Number}) to file.");
                     if (!pieceBuffer.Tc.downloadFinished.WaitOne(0))
                     {
@@ -154,7 +155,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="cancelTask"></param>
         /// <returns></returns>
-        private async Task PieceRequestProcessingAsync(CancellationToken cancelTask)
+        private void PieceRequestProcessing(CancellationToken cancelTask)
         {
             try
             {
@@ -162,7 +163,7 @@ namespace BitTorrentLibrary
                 while (true)
                 {
                     Peer remotePeer = null;
-                    PieceRequest request = await pieceRequestQueue.DequeueAsync(cancelTask);
+                    PieceRequest request = pieceRequestQueue.Take(cancelTask);
                     try
                     {
                         Log.Logger.Info($"(DiskIO) Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
@@ -196,11 +197,11 @@ namespace BitTorrentLibrary
         {
             _manager = manager;
             _cancelTaskSource = new CancellationTokenSource();
-            pieceWriteQueue = new AsyncQueue<PieceBuffer>();
-            pieceRequestQueue = new AsyncQueue<PieceRequest>();
+            pieceWriteQueue = new BlockingCollection<PieceBuffer>();
+            pieceRequestQueue = new BlockingCollection<PieceRequest>();
             CancellationToken cancelTask = _cancelTaskSource.Token;
-            Task.Run(() => PieceBufferDiskWriterAsync(cancelTask));
-            Task.Run(() => PieceRequestProcessingAsync(cancelTask));
+            Task.Run(() => PieceBufferDiskWriter(cancelTask));
+            Task.Run(() => PieceRequestProcessing(cancelTask));
         }
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the

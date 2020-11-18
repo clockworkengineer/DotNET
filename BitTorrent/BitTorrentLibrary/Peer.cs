@@ -1,4 +1,5 @@
-﻿//
+﻿using System.Collections.Concurrent;
+//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -22,7 +23,7 @@ namespace BitTorrentLibrary
         private readonly PeerNetwork _network;                           // Network layer
         internal readonly Stopwatch packetResponseTimer;                 // Packet reponse timer
         internal Average averagePacketResponse;                          // Average packet reponse time
-        internal AsyncQueue<Peer> peerCloseQueue;                        // Peer close queue
+        internal BlockingCollection<Peer> peerCloseQueue;                // Peer close queue
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public TorrentContext Tc { get; set; }                           // Torrent torrent context
@@ -187,7 +188,7 @@ namespace BitTorrentLibrary
         {
             if (peerCloseQueue != null)
             {
-                peerCloseQueue?.Enqueue(this);
+                peerCloseQueue?.Add(this);
             }
             else
             {

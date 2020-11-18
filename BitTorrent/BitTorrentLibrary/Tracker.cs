@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 //
 // Author: Robert Tizzard
@@ -40,7 +41,7 @@ namespace BitTorrentLibrary
         private readonly TorrentContext _tc;                    // Torrent context
         private readonly IAnnouncer _announcer;                 // Announcer for tracker
         internal Timer announceTimer;                           // Timer for sending tracker announce events
-        internal AsyncQueue<PeerDetails> peerSwarmQueue;        // Peers to add to swarm queue
+        internal BlockingCollection<PeerDetails> peerSwarmQueue;// Peers to add to swarm queue
         internal TrackerStatus trackerStatus;                   // Current tracker status
         internal AnnounceResponse lastResponse;                 // Last announce response 
         internal TrackerEvent Event { get; set; }               // Current state of torrent downloading
@@ -94,7 +95,7 @@ namespace BitTorrentLibrary
                             {
                                 if (!tracker._tc.manager.IsPeerDead(peerDetails.ip))
                                 {
-                                    tracker.peerSwarmQueue?.Enqueue(peerDetails);
+                                    tracker.peerSwarmQueue?.Add(peerDetails);
                                     if (peerThreshHold-- == 0) break;
                                 }
                             }

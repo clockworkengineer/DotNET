@@ -240,7 +240,7 @@ namespace BitTorrentLibrary
                 blockOffset = Util.UnPackUInt32(remotePeer.ReadBuffer, 5),
                 blockSize = Util.UnPackUInt32(remotePeer.ReadBuffer, 9)
             };
-            remotePeer.Tc.pieceRequestQueue.Enqueue(request);
+            remotePeer.Tc.pieceRequestQueue.Add(request);
             Log.Logger.Info($"(PWP) {RemotePeerID(remotePeer)}RX REQUEST {request.pieceNumber} Block Offset {request.blockOffset} Data Size {request.blockSize}\n.");
         }
         /// <summary>
@@ -279,9 +279,10 @@ namespace BitTorrentLibrary
         /// <returns>Tuple<bbol, byte[]> indicating connection succucess and the ID of the remote client.</returns>
         public static ValueTuple<bool, byte[]> Handshake(Peer remotePeer, Manager manager)
         {
-            List<byte> localPacket = BuildInitialHandshake(remotePeer.Tc.infoHash);
+            List<byte> localPacket=null; 
             if (remotePeer.Tc != null)
             {
+                localPacket = BuildInitialHandshake(remotePeer.Tc.infoHash);
                 remotePeer.PeerWrite(localPacket.ToArray());
             }
             byte[] remotePacket = new byte[Constants.IntialHandshakeLength];

@@ -53,8 +53,8 @@ namespace BitTorrentLibrary
         private readonly PieceInfo[] _pieceData;                     // Piece information 
         internal Manager manager;                                    // Torrent context 
         internal ManualResetEvent paused;                            // == false (unset) pause downloading from peer
-        internal AsyncQueue<PieceBuffer> pieceWriteQueue;            // Piece buffer disk write queue
-        internal AsyncQueue<PieceRequest> pieceRequestQueue;         // Piece request queue
+        internal BlockingCollection<PieceBuffer> pieceWriteQueue;    // Piece buffer disk write queue
+        internal BlockingCollection<PieceRequest> pieceRequestQueue; // Piece request queue
         internal UInt32 pieceLength;                                 // Length of piece in bytese
         internal byte[] piecesInfoHash;                              // Pieces infohash from torrent file
         internal int numberOfPieces;                                // Number of pieces into torrent
