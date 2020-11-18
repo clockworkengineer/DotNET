@@ -114,7 +114,6 @@ namespace BitTorrentLibrary
                                 peerCloseQueue = _peerCloseQueue
                             };
                             AddPeerToSwarm(remotePeer);
-                            remotePeerSocket = null;
                         }
                     }
                     catch (SocketException ex)
@@ -154,7 +153,7 @@ namespace BitTorrentLibrary
             try
             {
                 Log.Logger.Info("(Agent) Remote peer connected...");
-                PeerDetails peerDetails = PeerNetwork.GetConnectinPeerDetails(remotePeerSocket);
+                PeerDetails peerDetails = PeerNetwork.GetConnectingPeerDetails(remotePeerSocket);
                 remotePeer = new Peer(peerDetails.ip, peerDetails.port, null, remotePeerSocket)
                 {
                     peerCloseQueue = _peerCloseQueue
