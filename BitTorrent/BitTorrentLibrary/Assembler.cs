@@ -136,6 +136,13 @@ namespace BitTorrentLibrary
                     case WaitHandle.WaitTimeout:
                         Log.Logger.Debug($"(Assembler) Timeout assembling piece {pieceNumber}.");
                         tc.assemblyData.totalTimeouts++;
+                        Log.Logger.Debug($"(Assembler) Reconfiguring peer list because of timeout.");
+                        remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
+                        if (remotePeers.Length == 0)
+                        {
+                            Log.Logger.Debug($"(Assembler) Zero peers to assemble piece {pieceNumber}.");
+                            return false;
+                        }
                         continue;
                 }
             }
@@ -208,7 +215,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by assembler.
         /// </summary>
-        public Assembler(int assemblerTimeout = 4, int maximumBlockRequests = 5)
+        public Assembler(int assemblerTimeout = 10, int maximumBlockRequests = 5)
         {
             _assemberTimeout = assemblerTimeout;
             _maximumBlockRequests = maximumBlockRequests;
