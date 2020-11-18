@@ -154,7 +154,6 @@ namespace BitTorrentLibrary
                 }
             }
             remotePeerID = GetClientID(remotePacket);
-
             return true;
         }
         /// <summary>
@@ -272,17 +271,19 @@ namespace BitTorrentLibrary
             Log.Logger.Info($"(PWP) {RemotePeerID(remotePeer)}RX CANCEL {pieceNumber} Block Offset {blockOffset} Data Size {blockLength}\n.");
         }
         /// <summary>
-        /// Perform initial handshake with remote peer that connected to local client. We need to compare
-        /// the info hash from the peer trying to connect with the currently active torrents and if no match
-        /// found then no connect is performed (we disconnect).
+        /// Perform initial handshake with remote peer that we are connected. If we are been connected too remotely
+        /// we must check the connecting peers info hash is valid and hookup the peers torrent context if it is.
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="manager"></param>
-        /// <returns>Tuple<bbol, byte[]> indicating connection cucess and the ID of the remote client.</returns>
-        public static ValueTuple<bool, byte[]> ConnectFromIntialHandshake(Peer remotePeer, Manager manager)
+        /// <returns>Tuple<bbol, byte[]> indicating connection succucess and the ID of the remote client.</returns>
+        public static ValueTuple<bool, byte[]> Handshake(Peer remotePeer, Manager manager)
         {
-            bool connected = false;
-            byte[] remotePeerID = new byte[Constants.PeerIDLength];
+            List<byte> localPacket = BuildInitialHandshake(remotePeer.Tc.infoHash);
+            if (remotePeer.Tc != null)
+            {
+                remotePeer.PeerWrite(localPacket.ToArray());
+            }
             byte[] remotePacket = new byte[Constants.IntialHandshakeLength];
             Int32 bytesRead = remotePeer.PeerRead(remotePacket, remotePacket.Length);
             if (bytesRead != remotePacket.Length)
@@ -291,45 +292,30 @@ namespace BitTorrentLibrary
                 throw new Exception("Invalid length read for intial packet exchange.");
             }
             DumpRemoteClientInfo(remotePacket);
-            foreach (var tc in manager.TorrentList)
+            bool connected = false;
+            byte[] remotePeerID = new byte[Constants.PeerIDLength];
+            if (remotePeer.Tc is null)
             {
-                List<byte> localPacket = BuildInitialHandshake(tc.infoHash);
-                connected = ValidatePeerConnect(localPacket.ToArray(), remotePacket, out remotePeerID);
-                if (connected)
+                foreach (var tc in manager.TorrentList)
                 {
-                    remotePeer.PeerWrite(localPacket.ToArray());
-                    remotePeer.SetTorrentContext(tc);
+                    localPacket = BuildInitialHandshake(tc.infoHash);
+                    connected = ValidatePeerConnect(localPacket.ToArray(), remotePacket, out remotePeerID);
+                    if (connected)
+                    {
+                        remotePeer.PeerWrite(localPacket.ToArray());
+                        remotePeer.SetTorrentContext(tc);
+                        break;
+                    }
+                }
+                if (!connected)
+                {
+                    manager.AddToDeadPeerList(remotePeer.Ip);
+                    throw new Exception($"Remote peer [{remotePeer.Ip}] has the incorrect infohash.");
                 }
             }
-            if (!connected)
+            else
             {
-                manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new Exception($"Remote peer [{remotePeer.Ip}] tried to connect with invalid infohash.");
-            }
-            return (connected, remotePeerID);
-        }
-        /// <summary>
-        /// Perform initial handshake with remote peer that the local client connected to.
-        /// </summary>
-        /// <param name="remotePeer"></param>
-        /// <param name="manager"></param>
-        /// <returns>Tuple<bbol, byte[]> indicating connection success and the ID of the remote client.</returns>
-        public static ValueTuple<bool, byte[]> ConnectToIntialHandshake(Peer remotePeer, Manager manager)
-        {
-            List<byte> localPacket = BuildInitialHandshake(remotePeer.Tc.infoHash);
-            remotePeer.PeerWrite(localPacket.ToArray());
-            byte[] remotePacket = new byte[localPacket.Count];
-            Int32 bytesRead = remotePeer.PeerRead(remotePacket, remotePacket.Length);
-            if (bytesRead != remotePacket.Length)
-            {
-                manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new Exception("Invalid length read for intial packet exchange.");
-            }
-            bool connected = ValidatePeerConnect(localPacket.ToArray(), remotePacket, out byte[] remotePeerID);
-            if (!connected)
-            {
-                manager.AddToDeadPeerList(remotePeer.Ip);
-                throw new Exception($"Remote peer [{remotePeer.Ip}] tried to connect with invalid initial handshake.");
+                connected = ValidatePeerConnect(localPacket.ToArray(), remotePacket, out remotePeerID);
             }
             return (connected, remotePeerID);
         }
