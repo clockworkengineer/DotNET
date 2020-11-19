@@ -28,35 +28,11 @@ namespace BitTorrentLibrary
     };
     public enum TrackerStatus
     {
-        Running= 0,    // Currently running
+        Running = 0,    // Currently running
         Stopped = 1,    // Stopped from annoucing to server
         Stalled = 2     // Stalled because of an error
     }
-    public interface ITracker
-    {
-        string PeerID { get; }
-        int Port { get; }
-        string Ip { get; set; }
-        int Compact { get; }
-        int NoPeerID { get; }
-        string Key { get; }
-        string TrackerID { get; set; }
-        int NumWanted { get; set; }
-        byte[] InfoHash { get; }
-        string TrackerURL { get; }
-        int Interval { get; set; }
-        int MinInterval { get; set; }
-        TrackerCallBack CallBack { get; set; }
-        object CallBackData { get; set; }
-        ulong Downloaded { get; }
-        ulong Left { get; }
-        ulong Uploaded { get; }
-        void RestartAnnouncing();
-        void SetSeedingInterval(int seedingInerval);
-        void StartAnnouncing();
-        void StopAnnouncing();
-    }
-    public class Tracker : ITracker
+    public class Tracker
     {
         /// <summary>
         /// Tracker Announce event types.
@@ -261,8 +237,12 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    throw new Exception("Tracker cannot be started as is already running.");
+                    throw new BitTorrentException("BitTorrent (Tracker) Error: Tracker cannot be started as is already running.");
                 }
+            }
+            catch (BitTorrentException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -301,24 +281,6 @@ namespace BitTorrentLibrary
                 trackerStatus = TrackerStatus.Stalled;
                 throw new BitTorrentException("BitTorrent (Tracker) Error: " + ex.Message);
             }
-        }
-        /// <summary>
-        /// Restart a stalled tracker.We need to be able to restart the tracker no matter
-        /// what its current running state is so we trap any errors a stop might get before
-        /// we start it again.
-        /// </summary>
-        public void RestartAnnouncing()
-        {
-            try
-            {
-                StopAnnouncing();
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex.Message);
-            }
-            trackerStatus = TrackerStatus.Stopped;
-            StartAnnouncing();
         }
         /// <summary>
         /// Set tracker announce interval for when seeding.
