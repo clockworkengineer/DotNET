@@ -34,12 +34,12 @@ namespace BitTorrentLibrary
     }
     public class Tracker
     {
-        /// <summary>
-        /// Tracker Announce event types.
-        /// </summary>
-        public static readonly string[] EventString = { "", "started", "stopped", "completed" };
+        // Internal factory that can be overidden for mocking during test
+        internal static AnnouncerFactory announcerFactory = new AnnouncerFactory();
+        // Tracker Announce event types.
+        internal static readonly string[] EventString = { "", "started", "stopped", "completed" };
         private readonly TorrentContext _tc;                    // Torrent context
-        private readonly IAnnouncer _announcer;                 // Announcer for tracker
+        private readonly IAnnouncer _announcer;                 // Announcer for 
         internal Timer announceTimer;                           // Timer for sending tracker announce events
         internal BlockingCollection<PeerDetails> peerSwarmQueue;// Peers to add to swarm queue
         internal TrackerStatus trackerStatus;                   // Current tracker status
@@ -61,8 +61,7 @@ namespace BitTorrentLibrary
         public Object CallBackData { get; set; }                // Tracker ping callback function data
         public UInt64 Downloaded => _tc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download
-        public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes uploaded
-
+        public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes 
         /// <summary>
         /// Log announce details.
         /// </summary>
@@ -159,7 +158,7 @@ namespace BitTorrentLibrary
         /// Initialise BitTorrent Tracker.
         /// </summary>
         /// <param name="tc"></param>
-        public Tracker(TorrentContext tc) 
+        public Tracker(TorrentContext tc)
         {
             trackerStatus = TrackerStatus.Stopped;
             PeerID = BitTorrentLibrary.PeerID.Get();
@@ -168,7 +167,7 @@ namespace BitTorrentLibrary
             _tc.MainTracker = this;
             InfoHash = tc.infoHash;
             TrackerURL = tc.trackerURL;
-            _announcer = AnnouncerFactory.CreateAnnoucer(TrackerURL);
+            _announcer = announcerFactory.Create(TrackerURL);
         }
         /// <summary>
         /// Change tracker status.

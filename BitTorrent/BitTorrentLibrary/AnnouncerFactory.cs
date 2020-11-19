@@ -4,19 +4,19 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Factory for creating annoucers depending on the URL
-// passed in. At present it is onef too types HTTP or UDP.
+// passed in. At present it is one two types HTTP or UDP.
 //
 // Copyright 2020.
 //
 using System;
 namespace BitTorrentLibrary
 {
-    internal class AnnouncerFactory
+    public class AnnouncerFactory
     {
         public AnnouncerFactory()
         {
         }
-        public static IAnnouncer CreateAnnoucer(string url)
+        internal IAnnouncer Create(string url)
         {
             if (!url.StartsWith("http://"))
             {
