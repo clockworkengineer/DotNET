@@ -3,8 +3,8 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Perform a web request. This simple is wrapper class 
-// for the http requests that the HTTP tracker makes.
+// Description: Simple wrapper class for the requests that the 
+// HTTP tracker makes.
 //
 // Copyright 2020.
 //
@@ -12,14 +12,14 @@ using System.IO;
 using System.Net;
 namespace BitTorrentLibrary
 {
-    public interface IWeb
+    internal interface IWeb
     {
         byte[] ResponseData { get; set; }
         string StatusDescription { get; set; }
         bool Get();
         void SetURL(string url);
     }
-    public class Web : IWeb
+    internal class Web : IWeb
     {
         private HttpWebRequest httpGetRequest;
         public byte[] ResponseData { get; set; }
@@ -31,7 +31,7 @@ namespace BitTorrentLibrary
         {
         }
         /// <summary>
-        /// 
+        ///  Intialise web request.
         /// </summary>
         /// <param name="url"></param>
         public void SetURL(string url)
@@ -41,9 +41,9 @@ namespace BitTorrentLibrary
             httpGetRequest.ContentType = "text/xml";
         }
         /// <summary>
-        /// 
+        /// Make web request and receive response.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>true on sucess</returns>
         public bool Get()
         {
             bool success = false;

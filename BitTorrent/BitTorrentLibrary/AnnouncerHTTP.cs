@@ -142,7 +142,7 @@ namespace BitTorrentLibrary
             AnnounceResponse response = new AnnounceResponse();
             try
             {
-                _web.SetURL(BuildAnnouceURL(tracker));
+                _web.SetURL (BuildAnnouceURL(tracker));
 
                 if (_web.Get())
                 {

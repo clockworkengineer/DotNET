@@ -62,7 +62,7 @@ namespace BitTorrentLibrary
         public UInt64 Downloaded => _tc.TotalBytesDownloaded;   // Total downloaded bytes of torrent to local client
         public UInt64 Left => _tc.BytesLeftToDownload();        // Bytes left in torrent to download
         public UInt64 Uploaded => _tc.TotalBytesUploaded;       // Total bytes uploaded
-        internal string StatusMessage => lastResponse.statusMessage; // Status message from last announce.
+
         /// <summary>
         /// Log announce details.
         /// </summary>
@@ -159,7 +159,7 @@ namespace BitTorrentLibrary
         /// Initialise BitTorrent Tracker.
         /// </summary>
         /// <param name="tc"></param>
-        public Tracker(TorrentContext tc)
+        public Tracker(TorrentContext tc) 
         {
             trackerStatus = TrackerStatus.Stopped;
             PeerID = BitTorrentLibrary.PeerID.Get();
@@ -168,23 +168,7 @@ namespace BitTorrentLibrary
             _tc.MainTracker = this;
             InfoHash = tc.infoHash;
             TrackerURL = tc.trackerURL;
-            if (!TrackerURL.StartsWith("http://"))
-            {
-                if (TrackerURL.StartsWith("udp://"))
-                {
-                    Log.Logger.Info("(Tracker) Main tracker is UDP...");
-                    _announcer = new AnnouncerUDP(TrackerURL, new UDP());
-                }
-                else
-                {
-                    throw new BitTorrentException("BitTorrent (Tracker) Error: Invalid tracker URL.");
-                }
-            }
-            else
-            {
-                Log.Logger.Info("(Tracker) Main tracker is HTTP...");
-                _announcer = new AnnouncerHTTP(TrackerURL, new Web());
-            }
+            _announcer = AnnouncerFactory.CreateAnnoucer(TrackerURL);
         }
         /// <summary>
         /// Change tracker status.
