@@ -32,7 +32,34 @@ namespace BitTorrentLibrary
         Stopped,    // Stopped from annoucing to server
         Stalled     // Stalled because of an error
     }
-    public class Tracker
+
+    public interface ITracker
+    {
+        string PeerID { get; }
+        int Port { get; }
+        string Ip { get; set; }
+        int Compact { get; }
+        int NoPeerID { get; }
+        string Key { get; }
+        string TrackerID { get; set; }
+        int NumWanted { get; set; }
+        byte[] InfoHash { get; }
+        string TrackerURL { get; }
+        int Interval { get; set; }
+        int MinInterval { get; set; }
+        TrackerCallBack CallBack { get; set; }
+        object CallBackData { get; set; }
+        ulong Downloaded { get; }
+        ulong Left { get; }
+        ulong Uploaded { get; }
+
+        void RestartAnnouncing();
+        void SetSeedingInterval(int seedingInerval);
+        void StartAnnouncing();
+        void StopAnnouncing();
+    }
+
+    public class Tracker : ITracker
     {
         /// <summary>
         /// Tracker Announce event types.
@@ -88,7 +115,7 @@ namespace BitTorrentLibrary
                     if (!tracker.lastResponse.failure)
                     {
                         Log.Logger.Info("(Tracker) Queuing new peers for swarm ....");
-                        if ((tracker._tc.Status == TorrentStatus.Downloading)&&(tracker.peerSwarmQueue.Count==0))
+                        if ((tracker._tc.Status == TorrentStatus.Downloading) && (tracker.peerSwarmQueue.Count == 0))
                         {
                             int peerThreshHold = tracker._tc.maximumSwarmSize;
                             foreach (var peerDetails in tracker.lastResponse.peers)
@@ -159,7 +186,7 @@ namespace BitTorrentLibrary
             Ip = Host.GetIP();
             InfoHash = tc.infoHash;
             TrackerURL = tc.trackerURL;
-            _tc = tc;
+            _tc = tc ?? throw new ArgumentNullException(nameof(tc));
             _tc.MainTracker = this;
             if (!TrackerURL.StartsWith("http://"))
             {
