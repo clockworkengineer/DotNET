@@ -28,11 +28,10 @@ namespace BitTorrentLibrary
     };
     public enum TrackerStatus
     {
-        Running,    // Currently running
-        Stopped,    // Stopped from annoucing to server
-        Stalled     // Stalled because of an error
+        Running= 0,    // Currently running
+        Stopped = 1,    // Stopped from annoucing to server
+        Stalled = 2     // Stalled because of an error
     }
-
     public interface ITracker
     {
         string PeerID { get; }
@@ -52,13 +51,11 @@ namespace BitTorrentLibrary
         ulong Downloaded { get; }
         ulong Left { get; }
         ulong Uploaded { get; }
-
         void RestartAnnouncing();
         void SetSeedingInterval(int seedingInerval);
         void StartAnnouncing();
         void StopAnnouncing();
     }
-
     public class Tracker : ITracker
     {
         /// <summary>
@@ -147,7 +144,14 @@ namespace BitTorrentLibrary
                 }
             }
             tracker.announceTimer?.Start();
-            tracker.CallBack?.Invoke(tracker.CallBackData);
+            // Make sure calback doesnt not crash tracker
+            try
+            {
+                tracker.CallBack?.Invoke(tracker.CallBackData);
+            }
+            catch (Exception)
+            {
+            }
         }
         /// <summary>
         /// Restart announce on interval changing and save minimum interval and tracker ID.
@@ -184,10 +188,10 @@ namespace BitTorrentLibrary
             trackerStatus = TrackerStatus.Stopped;
             PeerID = BitTorrentLibrary.PeerID.Get();
             Ip = Host.GetIP();
-            InfoHash = tc.infoHash;
-            TrackerURL = tc.trackerURL;
             _tc = tc ?? throw new ArgumentNullException(nameof(tc));
             _tc.MainTracker = this;
+            InfoHash = tc.infoHash;
+            TrackerURL = tc.trackerURL;
             if (!TrackerURL.StartsWith("http://"))
             {
                 if (TrackerURL.StartsWith("udp://"))
@@ -228,36 +232,42 @@ namespace BitTorrentLibrary
                 //  Swarm queue needs to be initialised
                 if (peerSwarmQueue == null)
                 {
-                    throw new BitTorrentException("Peer swarm queue has not been set.");
+                    throw new Exception("Peer swarm queue has not been set.");
                 }
-                // If all of torrent downloaded reset total bytes downloaded
-                if (Left == 0)
+                if (trackerStatus != TrackerStatus.Running)
                 {
-                    _tc.TotalBytesDownloaded = 0;
-                    _tc.TotalBytesToDownload = 0;
-                    ChangeStatus(TrackerEvent.None);
+                    // If all of torrent downloaded reset total bytes downloaded
+                    if (Left == 0)
+                    {
+                        _tc.TotalBytesDownloaded = 0;
+                        _tc.TotalBytesToDownload = 0;
+                        ChangeStatus(TrackerEvent.None);
+                    }
+                    else
+                    {
+                        ChangeStatus(TrackerEvent.started);
+                    }
+                    if (lastResponse.failure)
+                    {
+                        trackerStatus = TrackerStatus.Stalled;
+                        throw new Exception("Tracker failure: " + lastResponse.statusMessage);
+                    }
+                    announceTimer = new System.Timers.Timer(Interval);
+                    announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
+                    announceTimer.AutoReset = false;
+                    announceTimer.Enabled = true;
+                    announceTimer?.Start();
+                    trackerStatus = TrackerStatus.Running;
                 }
                 else
                 {
-                    ChangeStatus(TrackerEvent.started);
+                    throw new Exception("Tracker cannot be started as is already running.");
                 }
-                if (lastResponse.failure)
-                {
-                    throw new BitTorrentException("Tracker failure: " + lastResponse.statusMessage);
-                }
-                announceTimer = new System.Timers.Timer(Interval);
-                announceTimer.Elapsed += (sender, e) => OnAnnounceEvent(this);
-                announceTimer.AutoReset = false;
-                announceTimer.Enabled = true;
-                trackerStatus = TrackerStatus.Running;
-                announceTimer?.Start();
-                CallBack?.Invoke(CallBackData);
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
                 trackerStatus = TrackerStatus.Stalled;
-                CallBack?.Invoke(CallBackData);
+                Log.Logger.Debug(ex);
                 throw new BitTorrentException("BitTorrent (Tracker) Error: " + ex.Message);
             }
         }
@@ -268,14 +278,21 @@ namespace BitTorrentLibrary
         {
             try
             {
-                if (announceTimer != null)
+                if (trackerStatus == TrackerStatus.Running)
                 {
-                    announceTimer.Stop();
-                    announceTimer.Dispose();
-                    announceTimer = null;
-                    CallBack = null;
-                    CallBackData = null;
+                    if (announceTimer != null)
+                    {
+                        announceTimer.Stop();
+                        announceTimer.Dispose();
+                        announceTimer = null;
+                        CallBack = null;
+                        CallBackData = null;
+                    }
                     trackerStatus = TrackerStatus.Stopped;
+                }
+                else
+                {
+                    throw new Exception("Tracker is not running so cannot be stopped.");
                 }
             }
             catch (Exception ex)
@@ -286,11 +303,21 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Restart a stalled tracker. 
+        /// Restart a stalled tracker.We need to be able to restart the tracker no matter
+        /// what its current running state is so we trap any errors a stop might get before
+        /// we start it again.
         /// </summary>
         public void RestartAnnouncing()
         {
-            StopAnnouncing();
+            try
+            {
+                StopAnnouncing();
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex.Message);
+            }
+            trackerStatus = TrackerStatus.Stopped;
             StartAnnouncing();
         }
         /// <summary>
@@ -310,6 +337,10 @@ namespace BitTorrentLibrary
                         announceTimer.Start();
                     }
                 }
+            }
+            else
+            {
+                throw new BitTorrentException("BitTorrent (Tracker) Error: Cannot change interval as torrent is not seeding.");
             }
         }
     }

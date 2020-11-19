@@ -66,7 +66,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
             torrentFile.Parse();
             string actual = System.Text.Encoding.UTF8.GetString(torrentFile.metaInfoDict[key]);
-            Assert.Equal(actual, expected);
+            Assert.Equal(expected, actual);
         }
         [Theory]
         [InlineData("announce", "http://192.168.1.215:9005/announce")]
@@ -87,7 +87,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.MultiFileTorrent);
             torrentFile.Parse();
             string actual = System.Text.Encoding.UTF8.GetString(torrentFile.metaInfoDict[key]);
-            Assert.Equal(actual, expected);
+            Assert.Equal(expected, actual);
         }
         [Theory]
         [InlineData(Constants.SingleFileTorrent, "7fd1a2631b385a4cc68bf15040fa375c8e68cb7e")]
@@ -102,7 +102,7 @@ namespace BitTorrentLibraryTests
             {
                 actual.AppendFormat("{0:x2}", b);
             }
-            Assert.Equal(actual.ToString(), expected);
+            Assert.Equal(expected, actual.ToString());
         }
         [Theory]
         [InlineData(Constants.SingleFileTorrent, "http://192.168.1.215:9005/announce")]
@@ -111,7 +111,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile torrentFile = new MetaInfoFile(file);
             torrentFile.Parse();
-            Assert.Equal(torrentFile.GetTracker(), expected);
+            Assert.Equal(expected, torrentFile.GetTracker());
         }
         [Theory]
         [InlineData(Constants.SingleFileTorrent, "7fd1a2631b385a4cc68bf15040fa375c8e68cb7e")]
@@ -126,7 +126,7 @@ namespace BitTorrentLibraryTests
             {
                 actual.AppendFormat("{0:x2}", b);
             }
-            Assert.Equal(actual.ToString(), expected);
+            Assert.Equal(expected, actual.ToString());
         }
         [Theory]
         [InlineData(Constants.SingleFileTorrent, "16384")]
@@ -135,7 +135,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile torrentFile = new MetaInfoFile(file);
             torrentFile.Parse();
-            Assert.Equal(torrentFile.GetPieceLength().ToString(), expected);
+            Assert.Equal(expected, torrentFile.GetPieceLength().ToString());
         }
         [Fact]
         public void TestGetTrackerWithNoParseOnMetaInfoFile()
