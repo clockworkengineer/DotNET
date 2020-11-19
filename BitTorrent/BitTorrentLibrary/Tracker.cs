@@ -39,7 +39,7 @@ namespace BitTorrentLibrary
         // Tracker Announce event types.
         internal static readonly string[] EventString = { "", "started", "stopped", "completed" };
         private readonly TorrentContext _tc;                    // Torrent context
-        private readonly IAnnouncer _announcer;                 // Announcer for 
+        private readonly IAnnouncer _announcer;                 // Announcer for tracker
         internal Timer announceTimer;                           // Timer for sending tracker announce events
         internal BlockingCollection<PeerDetails> peerSwarmQueue;// Peers to add to swarm queue
         internal TrackerStatus trackerStatus;                   // Current tracker status
@@ -104,7 +104,7 @@ namespace BitTorrentLibrary
                     }
                     else
                     {
-                        throw new Exception("(Tracker) Remote tracker failure: " + tracker.lastResponse.statusMessage);
+                        throw new Exception("Remote tracker failure: " + tracker.lastResponse.statusMessage);
                     }
                 }
             }
@@ -112,6 +112,7 @@ namespace BitTorrentLibrary
             {
                 tracker.trackerStatus = TrackerStatus.Stalled;
                 Log.Logger.Debug("BitTorrent (Tracker) Error : " + ex.Message);
+                // Make an exception viewable as a failure as any can cause a stall
                 if (!tracker.lastResponse.failure)
                 {
                     tracker.lastResponse.failure = true;
@@ -119,7 +120,7 @@ namespace BitTorrentLibrary
                 }
             }
             tracker.announceTimer?.Start();
-            // Make sure calback doesnt not crash tracker
+            // Make sure calback does not crash tracker
             try
             {
                 tracker.CallBack?.Invoke(tracker.CallBackData);

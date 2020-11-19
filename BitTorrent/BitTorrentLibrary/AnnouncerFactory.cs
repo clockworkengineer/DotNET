@@ -11,12 +11,12 @@
 using System;
 namespace BitTorrentLibrary
 {
-    public class AnnouncerFactory
+    internal class AnnouncerFactory
     {
         public AnnouncerFactory()
         {
         }
-        internal IAnnouncer Create(string url)
+        public IAnnouncer Create(string url)
         {
             if (!url.StartsWith("http://"))
             {
@@ -32,7 +32,7 @@ namespace BitTorrentLibrary
             }
             else
             {
-                Log.Logger.Info("(Tracker) Main tracker is HTTP...");
+                Log.Logger.Info("(AnnouncerFactory) Main tracker is HTTP...");
                 return new AnnouncerHTTP(url, new Web());
             }
         }
