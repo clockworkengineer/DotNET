@@ -32,8 +32,7 @@ namespace BitTorrentLibrary
         private readonly Random _transIDGenerator = new Random();   // Transaction ID generator
         private bool _connected = false;                            // == true connected
         private UInt64 _connectionID;                               // Returned connection ID
-        private readonly UdpClient _trackerConnection;              // Tracker UDP connection
-        private IPEndPoint _trackerEndPoint;                       // Tracker enpoint
+        private readonly IUDP _udp;                                          // Udp connection
         /// <summary>
         /// Send and recieve command to UDP tracker. If we get a timeout then the
         /// standard says keep retrying for 60 seconds.
@@ -47,8 +46,8 @@ namespace BitTorrentLibrary
             {
                 try
                 {
-                    _trackerConnection.Send(command, command.Length);
-                    return _trackerConnection.Receive(ref _trackerEndPoint);
+                    _udp.Send(command);
+                    return _udp.Receive();
                 }
                 catch (SocketException ex)
                 {
@@ -113,14 +112,11 @@ namespace BitTorrentLibrary
         /// Setup data and resources needed by UDP tracker.
         /// </summary>
         /// <param name="trackerURL"></param>
-        public AnnouncerUDP(string trackerURL)
+        /// <param name="udp"></param>
+        public AnnouncerUDP(string trackerURL, IUDP udp)
         {
-            _trackerConnection = new UdpClient();
-            _trackerConnection.Client.ReceiveTimeout = 15000;   // 15 seconds
-            Uri trackerURI = new Uri(trackerURL);
-            IPAddress[] trackerAddress = Dns.GetHostAddresses(trackerURI.Host);
-            _trackerEndPoint = new IPEndPoint(trackerAddress[0], (int)trackerURI.Port);
-            _trackerConnection.Connect(_trackerEndPoint);
+            _udp = udp;
+            _udp.Connect(trackerURL);
         }
         /// <summary>
         /// Perform an announce request to tracker and return any response.
@@ -161,9 +157,9 @@ namespace BitTorrentLibrary
                 {
                     if (transactionID == Util.UnPackUInt32(announceReply, 4))
                     {
-                        response.interval = (int) Util.UnPackUInt32(announceReply, 8);
-                        response.incomplete = (int) Util.UnPackUInt32(announceReply, 12);
-                        response.complete = (int) Util.UnPackUInt32(announceReply, 16);
+                        response.interval = (int)Util.UnPackUInt32(announceReply, 8);
+                        response.incomplete = (int)Util.UnPackUInt32(announceReply, 12);
+                        response.complete = (int)Util.UnPackUInt32(announceReply, 16);
                     }
                     for (var num = 20; num < announceReply.Length; num += 6)
                     {

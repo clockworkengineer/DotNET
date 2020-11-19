@@ -9,7 +9,6 @@
 //
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Text;
 namespace BitTorrentLibrary
@@ -19,6 +18,8 @@ namespace BitTorrentLibrary
     /// </summary>
     internal class AnnouncerHTTP : IAnnouncer
     {
+        private readonly IWeb _web;
+
         /// <summary>
         /// Decodes the announce request BEncoded response recieved from a tracker.
         /// </summary>
@@ -124,8 +125,11 @@ namespace BitTorrentLibrary
         /// Setup data and resources needed by HTTP tracker.
         /// </summary>
         /// <param name="trackerURL"></param>
-        public AnnouncerHTTP(string _)
+  
+
+        public AnnouncerHTTP(string _, IWeb web)
         {
+            _web = web;
         }
         /// <summary>
         /// Perform an HTTP announce request to tracker and return any response.
@@ -138,27 +142,15 @@ namespace BitTorrentLibrary
             AnnounceResponse response = new AnnounceResponse();
             try
             {
-                string announceURL = BuildAnnouceURL(tracker);
-                HttpWebRequest httpGetRequest = WebRequest.Create(announceURL) as HttpWebRequest;
-                httpGetRequest.Method = "GET";
-                httpGetRequest.ContentType = "text/xml";
-                using (HttpWebResponse httpGetResponse = httpGetRequest.GetResponse() as HttpWebResponse)
+                _web.SetURL(BuildAnnouceURL(tracker));
+
+                if (_web.Get())
                 {
-                    StreamReader reader = new StreamReader(httpGetResponse.GetResponseStream());
-                    byte[] announceResponse;
-                    using (var memstream = new MemoryStream())
-                    {
-                        reader.BaseStream.CopyTo(memstream);
-                        announceResponse = memstream.ToArray();
-                    }
-                    if (httpGetResponse.StatusCode == HttpStatusCode.OK)
-                    {
-                        DecodeAnnounceResponse(tracker, announceResponse, ref response);
-                    }
-                    else
-                    {
-                        throw new BitTorrentException(httpGetResponse.StatusDescription);
-                    }
+                    DecodeAnnounceResponse(tracker, _web.ResponseData, ref response);
+                }
+                else
+                {
+                    throw new BitTorrentException(_web.StatusDescription);
                 }
             }
             catch (Exception ex)

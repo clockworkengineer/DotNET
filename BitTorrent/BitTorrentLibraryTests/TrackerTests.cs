@@ -23,7 +23,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            _ = new Agent(new Manager(), new Assembler());
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             Assert.Equal(1, tracker.Compact);

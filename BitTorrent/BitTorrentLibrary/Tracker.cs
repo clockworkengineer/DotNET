@@ -173,7 +173,7 @@ namespace BitTorrentLibrary
                 if (TrackerURL.StartsWith("udp://"))
                 {
                     Log.Logger.Info("(Tracker) Main tracker is UDP...");
-                    _announcer = new AnnouncerUDP(TrackerURL);
+                    _announcer = new AnnouncerUDP(TrackerURL, new UDP());
                 }
                 else
                 {
@@ -183,7 +183,7 @@ namespace BitTorrentLibrary
             else
             {
                 Log.Logger.Info("(Tracker) Main tracker is HTTP...");
-                _announcer = new AnnouncerHTTP(TrackerURL);
+                _announcer = new AnnouncerHTTP(TrackerURL, new Web());
             }
         }
         /// <summary>
