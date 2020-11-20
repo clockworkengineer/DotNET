@@ -13,6 +13,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Linq;
 namespace BitTorrentLibrary
 {
     internal static class ManualResetEventExtensions
@@ -47,7 +48,15 @@ namespace BitTorrentLibrary
         {
             foreach (var remotePeer in tc.peerSwarm.Values)
             {
-                PWP.Have(remotePeer, pieceNumber);
+                try
+                {
+                    PWP.Have(remotePeer, pieceNumber);
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Debug(ex);
+                    remotePeer.QueueForClosure();
+                }
             }
         }
         /// <summary>
@@ -71,7 +80,18 @@ namespace BitTorrentLibrary
                     if (!blockThere)
                     {
                         remotePeers[currentPeer].CancelTaskSource.Token.ThrowIfCancellationRequested();
-                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
+                        try
+                        {
+                            PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
+                        }
+                        catch (Exception)
+                        {
+                            // Peer has an error; just close it and stall piece assembly so
+                            // that we reconfigure the assembling peers.
+                            remotePeers[currentPeer].QueueForClosure();
+                            tc.assemblyData.guardMutex.ReleaseMutex();
+                            return false;
+                        }
                         if (++currentBlockRequests == _maximumBlockRequests) break;
                         currentPeer++;
                         currentPeer %= (int)remotePeers.Length;
@@ -207,8 +227,18 @@ namespace BitTorrentLibrary
             WaitHandle[] waitHandles = new WaitHandle[] { cancelAssemblerTask.WaitHandle };
             foreach (var remotePeer in tc.peerSwarm.Values)
             {
-                PWP.Uninterested(remotePeer);
-                PWP.Unchoke(remotePeer);
+
+                try
+                {
+                    PWP.Uninterested(remotePeer);
+                    PWP.Unchoke(remotePeer);
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Debug(ex);
+                    remotePeer.QueueForClosure();
+                }
+
             }
             WaitHandle.WaitAll(waitHandles);
         }
@@ -250,6 +280,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
+                Log.Logger.Debug(ex);
                 Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
             }
             Log.Logger.Debug($"(Assembler) Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");

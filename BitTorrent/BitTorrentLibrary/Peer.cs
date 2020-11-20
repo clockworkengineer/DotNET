@@ -114,6 +114,7 @@ namespace BitTorrentLibrary
                 Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
                 CancelTaskSource.Cancel();
                 BitfieldReceived.Set();
+                
                 if (Tc.peerSwarm.ContainsKey(Ip))
                 {
                     if (Tc.peerSwarm.TryRemove(Ip, out Peer _))
