@@ -17,9 +17,6 @@ using System.Linq;
 using System.Net.Sockets;
 namespace BitTorrentLibrary
 {
-    /// <summary>
-    /// Agent class definition.
-    /// </summary>
     public class Agent
     {
         private readonly Manager _manager;                                 // Torrent context/dead peer manager

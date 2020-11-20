@@ -11,6 +11,7 @@ using System;
 using System.Text;
 namespace BitTorrentLibrary
 {
+    // Used to hold hold and calculate an average
     public struct Average
     {
         private long _total;

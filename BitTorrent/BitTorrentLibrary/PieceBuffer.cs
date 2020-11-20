@@ -13,9 +13,7 @@ using System;
 using System.Linq;
 namespace BitTorrentLibrary
 {
-    /// <summary>
-    /// Assembled piece buffer.
-    /// </summary>
+ 
     internal class PieceBuffer
     {
         private readonly Mutex _bufferMutex;            // Piece buffer guard mutex

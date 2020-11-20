@@ -17,9 +17,7 @@ using System.Net.Sockets;
 using System.Text;
 namespace BitTorrentLibrary
 {
-    /// <summary>
-    /// UDP Announcer
-    /// </summary>
+
     internal class AnnouncerUDP : IAnnouncer
     {
         private enum UDPAction

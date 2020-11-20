@@ -20,9 +20,6 @@ using System.Threading.Tasks;
 namespace BitTorrentLibrary
 {
     public delegate void ProgessCallBack(Object callBackData); // Download progress callback
-    /// <summary>
-    /// Torrent Disk IO subsystem.
-    /// </summary>
     public class DiskIO
     {
         private readonly Manager _manager;                             // Torrent manager

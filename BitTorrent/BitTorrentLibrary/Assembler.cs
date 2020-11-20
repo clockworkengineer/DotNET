@@ -84,10 +84,12 @@ namespace BitTorrentLibrary
                         {
                             PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             // Peer has an error; just close it and stall piece assembly so
                             // that we reconfigure the assembling peers.
+                            Log.Logger.Debug(ex);
+                            Log.Logger.Info("(Assembler) Peer exception so stalling piece assembly.");
                             remotePeers[currentPeer].QueueForClosure();
                             tc.assemblyData.guardMutex.ReleaseMutex();
                             return false;

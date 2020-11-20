@@ -19,9 +19,6 @@ using System.Threading;
 namespace BitTorrentLibrary
 {
     public delegate void DownloadCompleteCallBack(Object callbackData);  // Download completed callback
-    /// <summary>
-    /// Piece assembly torrent context data
-    /// </summary>
     internal struct AssemblerData
     {
         internal PieceBuffer pieceBuffer;                   // Assembled piece buffer

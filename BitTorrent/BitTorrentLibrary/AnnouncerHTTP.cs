@@ -13,9 +13,6 @@ using System.Net;
 using System.Text;
 namespace BitTorrentLibrary
 {
-    /// <summary>
-    /// HTTP Announcer
-    /// </summary>
     internal class AnnouncerHTTP : IAnnouncer
     {
         private readonly IWeb _web;

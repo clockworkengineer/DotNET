@@ -125,8 +125,9 @@ namespace BitTorrentLibrary
             {
                 tracker.CallBack?.Invoke(tracker.CallBackData);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Logger.Debug(ex);
             }
         }
         /// <summary>

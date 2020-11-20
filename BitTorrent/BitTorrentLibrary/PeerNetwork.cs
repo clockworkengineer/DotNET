@@ -37,9 +37,7 @@ namespace BitTorrentLibrary
             }
         }
     }
-    /// <summary>
-    /// Peer to peer network IO code.
-    /// </summary>
+
     internal class PeerNetwork
     {
         private static Socket _listenerSocket;                  // Connection listener socket

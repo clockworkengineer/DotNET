@@ -3,7 +3,9 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description:
+// Description: Structure used to communicate the current state of the
+// downloadling/seeding torrent. It is returned through the agent method
+// GetTorrentDetails.
 //
 // Copyright 2020.
 //

@@ -15,9 +15,6 @@ using System.Threading;
 using System.Diagnostics;
 namespace BitTorrentLibrary
 {
-    /// <summary>
-    /// Peer.
-    /// </summary>
     internal class Peer
     {
         private readonly PeerNetwork _network;                           // Network layer
