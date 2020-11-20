@@ -32,10 +32,10 @@ namespace BitTorrentLibrary
         private readonly Random _transIDGenerator = new Random();   // Transaction ID generator
         private bool _connected = false;                            // == true connected
         private UInt64 _connectionID;                               // Returned connection ID
-        private readonly IUDP _udp;                                          // Udp connection
+        private readonly IUDP _udp;                                 // UDP connection
         /// <summary>
         /// Send and recieve command to UDP tracker. If we get a timeout then the
-        /// standard says keep retrying for 60 seconds.
+        /// standard says keep retrying for 60 seconds; with the timeout being 15 seconds.
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
@@ -65,48 +65,72 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
+        /// Build connect command packet.
+        /// </summary>
+        /// <param name="transactionID"></param>
+        /// <returns></returns>
+        private byte[] BuildConnectPacket(UInt32 transactionID)
+        {
+            List<byte> commandPacket = new List<byte>();
+            commandPacket.AddRange(Util.PackUInt64(0x41727101980));
+            commandPacket.AddRange(Util.PackUInt32((UInt32)UDPAction.Connect));
+            commandPacket.AddRange(Util.PackUInt32((UInt32)transactionID));
+            return commandPacket.ToArray();
+        }
+        /// <summary>
+        /// Build announce command packet
+        /// </summary>
+        /// <param name="tracker"></param>
+        /// <param name="transactionID"></param>
+        /// <returns></returns>
+        private byte[] BuildAnnouncePacket(Tracker tracker, UInt32 transactionID)
+        {
+            List<byte> commandPacket = new List<byte>();
+            commandPacket.AddRange(Util.PackUInt64(_connectionID));
+            commandPacket.AddRange(Util.PackUInt32((UInt32)UDPAction.Announce));
+            commandPacket.AddRange(Util.PackUInt32(transactionID));
+            commandPacket.AddRange(tracker.InfoHash);
+            commandPacket.AddRange(Encoding.ASCII.GetBytes(tracker.PeerID));
+            commandPacket.AddRange(Util.PackUInt64(tracker.Downloaded));
+            commandPacket.AddRange(Util.PackUInt64(tracker.Left));
+            commandPacket.AddRange(Util.PackUInt64(tracker.Uploaded));
+            commandPacket.AddRange(Util.PackUInt32((UInt32)tracker.Event));
+            commandPacket.AddRange(Util.PackUInt32(0));                          // ip
+            commandPacket.AddRange(Util.PackUInt32(0));                          // key
+            commandPacket.AddRange(Util.PackUInt32((UInt32)tracker.NumWanted));
+            commandPacket.AddRange(Util.PackUInt32((UInt32)tracker.Port));
+            commandPacket.AddRange(Util.PackUInt32(0));                          // Extensions.
+            return commandPacket.ToArray();
+        }
+        /// <summary>
         /// Connect to UDP tracker server.
         /// </summary>
         private void Connect()
         {
-            try
+            int transactionID = (int)_transIDGenerator.Next();
+            var commandReply = SendCommand(BuildConnectPacket((UInt32)transactionID));
+            if (transactionID == Util.UnPackUInt32(commandReply, 4))
             {
-                int transactionID = (int)_transIDGenerator.Next();
-                List<byte> connectPacket = new List<byte>();
-                connectPacket.AddRange(Util.PackUInt64(0x41727101980));
-                connectPacket.AddRange(Util.PackUInt32((UInt32)UDPAction.Connect));
-                connectPacket.AddRange(Util.PackUInt32((UInt32)transactionID));
-                var connectReply = SendCommand(connectPacket.ToArray());
-                if (connectReply.Length == 16)
+                if (Util.UnPackUInt32(commandReply, 0) == (UInt32)UDPAction.Connect)
                 {
-                    if (Util.UnPackUInt32(connectReply, 0) == (UInt32)UDPAction.Connect)
-                    {
-                        if (transactionID == Util.UnPackUInt32(connectReply, 4))
-                        {
-                            _connectionID = Util.UnPackUInt64(connectReply, 8);
-                            _connected = true;
-                            Log.Logger.Info("(Tracker) Connected to UDP Tracker.");
-                        }
-                    }
-                    else if (Util.UnPackUInt32(connectReply, 0) == (UInt32)UDPAction.Error)
-                    {
-                        if (transactionID == Util.UnPackUInt32(connectReply, 4))
-                        {
-                            byte[] errorMessage = new byte[connectReply.Length - 4];
-                            connectReply.CopyTo(errorMessage, 4);
-                            throw new BitTorrentException("(Tracker) UDP connect returned error : " + errorMessage.ToString());
-                        }
-                    }
+                    _connectionID = Util.UnPackUInt64(commandReply, 8);
+                    _connected = true;
+                    Log.Logger.Info("(Tracker) Connected to UDP Tracker.");
                 }
-                if (!_connected)
+                else if (Util.UnPackUInt32(commandReply, 0) == (UInt32)UDPAction.Error)
                 {
-                    throw new BitTorrentException("(Tracker) Could not connect to UDP tracker server.");
+                    byte[] errorMessage = new byte[commandReply.Length - 4];
+                    commandReply.CopyTo(errorMessage, 4);
+                    throw new Exception("UDP connect returned error : " + errorMessage.ToString());
+                } else {
+                    throw new Exception($"Invalid UDP connect response {Util.UnPackUInt32(commandReply, 0)}.");
                 }
             }
-            catch (Exception)
+            else
             {
-                throw;
+                throw new Exception("Transaction ID for reply does not agree with that sent with connect.");
             }
+
         }
         /// <summary>
         /// Setup data and resources needed by UDP tracker.
@@ -136,60 +160,46 @@ namespace BitTorrentLibrary
                 {
                     Connect();
                 }
-                List<byte> announcePacket = new List<byte>();
                 UInt32 transactionID = (UInt32)_transIDGenerator.Next();
-                announcePacket.AddRange(Util.PackUInt64(_connectionID));
-                announcePacket.AddRange(Util.PackUInt32((UInt32)UDPAction.Announce));
-                announcePacket.AddRange(Util.PackUInt32(transactionID));
-                announcePacket.AddRange(tracker.InfoHash);
-                announcePacket.AddRange(Encoding.ASCII.GetBytes(tracker.PeerID));
-                announcePacket.AddRange(Util.PackUInt64(tracker.Downloaded));
-                announcePacket.AddRange(Util.PackUInt64(tracker.Left));
-                announcePacket.AddRange(Util.PackUInt64(tracker.Uploaded));
-                announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.Event));
-                announcePacket.AddRange(Util.PackUInt32(0));                          // ip
-                announcePacket.AddRange(Util.PackUInt32(0));                          // key
-                announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.NumWanted));
-                announcePacket.AddRange(Util.PackUInt32((UInt32)tracker.Port));
-                announcePacket.AddRange(Util.PackUInt32(0));                          // Extensions.
-                var announceReply = SendCommand(announcePacket.ToArray());
-                if (Util.UnPackUInt32(announceReply, 0) == (UInt32)UDPAction.Announce)
+                var commandReply = SendCommand(BuildAnnouncePacket(tracker, (UInt32)transactionID));
+                if (transactionID == Util.UnPackUInt32(commandReply, 4))
                 {
-                    if (transactionID == Util.UnPackUInt32(announceReply, 4))
+                    if (Util.UnPackUInt32(commandReply, 0) == (UInt32)UDPAction.Announce)
                     {
-                        response.interval = (int)Util.UnPackUInt32(announceReply, 8);
-                        response.incomplete = (int)Util.UnPackUInt32(announceReply, 12);
-                        response.complete = (int)Util.UnPackUInt32(announceReply, 16);
-                    }
-                    for (var num = 20; num < announceReply.Length; num += 6)
-                    {
-                        PeerDetails peer = new PeerDetails
+                        response.interval = (int)Util.UnPackUInt32(commandReply, 8);
+                        response.incomplete = (int)Util.UnPackUInt32(commandReply, 12);
+                        response.complete = (int)Util.UnPackUInt32(commandReply, 16);
+                        for (var num = 20; num < commandReply.Length; num += 6)
                         {
-                            infoHash = tracker.InfoHash,
-                            peerID = String.Empty,
-                            ip = $"{announceReply[num]}.{announceReply[num + 1]}.{announceReply[num + 2]}.{announceReply[num + 3]}"
-                        };
-                        peer.port = ((int)announceReply[num + 4] * 256) + announceReply[num + 5];
-                        if (peer.ip != tracker.Ip) // Ignore self in peers list
-                        {
-                            Log.Logger.Info($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
-                            response.peers.Add(peer);
+                            PeerDetails peer = new PeerDetails
+                            {
+                                infoHash = tracker.InfoHash,
+                                peerID = String.Empty,
+                                ip = $"{commandReply[num]}.{commandReply[num + 1]}.{commandReply[num + 2]}.{commandReply[num + 3]}"
+                            };
+                            peer.port = ((int)commandReply[num + 4] * 256) + commandReply[num + 5];
+                            if (peer.ip != tracker.Ip) // Ignore self in peers list
+                            {
+                                Log.Logger.Info($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
+                                response.peers.Add(peer);
+                            }
                         }
                     }
-                }
-                else if (Util.UnPackUInt32(announceReply, 0) == (UInt32)UDPAction.Error)
-                {
-                    if (transactionID == Util.UnPackUInt32(announceReply, 4))
+                    else if (Util.UnPackUInt32(commandReply, 0) == (UInt32)UDPAction.Error)
                     {
-                        byte[] errorMessage = new byte[announceReply.Length - 4];
-                        announceReply.CopyTo(errorMessage, 4);
+                        byte[] errorMessage = new byte[commandReply.Length - 4];
+                        commandReply.CopyTo(errorMessage, 4);
                         response.failure = true;
                         response.statusMessage = errorMessage.ToString();
+                    }
+                    else
+                    {
+                        throw new Exception($"Invalid UDP announce response {Util.UnPackUInt32(commandReply, 0)}.");
                     }
                 }
                 else
                 {
-                    throw new BitTorrentException($"(Tracker) Invalid announce response {Util.UnPackUInt32(announceReply, 0)}.");
+                    throw new Exception("Transaction ID for reply does not agree with that sent with announce.");
                 }
             }
             catch (Exception ex)

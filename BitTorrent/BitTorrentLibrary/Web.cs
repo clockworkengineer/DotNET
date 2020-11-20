@@ -21,9 +21,9 @@ namespace BitTorrentLibrary
     }
     internal class Web : IWeb
     {
-        private HttpWebRequest httpGetRequest;
-        public byte[] ResponseData { get; set; }
-        public string StatusDescription { get; set; }
+        private HttpWebRequest httpGetRequest;          // HTTP request object
+        public byte[] ResponseData { get; set; }        // Request response data
+        public string StatusDescription { get; set; }   // Returned status description
         /// <summary>
         /// Setup data and resources needed by Web.
         /// </summary>
