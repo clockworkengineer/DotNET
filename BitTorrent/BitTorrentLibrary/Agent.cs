@@ -71,7 +71,6 @@ namespace BitTorrentLibrary
             {
                 if (remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                 {
-                    remotePeer.BitfieldReceived.WaitOne();
                     foreach (var pieceNumber in remotePeer.Tc.selector.LocalPieceSuggestions(remotePeer, 10))
                     {
                         PWP.Have(remotePeer, pieceNumber);

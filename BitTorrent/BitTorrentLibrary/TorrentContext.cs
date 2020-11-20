@@ -242,7 +242,6 @@ namespace BitTorrentLibrary
                     }
                 }
             }
-            remotePeer.BitfieldReceived.Set();
         }
         /// <summary>
         /// Un-merges disconnecting peer bitfield from piece information. At

@@ -51,7 +51,6 @@ namespace BitTorrentLibrary
             _network = new PeerNetwork(socket);
             packetResponseTimer = new Stopwatch();
             PeerChoking = new ManualResetEvent(false);
-            BitfieldReceived = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
             if (tc != null)
             {
@@ -110,7 +109,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
                 CancelTaskSource.Cancel();
-                BitfieldReceived.Set();
+  //              BitfieldReceived.Set();
                 
                 if (Tc.peerSwarm.ContainsKey(Ip))
                 {

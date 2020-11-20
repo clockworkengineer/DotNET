@@ -19,7 +19,7 @@ using System.IO;
 using System.Text;
 using System.Security.Cryptography;
 namespace BitTorrentLibrary
-{>
+{
     public class MetaInfoFile
     {
         private byte[] _metaInfoData;                           // Raw data of torrent file
