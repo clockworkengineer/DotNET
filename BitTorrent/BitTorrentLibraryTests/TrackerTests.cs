@@ -1,4 +1,3 @@
-
 using System;
 using System.Text;
 using Xunit;
@@ -43,7 +42,6 @@ namespace BitTorrentLibraryTests
                 actual.AppendFormat("{0:x2}", b);
             }
             Assert.Equal("7fd1a2631b385a4cc68bf15040fa375c8e68cb7e", actual.ToString());
-
         }
         [Fact]
         public void TestStartAnnouncingWhenNoPeerSwarmQueueHasBeenAttached()
@@ -82,6 +80,53 @@ namespace BitTorrentLibraryTests
             agent.AttachPeerSwarmQueue(tracker);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StopAnnouncing());
             Assert.Equal("BitTorrent (Tracker) Error: Tracker is not running so cannot be stopped.", error.Message);
+        }
+        [Fact]
+        public void TestStartAnnoucingCalledOnAlreadyWhenAlreadyAnnoucing()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            Agent agent = new Agent(new Manager(), new Assembler());
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            Tracker tracker = new Tracker(tc);
+            agent.AddTorrent(tc);
+            agent.AttachPeerSwarmQueue(tracker);
+            agent.StartTorrent(tc);
+            tracker.StartAnnouncing();
+            BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StopAnnouncing());
+            //  Assert.Equal("BitTorrent (Tracker) Error: Tracker is not running so cannot be stopped.", error.Message);
+        }
+                [Fact]
+        public void TestStopAnnoucingWhenTrackerAlreadyStopped()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            Agent agent = new Agent(new Manager(), new Assembler());
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            Tracker tracker = new Tracker(tc);
+            agent.AddTorrent(tc);
+            agent.AttachPeerSwarmQueue(tracker);
+            agent.StartTorrent(tc);
+            tracker.StopAnnouncing();
+            BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StopAnnouncing());
+            //  Assert.Equal("BitTorrent (Tracker) Error: Tracker is not running so cannot be stopped.", error.Message);
+        }
+                        [Fact]
+        public void TestSetSeedingIntervalWhenNotSeeding()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            Agent agent = new Agent(new Manager(), new Assembler());
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            Tracker tracker = new Tracker(tc);
+            agent.AddTorrent(tc);
+            agent.AttachPeerSwarmQueue(tracker);
+            agent.StartTorrent(tc);
+            BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.SetSeedingInterval(30));
+            //  Assert.Equal("BitTorrent (Tracker) Error: Tracker is not running so cannot be stopped.", error.Message);
         }
     }
 }

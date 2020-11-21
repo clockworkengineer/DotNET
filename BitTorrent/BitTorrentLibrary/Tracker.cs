@@ -34,8 +34,6 @@ namespace BitTorrentLibrary
     }
     public class Tracker
     {
-        // Internal factory that can be overidden for mocking during test
-        internal static AnnouncerFactory announcerFactory = new AnnouncerFactory();
         // Tracker Announce event types.
         internal static readonly string[] EventString = { "", "started", "stopped", "completed" };
         private readonly TorrentContext _tc;                    // Torrent context
@@ -157,6 +155,14 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
+        /// Internal Tracker constructor for mock testing.
+        /// </summary>
+        /// <param name="tc"></param>
+        internal Tracker(TorrentContext tc, AnnouncerFactory announcerFactory) : this(tc)
+        {
+            _announcer = announcerFactory.Create(TrackerURL);
+        }
+        /// <summary>
         /// Initialise BitTorrent Tracker.
         /// </summary>
         /// <param name="tc"></param>
@@ -169,7 +175,7 @@ namespace BitTorrentLibrary
             _tc.MainTracker = this;
             InfoHash = tc.infoHash;
             TrackerURL = tc.trackerURL;
-            _announcer = announcerFactory.Create(TrackerURL);
+            _announcer = new AnnouncerFactory().Create(TrackerURL);
         }
         /// <summary>
         /// Change tracker status.
