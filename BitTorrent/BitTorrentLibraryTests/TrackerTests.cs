@@ -1,11 +1,66 @@
+using System.Threading;
 using System;
 using System.Text;
 using Xunit;
+using Moq;
 using BitTorrentLibrary;
 namespace BitTorrentLibraryTests
 {
     public class TrackerTests
     {
+        private class MockAnnouncerFactory : IAnnouncerFactory
+        {
+            private readonly Mock<IAnnouncer> _mockAnnouncer;
+            private AnnounceResponse _response;
+            private int _counter;
+            public ManualResetEvent waitUntilFinished;
+            private AnnounceResponse AnnouceResponseRecord()
+            {
+                _response.announceCount++;
+                return _response;
+            }
+            public MockAnnouncerFactory(int counter)
+            {
+                _mockAnnouncer = new Mock<IAnnouncer>();
+                _mockAnnouncer.SetupAllProperties();
+                _mockAnnouncer.Setup(a => a.Announce(It.IsAny<Tracker>())).Returns(AnnouceResponseRecord);
+                 _response = new AnnounceResponse();
+                 waitUntilFinished= new ManualResetEvent(false);
+                 _counter = counter;
+            }
+            public IAnnouncer Create(string url)
+            {
+                return _mockAnnouncer.Object;
+            }
+            public void Callback(Object obj) {
+                MockAnnouncerFactory factory = (MockAnnouncerFactory) obj;
+                factory._counter--;
+                if (factory._counter==0) {
+                    factory.waitUntilFinished.Set();
+                }
+            }
+        }
+        [Fact]
+        public void TestSucessfullyCreateTracker()
+        {
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            Agent agent = new Agent(new Manager(), new Assembler());
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            Tracker tracker = new Tracker(tc, mockAnnoucerFactory) {
+                CallBack = mockAnnoucerFactory.Callback,
+                CallBackData = mockAnnoucerFactory
+            };
+            agent.AddTorrent(tc);
+            agent.AttachPeerSwarmQueue(tracker);
+            tracker.StartAnnouncing();
+            mockAnnoucerFactory.waitUntilFinished.WaitOne();
+            TorrentDetails torrentDetails = agent.GetTorrentDetails(tc);
+            Assert.Equal(TrackerStatus.Running, torrentDetails.trackerStatus);
+            
+        }
         [Fact]
         public void TestNullPassedAsTorrentContext()
         {
@@ -97,7 +152,7 @@ namespace BitTorrentLibraryTests
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StopAnnouncing());
             //  Assert.Equal("BitTorrent (Tracker) Error: Tracker is not running so cannot be stopped.", error.Message);
         }
-                [Fact]
+        [Fact]
         public void TestStopAnnoucingWhenTrackerAlreadyStopped()
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
@@ -113,7 +168,7 @@ namespace BitTorrentLibraryTests
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StopAnnouncing());
             //  Assert.Equal("BitTorrent (Tracker) Error: Tracker is not running so cannot be stopped.", error.Message);
         }
-                        [Fact]
+        [Fact]
         public void TestSetSeedingIntervalWhenNotSeeding()
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);

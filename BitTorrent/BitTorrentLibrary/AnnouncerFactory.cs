@@ -11,7 +11,12 @@
 using System;
 namespace BitTorrentLibrary
 {
-    internal class AnnouncerFactory
+    internal interface IAnnouncerFactory
+    {
+        IAnnouncer Create(string url);
+    }
+
+    internal class AnnouncerFactory : IAnnouncerFactory
     {
         public AnnouncerFactory()
         {

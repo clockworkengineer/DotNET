@@ -158,7 +158,7 @@ namespace BitTorrentLibrary
         /// Internal Tracker constructor for mock testing.
         /// </summary>
         /// <param name="tc"></param>
-        internal Tracker(TorrentContext tc, AnnouncerFactory announcerFactory) : this(tc)
+        internal Tracker(TorrentContext tc, IAnnouncerFactory announcerFactory) : this(tc)
         {
             _announcer = announcerFactory.Create(TrackerURL);
         }
