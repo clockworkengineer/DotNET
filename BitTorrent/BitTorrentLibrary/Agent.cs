@@ -190,10 +190,10 @@ namespace BitTorrentLibrary
                 if (!_agentRunning)
                 {
                     Log.Logger.Info("(Agent) Starting up Torrent Agent...");
-                    _agentRunning = true;
                     Task.Run(() => PeerConnectCreatorTask(_cancelWorkerTaskSource.Token));
                     Task.Run(() => PeerCloseQueueTask(_cancelWorkerTaskSource.Token));
                     PeerNetwork.StartListening(this);
+                    _agentRunning = true;
                     Log.Logger.Info("(Agent) Torrent Agent started.");
                 }
                 else
@@ -344,6 +344,10 @@ namespace BitTorrentLibrary
             }
             try
             {
+                if (!_agentRunning)
+                {
+                    throw new Exception("Agent has not been started.");
+                }
                 if (_manager.GetTorrentContext(tc.infoHash, out TorrentContext _))
                 {
                     tc.paused.Set();

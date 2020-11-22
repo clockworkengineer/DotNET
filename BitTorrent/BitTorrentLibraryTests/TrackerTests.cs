@@ -22,7 +22,7 @@ namespace BitTorrentLibraryTests
                 _mockAnnouncer = new Mock<IAnnouncer>();
                 _mockAnnouncer.SetupAllProperties();
                 _mockAnnouncer.Setup(a => a.Announce(It.IsAny<Tracker>())).Returns(AnnouceResponseRecord);
-                _response = new AnnounceResponse();;
+                _response = new AnnounceResponse(); ;
             }
             public IAnnouncer Create(string url)
             {
@@ -96,7 +96,7 @@ namespace BitTorrentLibraryTests
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
-            agent.AddTorrent(tc);;
+            agent.AddTorrent(tc); ;
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StartAnnouncing());
             Assert.Equal("BitTorrent (Tracker) Error: Peer swarm queue has not been set.", error.Message);
         }
@@ -167,6 +167,33 @@ namespace BitTorrentLibraryTests
             tracker.StartAnnouncing();
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.SetSeedingInterval(30));
             Assert.Equal("BitTorrent (Tracker) Error: Cannot change interval as torrent is not seeding.", error.Message);
+        }
+        [Fact]
+        public void TestSetSeedingIntervalWhenSeeding()
+        {
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            Agent agent = new Agent(new Manager(), new Assembler(), 6889);
+            agent.Startup();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp", true);
+            Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
+            agent.AddTorrent(tc);
+            agent.AttachPeerSwarmQueue(tracker);
+            tracker.StartAnnouncing();
+            agent.StartTorrent(tc);
+            try
+            {
+                tracker.SetSeedingInterval(30);
+            }
+            catch (Exception ex)
+            {
+                Assert.True(false,"Should not throw execption here but it did. "+ex.Message);
+            }
+
+            Assert.True(true);
+
         }
     }
 }

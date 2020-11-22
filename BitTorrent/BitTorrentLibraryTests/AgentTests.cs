@@ -25,14 +25,14 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStartupAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6884);
+            Agent agent = new Agent(new Manager(), new Assembler(), 6882);
             agent.Startup();
             Assert.True(agent.Running);
         }
         [Fact]
         public void TestStartupThenShutDownAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6886);
+            Agent agent = new Agent(new Manager(), new Assembler(), 6883);
             agent.Startup();
             agent.ShutDown();
             Assert.False(agent.Running);
@@ -40,7 +40,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStartupAlreadyStartedAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6885);
+            Agent agent = new Agent(new Manager(), new Assembler(), 6884);
             agent.Startup();
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { agent.Startup(); });
             Assert.Equal("BitTorrent (Agent) Error : Failure to startup agent.Agent is already running.", error.Message);
@@ -48,7 +48,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestShutdownAlreadyShutdownAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(),6885);
             agent.Startup();
             agent.ShutDown();
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { agent.ShutDown(); });
@@ -57,7 +57,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestNullPassedToAddTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6882);
+            Agent agent = new Agent(new Manager(), new Assembler(), 6886);
             agent.Startup();
             Assert.Throws<ArgumentNullException>(() => agent.AddTorrent(null));
         }
@@ -71,7 +71,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestNullPassedToCloseTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6883);
+            Agent agent = new Agent(new Manager(), new Assembler(), 6888);
             agent.Startup();
             Assert.Throws<ArgumentNullException>(() => agent.CloseTorrent(null));
         }
@@ -81,7 +81,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6889);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             agent.AddTorrent(tc);
@@ -94,7 +95,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6890);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.RemoveTorrent(tc));
@@ -112,7 +114,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6891);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.StartTorrent(tc));
@@ -124,7 +127,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6892);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.CloseTorrent(tc));
@@ -136,7 +140,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6893);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             Assert.Throws<ArgumentNullException>(() => agent.PauseTorrent(null));
@@ -147,7 +152,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6894);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.PauseTorrent(tc));
@@ -159,12 +165,27 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6895);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             agent.AddTorrent(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.PauseTorrent(tc));
             Assert.Equal("BitTorrent (Agent) Error : Failure to pause torrent context.The torrent is currently not in a running state.", error.Message);
+        }
+                [Fact]
+        public void TestStartAddedTorrentWhenAgentHasntBeenStarted()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            Agent agent = new Agent(new Manager(), new Assembler(), 6896);
+            agent.Startup();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            _ = new Tracker(tc);
+            agent.AddTorrent(tc);
+            BitTorrentException error = Assert.Throws<BitTorrentException> (()=> agent.StartTorrent(tc));
+            Assert.Equal("BitTorrent (Agent) Error : Failure to start torrent context.Agent has not been started." , error.Message);
         }
         [Fact]
         public void TestStartAddedTorrent()
@@ -172,7 +193,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6897);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             _ = new Tracker(tc);
             agent.AddTorrent(tc);
@@ -185,7 +207,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6898);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.AddTorrent(tc));
             Assert.Equal("BitTorrent (Agent) Error : Failed to add torrent context.Torrent does not have a tracker associated with it.", error.Message);
@@ -196,7 +219,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6899);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             agent.AddTorrent(tc);
@@ -209,7 +233,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6900);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             _ = new Tracker(tc);
             agent.AddTorrent(tc);
@@ -232,7 +257,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6891);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { TorrentDetails details = agent.GetTorrentDetails(tc); });
@@ -242,9 +268,10 @@ namespace BitTorrentLibraryTests
         public void TestRemoveTorrentThatHasNotBeenAddedToAgent()
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
-            file.Parse();
+            file.Parse(); 
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Agent agent = new Agent(new Manager(), new Assembler(), 6892);
+            agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.RemoveTorrent(tc));
