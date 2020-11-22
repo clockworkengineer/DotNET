@@ -1,5 +1,11 @@
+//
+// Author: Robert Tizzard
+//
+// Description: XUnit tests for BiTorrent Agent class.
+//
+// Copyright 2020.
+//
 using System;
-using System.Text;
 using Xunit;
 using BitTorrentLibrary;
 namespace BitTorrentLibraryTests

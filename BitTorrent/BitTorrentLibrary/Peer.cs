@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-//
+﻿//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -13,6 +12,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Threading;
 using System.Diagnostics;
+using System.Collections.Concurrent;
 namespace BitTorrentLibrary
 {
     internal class Peer

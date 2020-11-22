@@ -1,4 +1,10 @@
-using System.Threading;
+//
+// Author: Robert Tizzard
+//
+// Description: XUnit tests for BiTorrent Tracker class.
+//
+// Copyright 2020.
+//
 using System;
 using System.Text;
 using Xunit;
@@ -8,6 +14,8 @@ namespace BitTorrentLibraryTests
 {
     public class TrackerTests
     {
+        // Basic mocking setup for a dummy tracker to run.Might be
+        // expanded at a later date with more enhanced tests.
         private class MockAnnouncerFactory : IAnnouncerFactory
         {
             private readonly Mock<IAnnouncer> _mockAnnouncer;
@@ -17,7 +25,7 @@ namespace BitTorrentLibraryTests
                 _response.announceCount++;
                 return _response;
             }
-            public MockAnnouncerFactory(int counter)
+            public MockAnnouncerFactory()
             {
                 _mockAnnouncer = new Mock<IAnnouncer>();
                 _mockAnnouncer.SetupAllProperties();
@@ -32,7 +40,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestSucessfullyCreateTrackerAndStartAnnoucing()
         {
-            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory();
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
@@ -88,7 +96,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStartAnnouncingWhenNoPeerSwarmQueueHasBeenAttached()
         {
-            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory();
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
@@ -103,7 +111,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStopAnnouncingOnOneThatHasNotBeenStarted()
         {
-            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory();
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
@@ -119,7 +127,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStartAnnoucingCalledOnAlreadyWhenAlreadyAnnoucing()
         {
-            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory();
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
@@ -136,7 +144,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStopAnnoucingWhenTrackerAlreadyStopped()
         {
-            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory();
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
@@ -154,7 +162,7 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestSetSeedingIntervalWhenNotSeeding()
         {
-            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory();
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
@@ -171,11 +179,11 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestSetSeedingIntervalWhenSeeding()
         {
-            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory(1);
+            MockAnnouncerFactory mockAnnoucerFactory = new MockAnnouncerFactory();
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6889);
+            Agent agent = new Agent(new Manager(), new Assembler(), 6890);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp", true);
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);

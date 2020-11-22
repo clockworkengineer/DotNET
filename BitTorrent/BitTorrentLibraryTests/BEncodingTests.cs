@@ -1,5 +1,10 @@
-using System;
-using System.Text;
+//
+// Author: Robert Tizzard
+//
+// Description: XUnit tests for BiTorrent BEncoding class.
+//
+// Copyright 2020.
+//
 using Xunit;
 using BitTorrentLibrary;
 namespace BitTorrentLibraryTests
