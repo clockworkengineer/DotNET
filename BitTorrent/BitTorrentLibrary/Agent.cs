@@ -23,42 +23,9 @@ namespace BitTorrentLibrary
         private bool _agentRunning = false;                                // == true while agent is up and running.
         private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
         private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
-        private readonly BlockingCollection<PeerDetails> _peerSwarmQeue;      // Queue of peers to add to swarm
-        private readonly BlockingCollection<Peer> _peerCloseQueue;            // Peer close queue
+        private readonly BlockingCollection<PeerDetails> _peerSwarmQeue;   // Queue of peers to add to swarm
         public bool Running { get => _agentRunning; }                      // == true then agent running
-        /// <summary>
-        /// Peer close processing task. Peers can be closed from differene threads and
-        /// contexts and having a queue and only one place that they are closed solves
-        /// any mutual exlusion issues.
-        /// <param name="cancelTask"></param>
-        /// <returns></returns>
-        private void PeerCloseQueueTask(CancellationToken cancelTask)
-        {
-            Log.Logger.Info("(Agent) Peer close queue task started ... ");
-            try
-            {
-                while (_agentRunning)
-                {
-                    Peer peer = _peerCloseQueue.Take(cancelTask);
-                    peer.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug("BitTorrent (Agent) Error :" + ex.Message);
-            }
-            Log.Logger.Info("(Agent) Close remaining peers left in queue... ");
-            if (_peerCloseQueue.Count > 0)
-            {
 
-                while (_peerCloseQueue.TryTake(out Peer peer))
-                {
-                    peer.Close();
-                }
-
-            }
-            Log.Logger.Info("(Agent) Peer close queue task terminated.");
-        }
         /// <summary>
         /// Add Peer to swarm if it connected, is not already present in the swarm 
         /// and there is room enough.
@@ -67,21 +34,24 @@ namespace BitTorrentLibrary
         private void AddPeerToSwarm(Peer remotePeer)
         {
             remotePeer.Handshake(_manager);
-            if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
+            if (remotePeer.Connected)
             {
-                if (remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
+                if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
                 {
-                    foreach (var pieceNumber in remotePeer.Tc.selector.LocalPieceSuggestions(remotePeer, 10))
+                    if (remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
                     {
-                        PWP.Have(remotePeer, pieceNumber);
+                        foreach (var pieceNumber in remotePeer.Tc.selector.LocalPieceSuggestions(remotePeer, 10))
+                        {
+                            PWP.Have(remotePeer, pieceNumber);
+                        }
+                        if (remotePeer.Tc.Status == TorrentStatus.Seeding)
+                        {
+                            PWP.Uninterested(remotePeer);
+                        }
+                        PWP.Unchoke(remotePeer);
+                        Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
+                        return;
                     }
-                    if (remotePeer.Tc.Status == TorrentStatus.Seeding)
-                    {
-                        PWP.Uninterested(remotePeer);
-                    }
-                    PWP.Unchoke(remotePeer);
-                    Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
-                    return;
                 }
             }
             throw new Exception($"Failure peer [{remotePeer.Ip}] not added to swarm.");
@@ -107,10 +77,7 @@ namespace BitTorrentLibrary
                         remotePeerSocket = PeerNetwork.Connect(peer.ip, peer.port);
                         if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
-                            remotePeer = new Peer(peer.ip, peer.port, tc, remotePeerSocket)
-                            {
-                                peerCloseQueue = _peerCloseQueue
-                            };
+                            remotePeer = new Peer(peer.ip, peer.port, tc, remotePeerSocket);
                             AddPeerToSwarm(remotePeer);
                         }
                     }
@@ -119,15 +86,13 @@ namespace BitTorrentLibrary
                         if ((ex.ErrorCode == 111) || (ex.ErrorCode == 113) || (ex.ErrorCode == (int)SocketError.TimedOut))
                         {    // Connection refused    // No route to host
                             _manager.AddToDeadPeerList(peer.ip);
-                            remotePeerSocket?.Close();
-                            remotePeer?.QueueForClosure();
+                            remotePeer?.Close();
                         }
                     }
                     catch (Exception ex)
                     {
                         Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
-                        remotePeerSocket?.Close();
-                        remotePeer?.QueueForClosure();
+                        remotePeer?.Close();
                     }
                 }
             }
@@ -152,17 +117,13 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info("(Agent) Remote peer connected...");
                 PeerDetails peerDetails = PeerNetwork.GetConnectingPeerDetails(remotePeerSocket);
-                remotePeer = new Peer(peerDetails.ip, peerDetails.port, null, remotePeerSocket)
-                {
-                    peerCloseQueue = _peerCloseQueue
-                };
+                remotePeer = new Peer(peerDetails.ip, peerDetails.port, null, remotePeerSocket);
                 AddPeerToSwarm(remotePeer);
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
-                remotePeer?.QueueForClosure();
-                remotePeerSocket?.Close();
+                remotePeer?.Close();
             }
         }
         /// <summary>
@@ -178,7 +139,6 @@ namespace BitTorrentLibrary
             _pieceAssembler = pieceAssembler ?? throw new ArgumentNullException(nameof(pieceAssembler));
             _peerSwarmQeue = new BlockingCollection<PeerDetails>();
             _cancelWorkerTaskSource = new CancellationTokenSource();
-            _peerCloseQueue = new BlockingCollection<Peer>();
         }
         /// <summary>
         /// Startup worker tasks needed by the agent.
@@ -191,7 +151,6 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Info("(Agent) Starting up Torrent Agent...");
                     Task.Run(() => PeerConnectCreatorTask(_cancelWorkerTaskSource.Token));
-                    Task.Run(() => PeerCloseQueueTask(_cancelWorkerTaskSource.Token));
                     PeerNetwork.StartListening(this);
                     _agentRunning = true;
                     Log.Logger.Info("(Agent) Torrent Agent started.");
@@ -278,7 +237,7 @@ namespace BitTorrentLibrary
                     {
                         CloseTorrent(tc);
                     }
-                    PeerNetwork.ShutdownListener(Host.DefaultPort);
+                    PeerNetwork.ShutdownListener();
                     _cancelWorkerTaskSource.Cancel();
                     Log.Logger.Info("(Agent) Torrent agent shutdown.");
                 }
@@ -315,7 +274,7 @@ namespace BitTorrentLibrary
                         Log.Logger.Info("(Agent) Closing peer sockets.");
                         foreach (var remotePeer in tc.peerSwarm.Values)
                         {
-                            remotePeer.QueueForClosure();
+                            remotePeer.Close();
                         }
                     }
                     tc.Status = TorrentStatus.Ended;

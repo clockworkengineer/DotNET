@@ -17,7 +17,8 @@ namespace BitTorrentLibrary
 {
     internal class Peer
     {
-        private readonly PeerNetwork _network;                           // Network layer
+        private PeerNetwork _network;                                    // Network layer
+        private readonly Mutex _closeGuardMutex;                         // Peer close guard
         internal readonly Stopwatch packetResponseTimer;                 // Packet reponse timer
         internal Average averagePacketResponse;                          // Average packet reponse time
         internal BlockingCollection<Peer> peerCloseQueue;                // Peer close queue
@@ -49,6 +50,7 @@ namespace BitTorrentLibrary
             Ip = ip;
             Port = port;
             _network = new PeerNetwork(socket);
+            _closeGuardMutex = new Mutex();
             packetResponseTimer = new Stopwatch();
             PeerChoking = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
@@ -96,8 +98,8 @@ namespace BitTorrentLibrary
             {
                 RemotePeerID = peerResponse.Item2;
                 PWP.Bitfield(this, Tc.Bitfield);
-                Connected = true;
                 _network.StartReads(this);
+                Connected = true;
             }
         }
         /// <summary>
@@ -105,23 +107,32 @@ namespace BitTorrentLibrary
         /// </summary>
         public void Close()
         {
-            if (Connected)
+            try
             {
-                Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
-                CancelTaskSource.Cancel();
-  //              BitfieldReceived.Set();
-                
-                if (Tc.peerSwarm.ContainsKey(Ip))
+                _closeGuardMutex.WaitOne();
+                if (Connected)
                 {
-                    if (Tc.peerSwarm.TryRemove(Ip, out Peer _))
+                    Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
+                    CancelTaskSource.Cancel();
+
+                    if (Tc.peerSwarm.ContainsKey(Ip))
                     {
-                        Log.Logger.Info($"(Peer) Dead Peer {Ip} removed from swarm.");
+                        if (Tc.peerSwarm.TryRemove(Ip, out Peer _))
+                        {
+                            Log.Logger.Info($"(Peer) Dead Peer {Ip} removed from swarm.");
+                        }
                     }
-                    _network.Close();
+                    Connected = false;
+                    Log.Logger.Info($"(Peer) Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
                 }
-                Connected = false;
-                Log.Logger.Info($"(Peer) Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
             }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+            }
+            _network?.Close();
+            _network = null;
+            _closeGuardMutex.ReleaseMutex();
         }
         /// <summary>
         /// Check downloaded bitfield to see if a piece is present on a remote peer.
@@ -176,20 +187,6 @@ namespace BitTorrentLibrary
             else
             {
                 Log.Logger.Debug($"(Peer) PIECE {pieceNumber} DISCARDED.");
-            }
-        }
-        /// <summary>
-        /// Queue peer for closing.
-        /// </summary>
-        public void QueueForClosure()
-        {
-            if (peerCloseQueue != null)
-            {
-                peerCloseQueue?.Add(this);
-            }
-            else
-            {
-                Close();
             }
         }
     }

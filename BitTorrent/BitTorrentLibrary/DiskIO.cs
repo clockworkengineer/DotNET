@@ -177,7 +177,7 @@ namespace BitTorrentLibrary
                     {
                         // Remote peer most probably closed socket so close connection
                         Log.Logger.Debug("BitTorrent (DiskIO) Error (ignoring): "+ ex.Message);
-                        remotePeer?.QueueForClosure();
+                        remotePeer?.Close();
                     }
                 }
             }

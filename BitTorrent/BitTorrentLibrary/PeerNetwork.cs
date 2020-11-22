@@ -82,9 +82,11 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (PeerNetwork) Error (Ignored): "+ex.Message);
+                Log.Logger.Debug(ex);
+                Log.Logger.Debug("BitTorrent (PeerNetwork) Error (Ignored): " + ex.Message);
                 Log.Logger.Info("(PeerNetwork) Port connection listener terminated.");
             }
+
         }
         /// <summary>
         /// Peer read packet asynchronous callback.
@@ -123,9 +125,9 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (PeerNetwork) Error (Ignored): "+ex.Message);
+                Log.Logger.Debug("BitTorrent (PeerNetwork) Error (Ignored): " + ex.Message);
                 Log.Logger.Info($"(PeerNetwork) Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
-                remotePeer.QueueForClosure();
+                remotePeer.Close();
             }
         }
         /// <summary>
@@ -190,8 +192,8 @@ namespace BitTorrentLibrary
             if (PeerSocket.Connected)
             {
                 PeerSocket.Close();
-                PeerSocket = null;
             }
+            PeerSocket = null;
         }
         /// <summary>
         /// Return IP and Port of remote connection.
@@ -230,13 +232,12 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Connect to listen port to shutdown listener task.
         /// </summary>
-        public static void ShutdownListener(int port)
+        public static void ShutdownListener()
         {
             try
             {
-                IPAddress localPeerIP = Dns.GetHostEntry(Host.GetIP()).AddressList[0];
-                Socket socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                socket.Connect(new IPEndPoint(localPeerIP, port));
+                _listenerSocket?.Close();
+                _listenerSocket = null;
             }
             catch (Exception ex)
             {

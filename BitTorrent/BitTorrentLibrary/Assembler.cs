@@ -55,7 +55,7 @@ namespace BitTorrentLibrary
                 catch (Exception ex)
                 {
                     Log.Logger.Debug(ex);
-                    remotePeer.QueueForClosure();
+                    remotePeer.Close();
                 }
             }
         }
@@ -86,13 +86,18 @@ namespace BitTorrentLibrary
                         }
                         catch (Exception ex)
                         {
-                            // Peer has an error; just close it and stall piece assembly so
-                            // that we reconfigure the assembling peers.
+                            // Peer has an error so remove it
                             Log.Logger.Debug(ex);
-                            Log.Logger.Info("(Assembler) Peer exception so stalling piece assembly.");
-                            remotePeers[currentPeer].QueueForClosure();
-                            tc.assemblyData.guardMutex.ReleaseMutex();
-                            return false;
+                            Log.Logger.Info("(Assembler) Peer exception so removing it.");
+                            remotePeers[currentPeer].Close();
+                            remotePeers = remotePeers.Except(new Peer[] { remotePeers[currentPeer] }).ToArray();
+                            if (remotePeers.Length == 0)
+                            {
+                                tc.assemblyData.guardMutex.ReleaseMutex();
+                                return false;
+                            }
+                            currentPeer %= (int)remotePeers.Length;
+                            continue;
                         }
                         if (++currentBlockRequests == _maximumBlockRequests) break;
                         currentPeer++;
@@ -238,7 +243,7 @@ namespace BitTorrentLibrary
                 catch (Exception ex)
                 {
                     Log.Logger.Debug(ex);
-                    remotePeer.QueueForClosure();
+                    remotePeer.Close();
                 }
 
             }
