@@ -34,27 +34,23 @@ namespace BitTorrentLibrary
         private void AddPeerToSwarm(Peer remotePeer)
         {
             remotePeer.Handshake(_manager);
-            if (remotePeer.Connected)
+            if (!remotePeer.Connected || 
+                !remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip) || 
+                !remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
             {
-                if (remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip))
-                {
-                    if (remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
-                    {
-                        foreach (var pieceNumber in remotePeer.Tc.selector.LocalPieceSuggestions(remotePeer, 10))
-                        {
-                            PWP.Have(remotePeer, pieceNumber);
-                        }
-                        if (remotePeer.Tc.Status == TorrentStatus.Seeding)
-                        {
-                            PWP.Uninterested(remotePeer);
-                        }
-                        PWP.Unchoke(remotePeer);
-                        Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
-                        return;
-                    }
-                }
+                throw new Exception($"Failure peer [{remotePeer.Ip}] not added to swarm.");
             }
-            throw new Exception($"Failure peer [{remotePeer.Ip}] not added to swarm.");
+            foreach (var pieceNumber in remotePeer.Tc.selector.LocalPieceSuggestions(remotePeer, 10))
+            {
+                PWP.Have(remotePeer, pieceNumber);
+            }
+            if (remotePeer.Tc.Status == TorrentStatus.Seeding)
+            {
+                PWP.Uninterested(remotePeer);
+            }
+            PWP.Unchoke(remotePeer);
+            Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
+       
         }
         /// <summary>
         /// Inspect peer queue added to by tracker, connect to the peer and add it to swarm
@@ -69,12 +65,11 @@ namespace BitTorrentLibrary
             {
                 while (_agentRunning)
                 {
-                    Socket remotePeerSocket = null;
                     Peer remotePeer = null;
                     PeerDetails peer = _peerSwarmQeue.Take(cancelTask);
                     try
                     {
-                        remotePeerSocket = PeerNetwork.Connect(peer.ip, peer.port);
+                        Socket remotePeerSocket = PeerNetwork.Connect(peer.ip, peer.port);
                         if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
                         {
                             remotePeer = new Peer(peer.ip, peer.port, tc, remotePeerSocket);
