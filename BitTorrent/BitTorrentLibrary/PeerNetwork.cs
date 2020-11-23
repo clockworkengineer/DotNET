@@ -14,6 +14,29 @@ using System.Threading.Tasks;
 using System.Text;
 namespace BitTorrentLibrary
 {
+    /// <summary>
+    /// Peer connector is used to link the peer network socket listener/connect
+    /// and an agent. It contains any data that is filled in and passed
+    /// between them and also the callback that is called on a accept/connect.
+    /// </summary>
+    /// <param name="callBackData"></param>
+    internal delegate void ConnectorCallBack(Object callBackData);
+    internal struct PeerConnector
+    {
+        // Shallow copy connector
+        public PeerConnector Copy()
+        {
+            return (PeerConnector)new PeerConnector
+            {
+                peerDetails = peerDetails,
+                socket = socket,
+                callBack = callBack
+            };
+        }
+        public PeerDetails peerDetails;
+        public Socket socket;
+        public ConnectorCallBack callBack;
+    }
     internal static class SocketExtensions
     {
         /// <summary>
@@ -67,18 +90,18 @@ namespace BitTorrentLibrary
         }
         /// <summary>
         /// Asynchronous remote peer connection callback. When a remote connection
-        /// arrives try to add it to the swarm then prime the callback for the next
-        /// peers connection attempt.
+        /// arrives try to add it to the swarm via the connector passed then prime 
+        /// the accept callback for the next peers connection attempt.
         /// </summary>
         /// <param name="ar"></param>
         public static void AcceptConnectionAsyncHandler(IAsyncResult ar)
         {
-            Agent agent = (Agent)ar.AsyncState;
+            PeerConnector connector = (PeerConnector)ar.AsyncState;
             try
             {
-                Socket acceptedSocket = _listenerSocket.EndAccept(ar);
-                agent.AddRemoteConnectedPeerToSpawn(acceptedSocket);
-                _listenerSocket.BeginAccept(new AsyncCallback(AcceptConnectionAsyncHandler), agent);
+                connector.socket = _listenerSocket.EndAccept(ar);
+                connector.callBack(connector.Copy());
+                _listenerSocket.BeginAccept(new AsyncCallback(AcceptConnectionAsyncHandler), connector);
             }
             catch (Exception ex)
             {
@@ -214,14 +237,14 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="agent"></param>
         /// <param name="port"></param>
-        public static void StartListening(Agent agent)
+        public static void StartListening(PeerConnector connector)
         {
             try
             {
                 _listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
                 _listenerSocket.Listen(100);
-                _listenerSocket.BeginAccept(new AsyncCallback(AcceptConnectionAsyncHandler), agent);
+                _listenerSocket.BeginAccept(new AsyncCallback(AcceptConnectionAsyncHandler), connector);
                 Log.Logger.Info("(PeerNetwork) Port connection listener started...");
             }
             catch (Exception ex)

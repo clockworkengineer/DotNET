@@ -25,7 +25,6 @@ namespace BitTorrentLibrary
         private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
         private readonly BlockingCollection<PeerDetails> _peerSwarmQeue;   // Queue of peers to add to swarm
         public bool Running { get => _agentRunning; }                      // == true then agent running
-
         /// <summary>
         /// Add Peer to swarm if it connected, is not already present in the swarm 
         /// and there is room enough.
@@ -50,7 +49,6 @@ namespace BitTorrentLibrary
             }
             PWP.Unchoke(remotePeer);
             Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
-       
         }
         /// <summary>
         /// Inspect peer queue added to by tracker, connect to the peer and add it to swarm
@@ -106,15 +104,16 @@ namespace BitTorrentLibrary
         /// an exception that will terminate the listener.
         /// </summary>
         /// <param name="remotePeerSocket"></param>
-        internal void AddRemoteConnectedPeerToSpawn(Socket remotePeerSocket)
+        internal void AddRemoteConnectedPeerToSpawn(Object obj)
         {
+            PeerConnector connector = (PeerConnector) obj;
             _cancelWorkerTaskSource.Token.ThrowIfCancellationRequested();
             Peer remotePeer = null;
             try
             {
                 Log.Logger.Info("(Agent) Remote peer connected...");
-                PeerDetails peerDetails = PeerNetwork.GetConnectingPeerDetails(remotePeerSocket);
-                remotePeer = new Peer(peerDetails.ip, peerDetails.port, null, remotePeerSocket);
+                connector.peerDetails = PeerNetwork.GetConnectingPeerDetails(connector.socket);
+                remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, null, connector.socket);
                 AddPeerToSwarm(remotePeer);
             }
             catch (Exception ex)
@@ -147,9 +146,12 @@ namespace BitTorrentLibrary
                 if (!_agentRunning)
                 {
                     Log.Logger.Info("(Agent) Starting up Torrent Agent...");
-                    Task.Run(() => PeerConnectCreatorTask(_cancelWorkerTaskSource.Token));
-                    PeerNetwork.StartListening(this);
                     _agentRunning = true;
+                    Task.Run(() => PeerConnectCreatorTask(_cancelWorkerTaskSource.Token));
+                    PeerNetwork.StartListening(new PeerConnector
+                    {
+                        callBack = AddRemoteConnectedPeerToSpawn
+                    });
                     Log.Logger.Info("(Agent) Torrent Agent started.");
                 }
                 else
@@ -160,6 +162,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
+                _agentRunning = false;
                 throw new BitTorrentException("BitTorrent (Agent) Error : Failure to startup agent." + ex.Message);
             }
         }
