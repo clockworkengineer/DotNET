@@ -74,6 +74,8 @@ namespace BitTorrentLibrary
                         {
                             remotePeer = new Peer(peer.ip, peer.port, tc, remotePeerSocket);
                             AddPeerToSwarm(remotePeer);
+                        } else {
+                            remotePeerSocket.Close();
                         }
                     }
                     catch (SocketException ex)

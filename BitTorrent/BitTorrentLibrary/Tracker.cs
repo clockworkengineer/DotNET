@@ -129,6 +129,19 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
+        /// Update annouce timer interval.
+        /// </summary>
+        /// <param name="interval"></param>
+        private void UpdateTimerInterval(int interval)
+        {
+            if (announceTimer != null)
+            {
+                announceTimer.Stop();
+                announceTimer.Interval = interval;
+                announceTimer.Start();
+            }
+        }
+        /// <summary>
         /// Restart announce on interval changing and save minimum interval and tracker ID.
         /// </summary>
         /// <param name="response"></param>
@@ -136,21 +149,13 @@ namespace BitTorrentLibrary
         {
             TrackerID = response.trackerID;
             MinInterval = response.minInterval;
-            if (_tc.Status == TorrentStatus.Downloading)
+            if (_tc.Status == TorrentStatus.Downloading && response.interval > MinInterval)
             {
-                if (response.interval > MinInterval)
+                int oldInterval = Interval;
+                Interval = response.interval;
+                if (oldInterval != Interval)
                 {
-                    int oldInterval = Interval;
-                    Interval = response.interval;
-                    if (oldInterval != Interval)
-                    {
-                        if (announceTimer != null)
-                        {
-                            announceTimer.Stop();
-                            announceTimer.Interval = Interval;
-                            announceTimer.Start();
-                        }
-                    }
+                    UpdateTimerInterval(Interval);
                 }
             }
         }
@@ -283,12 +288,7 @@ namespace BitTorrentLibrary
             {
                 if (seedingInerval > MinInterval)
                 {
-                    if (announceTimer != null)
-                    {
-                        announceTimer.Stop();
-                        announceTimer.Interval = seedingInerval;
-                        announceTimer.Start();
-                    }
+                    UpdateTimerInterval(seedingInerval);
                 }
             }
             else

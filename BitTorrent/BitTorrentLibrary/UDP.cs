@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Simple wrapper class for the  requests that the UDP 
+// Description: Simple adapter class for the  requests that the UDP 
 // tracker makes.
 //
 // Copyright 2020.

@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Simple wrapper class for the requests that the 
+// Description: Simple adper class for the requests that the 
 // HTTP tracker makes.
 //
 // Copyright 2020.
