@@ -33,8 +33,8 @@ namespace BitTorrentLibrary
         private void AddPeerToSwarm(Peer remotePeer)
         {
             remotePeer.Handshake(_manager);
-            if (!remotePeer.Connected || 
-                !remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip) || 
+            if (!remotePeer.Connected ||
+                !remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip) ||
                 !remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
             {
                 throw new Exception($"Failure peer [{remotePeer.Ip}] not added to swarm.");
@@ -48,11 +48,12 @@ namespace BitTorrentLibrary
                 PWP.Uninterested(remotePeer);
             }
             PWP.Unchoke(remotePeer);
+            _manager.RemoFromDeadPeerList(remotePeer.Ip);
             Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
         }
         /// <summary>
-        /// Inspect peer queue added to by tracker, connect to the peer and add it to swarm
-        /// on success.
+        /// Inspect peer queue added to by tracker, connect to the peer which will add it
+        /// to the peer swarm on success in its asynchronous callback.
         /// </summary>
         /// <param name="cancelTask"></param>
         /// <returns></returns>
@@ -63,31 +64,20 @@ namespace BitTorrentLibrary
             {
                 while (_agentRunning)
                 {
-                    Peer remotePeer = null;
                     PeerDetails peer = _peerSwarmQeue.Take(cancelTask);
                     try
                     {
-                        Socket remotePeerSocket = PeerNetwork.Connect(peer.ip, peer.port);
-                        if (_manager.GetTorrentContext(peer.infoHash, out TorrentContext tc))
+                        _manager.AddToDeadPeerList(peer.ip);
+                        PeerConnector connector = new PeerConnector()
                         {
-                            remotePeer = new Peer(peer.ip, peer.port, tc, remotePeerSocket);
-                            AddPeerToSwarm(remotePeer);
-                        } else {
-                            remotePeerSocket.Close();
-                        }
-                    }
-                    catch (SocketException ex)
-                    {
-                        if ((ex.ErrorCode == 111) || (ex.ErrorCode == 113) || (ex.ErrorCode == (int)SocketError.TimedOut))
-                        {    // Connection refused    // No route to host
-                            _manager.AddToDeadPeerList(peer.ip);
-                            remotePeer?.Close();
-                        }
+                            peerDetails = peer,
+                            callBack = AddConnectedToPeerToSpawn
+                        };
+                        PeerNetwork.Connect(connector);
                     }
                     catch (Exception ex)
                     {
                         Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
-                        remotePeer?.Close();
                     }
                 }
             }
@@ -104,17 +94,49 @@ namespace BitTorrentLibrary
         /// an exception that will terminate the listener.
         /// </summary>
         /// <param name="remotePeerSocket"></param>
-        internal void AddRemoteConnectedPeerToSpawn(Object obj)
+        private void AddRemotelyConnectingPeerToSpawn(Object obj)
         {
-            PeerConnector connector = (PeerConnector) obj;
+            PeerConnector connector = (PeerConnector)obj;
             _cancelWorkerTaskSource.Token.ThrowIfCancellationRequested();
             Peer remotePeer = null;
             try
             {
                 Log.Logger.Info("(Agent) Remote peer connected...");
+
                 connector.peerDetails = PeerNetwork.GetConnectingPeerDetails(connector.socket);
+                _manager.AddToDeadPeerList(connector.peerDetails.ip);
                 remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, null, connector.socket);
                 AddPeerToSwarm(remotePeer);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
+                remotePeer?.Close();
+            }
+        }
+        /// <summary>
+        /// Called from asychronous connect handler on connection to a remote peer. 
+        /// An attempt is then made to handshake with the peer and add it to the peer 
+        /// swarm on success. On entry into the method we check a cancel source and throw
+        /// an exception that will terminate the listener.
+        /// </summary>
+        /// <param name="remotePeerSocket"></param>
+        private void AddConnectedToPeerToSpawn(Object obj)
+        {
+            PeerConnector connector = (PeerConnector)obj;
+            _cancelWorkerTaskSource.Token.ThrowIfCancellationRequested();
+            Peer remotePeer = null;
+            try
+            {
+                if (_manager.GetTorrentContext(connector.peerDetails.infoHash, out TorrentContext tc))
+                {
+                    remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, tc, connector.socket);
+                    AddPeerToSwarm(remotePeer);
+                }
+                else
+                {
+                    connector.socket.Close();
+                }
             }
             catch (Exception ex)
             {
@@ -150,7 +172,7 @@ namespace BitTorrentLibrary
                     Task.Run(() => PeerConnectCreatorTask(_cancelWorkerTaskSource.Token));
                     PeerNetwork.StartListening(new PeerConnector
                     {
-                        callBack = AddRemoteConnectedPeerToSpawn
+                        callBack = AddRemotelyConnectingPeerToSpawn
                     });
                     Log.Logger.Info("(Agent) Torrent Agent started.");
                 }

@@ -252,7 +252,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by assembler.
         /// </summary>
-        public Assembler(int assemblerTimeout = 10, int maximumBlockRequests = 5)
+        public Assembler(int assemblerTimeout = 10, int maximumBlockRequests = 10)
         {
             _assemberTimeout = assemblerTimeout;
             _maximumBlockRequests = maximumBlockRequests;

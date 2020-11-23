@@ -289,7 +289,6 @@ namespace BitTorrentLibrary
             Int32 bytesRead = remotePeer.PeerRead(remotePacket, remotePacket.Length);
             if (bytesRead != remotePacket.Length)
             {
-                manager.AddToDeadPeerList(remotePeer.Ip);
                 throw new Exception("Invalid length read for intial packet exchange.");
             }
             DumpRemoteClientInfo(remotePacket);
@@ -310,7 +309,6 @@ namespace BitTorrentLibrary
                 }
                 if (!connected)
                 {
-                    manager.AddToDeadPeerList(remotePeer.Ip);
                     throw new Exception($"Remote peer [{remotePeer.Ip}] has the incorrect infohash.");
                 }
             }

@@ -1,3 +1,4 @@
+using System.Data.Common;
 //
 // Author: Robert Tizzard
 //
@@ -89,19 +90,39 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
+        /// Asynchronous peer connection callback. When a connection
+        /// is completed try to add it to the swarm via the connector 
+        /// passed as a parameter.
+        /// </summary>
+        /// <param name="ar"></param>
+        private static void ConnectionAsyncHandler(IAsyncResult ar)
+        {
+            PeerConnector connector = (PeerConnector)ar.AsyncState;
+            try
+            {
+                connector.socket.EndConnect(ar);
+                connector.callBack(connector);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
+                connector.socket?.Close();
+            }
+        }
+        /// <summary>
         /// Asynchronous remote peer connection callback. When a remote connection
         /// arrives try to add it to the swarm via the connector passed then prime 
         /// the accept callback for the next peers connection attempt.
         /// </summary>
         /// <param name="ar"></param>
-        public static void AcceptConnectionAsyncHandler(IAsyncResult ar)
+        public static void AcceptAsyncHandler(IAsyncResult ar)
         {
             PeerConnector connector = (PeerConnector)ar.AsyncState;
             try
             {
                 connector.socket = _listenerSocket.EndAccept(ar);
                 connector.callBack(connector.Copy());
-                _listenerSocket.BeginAccept(new AsyncCallback(AcceptConnectionAsyncHandler), connector);
+                _listenerSocket.BeginAccept(new AsyncCallback(AcceptAsyncHandler), connector);
             }
             catch (Exception ex)
             {
@@ -115,7 +136,7 @@ namespace BitTorrentLibrary
         /// Peer read packet asynchronous callback.
         /// </summary>
         /// <param name="readAsyncState">Read async state.</param>
-        private void ReadPacketAsyncHandler(IAsyncResult readAsyncState)
+        private void ReadAsyncHandler(IAsyncResult readAsyncState)
         {
             Peer remotePeer = (Peer)readAsyncState.AsyncState;
             try
@@ -144,7 +165,7 @@ namespace BitTorrentLibrary
                     _bytesRead = 0;
                     PacketLength = Constants.SizeOfUInt32;
                 }
-                PeerSocket.BeginReceive(ReadBuffer, _bytesRead, (PacketLength - _bytesRead), SocketFlags.None, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
+                PeerSocket.BeginReceive(ReadBuffer, _bytesRead, (PacketLength - _bytesRead), SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
             }
             catch (Exception ex)
             {
@@ -162,18 +183,18 @@ namespace BitTorrentLibrary
             PeerSocket = remotePeerSocket;
         }
         /// <summary>
-        /// Connect with remote peer and return the socket.
+        /// Connect with remote peer and add it to the swarm when its callback handler is called.
         /// </summary>
         /// <param name="ip"></param>
         /// <param name="port"></param>
         /// <returns></returns>
-        public static Socket Connect(string ip, int port)
+        public static void Connect(PeerConnector connector)
         {
             IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
-            IPAddress remotePeerIP = System.Net.IPAddress.Parse(ip);
-            Socket socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(new IPEndPoint(remotePeerIP, port), new TimeSpan(0, 0, Constants.ReadSocketTimeout));
-            return socket;
+            IPAddress remotePeerIP = System.Net.IPAddress.Parse(connector.peerDetails.ip);
+            connector.socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            connector.socket.BeginConnect(new IPEndPoint(remotePeerIP, connector.peerDetails.port), new AsyncCallback(ConnectionAsyncHandler), connector);
+
         }
         /// <summary>
         /// Send packet to remote peer. Again do not check for connected as used in intial handshake with peer and
@@ -205,7 +226,7 @@ namespace BitTorrentLibrary
         public void StartReads(Peer remotePeer)
         {
             Log.Logger.Info($"(PeerNetwork) Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} started...");
-            PeerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, SocketFlags.None, new AsyncCallback(ReadPacketAsyncHandler), remotePeer);
+            PeerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
         }
         /// <summary>
         /// Close socket connection
@@ -244,7 +265,7 @@ namespace BitTorrentLibrary
                 _listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
                 _listenerSocket.Listen(100);
-                _listenerSocket.BeginAccept(new AsyncCallback(AcceptConnectionAsyncHandler), connector);
+                _listenerSocket.BeginAccept(new AsyncCallback(AcceptAsyncHandler), connector);
                 Log.Logger.Info("(PeerNetwork) Port connection listener started...");
             }
             catch (Exception ex)
