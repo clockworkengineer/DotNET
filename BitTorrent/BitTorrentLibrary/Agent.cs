@@ -52,8 +52,8 @@ namespace BitTorrentLibrary
             Log.Logger.Info($"(Agent) Peer [{remotePeer.Ip}] added to swarm.");
         }
         /// <summary>
-        /// Inspect peer queue added to by tracker, connect to the peer which will add it
-        /// to the peer swarm on success in its asynchronous callback.
+        /// Keep taking peers from queue added to be tracker,  try to connect to them and
+        /// and on success add them to the active peer swarm.
         /// </summary>
         /// <param name="cancelTask"></param>
         /// <returns></returns>
@@ -64,16 +64,15 @@ namespace BitTorrentLibrary
             {
                 while (_agentRunning)
                 {
-                    PeerDetails peer = _peerSwarmQeue.Take(cancelTask);
                     try
                     {
+                        PeerDetails peer = _peerSwarmQeue.Take(cancelTask);
                         _manager.AddToDeadPeerList(peer.ip);
-                        PeerConnector connector = new PeerConnector()
+                        PeerNetwork.Connect(new PeerConnector()
                         {
                             peerDetails = peer,
                             callBack = AddConnectedToPeerToSpawn
-                        };
-                        PeerNetwork.Connect(connector);
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -96,13 +95,12 @@ namespace BitTorrentLibrary
         /// <param name="remotePeerSocket"></param>
         private void AddRemotelyConnectingPeerToSpawn(Object obj)
         {
-            PeerConnector connector = (PeerConnector)obj;
             _cancelWorkerTaskSource.Token.ThrowIfCancellationRequested();
             Peer remotePeer = null;
             try
             {
                 Log.Logger.Info("(Agent) Remote peer connected...");
-
+                PeerConnector connector = (PeerConnector)obj;
                 connector.peerDetails = PeerNetwork.GetConnectingPeerDetails(connector.socket);
                 _manager.AddToDeadPeerList(connector.peerDetails.ip);
                 remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, null, connector.socket);
@@ -123,11 +121,11 @@ namespace BitTorrentLibrary
         /// <param name="remotePeerSocket"></param>
         private void AddConnectedToPeerToSpawn(Object obj)
         {
-            PeerConnector connector = (PeerConnector)obj;
             _cancelWorkerTaskSource.Token.ThrowIfCancellationRequested();
             Peer remotePeer = null;
             try
             {
+                PeerConnector connector = (PeerConnector)obj;
                 if (_manager.GetTorrentContext(connector.peerDetails.infoHash, out TorrentContext tc))
                 {
                     remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, tc, connector.socket);
