@@ -31,7 +31,7 @@ namespace BitTorrentLibrary
         }
         /// <summary>
         /// Select the next piece to be downloaded. At present this is just return the next sequentially
-        /// missing piece but may change in thf future.
+        /// missing piece but may change in the future.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="nextPiece"></param>
@@ -57,21 +57,21 @@ namespace BitTorrentLibrary
         {
             HashSet<UInt32> suggestions = new HashSet<UInt32>();
             UInt32 startPiece = (UInt32)_pieceRandmizer.Next(0, remotePeer.Tc.numberOfPieces);
-            UInt32 currentPiece = startPiece;
             numberOfSuggestions = Math.Min(remotePeer.NumberOfMissingPieces, numberOfSuggestions);
             if (numberOfSuggestions > 0)
             {
+                UInt32 currentPiece = startPiece;
                 do
                 {
-                    if (!remotePeer.IsPieceOnRemotePeer(currentPiece) && remotePeer.Tc.IsPieceLocal(currentPiece) && !suggestions.Contains(currentPiece))
+                    if (!remotePeer.IsPieceOnRemotePeer(currentPiece) && 
+                         remotePeer.Tc.IsPieceLocal(currentPiece) && 
+                         !suggestions.Contains(currentPiece))
                     {
                         suggestions.Add(currentPiece);
-                        if (--numberOfSuggestions == 0) break;
-                        currentPiece = startPiece = (UInt32)_pieceRandmizer.Next(0, remotePeer.Tc.numberOfPieces);
                     }
                     currentPiece++;
                     currentPiece %= (UInt32)remotePeer.Tc.numberOfPieces;
-                } while ((startPiece != currentPiece));
+                } while ((startPiece != currentPiece)&&(suggestions.Count<numberOfSuggestions));
             }
             return (suggestions.ToArray());
         }
