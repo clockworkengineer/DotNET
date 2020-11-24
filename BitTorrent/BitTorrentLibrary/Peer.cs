@@ -36,7 +36,7 @@ namespace BitTorrentLibrary
         public ManualResetEvent BitfieldReceived { get; }                // When event set then peer has recieved bitfield from remote peer
         public int NumberOfMissingPieces { get; set; }                   // Number of missing pieces from a remote peers torrent
         public byte[] ReadBuffer => _network?.ReadBuffer;                 // Network read buffer
-        public int PacketLength => (int) _network?.PacketLength;          // Current read packet length
+        public int PacketLength => (int)_network?.PacketLength;          // Current read packet length
         /// <summary>
         /// Setup data and resources needed by peer.
         /// </summary>
@@ -96,10 +96,10 @@ namespace BitTorrentLibrary
             ValueTuple<bool, byte[]> peerResponse = PWP.Handshake(this, manager);
             if (peerResponse.Item1)
             {
-                RemotePeerID = peerResponse.Item2;
-                PWP.Bitfield(this, Tc.Bitfield);
-                _network.StartReads(this);
                 Connected = true;
+                RemotePeerID = peerResponse.Item2;
+                _network.StartReads(this);
+                PWP.Bitfield(this, Tc.Bitfield);
             }
         }
         /// <summary>
