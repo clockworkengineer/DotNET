@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-using System.Diagnostics;
 //
 // Author: Robert Tizzard
 //
@@ -13,9 +11,10 @@ using System.Diagnostics;
 //
 using System;
 using System.Timers;
-using System.Threading.Tasks;
 using System.Net;
 using System.Text;
+using System.Collections.Concurrent;
+using System.Linq;
 namespace BitTorrentLibrary
 {
     public delegate void TrackerCallBack(Object callBackData);            // Tracker callback
@@ -88,7 +87,7 @@ namespace BitTorrentLibrary
                         if ((tracker._tc.Status == TorrentStatus.Downloading) && (tracker.peerSwarmQueue.Count == 0))
                         {
                             int peerThreshHold = tracker._tc.maximumSwarmSize;
-                            foreach (var peerDetails in tracker.lastResponse.peers)
+                            foreach (var peerDetails in tracker.lastResponse.peers ?? Enumerable.Empty<PeerDetails>())
                             {
                                 if (!tracker._tc.manager.IsPeerDead(peerDetails.ip))
                                 {
