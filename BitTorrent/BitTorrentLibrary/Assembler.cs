@@ -137,6 +137,7 @@ namespace BitTorrentLibrary
             tc.assemblyData.pieceBuffer.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
             tc.assemblyData.pieceFinished.Reset();
             tc.assemblyData.blockRequestsDone.Reset();
+             tc.MarkPieceMissing(pieceNumber, false);
             while (GetMoreBlocks(tc, pieceNumber, remotePeers))
             {
                 //

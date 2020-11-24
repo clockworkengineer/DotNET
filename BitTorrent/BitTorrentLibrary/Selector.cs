@@ -7,8 +7,8 @@
 // peer selection methods for piece download. For piece selection it just starts
 // at beginning of the missing pieces bitfield and stops when it finds
 // the first piece as flagged missing and returns its ordinal position within
-// the bitfield. For peers its just al those that are currently active and have
-// the required piece.
+// the bitfield. For peers selection it is just all those that are currently active 
+// (not choked) and have the required piece.
 //
 // Copyright 2020.
 //
@@ -20,27 +20,7 @@ namespace BitTorrentLibrary
 {
     public class Selector
     {
-        private Random _pieceRandmizer;
-        /// <summary>
-        /// Return next suggested piece to download.
-        /// </summary>
-        /// <param name="remotePeer"></param>
-        /// <param name="startPiece"></param>
-        /// <returns></returns>
-        private Int64 GetSuggestedPiece(TorrentContext tc, UInt32 startPiece)
-        {
-            UInt32 currentPiece = startPiece;
-            do
-            {
-                if (tc.IsPieceMissing(currentPiece) && (tc.PeersThatHavePiece(currentPiece) > 0))
-                {
-                    return currentPiece;
-                }
-                currentPiece++;
-                currentPiece %= (UInt32)tc.numberOfPieces;
-            } while (startPiece != currentPiece);
-            return -1;
-        }
+        private readonly Random _pieceRandmizer;
         /// <summary>
         /// Setup data and resources needed by selector.
         /// </summary>
@@ -50,7 +30,8 @@ namespace BitTorrentLibrary
             _pieceRandmizer = new Random();
         }
         /// <summary>
-        /// 
+        /// Select the next piece to be downloaded. At present this is just return the next sequentially
+        /// missing piece but may change in thf future.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="nextPiece"></param>
@@ -59,14 +40,9 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece, UInt32 startPiece, CancellationToken _)
         {
-            bool pieceSuggested = false;
-            Int64 suggestedPiece = GetSuggestedPiece(tc, startPiece);
-            if (suggestedPiece != -1)
-            {
-                nextPiece = (UInt32)suggestedPiece;
-                tc.MarkPieceMissing(nextPiece, false);
-                pieceSuggested = true;
-            }
+
+            (var pieceSuggested, var pieceNumber) = tc.FindNextMissingPiece(startPiece);
+            nextPiece = pieceNumber;
             return pieceSuggested;
         }
         /// <summary>

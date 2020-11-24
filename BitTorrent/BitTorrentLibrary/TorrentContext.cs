@@ -29,7 +29,7 @@ namespace BitTorrentLibrary
         internal Average averageAssemblyTime;               // Average assembly time in milliseconds
         internal int totalTimeouts;                      // Timeouts while assembling pieces
         internal int currentBlockRequests;                  // Current outstanding block requests
-        internal Mutex guardMutex;                          
+        internal Mutex guardMutex;
     }
     /// <summary>
     /// Piece Information.
@@ -45,7 +45,7 @@ namespace BitTorrentLibrary
     public class TorrentContext
     {
         private readonly SHA1 _SHA1;                                 // Object to create SHA1 piece info hash
-        private readonly Object _dcLock = new object();              // Synchronization lock for torrent context
+        private readonly Object _tcLock = new object();              // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                      // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                     // Piece information 
         internal Manager manager;                                    // Torrent context 
@@ -90,7 +90,7 @@ namespace BitTorrentLibrary
             (var totalDownloadLength, var allFilesToDownload) = torrentMetaInfo.LocalFilesToDownloadList(downloadPath);
             filesToDownload = allFilesToDownload;
             TotalBytesToDownload = totalDownloadLength;
-            pieceLength =  torrentMetaInfo.GetPieceLength();
+            pieceLength = torrentMetaInfo.GetPieceLength();
             piecesInfoHash = torrentMetaInfo.GetPiecesInfoHash();
             numberOfPieces = ((piecesInfoHash.Length / Constants.HashLength));
             _pieceData = new PieceInfo[numberOfPieces];
@@ -161,7 +161,7 @@ namespace BitTorrentLibrary
         /// <param name="local">If set to <c>true</c> piece has been downloaded.</param>
         internal void MarkPieceLocal(UInt32 pieceNumber, bool local)
         {
-            lock (_dcLock)
+            lock (_tcLock)
             {
                 if (local)
                 {
@@ -180,7 +180,7 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         internal bool IsPieceLocal(UInt32 pieceNumber)
         {
-            lock (_dcLock)
+            lock (_tcLock)
             {
                 return (Bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
             }
@@ -192,7 +192,7 @@ namespace BitTorrentLibrary
         /// <param name="missing"></param>
         internal void MarkPieceMissing(UInt32 pieceNumber, bool missing)
         {
-            lock (_dcLock)
+            lock (_tcLock)
             {
                 if (missing)
                 {
@@ -219,7 +219,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool IsPieceMissing(UInt32 pieceNumber)
         {
-            lock (_dcLock)
+            lock (_tcLock)
             {
                 return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
             }
@@ -282,24 +282,6 @@ namespace BitTorrentLibrary
             _pieceData[pieceNumber].pieceLength = pieceLength;
         }
         /// <summary>
-        /// Get number of blocks in piece.
-        /// </summary>
-        /// <param name="pieceNumber"></param>
-        /// <returns></returns>
-        internal int GetBlocksInPiece(UInt32 pieceNumber)
-        {
-            int blockCount = (int) (_pieceData[pieceNumber].pieceLength / Constants.BlockSize);
-            if (_pieceData[pieceNumber].pieceLength % Constants.BlockSize != 0)
-            {
-                blockCount++;
-            }
-            return blockCount;
-        }
-        internal int PeersThatHavePiece(UInt32 pieceNumber)
-        {
-            return _pieceData[pieceNumber].peerCount;
-        }
-        /// <summary>
         /// Check that ip not already in swarm and that maximum size hasnt been reached.
         /// </summary>
         /// <param name="ip"></param>
@@ -309,12 +291,37 @@ namespace BitTorrentLibrary
             return !peerSwarm.ContainsKey(ip) && (peerSwarm.Count < maximumSwarmSize);
         }
         /// <summary>
-        /// 
+        /// Increment the peer count giving the number of peers with piece
         /// </summary>
         /// <param name="pieceNumber"></param>
         internal void IncrementPeerCount(UInt32 pieceNumber)
         {
             _pieceData[pieceNumber].peerCount++;
+        }
+        /// <summary>
+        /// Find the next piece that the local torrent is missing.
+        /// </summary>
+        /// <param name="startPiece"></param>
+        /// <returns></returns>
+        internal (bool, UInt32) FindNextMissingPiece(UInt32 startPiece)
+        {
+            startPiece %= (UInt32)numberOfPieces;
+            UInt32 currentPiece = startPiece;
+            lock (_tcLock)
+            {
+                do
+                {
+                    if (((_piecesMissing[currentPiece >> 3] & 0x80 >> (Int32)(currentPiece & 0x7)) != 0) &&
+                       (_pieceData[currentPiece].peerCount > 0))
+                    {
+                        return (true, currentPiece);
+                    }
+                    currentPiece++;
+                    currentPiece %= (UInt32)numberOfPieces;
+                } while (startPiece != currentPiece);
+                return (false, currentPiece);
+            }
+
         }
     }
 }
