@@ -20,6 +20,7 @@ namespace BitTorrentLibrary
 {
     public class Selector
     {
+        private Random _pieceRandmizer;
         /// <summary>
         /// Return next suggested piece to download.
         /// </summary>
@@ -36,7 +37,7 @@ namespace BitTorrentLibrary
                     return currentPiece;
                 }
                 currentPiece++;
-                currentPiece %= (UInt32) tc.numberOfPieces;
+                currentPiece %= (UInt32)tc.numberOfPieces;
             } while (startPiece != currentPiece);
             return -1;
         }
@@ -46,6 +47,7 @@ namespace BitTorrentLibrary
         /// <param name="dc"></param>
         public Selector()
         {
+            _pieceRandmizer = new Random();
         }
         /// <summary>
         /// 
@@ -75,20 +77,26 @@ namespace BitTorrentLibrary
         /// <param name="numberOfSuggestions"></param>
         /// <param name="startPiece"></param>
         /// <returns></returns>
-        internal UInt32[] LocalPieceSuggestions(Peer remotePeer, UInt32 numberOfSuggestions, UInt32 startPiece = 0)
+        internal UInt32[] LocalPieceSuggestions(Peer remotePeer, int numberOfSuggestions)
         {
-            List<UInt32> suggestions = new List<UInt32>();
+            HashSet<UInt32> suggestions = new HashSet<UInt32>();
+            UInt32 startPiece = (UInt32)_pieceRandmizer.Next(0, remotePeer.Tc.numberOfPieces);
             UInt32 currentPiece = startPiece;
-            do
+            numberOfSuggestions = Math.Min(remotePeer.NumberOfMissingPieces, numberOfSuggestions);
+            if (numberOfSuggestions > 0)
             {
-                if (!remotePeer.IsPieceOnRemotePeer(currentPiece) && remotePeer.Tc.IsPieceLocal(currentPiece))
+                do
                 {
-                    suggestions.Add(currentPiece);
-                    numberOfSuggestions--;
-                }
-                currentPiece++;
-                currentPiece %= (UInt32) remotePeer.Tc.numberOfPieces;
-            } while ((startPiece != currentPiece) && (numberOfSuggestions > 0));
+                    if (!remotePeer.IsPieceOnRemotePeer(currentPiece) && remotePeer.Tc.IsPieceLocal(currentPiece) && !suggestions.Contains(currentPiece))
+                    {
+                        suggestions.Add(currentPiece);
+                        if (--numberOfSuggestions == 0) break;
+                        currentPiece = startPiece = (UInt32)_pieceRandmizer.Next(0, remotePeer.Tc.numberOfPieces);
+                    }
+                    currentPiece++;
+                    currentPiece %= (UInt32)remotePeer.Tc.numberOfPieces;
+                } while ((startPiece != currentPiece));
+            }
             return (suggestions.ToArray());
         }
         /// <summary>

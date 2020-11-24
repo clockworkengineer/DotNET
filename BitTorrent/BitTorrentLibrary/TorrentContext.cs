@@ -54,7 +54,7 @@ namespace BitTorrentLibrary
         internal BlockingCollection<PieceRequest> pieceRequestQueue; // Piece request queue
         internal UInt32 pieceLength;                                 // Length of piece in bytese
         internal byte[] piecesInfoHash;                              // Pieces infohash from torrent file
-        internal int numberOfPieces;                                // Number of pieces into torrent
+        internal int numberOfPieces;                                // Number of pieces in torrent
         internal Selector selector;                                  // Piece selector
         internal ManualResetEvent downloadFinished;                  // == Set then download finished
         internal byte[] Bitfield;                                    // Bitfield for current torrent on disk
