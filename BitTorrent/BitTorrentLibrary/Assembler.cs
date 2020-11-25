@@ -132,9 +132,10 @@ namespace BitTorrentLibrary
             }
             var stopwatch = new Stopwatch();
             Log.Logger.Debug($"(Assembler) Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
-            tc.assemblyData.pieceBuffer.Number = pieceNumber;
-            tc.assemblyData.pieceBuffer.Reset();
-            tc.assemblyData.pieceBuffer.SetBlocksPresent(tc.GetPieceLength(pieceNumber));
+            tc.assemblyData.pieceBuffer = new PieceBuffer(tc, tc.GetPieceLength(pieceNumber))
+            {
+                Number = pieceNumber
+            };
             tc.assemblyData.pieceFinished.Reset();
             tc.assemblyData.blockRequestsDone.Reset();
             tc.MarkPieceMissing(pieceNumber, false);
@@ -204,7 +205,7 @@ namespace BitTorrentLibrary
                         if (pieceValid)
                         {
                             Log.Logger.Debug($"(Assembler) All blocks for piece {nextPiece} received");
-                            tc.pieceWriteQueue.Add(new PieceBuffer(tc.assemblyData.pieceBuffer));
+                            tc.pieceWriteQueue.Add(tc.assemblyData.pieceBuffer);
                             tc.MarkPieceLocal(nextPiece, true);
                             SignalHaveToSwarm(tc, nextPiece);
                         }

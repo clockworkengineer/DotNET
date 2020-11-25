@@ -114,7 +114,7 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
                     CancelTaskSource.Cancel();
-
+                    Tc.UnMergePieceBitfield(this);
                     if (Tc.peerSwarm.ContainsKey(Ip))
                     {
                         if (Tc.peerSwarm.TryRemove(Ip, out Peer _))
@@ -163,6 +163,7 @@ namespace BitTorrentLibrary
         /// <param name="blockOffset">Block offset.</param>
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
         {
+
             if (pieceNumber == Tc.assemblyData.pieceBuffer.Number)
             {
                 Tc.assemblyData.guardMutex.WaitOne();
@@ -188,6 +189,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug($"(Peer) PIECE {pieceNumber} DISCARDED.");
             }
+
         }
     }
 }

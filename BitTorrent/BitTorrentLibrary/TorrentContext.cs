@@ -108,7 +108,6 @@ namespace BitTorrentLibrary
             peerSwarm = new ConcurrentDictionary<string, Peer>();
             assemblyData.pieceFinished = new ManualResetEvent(false);
             assemblyData.blockRequestsDone = new ManualResetEvent(false);
-            assemblyData.pieceBuffer = new PieceBuffer(this, pieceLength);
             assemblyData.cancelTaskSource = new CancellationTokenSource();
             assemblyData.guardMutex = new Mutex();
             paused = new ManualResetEvent(false);
@@ -231,6 +230,7 @@ namespace BitTorrentLibrary
         /// Calculate bytes left to download and report going negative.
         /// </summary>
         /// <returns>Bytes left in torrent to download</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal UInt64 BytesLeftToDownload()
         {
             if ((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded < 0)
@@ -275,6 +275,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="pieceNumber"></param>
         /// <param name="pieceLength"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void SetPieceLength(UInt32 pieceNumber, UInt32 pieceLength)
         {
             _pieceData[pieceNumber].pieceLength = pieceLength;
