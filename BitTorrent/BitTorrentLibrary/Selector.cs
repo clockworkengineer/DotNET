@@ -47,7 +47,8 @@ namespace BitTorrentLibrary
         }
         /// <summary>
         /// Generate an array of pieces that are local but missing from the remote peer for input
-        /// to Have packet requests sent to remote peer.
+        /// to Have packet requests sent to remote peer. At present we only randomise the first 
+        /// piece and the rest are chosen sequentially from that position (with wrap).
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="numberOfSuggestions"></param>

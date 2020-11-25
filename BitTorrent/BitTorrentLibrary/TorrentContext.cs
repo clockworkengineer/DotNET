@@ -4,8 +4,9 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: Torrent being downloaded/seeded context. This includes
-// download progress, a pieces to download bitfield and functions for 
-// accessing this map to change a pieces status.
+// download progress, a pieces to download bitfield, functions for 
+// accessing this map to change a pieces status and the buffer for the
+// current piece being assembled.
 //
 // Copyright 2020.
 //
@@ -16,9 +17,13 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Threading;
+using System.Runtime.CompilerServices;
 namespace BitTorrentLibrary
 {
     public delegate void DownloadCompleteCallBack(Object callbackData);  // Download completed callback
+    /// <summary>
+    /// Piece being assembled related data
+    /// </summary>
     internal struct AssemblerData
     {
         internal PieceBuffer pieceBuffer;                   // Assembled piece buffer
@@ -27,9 +32,9 @@ namespace BitTorrentLibrary
         internal ManualResetEvent blockRequestsDone;        // When event set then piece has been fully assembled
         internal CancellationTokenSource cancelTaskSource;  // Cancel assembler task source
         internal Average averageAssemblyTime;               // Average assembly time in milliseconds
-        internal int totalTimeouts;                      // Timeouts while assembling pieces
+        internal int totalTimeouts;                         // Timeouts while assembling pieces
         internal int currentBlockRequests;                  // Current outstanding block requests
-        internal Mutex guardMutex;
+        internal Mutex guardMutex;                          // Assembled piece guard mutex
     }
     /// <summary>
     /// Piece Information.
@@ -45,7 +50,6 @@ namespace BitTorrentLibrary
     public class TorrentContext
     {
         private readonly SHA1 _SHA1;                                 // Object to create SHA1 piece info hash
-        private readonly Object _tcLock = new object();              // Synchronization lock for torrent context
         private readonly byte[] _piecesMissing;                      // Missing piece bitfield
         private readonly PieceInfo[] _pieceData;                     // Piece information 
         internal Manager manager;                                    // Torrent context 
@@ -61,7 +65,7 @@ namespace BitTorrentLibrary
         internal List<FileDetails> filesToDownload;                  // Local files in torrent
         internal byte[] infoHash;                                    // Torrent info hash
         internal string trackerURL;                                  // Main Tracker URL
-        internal int missingPiecesCount = 0;                        // Missing piece count
+        internal int missingPiecesCount = 0;                         // Missing piece count
         internal int maximumSwarmSize = Constants.MaximumSwarmSize;  // Maximim swarm size
         internal ConcurrentDictionary<string, Peer> peerSwarm;       // Current peer swarm
         internal Tracker MainTracker;                                // Main tracker assigned to torrent
@@ -123,6 +127,87 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
+        /// Sets a piece as downloaded.
+        /// </summary>
+        /// <param name="pieceNumber">Piece number.</param>
+        /// <param name="local">If set to <c>true</c> piece has been downloaded.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void MarkPieceLocal(UInt32 pieceNumber, bool local)
+        {
+            if (local)
+            {
+                Bitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+            }
+            else
+            {
+                Bitfield[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
+            }
+        }
+        /// <summary>
+        /// Has a piece been fully downloaded.
+        /// </summary>
+        /// <returns><c>true</c>, if piece is local, <c>false</c> otherwise.</returns>
+        /// <param name="pieceNumber">Piece number.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool IsPieceLocal(UInt32 pieceNumber)
+        {
+            return (Bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pieceNumber"></param>
+        /// <param name="missing"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void MarkPieceMissing(UInt32 pieceNumber, bool missing)
+        {
+            if (missing)
+            {
+                if (!IsPieceMissing(pieceNumber))
+                {
+                    _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
+                    missingPiecesCount++;
+                }
+            }
+            else
+            {
+                if (IsPieceMissing(pieceNumber))
+                {
+                    _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
+                    missingPiecesCount--;
+                }
+            }
+        }
+        /// <summary>
+        /// Is a piece missing from local peer.
+        /// </summary>
+        /// <param name="pieceNumber"></param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool IsPieceMissing(UInt32 pieceNumber)
+        {
+            return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+        }
+        /// <summary>
+        /// Merges the piece bitfield of a remote peer with the torrents local piece map data.
+        /// </summary>
+        /// <param name="remotePeer">Remote peer.</param>
+        internal void MergePieceBitfield(Peer remotePeer)
+        {
+            UInt32 pieceNumber = 0;
+            for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
+            {
+                for (byte bit = 0x80; bit != 0; bit >>= 1, pieceNumber++)
+                {
+                    if ((remotePeer.RemotePieceBitfield[i] & bit) != 0)
+                    {
+                        _pieceData[pieceNumber].peerCount++;
+                        remotePeer.NumberOfMissingPieces--;
+                    }
+                }
+            }
+        }
+        /// <summary>
         /// Checks the hash of a torrent piece on disc to see whether it has already been downloaded.
         /// </summary>
         /// <returns><c>true</c>, if piece hash agrees (it has been downloaded), <c>false</c> otherwise.</returns>
@@ -154,95 +239,7 @@ namespace BitTorrentLibrary
             }
             return (UInt64)((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded);
         }
-        /// <summary>
-        /// Sets a piece as downloaded.
-        /// </summary>
-        /// <param name="pieceNumber">Piece number.</param>
-        /// <param name="local">If set to <c>true</c> piece has been downloaded.</param>
-        internal void MarkPieceLocal(UInt32 pieceNumber, bool local)
-        {
-            lock (_tcLock)
-            {
-                if (local)
-                {
-                    Bitfield[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                }
-                else
-                {
-                    Bitfield[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                }
-            }
-        }
-        /// <summary>
-        /// Has a piece been fully downloaded.
-        /// </summary>
-        /// <returns><c>true</c>, if piece is local, <c>false</c> otherwise.</returns>
-        /// <param name="pieceNumber">Piece number.</param>
-        internal bool IsPieceLocal(UInt32 pieceNumber)
-        {
-            lock (_tcLock)
-            {
-                return (Bitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
-            }
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="pieceNumber"></param>
-        /// <param name="missing"></param>
-        internal void MarkPieceMissing(UInt32 pieceNumber, bool missing)
-        {
-            lock (_tcLock)
-            {
-                if (missing)
-                {
-                    if (!IsPieceMissing(pieceNumber))
-                    {
-                        _piecesMissing[pieceNumber >> 3] |= (byte)(0x80 >> (Int32)(pieceNumber & 0x7));
-                        missingPiecesCount++;
-                    }
-                }
-                else
-                {
-                    if (IsPieceMissing(pieceNumber))
-                    {
-                        _piecesMissing[pieceNumber >> 3] &= (byte)~(0x80 >> (Int32)(pieceNumber & 0x7));
-                        missingPiecesCount--;
-                    }
-                }
-            }
-        }
-        /// <summary>
-        /// Is a piece missing from local peer.
-        /// </summary>
-        /// <param name="pieceNumber"></param>
-        /// <returns></returns>
-        internal bool IsPieceMissing(UInt32 pieceNumber)
-        {
-            lock (_tcLock)
-            {
-                return (_piecesMissing[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
-            }
-        }
-        /// <summary>
-        /// Merges the piece bitfield of a remote peer with the torrents local piece map data.
-        /// </summary>
-        /// <param name="remotePeer">Remote peer.</param>
-        internal void MergePieceBitfield(Peer remotePeer)
-        {
-            UInt32 pieceNumber = 0;
-            for (int i = 0; i < remotePeer.RemotePieceBitfield.Length; i++)
-            {
-                for (byte bit = 0x80; bit != 0; bit >>= 1, pieceNumber++)
-                {
-                    if ((remotePeer.RemotePieceBitfield[i] & bit) != 0)
-                    {
-                        _pieceData[pieceNumber].peerCount++;
-                        remotePeer.NumberOfMissingPieces--;
-                    }
-                }
-            }
-        }
+
         /// <summary>
         /// Un-merges disconnecting peer bitfield from piece information. At
         /// present this just involves decreasing its availability count.
@@ -268,6 +265,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="peiceNumber"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal UInt32 GetPieceLength(UInt32 peiceNumber)
         {
             return _pieceData[peiceNumber].pieceLength;
@@ -286,6 +284,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool IsSpaceInSwarm(string ip)
         {
             return !peerSwarm.ContainsKey(ip) && (peerSwarm.Count < maximumSwarmSize);
@@ -294,12 +293,15 @@ namespace BitTorrentLibrary
         /// Increment the peer count giving the number of peers with piece
         /// </summary>
         /// <param name="pieceNumber"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void IncrementPeerCount(UInt32 pieceNumber)
         {
             _pieceData[pieceNumber].peerCount++;
         }
         /// <summary>
-        /// Find the next piece that the local torrent is missing.
+        /// Find the next piece that the local torrent is missing. On finding a piece
+        /// that is missing and is available on at least one peer returns a tuple<bool, UIInt32>
+        /// that is true and has the piece number otherwise false and an unspecified value.
         /// </summary>
         /// <param name="startPiece"></param>
         /// <returns></returns>
@@ -307,21 +309,16 @@ namespace BitTorrentLibrary
         {
             startPiece %= (UInt32)numberOfPieces;
             UInt32 currentPiece = startPiece;
-            lock (_tcLock)
+            do
             {
-                do
+                if (IsPieceMissing(currentPiece) && (_pieceData[currentPiece].peerCount > 0))
                 {
-                    if (((_piecesMissing[currentPiece >> 3] & 0x80 >> (Int32)(currentPiece & 0x7)) != 0) &&
-                       (_pieceData[currentPiece].peerCount > 0))
-                    {
-                        return (true, currentPiece);
-                    }
-                    currentPiece++;
-                    currentPiece %= (UInt32)numberOfPieces;
-                } while (startPiece != currentPiece);
-                return (false, currentPiece);
-            }
-
+                    return (true, currentPiece);
+                }
+                currentPiece++;
+                currentPiece %= (UInt32)numberOfPieces;
+            } while (startPiece != currentPiece);
+            return (false, currentPiece);
         }
     }
 }

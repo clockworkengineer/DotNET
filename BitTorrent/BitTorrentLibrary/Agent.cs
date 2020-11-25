@@ -66,11 +66,11 @@ namespace BitTorrentLibrary
                 {
                     try
                     {
-                        PeerDetails peer = _peerSwarmQeue.Take(cancelTask);
-                        _manager.AddToDeadPeerList(peer.ip);
+                        PeerDetails peerDetails = _peerSwarmQeue.Take(cancelTask);
+                        _manager.AddToDeadPeerList(peerDetails.ip);
                         PeerNetwork.Connect(new PeerConnector()
                         {
-                            peerDetails = peer,
+                            peerDetails = peerDetails,
                             callBack = AddConnectedToPeerToSpawn
                         });
                     }
