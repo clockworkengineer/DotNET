@@ -1,4 +1,3 @@
-using System.Data.Common;
 //
 // Author: Robert Tizzard
 //
@@ -34,9 +33,9 @@ namespace BitTorrentLibrary
                 callBack = callBack
             };
         }
-        public PeerDetails peerDetails;
-        public Socket socket;
-        public ConnectorCallBack callBack;
+        public PeerDetails peerDetails;     // Connecting peer details
+        public Socket socket;               // Connecting socket
+        public ConnectorCallBack callBack;  // Connecting callback
     }
     internal class PeerNetwork
     {
@@ -136,7 +135,7 @@ namespace BitTorrentLibrary
                 }
                 else if (_bytesRead == PacketLength)
                 {
-                    PWP.RemotePeerMessageProcess(remotePeer);
+                    remotePeer.protocolHandler(remotePeer);
                     _lengthRead = false;
                     _bytesRead = 0;
                     PacketLength = Constants.SizeOfUInt32;

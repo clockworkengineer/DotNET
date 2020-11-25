@@ -268,17 +268,17 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="cancelAssemblerTask"></param>
-        internal void AssemblePieces(TorrentContext tc, CancellationToken cancelAssemblerTask)
+        internal void AssemblePieces(TorrentContext tc)
         {
             Log.Logger.Debug($"(Assembler) Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
             try
             {
-                tc.paused.WaitOne(cancelAssemblerTask);
+                tc.paused.WaitOne(tc.assemblyData.cancelTaskSource.Token);
                 if (tc.MainTracker.Left != 0)
                 {
                     Log.Logger.Info("Torrent downloading...");
                     tc.Status = TorrentStatus.Downloading;
-                    AssembleMissingPieces(tc, cancelAssemblerTask);
+                    AssembleMissingPieces(tc, tc.assemblyData.cancelTaskSource.Token);
                     tc.MainTracker.ChangeStatus(TrackerEvent.completed);
                     Log.Logger.Info("Whole Torrent finished downloading.");
                 }
@@ -287,7 +287,7 @@ namespace BitTorrentLibrary
                 tc.MainTracker.SetSeedingInterval(60000 * 30);
                 // Make sure get at least one more annouce before long wait
                 tc.MainTracker.ChangeStatus(TrackerEvent.None);
-                ProcessRemotePeerRequests(tc, cancelAssemblerTask);
+                ProcessRemotePeerRequests(tc, tc.assemblyData.cancelTaskSource.Token);
             }
             catch (Exception ex)
             {

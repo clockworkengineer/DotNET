@@ -38,25 +38,10 @@ namespace BitTorrentLibrary
                 BNodeBase field = Bencoding.GetDictionaryEntry(decodedAnnounce, "peers");
                 if (field != null)
                 {
-                    decodedResponse.peers = new List<PeerDetails>();
+                    decodedResponse.peerList = new List<PeerDetails>();
                     if (field is BNodeString bNodeString) // Compact peer list reply
                     {
-                        byte[] peers = (bNodeString).str;
-                        for (var num = 0; num < peers.Length; num += 6)
-                        {
-                            PeerDetails peer = new PeerDetails
-                            {
-                                infoHash = tracker.InfoHash,
-                                peerID = String.Empty,
-                                ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}"
-                            };
-                            peer.port = ((int)peers[num + 4] * 256) + peers[num + 5];
-                            if (peer.ip != tracker.Ip) // Ignore self in peers list
-                            {
-                                Log.Logger.Trace($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
-                                decodedResponse.peers.Add(peer);
-                            }
-                        }
+                        decodedResponse.peerList = tracker.GetCompactPeerList( (bNodeString).str, 0);
                     }
                     else if (field is BNodeList bNodeList)  // Non-compact peer list reply
                     {
@@ -86,7 +71,7 @@ namespace BitTorrentLibrary
                                 if (peer.ip != tracker.Ip) // Ignore self in peers list
                                 {
                                     Log.Logger.Trace($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
-                                    decodedResponse.peers.Add(peer);
+                                    decodedResponse.peerList.Add(peer);
                                 }
                             }
                         }

@@ -13,6 +13,7 @@ using System;
 using System.Timers;
 using System.Net;
 using System.Text;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 namespace BitTorrentLibrary
@@ -87,7 +88,7 @@ namespace BitTorrentLibrary
                         if ((tracker._tc.Status == TorrentStatus.Downloading) && (tracker.peerSwarmQueue.Count == 0))
                         {
                             int peerThreshHold = tracker._tc.maximumSwarmSize;
-                            foreach (var peerDetails in tracker.lastResponse.peers ?? Enumerable.Empty<PeerDetails>())
+                            foreach (var peerDetails in tracker.lastResponse.peerList ?? Enumerable.Empty<PeerDetails>())
                             {
                                 if (!tracker._tc.manager.IsPeerDead(peerDetails.ip))
                                 {
@@ -157,6 +158,32 @@ namespace BitTorrentLibrary
                     UpdateTimerInterval(Interval);
                 }
             }
+        }
+        /// <summary>
+        /// Decode peer list sent by remote tracker.
+        /// </summary>
+        /// <param name="peers"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        internal List<PeerDetails> GetCompactPeerList(byte[] peers, int offset)
+        {
+            List<PeerDetails> peerList = new List<PeerDetails>();
+            for (var num = offset; num < peers.Length; num += 6)
+            {
+                PeerDetails peer = new PeerDetails
+                {
+                    infoHash = InfoHash,
+                    peerID = String.Empty,
+                    ip = $"{peers[num]}.{peers[num + 1]}.{peers[num + 2]}.{peers[num + 3]}"
+                };
+                peer.port = ((int)peers[num + 4] * 256) + peers[num + 5];
+                if (peer.ip != Ip) // Ignore self in peers list
+                {
+                    Log.Logger.Trace($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
+                    peerList.Add(peer);
+                }
+            }
+            return peerList;
         }
         /// <summary>
         /// Internal Tracker constructor for mock testing.

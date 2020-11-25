@@ -150,7 +150,7 @@ namespace BitTorrentLibrary
             Tracker.LogAnnouce(tracker);
             AnnounceResponse response = new AnnounceResponse
             {
-                peers = new List<PeerDetails>()
+                peerList = new List<PeerDetails>()
             };
             try
             {
@@ -167,21 +167,7 @@ namespace BitTorrentLibrary
                         response.interval = (int)Util.UnPackUInt32(commandReply, 8);
                         response.incomplete = (int)Util.UnPackUInt32(commandReply, 12);
                         response.complete = (int)Util.UnPackUInt32(commandReply, 16);
-                        for (var num = 20; num < commandReply.Length; num += 6)
-                        {
-                            PeerDetails peer = new PeerDetails
-                            {
-                                infoHash = tracker.InfoHash,
-                                peerID = String.Empty,
-                                ip = $"{commandReply[num]}.{commandReply[num + 1]}.{commandReply[num + 2]}.{commandReply[num + 3]}"
-                            };
-                            peer.port = ((int)commandReply[num + 4] * 256) + commandReply[num + 5];
-                            if (peer.ip != tracker.Ip) // Ignore self in peers list
-                            {
-                                Log.Logger.Info($"(Tracker) Peer {peer.ip} Port {peer.port} found.");
-                                response.peers.Add(peer);
-                            }
-                        }
+                        response.peerList = tracker.GetCompactPeerList(commandReply, 20);
                     }
                     else if (Util.UnPackUInt32(commandReply, 0) == (UInt32)UDPAction.Error)
                     {

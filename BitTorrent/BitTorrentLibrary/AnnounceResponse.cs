@@ -28,14 +28,14 @@ namespace BitTorrentLibrary
     /// </summary>
     internal struct AnnounceResponse
     {
-        public int announceCount;       // Announce counter
-        public bool failure;            // == true tracker failure message returned
-        public string statusMessage;    // Returned failure/warning message message
-        public int interval;            // Poll time between annouces in milliseconds
-        public int minInterval;         // Minimum poll time
-        public string trackerID;        // Track ID (optional)
-        public int complete;            // Number of seeders for torrent (optional)
-        public int incomplete;          // Number of non-seeder peers (leeches) (optional)
-        public List<PeerDetails> peers; // Number of peers in swarm
+        public int announceCount;              // Announce counter
+        public bool failure;                   // == true tracker failure message returned
+        public string statusMessage;           // Returned failure/warning message message
+        public int interval;                   // Poll time between annouces in milliseconds
+        public int minInterval;                // Minimum poll time
+        public string trackerID;               // Track ID (optional)
+        public int complete;                   // Number of seeders for torrent (optional)
+        public int incomplete;                 // Number of non-seeder peers (leeches) (optional)
+        public List<PeerDetails> peerList; // Number of peers in swarm
     };
 }

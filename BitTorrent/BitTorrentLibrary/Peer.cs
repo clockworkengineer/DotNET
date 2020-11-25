@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.Collections.Concurrent;
 namespace BitTorrentLibrary
 {
+    internal delegate void ProtocolHandler(Peer remotePeer);
     internal class Peer
     {
         private PeerNetwork _network;                                    // Network layer
@@ -22,6 +23,7 @@ namespace BitTorrentLibrary
         internal readonly Stopwatch packetResponseTimer;                 // Packet reponse timer
         internal Average averagePacketResponse;                          // Average packet reponse time
         internal BlockingCollection<Peer> peerCloseQueue;                // Peer close queue
+        internal ProtocolHandler protocolHandler;                        // Wire Procol handler for peer
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public TorrentContext Tc { get; set; }                           // Torrent torrent context
@@ -54,6 +56,7 @@ namespace BitTorrentLibrary
             packetResponseTimer = new Stopwatch();
             PeerChoking = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
+            protocolHandler = PWP.MessageProcess;
             if (tc != null)
             {
                 SetTorrentContext(tc);
@@ -73,7 +76,7 @@ namespace BitTorrentLibrary
         /// Send packet to remote peer.
         /// </summary>
         /// <param name="buffer">Buffer.</param>
-        public void PeerWrite(byte[] buffer)
+        public void Write(byte[] buffer)
         {
             _network.Write(buffer);
         }
@@ -83,7 +86,7 @@ namespace BitTorrentLibrary
         /// <returns>The read.</returns>
         /// <param name="buffer">Buffer.</param>
         /// <param name="length">Length.</param>
-        public int PeerRead(byte[] buffer, int length)
+        public int Read(byte[] buffer, int length)
         {
             return _network.Read(buffer, length);
         }

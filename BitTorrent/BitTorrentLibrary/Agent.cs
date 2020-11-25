@@ -57,7 +57,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="cancelTask"></param>
         /// <returns></returns>
-        private void PeerConnectCreatorTask(CancellationToken cancelTask)
+        private void PeerConnectWorkerTask(CancellationToken cancelTask)
         {
             Log.Logger.Info("(Agent) Remote peer connect creation task started...");
             try
@@ -167,7 +167,7 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Info("(Agent) Starting up Torrent Agent...");
                     _agentRunning = true;
-                    Task.Run(() => PeerConnectCreatorTask(_cancelWorkerTaskSource.Token));
+                    Task.Run(() => PeerConnectWorkerTask(_cancelWorkerTaskSource.Token));
                     PeerNetwork.StartListening(new PeerConnector
                     {
                         callBack = AddRemotelyConnectingPeerToSpawn
@@ -203,7 +203,7 @@ namespace BitTorrentLibrary
                     if (tc.MainTracker != null)
                     {
                         tc.manager = _manager;
-                        tc.assemblyData.task = Task.Run(() => _pieceAssembler.AssemblePieces(tc, tc.assemblyData.cancelTaskSource.Token));
+                        tc.assemblyData.task = Task.Run(() => _pieceAssembler.AssemblePieces(tc));
                     }
                     else
                     {

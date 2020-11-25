@@ -283,10 +283,10 @@ namespace BitTorrentLibrary
             if (remotePeer.Tc != null)
             {
                 localPacket = BuildInitialHandshake(remotePeer.Tc.infoHash);
-                remotePeer.PeerWrite(localPacket.ToArray());
+                remotePeer.Write(localPacket.ToArray());
             }
             byte[] remotePacket = new byte[Constants.IntialHandshakeLength];
-            Int32 bytesRead = remotePeer.PeerRead(remotePacket, remotePacket.Length);
+            Int32 bytesRead = remotePeer.Read(remotePacket, remotePacket.Length);
             if (bytesRead != remotePacket.Length)
             {
                 throw new Exception("Invalid length read for intial packet exchange.");
@@ -302,7 +302,7 @@ namespace BitTorrentLibrary
                     connected = ValidatePeerConnect(localPacket.ToArray(), remotePacket, out remotePeerID);
                     if (connected)
                     {
-                        remotePeer.PeerWrite(localPacket.ToArray());
+                        remotePeer.Write(localPacket.ToArray());
                         remotePeer.SetTorrentContext(tc);
                         break;
                     }
@@ -322,7 +322,7 @@ namespace BitTorrentLibrary
         /// Route the peer message to process.
         /// </summary>
         /// <param name="remotePeer">Remote peer.</param>
-        public static void RemotePeerMessageProcess(Peer remotePeer)
+        public static void MessageProcess(Peer remotePeer)
         {
             if (remotePeer.Connected)
             {
@@ -351,7 +351,7 @@ namespace BitTorrentLibrary
                     List<byte> requestPacket = new List<byte>();
                     requestPacket.AddRange(Util.PackUInt32(1));
                     requestPacket.Add(CHOKE);
-                    remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.Write(requestPacket.ToArray());
                     remotePeer.AmChoking = true;
                 }
             }
@@ -370,7 +370,7 @@ namespace BitTorrentLibrary
                     List<byte> requestPacket = new List<byte>();
                     requestPacket.AddRange(Util.PackUInt32(1));
                     requestPacket.Add(UNCHOKE);
-                    remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.Write(requestPacket.ToArray());
                     remotePeer.AmChoking = false;
                 }
             }
@@ -389,7 +389,7 @@ namespace BitTorrentLibrary
                     List<byte> requestPacket = new List<byte>();
                     requestPacket.AddRange(Util.PackUInt32(1));
                     requestPacket.Add(INTERESTED);
-                    remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.Write(requestPacket.ToArray());
                     remotePeer.AmInterested = true;
                 }
             }
@@ -408,7 +408,7 @@ namespace BitTorrentLibrary
                     List<byte> requestPacket = new List<byte>();
                     requestPacket.AddRange(Util.PackUInt32(1));
                     requestPacket.Add(UNINTERESTED);
-                    remotePeer.PeerWrite(requestPacket.ToArray());
+                    remotePeer.Write(requestPacket.ToArray());
                     remotePeer.AmInterested = false;
                 }
             }
@@ -427,7 +427,7 @@ namespace BitTorrentLibrary
                 requestPacket.AddRange(Util.PackUInt32(5));
                 requestPacket.Add(HAVE);
                 requestPacket.AddRange(Util.PackUInt32(pieceNumber));
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                remotePeer.Write(requestPacket.ToArray());
             }
         }
         /// <summary>
@@ -445,7 +445,7 @@ namespace BitTorrentLibrary
                 requestPacket.AddRange(Util.PackUInt32((UInt32)bitField.Length + 1));
                 requestPacket.Add(BITFIELD);
                 requestPacket.AddRange(bitField);
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                remotePeer.Write(requestPacket.ToArray());
             }
         }
         /// <summary>
@@ -466,7 +466,7 @@ namespace BitTorrentLibrary
                 requestPacket.AddRange(Util.PackUInt32(pieceNumber));
                 requestPacket.AddRange(Util.PackUInt32(blockOffset));
                 requestPacket.AddRange(Util.PackUInt32(blockSize));
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                remotePeer.Write(requestPacket.ToArray());
                 if (!remotePeer.packetResponseTimer.IsRunning)
                 {
                     remotePeer.packetResponseTimer.Start();
@@ -491,7 +491,7 @@ namespace BitTorrentLibrary
                 requestPacket.AddRange(Util.PackUInt32(pieceNumber));
                 requestPacket.AddRange(Util.PackUInt32(blockOffset));
                 requestPacket.AddRange(blockData);
-                remotePeer.PeerWrite(requestPacket.ToArray());
+                remotePeer.Write(requestPacket.ToArray());
             }
         }
         /// <summary>
