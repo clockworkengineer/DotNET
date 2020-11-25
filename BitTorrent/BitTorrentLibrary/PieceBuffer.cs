@@ -15,7 +15,6 @@ namespace BitTorrentLibrary
 {
     internal class PieceBuffer
     {
-        private readonly Mutex _bufferMutex;            // Piece buffer guard mutex
         private readonly bool[] _blockPresent;          // == true then block present
         private int _blockCount;                        // Unfilled block spaces in buffer
         public TorrentContext Tc { get; }               // Torrent context
@@ -36,7 +35,6 @@ namespace BitTorrentLibrary
             _blockCount = (int)Length / Constants.BlockSize;
             if (Length % Constants.BlockSize != 0) _blockCount++;
             _blockPresent = new bool[_blockCount];
-            _bufferMutex = new Mutex();
         }
         /// <summary>
         /// Create an empty piece buffer.
@@ -53,14 +51,13 @@ namespace BitTorrentLibrary
         /// <param name="blockNumber"></param>
         public void AddBlockFromPacket(byte[] packetBuffer, UInt32 blockNumber)
         {
-            _bufferMutex.WaitOne();
-            System.Buffer.BlockCopy(packetBuffer, 9, Buffer, (Int32)blockNumber * Constants.BlockSize, (Int32)packetBuffer.Length - 9);
+            int blockLength = (int)Math.Min(Length - blockNumber * Constants.BlockSize, Constants.BlockSize);
+            System.Buffer.BlockCopy(packetBuffer, 9, Buffer, (Int32)blockNumber * Constants.BlockSize, blockLength);
             if (!_blockPresent[blockNumber])
             {
                 _blockPresent[blockNumber] = true;
-                _blockCount--;
+                Interlocked.Decrement(ref _blockCount);
             }
-            _bufferMutex.ReleaseMutex();
         }
         /// <summary>
         /// 

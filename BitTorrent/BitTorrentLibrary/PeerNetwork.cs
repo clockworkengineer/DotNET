@@ -42,10 +42,11 @@ namespace BitTorrentLibrary
         private static Socket _listenerSocket;                  // Connection listener socket
         private int _bytesRead;                                 // Bytes read in read request
         private bool _lengthRead;                               // == true packet length has been read
+        private Socket _socket;                                 // Socket for I/O
         internal static int listenPort = Host.DefaultPort;      // Listener port
         public byte[] ReadBuffer { get; set; }                  // Read buffer
         public int PacketLength { get; set; }                   // Current packet length
-        public Socket PeerSocket { get; set; }                  // Socket for I/O
+
         /// <summary>
         /// Throw an exception if an send error is reported.The error can either
         /// be because the errorReported boolean is true or an actual socket error
@@ -80,7 +81,8 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug($"BitTorrent (Agent) Error (Ignored): " + ex.Message);
+                Log.Logger.Debug(ex);
+                Log.Logger.Debug($"BitTorrent (PeerNetwork) Error (Ignored): " + ex.Message);
                 connector.socket?.Close();
             }
         }
@@ -116,8 +118,8 @@ namespace BitTorrentLibrary
             Peer remotePeer = (Peer)readAsyncState.AsyncState;
             try
             {
-                int bytesRead = PeerSocket.EndReceive(readAsyncState, out SocketError socketError);
-                ThrowOnError("Socket recieve error.", (bytesRead <= 0) || !PeerSocket.Connected, socketError);
+                int bytesRead = _socket.EndReceive(readAsyncState, out SocketError socketError);
+                ThrowOnError("Socket recieve error.", (bytesRead <= 0) || !_socket.Connected, socketError);
                 _bytesRead += bytesRead;
                 if (!_lengthRead)
                 {
@@ -140,10 +142,11 @@ namespace BitTorrentLibrary
                     _bytesRead = 0;
                     PacketLength = Constants.SizeOfUInt32;
                 }
-                PeerSocket.BeginReceive(ReadBuffer, _bytesRead, (PacketLength - _bytesRead), SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
+                _socket.BeginReceive(ReadBuffer, _bytesRead, (PacketLength - _bytesRead), SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
             }
             catch (Exception ex)
             {
+                Log.Logger.Debug(ex);
                 Log.Logger.Debug("BitTorrent (PeerNetwork) Error (Ignored): " + ex.Message);
                 Log.Logger.Info($"(PeerNetwork) Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
                 remotePeer.Close();
@@ -155,7 +158,7 @@ namespace BitTorrentLibrary
         public PeerNetwork(Socket remotePeerSocket)
         {
             ReadBuffer = new byte[Constants.BlockSize + (2 * Constants.SizeOfUInt32) + 1]; // Maximum possible packet size
-            PeerSocket = remotePeerSocket;
+            _socket = remotePeerSocket;
         }
         /// <summary>
         /// Connect with remote peer and add it to the swarm when its callback handler is called.
@@ -178,8 +181,8 @@ namespace BitTorrentLibrary
         /// <param name="buffer">Buffer.</param>
         public void Write(byte[] buffer)
         {
-            int bytesWritten = PeerSocket.Send(buffer, 0, buffer.Length, SocketFlags.None, out SocketError socketError);
-            ThrowOnError("Socket send error.", (bytesWritten <= 0) || !PeerSocket.Connected, socketError);
+            int bytesWritten = _socket.Send(buffer, 0, buffer.Length, SocketFlags.None, out SocketError socketError);
+            ThrowOnError("Socket send error.", (bytesWritten <= 0) || !_socket.Connected, socketError);
         }
         /// <summary>
         /// Read direct packet from remote peer. Note this only used in the initial handshake with a peer
@@ -190,8 +193,8 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int Read(byte[] buffer, int length)
         {
-            int bytesRead = PeerSocket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
-            ThrowOnError("Socket recieve error.", (bytesRead <= 0) || !PeerSocket.Connected, socketError);
+            int bytesRead = _socket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
+            ThrowOnError("Socket recieve error.", (bytesRead <= 0) || !_socket.Connected, socketError);
             return bytesRead;
         }
         /// <summary>
@@ -201,18 +204,18 @@ namespace BitTorrentLibrary
         public void StartReads(Peer remotePeer)
         {
             Log.Logger.Info($"(PeerNetwork) Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} started...");
-            PeerSocket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
+            _socket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
         }
         /// <summary>
         /// Close socket connection
         /// </summary>
         public void Close()
         {
-            if (PeerSocket.Connected)
+            if (_socket.Connected)
             {
-                PeerSocket.Close();
+                _socket.Close();
             }
-            PeerSocket = null;
+            _socket = null;
         }
         /// <summary>
         /// Return IP and Port of remote connection.

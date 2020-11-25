@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
 //
 // Author: Robert Tizzard
 //
@@ -175,6 +176,7 @@ namespace BitTorrentLibrary
                     }
                     catch (Exception ex)
                     {
+                        Log.Logger.Debug(ex);
                         // Remote peer most probably closed socket so close connection
                         Log.Logger.Debug("BitTorrent (DiskIO) Error (ignoring): "+ ex.Message);
                         remotePeer?.Close();

@@ -156,7 +156,6 @@ namespace BitTorrentLibrary
                         stopwatch.Stop();
                         tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
                         Log.Logger.Debug($"(Assembler) Average time {tc.assemblyData.averageAssemblyTime.Get()} ms.");
-
                         return tc.assemblyData.pieceBuffer.AllBlocksThere;
                     // Assembly has been cancelled by external source
                     case 2:
@@ -167,7 +166,7 @@ namespace BitTorrentLibrary
                         Log.Logger.Debug($"(Assembler) Timeout assembling piece {pieceNumber}.");
                         tc.assemblyData.totalTimeouts++;
                         Log.Logger.Debug($"(Assembler) Reconfiguring peer list because of timeout.");
-                        Log.Logger.Debug($"(Assembler) Total piece assembly timeours { tc.assemblyData.totalTimeouts}.");
+                        Log.Logger.Debug($"(Assembler) Total piece assembly timeourt { tc.assemblyData.totalTimeouts}.");
                         remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
                         if (remotePeers.Length == 0)
                         {

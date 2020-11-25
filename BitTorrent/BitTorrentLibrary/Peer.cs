@@ -170,21 +170,29 @@ namespace BitTorrentLibrary
             if (pieceNumber == Tc.assemblyData.pieceBuffer.Number)
             {
                 Tc.assemblyData.guardMutex.WaitOne();
-                Log.Logger.Trace($"(Peer) PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
-                UInt32 blockNumber = blockOffset / Constants.BlockSize;
-                if (!Tc.assemblyData.pieceBuffer.IsBlockPresent(blockNumber))
+                try
                 {
-                    Tc.assemblyData.currentBlockRequests--;
+
+                    Log.Logger.Trace($"(Peer) PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
+                    UInt32 blockNumber = blockOffset / Constants.BlockSize;
+                    if (!Tc.assemblyData.pieceBuffer.IsBlockPresent(blockNumber))
+                    {
+                        Tc.assemblyData.currentBlockRequests--;
+                    }
+                    Tc.assemblyData.pieceBuffer.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
+                    if (Tc.assemblyData.pieceBuffer.AllBlocksThere)
+                    {
+                        Tc.assemblyData.pieceBuffer.Number = pieceNumber;
+                        Tc.assemblyData.pieceFinished.Set();
+                    }
+                    if (Tc.assemblyData.currentBlockRequests == 0)
+                    {
+                        Tc.assemblyData.blockRequestsDone.Set();
+                    }
                 }
-                Tc.assemblyData.pieceBuffer.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
-                if (Tc.assemblyData.pieceBuffer.AllBlocksThere)
+                catch (Exception ex)
                 {
-                    Tc.assemblyData.pieceBuffer.Number = pieceNumber;
-                    Tc.assemblyData.pieceFinished.Set();
-                }
-                if (Tc.assemblyData.currentBlockRequests == 0)
-                {
-                    Tc.assemblyData.blockRequestsDone.Set();
+                    Log.Logger.Debug(ex);
                 }
                 Tc.assemblyData.guardMutex.ReleaseMutex();
             }
