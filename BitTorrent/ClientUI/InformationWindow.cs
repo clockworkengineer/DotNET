@@ -24,12 +24,27 @@ namespace ClientUI
         private readonly Window _peersWindow;         // Peer swarm list sub-window
         private readonly TextField[] _infoTextFields; // Torrent information window text fields
         public TextField TrackerText { get; }         // Torrent tracker text field
-        private string DownloadRate(long bytesPerSecond) {
-            if (bytesPerSecond > 1000000) {
-                return $"{bytesPerSecond/1000000} Mb/s";
-            } else if (bytesPerSecond > 100000) {
-                return $"{bytesPerSecond/1000} Kb/s";
-            } else {
+        /// <summary>
+        /// Create download rate display string
+        /// </summary>
+        /// <param name="bytesPerSecond"></param>
+        /// <returns></returns>
+        private string DownloadRate(long bytesPerSecond)
+        {
+            if (bytesPerSecond > 1000000)
+            {
+                return $"{bytesPerSecond / 1000000} Mb/s";
+            }
+            else if (bytesPerSecond > 100000)
+            {
+                return $"{bytesPerSecond / 1000} Kb/s";
+            }
+            else if (bytesPerSecond > 10000)
+            {
+                return $"{bytesPerSecond / 1000} Kb/s";
+            }
+            else
+            {
                 return $"{bytesPerSecond} B/s";
             }
         }
@@ -143,7 +158,7 @@ namespace ClientUI
                                   _infoTextFields[5].Text = "";
                                   _infoTextFields[6].Text = "";
                                   _infoTextFields[7].Text = "";
-                                 _infoTextFields[8].Text = "";
+                                  _infoTextFields[8].Text = "";
                                   _peersListView.SetSource(null);
                               });
         }

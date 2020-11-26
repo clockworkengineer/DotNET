@@ -17,7 +17,6 @@ namespace ClientUI
 {
     public class SeedingWindow : Window
     {
-        private readonly List<TorrentContext> _seeders;  // List of current seeding torrents
         private readonly ListView _seederListView;       // List view to displat seeding torrent information
         private Agent _agent;                            // Main torrent agent
         /// <summary>
@@ -40,8 +39,9 @@ namespace ClientUI
         /// <returns></returns>
         private bool UpdateSeederList(MainLoop main)
         {
-            List<string> seederLines = (from seeder in _seeders
+            List<string> seederLines = (from seeder in _agent.TorrentList
                                         let seederDetails = _agent.GetTorrentDetails(seeder)
+                                        where seederDetails.status == TorrentStatus.Seeding
                                         select BuildSeederDisplayLine(seederDetails)).ToList();
             if (seederLines.Count > 0)
             {
@@ -68,7 +68,6 @@ namespace ClientUI
                 CanFocus = true
             };
             Add(_seederListView);
-            _seeders = new List<TorrentContext>();
         }
         /// <summary>
         /// Load torrents in the seeding list.
@@ -91,21 +90,11 @@ namespace ClientUI
                     agent.AttachPeerSwarmQueue(seederTracker);
                     seederTracker.StartAnnouncing();
                     agent.StartTorrent(tc);
-                    _seeders.Add(tc);
                 }
                 catch (Exception)
                 {
                     if (tc != null)
                     {
-                        if (_seeders.Contains(tc))
-                        {
-                            _seeders.Remove(tc);
-                        }
-                        if (seederTracker != null)
-                        {
-                            seederTracker.StopAnnouncing();
-                            seederTracker = null;
-                        }
                         agent.CloseTorrent(tc);
                         agent.RemoveTorrent(tc);
                         tc = null;

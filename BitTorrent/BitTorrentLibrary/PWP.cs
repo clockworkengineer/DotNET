@@ -295,7 +295,7 @@ namespace BitTorrentLibrary
             byte[] remotePeerID = new byte[Constants.PeerIDLength];
             if (remotePeer.Tc is null)
             {
-                foreach (var tc in manager.TorrentList)
+                foreach (var tc in manager.GetTorrentList())
                 {
                     localPacket = BuildInitialHandshake(tc.infoHash);
                     connected = ValidatePeerConnect(localPacket.ToArray(), remotePacket, out remotePeerID);

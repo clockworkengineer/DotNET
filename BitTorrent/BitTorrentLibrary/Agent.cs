@@ -10,20 +10,23 @@
 // Copyright 2020.
 //
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 namespace BitTorrentLibrary
 {
     public class Agent
     {
-        private readonly Manager _manager;                                 // Torrent context/dead peer manager
-        private bool _agentRunning = false;                                // == true while agent is up and running.
-        private readonly Assembler _pieceAssembler;                        // Piece assembler for agent
-        private readonly CancellationTokenSource _cancelWorkerTaskSource;  // Cancel all agent worker tasks
-        private readonly BlockingCollection<PeerDetails> _peerSwarmQeue;   // Queue of peers to add to swarm
-        public bool Running { get => _agentRunning; }                      // == true then agent running
+        private readonly Manager _manager;                                       // Torrent context/dead peer manager
+        private bool _agentRunning = false;                                      // == true while agent is up and running.
+        private readonly Assembler _pieceAssembler;                              // Piece assembler for agent
+        private readonly CancellationTokenSource _cancelWorkerTaskSource;        // Cancel all agent worker tasks
+        private readonly BlockingCollection<PeerDetails> _peerSwarmQeue;         // Queue of peers to add to swarm
+        public bool Running { get => _agentRunning; }                            // == true then agent running
+        public ICollection<TorrentContext> TorrentList => _manager.GetTorrentList();  // List of torrent contexts
+
         /// <summary>
         /// Add Peer to swarm if it connected, is not already present in the swarm 
         /// and there is room enough.
@@ -252,7 +255,7 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Info("Shutting down torrent agent...");
                     _agentRunning = false;
-                    foreach (var tc in _manager.TorrentList)
+                    foreach (var tc in _manager.GetTorrentList())
                     {
                         CloseTorrent(tc);
                     }

@@ -23,7 +23,14 @@ namespace BitTorrentLibrary
         private readonly int _deadPeerPurgeTimeOut;                              // Time minutes to perform dead peer purge
         private readonly Timer _deadPeerPurgeTimer;                              // Dead peer purge timer
         internal Int32 DeadPeerCount => _deadPeers.Count;                        // Number of dead 
-        internal ICollection<TorrentContext> TorrentList => _torrents.Values;    // List of torrent contexts
+        /// <summary>
+        /// Return iterator for torrents being managed.
+        /// </summary>
+        /// <returns></returns>
+        internal ICollection<TorrentContext> GetTorrentList()
+        {
+            return _torrents.Values;
+        }
         /// <summary>
         /// Purge dead peers.
         /// </summary>
