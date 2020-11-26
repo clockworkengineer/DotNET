@@ -84,7 +84,7 @@ namespace BitTorrentLibrary
                     tracker.lastResponse = tracker._announcer.Announce(tracker);
                     if (!tracker.lastResponse.failure)
                     {
-                        Log.Logger.Info("(Tracker) Queuing new peers for swarm ....");
+                        Log.Logger.Info("Queuing new peers for swarm ....");
                         if ((tracker._tc.Status == TorrentStatus.Downloading) && (tracker.peerSwarmQueue.Count == 0))
                         {
                             int peerThreshHold = tracker._tc.maximumSwarmSize;
@@ -109,7 +109,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 tracker.trackerStatus = TrackerStatus.Stalled;
-                Log.Logger.Debug("BitTorrent (Tracker) Error : " + ex.Message);
+                Log.Logger.Error(ex);
                 // Make an exception viewable as a failure as any can cause a stall
                 if (!tracker.lastResponse.failure)
                 {
@@ -125,7 +125,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
+                Log.Logger.Error(ex);
             }
         }
         /// <summary>
@@ -269,7 +269,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 trackerStatus = TrackerStatus.Stalled;
-                Log.Logger.Debug(ex);
+                Log.Logger.Error(ex);
                 throw new BitTorrentException(ex.Message);
             }
         }
@@ -299,7 +299,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
+                Log.Logger.Error(ex);
                 trackerStatus = TrackerStatus.Stalled;
                 throw new BitTorrentException("" + ex.Message);
             }

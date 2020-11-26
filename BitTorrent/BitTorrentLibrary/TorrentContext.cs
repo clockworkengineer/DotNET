@@ -266,7 +266,7 @@ namespace BitTorrentLibrary
         /// <param name="peiceNumber"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal UInt32 GetPieceLength(UInt32 peiceNumber)
+        internal UInt32 PieceLength(UInt32 peiceNumber)
         {
             return _pieceData[peiceNumber].pieceLength;
         }

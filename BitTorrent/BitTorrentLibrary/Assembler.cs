@@ -54,7 +54,7 @@ namespace BitTorrentLibrary
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Debug(ex);
+                    Log.Logger.Error(ex);
                     remotePeer.Close();
                 }
             }
@@ -73,7 +73,7 @@ namespace BitTorrentLibrary
             {
                 int currentBlockRequests = 0;
                 UInt32 blockOffset = 0;
-                UInt32 bytesToTransfer = tc.GetPieceLength(pieceNumber);
+                UInt32 bytesToTransfer = tc.PieceLength(pieceNumber);
                 int currentPeer = 0;
                 foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
                 {
@@ -87,8 +87,8 @@ namespace BitTorrentLibrary
                         catch (Exception ex)
                         {
                             // Peer has an error so remove it
-                            Log.Logger.Debug(ex);
-                            Log.Logger.Info("(Assembler) Peer exception so removing it.");
+                            Log.Logger.Error(ex);
+                            Log.Logger.Info("Peer exception so removing it.");
                             remotePeers[currentPeer].Close();
                             remotePeers = remotePeers.Except(new Peer[] { remotePeers[currentPeer] }).ToArray();
                             if (remotePeers.Length == 0)
@@ -110,7 +110,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (Assembler) Error:" + ex.Message);
+                Log.Logger.Error(ex);
             }
             tc.assemblyData.guardMutex.ReleaseMutex();
             return true;
@@ -127,12 +127,12 @@ namespace BitTorrentLibrary
             Peer[] remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
             if (remotePeers.Length == 0)
             {
-                Log.Logger.Debug($"(Assembler) Zero peers to assemble piece {pieceNumber}.");
+                Log.Logger.Debug($"Zero peers to assemble piece {pieceNumber}.");
                 return false;
             }
             var stopwatch = new Stopwatch();
-            Log.Logger.Debug($"(Assembler) Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
-            tc.assemblyData.pieceBuffer = new PieceBuffer(tc, tc.GetPieceLength(pieceNumber))
+            Log.Logger.Debug($"Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
+            tc.assemblyData.pieceBuffer = new PieceBuffer(tc, tc.PieceLength(pieceNumber))
             {
                 Number = pieceNumber
             };
@@ -155,7 +155,7 @@ namespace BitTorrentLibrary
                     case 1:
                         stopwatch.Stop();
                         tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
-                        Log.Logger.Debug($"(Assembler) Average time {tc.assemblyData.averageAssemblyTime.Get()} ms.");
+                        Log.Logger.Debug($"Average time {tc.assemblyData.averageAssemblyTime.Get()} ms.");
                         return tc.assemblyData.pieceBuffer.AllBlocksThere;
                     // Assembly has been cancelled by external source
                     case 2:
@@ -163,14 +163,14 @@ namespace BitTorrentLibrary
                     // Timeout so re-request blocks not returned
                     // Note: can result in blocks having to be discarded
                     case WaitHandle.WaitTimeout:
-                        Log.Logger.Debug($"(Assembler) Timeout assembling piece {pieceNumber}.");
+                        Log.Logger.Debug($"Timeout assembling piece {pieceNumber}.");
                         tc.assemblyData.totalTimeouts++;
-                        Log.Logger.Debug($"(Assembler) Reconfiguring peer list because of timeout.");
-                        Log.Logger.Debug($"(Assembler) Total piece assembly timeourt { tc.assemblyData.totalTimeouts}.");
+                        Log.Logger.Debug($"Reconfiguring peer list because of timeout.");
+                        Log.Logger.Debug($"Total piece assembly timeourt { tc.assemblyData.totalTimeouts}.");
                         remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
                         if (remotePeers.Length == 0)
                         {
-                            Log.Logger.Debug($"(Assembler) Zero peers to assemble piece {pieceNumber}.");
+                            Log.Logger.Debug($"Zero peers to assemble piece {pieceNumber}.");
                             return false;
                         }
                         continue;
@@ -200,22 +200,18 @@ namespace BitTorrentLibrary
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
-                        bool pieceValid = tc.CheckPieceHash(nextPiece, tc.assemblyData.pieceBuffer.Buffer, tc.GetPieceLength(nextPiece));
+                        bool pieceValid = tc.CheckPieceHash(nextPiece, tc.assemblyData.pieceBuffer.Buffer, tc.PieceLength(nextPiece));
                         if (pieceValid)
                         {
-                            Log.Logger.Debug($"(Assembler) All blocks for piece {nextPiece} received");
+                            Log.Logger.Debug($"All blocks for piece {nextPiece} received");
                             tc.pieceWriteQueue.Add(tc.assemblyData.pieceBuffer);
                             tc.MarkPieceLocal(nextPiece, true);
                             SignalHaveToSwarm(tc, nextPiece);
                         }
                         else
                         {
-                            Log.Logger.Debug($"(Assembler) InfoHash for piece {nextPiece} corrupt.");
+                            Log.Logger.Debug($"InfoHash for piece {nextPiece} corrupt.");
                         }
-                    }
-                    else
-                    {   // if we reach here then no eligable peers in swarm so sleep a bit.
-                        Thread.Sleep(1000);
                     }
                     // Signal piece to be requested in unsucessful download
                     if (!tc.IsPieceLocal(nextPiece))
@@ -225,6 +221,10 @@ namespace BitTorrentLibrary
                     cancelAssemblerTask.ThrowIfCancellationRequested();
                     tc.paused.WaitOne(cancelAssemblerTask);
                 }
+                // if we reach here then no eligable peers in swarm so sleep a bit.
+                Log.Logger.Debug($"Waiting for eligable peers to download peice from.");
+                Thread.Sleep(1000);
+
             }
         }
         /// <summary>
@@ -245,7 +245,7 @@ namespace BitTorrentLibrary
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Debug(ex);
+                    Log.Logger.Error(ex);
                     remotePeer.Close();
                 }
 
@@ -269,7 +269,7 @@ namespace BitTorrentLibrary
         /// <param name="cancelAssemblerTask"></param>
         internal void AssemblePieces(TorrentContext tc)
         {
-            Log.Logger.Debug($"(Assembler) Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
+            Log.Logger.Debug($"Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
             try
             {
                 tc.paused.WaitOne(tc.assemblyData.cancelTaskSource.Token);
@@ -290,10 +290,9 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
-                Log.Logger.Error("BitTorrent (Assembler) Error: " + ex.Message);
+                Log.Logger.Error(ex);
             }
-            Log.Logger.Debug($"(Assembler) Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
+            Log.Logger.Debug($"Terminating block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
         }
     }
 }

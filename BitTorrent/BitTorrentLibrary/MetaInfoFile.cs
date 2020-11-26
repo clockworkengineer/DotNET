@@ -138,7 +138,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
+                Log.Logger.Error(ex);
                 throw;
             }
         }
@@ -202,7 +202,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
+                Log.Logger.Error(ex);
                 throw new BitTorrentException("Failed to create download file list." + ex.Message);
             }
             return (totalBytes, filesToDownload);
@@ -240,13 +240,13 @@ namespace BitTorrentLibrary
                 {
                     if ((key != "pieces") && (key != "info") && (key != "info hash"))
                     {
-                        Log.Logger.Debug($"{key}={Encoding.ASCII.GetString(metaInfoDict[key])}");
+                        Log.Logger.Error($"{key}={Encoding.ASCII.GetString(metaInfoDict[key])}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
+                Log.Logger.Error(ex);
                 throw new BitTorrentException(ex.Message);
             }
         }

@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Collections.Concurrent;
-//
+﻿//
 // Author: Robert Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -18,6 +16,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 namespace BitTorrentLibrary
 {
     public delegate void ProgessCallBack(Object callBackData); // Download progress callback
@@ -57,7 +56,7 @@ namespace BitTorrentLibrary
                             stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % tc.pieceLength), (Int32)(endTransfer - startTransfer));
                         }
                         bytesTransferred += (Int32)(endTransfer - startTransfer);
-                        if (bytesTransferred == tc.GetPieceLength(transferBuffer.Number))
+                        if (bytesTransferred == tc.PieceLength(transferBuffer.Number))
                         {
                             break;
                         }
@@ -95,10 +94,10 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private PieceBuffer GetPieceFromTorrent(Peer remotePeer, UInt32 pieceNumber)
         {
-            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.Tc, pieceNumber, remotePeer.Tc.GetPieceLength(pieceNumber));
-            Log.Logger.Debug($"(DiskIO) Read piece ({pieceBuffer.Number}) from file.");
+            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.Tc, pieceNumber, remotePeer.Tc.PieceLength(pieceNumber));
+            Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
             TransferPiece(remotePeer.Tc, pieceBuffer, true);
-            Log.Logger.Debug($"(DiskIO) Piece ({pieceBuffer.Number}) read from file.");
+            Log.Logger.Debug($"Piece ({pieceBuffer.Number}) read from file.");
             return pieceBuffer;
         }
         /// <summary>
@@ -111,17 +110,17 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info("(DiskIO) Piece Buffer disk writer task starting...");
+                Log.Logger.Info("Piece Buffer disk writer task starting...");
                 while (true)
                 {
                     PieceBuffer pieceBuffer = pieceWriteQueue.Take(cancelTask);
-                    Log.Logger.Debug($"(DiskIO) Write piece ({pieceBuffer.Number}) to file.");
+                    Log.Logger.Debug($"Write piece ({pieceBuffer.Number}) to file.");
                     if (!pieceBuffer.Tc.downloadFinished.WaitOne(0))
                     {
                         TransferPiece(pieceBuffer.Tc, pieceBuffer, false);
-                        pieceBuffer.Tc.TotalBytesDownloaded += pieceBuffer.Tc.GetPieceLength((pieceBuffer.Number));
-                        Log.Logger.Info("(DiskIO) "+(pieceBuffer.Tc.TotalBytesDownloaded / (double)pieceBuffer.Tc.TotalBytesToDownload).ToString("0.00%"));
-                        Log.Logger.Debug($"(DiskIO) Piece ({pieceBuffer.Number}) written to file.");
+                        pieceBuffer.Tc.TotalBytesDownloaded += pieceBuffer.Tc.PieceLength((pieceBuffer.Number));
+                        Log.Logger.Info((pieceBuffer.Tc.TotalBytesDownloaded / (double)pieceBuffer.Tc.TotalBytesToDownload).ToString("0.00%"));
+                        Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
                         if (pieceBuffer.Tc.BytesLeftToDownload() == 0)
                         {
                             pieceBuffer.Tc.downloadFinished.Set();
@@ -133,20 +132,20 @@ namespace BitTorrentLibrary
                         }
                         catch (Exception ex)
                         {
-                            Log.Logger.Debug(ex.Message);
+                            Log.Logger.Error(ex);
                         }
                     }
                     else
                     {
-                        Log.Logger.Debug("(DiskIO) Extra piece buffer removed after download finished.");
+                        Log.Logger.Debug("Extra piece buffer removed after download finished.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (DiskIO) Error: ", ex.Message);
+                Log.Logger.Error(ex);
             }
-            Log.Logger.Info("(DiskIO) Piece Buffer disk writer task terminated.");
+            Log.Logger.Info("Piece Buffer disk writer task terminated.");
         }
         /// <summary>
         /// Process any piece requests in buffer and send to remote peer.
@@ -157,14 +156,14 @@ namespace BitTorrentLibrary
         {
             try
             {
-                Log.Logger.Info("(DiskIO) Piece request processing task started...");
+                Log.Logger.Info("Piece request processing task started...");
                 while (true)
                 {
                     Peer remotePeer = null;
                     PieceRequest request = pieceRequestQueue.Take(cancelTask);
                     try
                     {
-                        Log.Logger.Info($"(DiskIO) Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
+                        Log.Logger.Info($"Piece Reqeuest {request.pieceNumber} {request.blockOffset} {request.blockSize}.");
                         if (_manager.GetPeer(request.infoHash, request.ip, out remotePeer))
                         {
                             PieceBuffer requestBuffer = GetPieceFromTorrent(remotePeer, request.pieceNumber);
@@ -176,18 +175,17 @@ namespace BitTorrentLibrary
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Debug(ex);
+                        Log.Logger.Error(ex);
                         // Remote peer most probably closed socket so close connection
-                        Log.Logger.Debug("BitTorrent (DiskIO) Error (ignoring): "+ ex.Message);
                         remotePeer?.Close();
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug("BitTorrent (DiskIO) Error :", ex.Message);
+                Log.Logger.Debug(ex);
             }
-            Log.Logger.Info("(DiskIO) Piece request processing task terminated.");
+            Log.Logger.Info("Piece request processing task terminated.");
         }
         /// <summary>
         /// Setup data and resources needed by DiskIO.
@@ -216,7 +214,7 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal void CreateLocalTorrentStructure(TorrentContext tc)
         {
-            Log.Logger.Debug("(DiskIO) Creating empty files as placeholders for downloading ...");
+            Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
             foreach (var file in tc.filesToDownload)
             {
                 if (!System.IO.File.Exists(file.name))
@@ -241,10 +239,10 @@ namespace BitTorrentLibrary
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
             int bytesRead = 0;
-            Log.Logger.Debug("(DiskIO) Generate pieces downloaded map from local files ...");
+            Log.Logger.Debug("Generate pieces downloaded map from local files ...");
             foreach (var file in tc.filesToDownload)
             {
-                Log.Logger.Debug($"(DiskIO) File: {file.name}");
+                Log.Logger.Debug($"File: {file.name}");
                 using (var inFileSteam = new FileStream(file.name, FileMode.Open))
                 {
                     while ((bytesRead = inFileSteam.Read(pieceBuffer, (Int32)bytesInBuffer, pieceBuffer.Length - (Int32)bytesInBuffer)) > 0)
@@ -263,7 +261,7 @@ namespace BitTorrentLibrary
             {
                 UpdateBitfieldFromBuffer(tc, pieceNumber, pieceBuffer, bytesInBuffer);
             }
-            Log.Logger.Debug("(DiskIO) Finished generating downloaded map.");
+            Log.Logger.Debug("Finished generating downloaded map.");
         }
         /// <summary>
         /// Mark torrent as fully downloaded for when in seeding from startup. This

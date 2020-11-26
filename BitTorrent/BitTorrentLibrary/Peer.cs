@@ -115,23 +115,23 @@ namespace BitTorrentLibrary
                 _closeGuardMutex.WaitOne();
                 if (Connected)
                 {
-                    Log.Logger.Info($"(Peer) Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
+                    Log.Logger.Info($"Closing down Peer {Encoding.ASCII.GetString(RemotePeerID)}...");
                     CancelTaskSource.Cancel();
                     Tc.UnMergePieceBitfield(this);
                     if (Tc.peerSwarm.ContainsKey(Ip))
                     {
                         if (Tc.peerSwarm.TryRemove(Ip, out Peer _))
                         {
-                            Log.Logger.Info($"(Peer) Dead Peer {Ip} removed from swarm.");
+                            Log.Logger.Info($"Dead Peer {Ip} removed from swarm.");
                         }
                     }
                     Connected = false;
-                    Log.Logger.Info($"(Peer) Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
+                    Log.Logger.Info($"Closed down {Encoding.ASCII.GetString(RemotePeerID)}.");
                 }
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
+                Log.Logger.Error(ex);
             }
             _network?.Close();
             _network = null;
@@ -173,7 +173,7 @@ namespace BitTorrentLibrary
                 try
                 {
 
-                    Log.Logger.Trace($"(Peer) PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
+                    Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
                     UInt32 blockNumber = blockOffset / Constants.BlockSize;
                     if (!Tc.assemblyData.pieceBuffer.IsBlockPresent(blockNumber))
                     {
@@ -192,13 +192,13 @@ namespace BitTorrentLibrary
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Debug(ex);
+                    Log.Logger.Error(ex);
                 }
                 Tc.assemblyData.guardMutex.ReleaseMutex();
             }
             else
             {
-                Log.Logger.Debug($"(Peer) PIECE {pieceNumber} DISCARDED.");
+                Log.Logger.Debug($"PIECE {pieceNumber} DISCARDED.");
             }
 
         }

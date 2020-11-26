@@ -113,7 +113,7 @@ namespace BitTorrentLibrary
                 {
                     _connectionID = Util.UnPackUInt64(commandReply, 8);
                     _connected = true;
-                    Log.Logger.Info("(Tracker) Connected to UDP Tracker.");
+                    Log.Logger.Info("Connected to UDP Tracker.");
                 }
                 else if (Util.UnPackUInt32(commandReply, 0) == (UInt32)UDPAction.Error)
                 {
@@ -188,7 +188,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex.Message);
+                Log.Logger.Error(ex.Message);
                 throw;
             }
             return response;

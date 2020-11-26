@@ -137,7 +137,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
+                Log.Logger.Error(ex);
                 throw;
             }
             return response;

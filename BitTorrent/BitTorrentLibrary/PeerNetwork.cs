@@ -81,9 +81,9 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
-                Log.Logger.Debug($"BitTorrent (PeerNetwork) Error (Ignored): " + ex.Message);
-                connector.socket?.Close();
+                Log.Logger.Error(ex);
+                Log.Logger.Error("Error (Ignored): " + ex.Message);
+                connector.socket?.Close();;
             }
         }
         /// <summary>
@@ -103,9 +103,9 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
-                Log.Logger.Debug("BitTorrent (PeerNetwork) Error (Ignored): " + ex.Message);
-                Log.Logger.Info("(PeerNetwork) Port connection listener terminated.");
+                Log.Logger.Error(ex);
+                Log.Logger.Debug("Error (Ignored): " + ex.Message);
+                Log.Logger.Info("Port connection listener terminated.");
             }
 
         }
@@ -130,7 +130,7 @@ namespace BitTorrentLibrary
                         _bytesRead = 0;
                         if (PacketLength > ReadBuffer.Length)
                         {
-                            Log.Logger.Debug("(PeerNetwork) Resizing readBuffer ...");
+                            Log.Logger.Debug("Resizing readBuffer ...");
                             ReadBuffer = new byte[PacketLength];
                         }
                     }
@@ -146,9 +146,9 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex);
-                Log.Logger.Debug("BitTorrent (PeerNetwork) Error (Ignored): " + ex.Message);
-                Log.Logger.Info($"(PeerNetwork) Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
+                Log.Logger.Error(ex);
+                Log.Logger.Error("Error (Ignored): " + ex.Message);
+                Log.Logger.Info($"Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
                 remotePeer.Close();
             }
         }
@@ -203,7 +203,7 @@ namespace BitTorrentLibrary
         /// <param name="remotePeer"></param>
         public void StartReads(Peer remotePeer)
         {
-            Log.Logger.Info($"(PeerNetwork) Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} started...");
+            Log.Logger.Info($"Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} started...");
             _socket.BeginReceive(ReadBuffer, 0, Constants.SizeOfUInt32, SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
         }
         /// <summary>
@@ -244,11 +244,11 @@ namespace BitTorrentLibrary
                 _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
                 _listenerSocket.Listen(100);
                 _listenerSocket.BeginAccept(new AsyncCallback(AcceptAsyncHandler), connector);
-                Log.Logger.Info("(PeerNetwork) Port connection listener started...");
+                Log.Logger.Info("Port connection listener started...");
             }
             catch (Exception ex)
             {
-                throw new Exception("(PeerNetwork) Error:" + ex);
+                throw new Exception("Error:" + ex);
             }
         }
         /// <summary>
@@ -263,7 +263,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Debug(ex.Message);
+                Log.Logger.Error(ex);
             }
         }
     }
