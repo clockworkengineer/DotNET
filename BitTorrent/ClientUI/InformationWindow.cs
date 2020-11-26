@@ -24,6 +24,15 @@ namespace ClientUI
         private readonly Window _peersWindow;         // Peer swarm list sub-window
         private readonly TextField[] _infoTextFields; // Torrent information window text fields
         public TextField TrackerText { get; }         // Torrent tracker text field
+        private string DownloadRate(long bytesPerSecond) {
+            if (bytesPerSecond > 1000000) {
+                return $"{bytesPerSecond/1000000} Mb/s";
+            } else if (bytesPerSecond > 100000) {
+                return $"{bytesPerSecond/1000} Kb/s";
+            } else {
+                return $"{bytesPerSecond} B/s";
+            }
+        }
         /// <summary>
         /// Convert torrent infohash to string.
         /// </summary>
@@ -77,7 +86,7 @@ namespace ClientUI
                 CanFocus = false
             };
             _peersWindow.Add(_peersListView);
-            string[] labels = { "InfoHash:", "Downloaded:", "Uploaded:", "Missing:", "Status:", "Swarm:", "Dead:", "Tracker:" };
+            string[] labels = { "InfoHash:", "Downloaded:", "Uploaded:", "Missing:", "Status:", "Swarm:", "Dead:", "Tracker:", "Rate:" };
             _infoTextFields = new TextField[labels.Length];
             int pos = 0;
             foreach (var label in labels)
@@ -117,6 +126,7 @@ namespace ClientUI
             _infoTextFields[5].Text = torrentDetails.swarmSize.ToString();
             _infoTextFields[6].Text = torrentDetails.deadPeers.ToString();
             _infoTextFields[7].Text = torrentDetails.trackerStatus.ToString();
+            _infoTextFields[8].Text = DownloadRate(torrentDetails.bytesPerSecond);
         }
         /// <summary>
         /// Clear information window.
@@ -133,6 +143,7 @@ namespace ClientUI
                                   _infoTextFields[5].Text = "";
                                   _infoTextFields[6].Text = "";
                                   _infoTextFields[7].Text = "";
+                                 _infoTextFields[8].Text = "";
                                   _peersListView.SetSource(null);
                               });
         }

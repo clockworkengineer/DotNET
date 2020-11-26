@@ -156,6 +156,7 @@ namespace BitTorrentLibrary
                         stopwatch.Stop();
                         tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
                         Log.Logger.Debug($"Average time {tc.assemblyData.averageAssemblyTime.Get()} ms.");
+                        Log.Logger.Info($"Download speed {(tc.pieceLength)/(tc.assemblyData.averageAssemblyTime.Get()/1000)} bytes/sec");
                         return tc.assemblyData.pieceBuffer.AllBlocksThere;
                     // Assembly has been cancelled by external source
                     case 2:

@@ -30,7 +30,8 @@ namespace BitTorrentLibrary
         public UInt64 downloadedBytes;      // Total bytes downloaded from peers
         public int missingPiecesCount;      // Number of missing pieces that need download
         public int swarmSize;               // Swarm size
-        public int deadPeers;               // Number of dead peers 
+        public int deadPeers;               // Number of dead peers
+        public long bytesPerSecond;         // Approximate bytes per second download speed 
         public byte[] infoHash;             // Torrent InfoHash
         public TrackerStatus trackerStatus; // Tracker status;
         public string trackerStatusMessage; // Message indicating why tracker has stalled

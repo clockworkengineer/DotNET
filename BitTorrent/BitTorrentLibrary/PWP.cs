@@ -110,7 +110,7 @@ namespace BitTorrentLibrary
                     hex.Append("\n");
                 }
             }
-            Log.Logger.Info("\n" + hex + "\n");
+            Log.Logger.Info("\n" + hex);
         }
         /// <summary>
         /// Create intial handshake to send to remote peer.
