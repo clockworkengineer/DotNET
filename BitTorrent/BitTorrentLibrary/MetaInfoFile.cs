@@ -156,7 +156,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                throw new BitTorrentException($"BitTorrent (MetaInfoFile) Error:" + ex.Message);
+                throw new BitTorrentException(ex.Message);
             }
         }
         /// <summary>
@@ -203,7 +203,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error: Failed to create download file list." + ex.Message);
+                throw new BitTorrentException("Failed to create download file list." + ex.Message);
             }
             return (totalBytes, filesToDownload);
         }
@@ -247,7 +247,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException($"BitTorrent (MetaInfoFile) Error:" + ex.Message);
+                throw new BitTorrentException(ex.Message);
             }
         }
         /// <summary>
@@ -262,7 +262,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception)
             {
-                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error : File has not been parsed.");
+                throw new BitTorrentException("File has not been parsed.");
             }
         }
         /// <summary>
@@ -277,7 +277,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception)
             {
-                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error : File has not been parsed.");
+                throw new BitTorrentException("File has not been parsed.");
             }
         }
         /// <summary>
@@ -292,7 +292,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception)
             {
-                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error : File has not been parsed.");
+                throw new BitTorrentException("File has not been parsed.");
             }
         }
         /// <summary>
@@ -307,7 +307,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception)
             {
-                throw new BitTorrentException("BitTorrent (MetaInfoFile) Error : File has not been parsed.");
+                throw new BitTorrentException("File has not been parsed.");
             }
         }
     }

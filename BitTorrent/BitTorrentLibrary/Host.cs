@@ -38,7 +38,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex.Message);
-                throw new BitTorrentException("BitTorrent (Host) Error: " + ex.Message);
+                throw new BitTorrentException(ex.Message);
             }
             return localHostIP;
         }

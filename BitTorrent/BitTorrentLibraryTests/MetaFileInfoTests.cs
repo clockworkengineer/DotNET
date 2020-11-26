@@ -149,28 +149,28 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { string tracker = torrentFile.GetTracker(); });
-            Assert.Equal("BitTorrent (MetaInfoFile) Error : File has not been parsed.", error.Message);
+            Assert.Equal("BitTorrent Error: File has not been parsed.", error.Message);
         }
         [Fact]
         public void TestGetInfoHashWithNoParseOnMetaInfoFile()
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { byte[] infoHash = new byte[20]; infoHash = torrentFile.GetInfoHash(); });
-            Assert.Equal("BitTorrent (MetaInfoFile) Error : File has not been parsed.", error.Message);
+            Assert.Equal("BitTorrent Error: File has not been parsed.", error.Message);
         }
         [Fact]
         public void TestGetPieceLengthWithNoParseOnMetaInfoFile()
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { UInt32 pieceLength = torrentFile.GetPieceLength(); });
-            Assert.Equal("BitTorrent (MetaInfoFile) Error : File has not been parsed.", error.Message);
+            Assert.Equal("BitTorrent Error: File has not been parsed.", error.Message);
         }
         [Fact]
         public void TestGetPiecesInfoHashWithNoParseOnMetaInfoFile()
         {
             MetaInfoFile torrentFile = new MetaInfoFile(Constants.SingleFileTorrent);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { byte[] piecesInfoHash = torrentFile.GetPiecesInfoHash(); });
-            Assert.Equal("BitTorrent (MetaInfoFile) Error : File has not been parsed.", error.Message);
+            Assert.Equal("BitTorrent Error: File has not been parsed.", error.Message);
         }
     }
 }

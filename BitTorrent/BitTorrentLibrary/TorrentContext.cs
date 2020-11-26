@@ -235,7 +235,7 @@ namespace BitTorrentLibrary
         {
             if ((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded < 0)
             {
-                throw new BitTorrentException("BitTorrent (TorrentContext) Error: Bytes left to download turned negative.");
+                throw new BitTorrentException("Bytes left to download turned negative.");
             }
             return (UInt64)((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded);
         }

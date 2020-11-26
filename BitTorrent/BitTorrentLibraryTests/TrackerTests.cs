@@ -106,7 +106,7 @@ namespace BitTorrentLibraryTests
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
             agent.AddTorrent(tc); ;
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StartAnnouncing());
-            Assert.Equal("BitTorrent (Tracker) Error: Peer swarm queue has not been set.", error.Message);
+            Assert.Equal("BitTorrent Error: Peer swarm queue has not been set.", error.Message);
         }
         [Fact]
         public void TestStopAnnouncingOnOneThatHasNotBeenStarted()
@@ -122,7 +122,7 @@ namespace BitTorrentLibraryTests
             agent.AddTorrent(tc);
             agent.AttachPeerSwarmQueue(tracker);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StopAnnouncing());
-            Assert.Equal("BitTorrent (Tracker) Error: Tracker is not running so cannot be stopped.", error.Message);
+            Assert.Equal("BitTorrent Error: Tracker is not running so cannot be stopped.", error.Message);
         }
         [Fact]
         public void TestStartAnnoucingCalledOnAlreadyWhenAlreadyAnnoucing()
@@ -139,7 +139,7 @@ namespace BitTorrentLibraryTests
             agent.AttachPeerSwarmQueue(tracker);
             tracker.StartAnnouncing();
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StartAnnouncing());
-            Assert.Equal("BitTorrent (Tracker) Error: Tracker cannot be started as is already running.", error.Message);
+            Assert.Equal("BitTorrent Error: Tracker cannot be started as is already running.", error.Message);
         }
         [Fact]
         public void TestStopAnnoucingWhenTrackerAlreadyStopped()
@@ -157,7 +157,7 @@ namespace BitTorrentLibraryTests
             tracker.StartAnnouncing();
             tracker.StopAnnouncing();
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StopAnnouncing());
-            Assert.Equal("BitTorrent (Tracker) Error: Tracker is not running so cannot be stopped.", error.Message);
+            Assert.Equal("BitTorrent Error: Tracker is not running so cannot be stopped.", error.Message);
         }
         [Fact]
         public void TestSetSeedingIntervalWhenNotSeeding()
@@ -174,7 +174,7 @@ namespace BitTorrentLibraryTests
             agent.AttachPeerSwarmQueue(tracker);
             tracker.StartAnnouncing();
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.SetSeedingInterval(30));
-            Assert.Equal("BitTorrent (Tracker) Error: Cannot change interval as torrent is not seeding.", error.Message);
+            Assert.Equal("BitTorrent Error: Cannot change interval as torrent is not seeding.", error.Message);
         }
         [Fact]
         public void TestSetSeedingIntervalWhenSeeding()

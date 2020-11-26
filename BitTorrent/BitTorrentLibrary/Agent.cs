@@ -183,7 +183,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex);
                 _agentRunning = false;
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failure to startup agent." + ex.Message);
+                throw new BitTorrentException("Failure to startup agent." + ex.Message);
             }
         }
         /// <summary>
@@ -217,7 +217,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failed to add torrent context." + ex.Message);
+                throw new BitTorrentException("Failed to add torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -239,7 +239,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failed to remove torrent context." + ex.Message);
+                throw new BitTorrentException("Failed to remove torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -269,7 +269,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failed to shutdown agent." + ex.Message);
+                throw new BitTorrentException("Failed to shutdown agent." + ex.Message);
             }
         }
         /// <summary>
@@ -308,7 +308,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failure to close torrent context." + ex.Message);
+                throw new BitTorrentException("Failure to close torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -347,7 +347,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failure to start torrent context." + ex.Message);
+                throw new BitTorrentException("Failure to start torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -381,7 +381,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failure to pause torrent context." + ex.Message);
+                throw new BitTorrentException("Failure to pause torrent context." + ex.Message);
             }
         }
         /// <summary>
@@ -426,7 +426,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("BitTorrent (Agent) Error : Failure to get torrent details." + ex.Message);
+                throw new BitTorrentException("Failure to get torrent details." + ex.Message);
             }
         }
         /// <summary>

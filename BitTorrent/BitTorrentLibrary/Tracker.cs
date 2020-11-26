@@ -259,7 +259,7 @@ namespace BitTorrentLibrary
                 }
                 else
                 {
-                    throw new BitTorrentException("BitTorrent (Tracker) Error: Tracker cannot be started as is already running.");
+                    throw new BitTorrentException("Tracker cannot be started as is already running.");
                 }
             }
             catch (BitTorrentException)
@@ -270,7 +270,7 @@ namespace BitTorrentLibrary
             {
                 trackerStatus = TrackerStatus.Stalled;
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("BitTorrent (Tracker) Error: " + ex.Message);
+                throw new BitTorrentException(ex.Message);
             }
         }
         /// <summary>
@@ -301,7 +301,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug(ex);
                 trackerStatus = TrackerStatus.Stalled;
-                throw new BitTorrentException("BitTorrent (Tracker) Error: " + ex.Message);
+                throw new BitTorrentException("" + ex.Message);
             }
         }
         /// <summary>
@@ -319,7 +319,7 @@ namespace BitTorrentLibrary
             }
             else
             {
-                throw new BitTorrentException("BitTorrent (Tracker) Error: Cannot change interval as torrent is not seeding.");
+                throw new BitTorrentException("Cannot change interval as torrent is not seeding.");
             }
         }
     }

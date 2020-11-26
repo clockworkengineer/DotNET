@@ -21,7 +21,7 @@ namespace BitTorrentLibrary
         /// Create with a specific error message
         /// </summary>
         /// <param name="message">Message.</param>
-        public BitTorrentException(string message) : base(message)
+        public BitTorrentException(string message) : base("BitTorrent Error: "+message)
         {
         }
         /// <summary>
@@ -29,7 +29,7 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="message">Message.</param>
         /// <param name="innerException">Inner exception.</param>
-        public BitTorrentException(string message, Exception innerException) : base(message, innerException)
+        public BitTorrentException(string message, Exception innerException) : base("BitTorrent Error: "+ message, innerException)
         {
         }
         /// <summary>
