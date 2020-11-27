@@ -8,45 +8,26 @@
 // Copyright 2020.
 //
 using System;
-using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
 using System.Text;
 namespace BitTorrentLibrary
 {
-    /// <summary>
-    /// Peer connector is used to link the peer network socket listener/connect
-    /// and an agent. It contains any data that is filled in and passed
-    /// between them and also the callback that is called on a accept/connect.
-    /// </summary>
-    /// <param name="callBackData"></param>
-    internal delegate void ConnectorCallBack(Object callBackData);
-    internal struct PeerConnector
+    internal interface IPeerNetwork
     {
-        // Shallow copy connector
-        public PeerConnector Copy()
-        {
-            return (PeerConnector)new PeerConnector
-            {
-                peerDetails = peerDetails,
-                socket = socket,
-                callBack = callBack
-            };
-        }
-        public PeerDetails peerDetails;     // Connecting peer details
-        public Socket socket;               // Connecting socket
-        public ConnectorCallBack callBack;  // Connecting callback
+        byte[] ReadBuffer { get; set; }
+        int PacketLength { get; set; }
+        void Close();
+        int Read(byte[] buffer, int length);
+        void StartReads(Peer remotePeer);
+        void Write(byte[] buffer);
     }
-    internal class PeerNetwork
+    internal class PeerNetwork : IPeerNetwork
     {
-        private static Socket _listenerSocket;                  // Connection listener socket
         private int _bytesRead;                                 // Bytes read in read request
         private bool _lengthRead;                               // == true packet length has been read
         private Socket _socket;                                 // Socket for I/O
-        internal static int listenPort = Host.DefaultPort;      // Listener port
         public byte[] ReadBuffer { get; set; }                  // Read buffer
         public int PacketLength { get; set; }                   // Current packet length
-
         /// <summary>
         /// Throw an exception if an send error is reported.The error can either
         /// be because the errorReported boolean is true or an actual socket error
@@ -64,50 +45,6 @@ namespace BitTorrentLibrary
                 }
                 throw new Exception(message);
             }
-        }
-        /// <summary>
-        /// Asynchronous peer connection callback. When a connection
-        /// is completed try to add it to the swarm via the connector 
-        /// passed as a parameter.
-        /// </summary>
-        /// <param name="ar"></param>
-        private static void ConnectionAsyncHandler(IAsyncResult ar)
-        {
-            PeerConnector connector = (PeerConnector)ar.AsyncState;
-            try
-            {
-                connector.socket.EndConnect(ar);
-                connector.callBack(connector);
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error(ex);
-                Log.Logger.Error("Error (Ignored): " + ex.Message);
-                connector.socket?.Close();;
-            }
-        }
-        /// <summary>
-        /// Asynchronous remote peer connection callback. When a remote connection
-        /// arrives try to add it to the swarm via the connector passed then prime 
-        /// the accept callback for the next peers connection attempt.
-        /// </summary>
-        /// <param name="ar"></param>
-        public static void AcceptAsyncHandler(IAsyncResult ar)
-        {
-            PeerConnector connector = (PeerConnector)ar.AsyncState;
-            try
-            {
-                connector.socket = _listenerSocket.EndAccept(ar);
-                connector.callBack(connector.Copy());
-                _listenerSocket.BeginAccept(new AsyncCallback(AcceptAsyncHandler), connector);
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error(ex);
-                Log.Logger.Debug("Error (Ignored): " + ex.Message);
-                Log.Logger.Info("Port connection listener terminated.");
-            }
-
         }
         /// <summary>
         /// Peer read packet asynchronous callback.
@@ -161,20 +98,6 @@ namespace BitTorrentLibrary
             _socket = remotePeerSocket;
         }
         /// <summary>
-        /// Connect with remote peer and add it to the swarm when its callback handler is called.
-        /// </summary>
-        /// <param name="ip"></param>
-        /// <param name="port"></param>
-        /// <returns></returns>
-        public static void Connect(PeerConnector connector)
-        {
-            IPAddress localPeerIP = Dns.GetHostEntry("localhost").AddressList[0];
-            IPAddress remotePeerIP = System.Net.IPAddress.Parse(connector.peerDetails.ip);
-            connector.socket = new Socket(localPeerIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            connector.socket.BeginConnect(new IPEndPoint(remotePeerIP, connector.peerDetails.port), new AsyncCallback(ConnectionAsyncHandler), connector);
-
-        }
-        /// <summary>
         /// Send packet to remote peer. Again do not check for connected as used in intial handshake with peer and
         /// when not checks happen at a higher level.
         /// </summary>
@@ -216,55 +139,6 @@ namespace BitTorrentLibrary
                 _socket.Close();
             }
             _socket = null;
-        }
-        /// <summary>
-        /// Return IP and Port of remote connection.
-        /// </summary>
-        /// <param name="socket"></param>
-        /// <returns></returns>
-        public static PeerDetails GetConnectingPeerDetails(Socket socket)
-        {
-            PeerDetails peerDetails = new PeerDetails
-            {
-                ip = ((IPEndPoint)(socket.RemoteEndPoint)).Address.ToString(),
-                port = ((IPEndPoint)(socket.RemoteEndPoint)).Port
-            };
-            return peerDetails;
-        }
-        /// <summary>
-        /// Start asychronouse peer port connection listener.
-        /// </summary>
-        /// <param name="agent"></param>
-        /// <param name="port"></param>
-        public static void StartListening(PeerConnector connector)
-        {
-            try
-            {
-                _listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
-                _listenerSocket.Listen(100);
-                _listenerSocket.BeginAccept(new AsyncCallback(AcceptAsyncHandler), connector);
-                Log.Logger.Info("Port connection listener started...");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error:" + ex);
-            }
-        }
-        /// <summary>
-        /// Connect to listen port to shutdown listener task.
-        /// </summary>
-        public static void ShutdownListener()
-        {
-            try
-            {
-                _listenerSocket?.Close();
-                _listenerSocket = null;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error(ex);
-            }
         }
     }
 }

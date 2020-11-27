@@ -19,6 +19,7 @@ namespace BitTorrentLibrary
 {
     public class Agent
     {
+        private readonly AgentNetwork _network;                                  // Network layer used by agent
         private readonly Manager _manager;                                       // Torrent context/dead peer manager
         private bool _agentRunning = false;                                      // == true while agent is up and running.
         private readonly Assembler _pieceAssembler;                              // Piece assembler for agent
@@ -70,7 +71,7 @@ namespace BitTorrentLibrary
                     {
                         PeerDetails peerDetails = _peerSwarmQeue.Take(cancelTask);
                         _manager.AddToDeadPeerList(peerDetails.ip);
-                        PeerNetwork.Connect(new PeerConnector()
+                        _network.Connect(new PeerConnector()
                         {
                             peerDetails = peerDetails,
                             callBack = AddConnectedToPeerToSpawn
@@ -103,7 +104,7 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Info("Remote peer connected...");
                 PeerConnector connector = (PeerConnector)obj;
-                connector.peerDetails = PeerNetwork.GetConnectingPeerDetails(connector.socket);
+                connector.peerDetails = _network.GetConnectingPeerDetails(connector.socket);
                 _manager.AddToDeadPeerList(connector.peerDetails.ip);
                 remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, null, connector.socket);
                 AddPeerToSwarm(remotePeer);
@@ -152,7 +153,8 @@ namespace BitTorrentLibrary
         /// <param name="listenPort"></param>
         public Agent(Manager manager, Assembler pieceAssembler, int listenPort = Host.DefaultPort)
         {
-            PeerNetwork.listenPort = listenPort;
+            AgentNetwork.listenPort = listenPort;
+            _network = new AgentNetwork();
             _manager = manager ?? throw new ArgumentNullException(nameof(manager));
             _pieceAssembler = pieceAssembler ?? throw new ArgumentNullException(nameof(pieceAssembler));
             _peerSwarmQeue = new BlockingCollection<PeerDetails>();
@@ -170,7 +172,7 @@ namespace BitTorrentLibrary
                     Log.Logger.Info("Starting up Torrent Agent...");
                     _agentRunning = true;
                     Task.Run(() => PeerConnectWorkerTask(_cancelWorkerTaskSource.Token));
-                    PeerNetwork.StartListening(new PeerConnector
+                    _network.StartListening(new PeerConnector
                     {
                         callBack = AddRemotelyConnectingPeerToSpawn
                     });
@@ -259,7 +261,7 @@ namespace BitTorrentLibrary
                     {
                         CloseTorrent(tc);
                     }
-                    PeerNetwork.ShutdownListener();
+                    _network.ShutdownListener();
                     _cancelWorkerTaskSource.Cancel();
                     Log.Logger.Info("Torrent agent shutdown.");
                 }
