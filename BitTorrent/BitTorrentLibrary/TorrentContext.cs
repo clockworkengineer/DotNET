@@ -239,7 +239,6 @@ namespace BitTorrentLibrary
             }
             return (UInt64)((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded);
         }
-
         /// <summary>
         /// Un-merges disconnecting peer bitfield from piece information. At
         /// present this just involves decreasing its availability count.
@@ -320,6 +319,18 @@ namespace BitTorrentLibrary
                 currentPiece %= (UInt32)numberOfPieces;
             } while (startPiece != currentPiece);
             return (false, currentPiece);
+        }
+        /// <summary>
+        /// Calculate bytes per second of torrent download
+        /// </summary>
+        /// <returns></returns>
+        internal Int64 BytesPerSecond() {
+            int seconds = (int) assemblyData.averageAssemblyTime.Get()/1000;
+            if (seconds!=0) {
+                return pieceLength/seconds;
+            }else {
+                return 0;
+            }
         }
     }
 }

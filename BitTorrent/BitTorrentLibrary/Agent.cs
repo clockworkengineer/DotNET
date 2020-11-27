@@ -415,8 +415,7 @@ namespace BitTorrentLibrary
                         infoHash = tc.infoHash,
                         missingPiecesCount = tc.missingPiecesCount,
                         swarmSize = tc.peerSwarm.Count,
-                        bytesPerSecond = (tc.assemblyData.averageAssemblyTime.Get()==0) ? 
-                                          0 :tc.pieceLength/(tc.assemblyData.averageAssemblyTime.Get()/1000),
+                        bytesPerSecond = tc.BytesPerSecond(),
                         deadPeers = _manager.DeadPeerCount,
                         trackerStatus = tc.MainTracker.trackerStatus,
                         trackerStatusMessage = tc.MainTracker.lastResponse.statusMessage

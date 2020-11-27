@@ -37,7 +37,7 @@ namespace BitTorrentLibrary
         {
             int bytesTransferred = 0;
             UInt64 startOffset = transferBuffer.Number * tc.pieceLength;
-            UInt64 endOffset = startOffset + tc.pieceLength;
+            UInt64 endOffset = startOffset + transferBuffer.Length;
             foreach (var file in tc.filesToDownload)
             {
                 if ((startOffset <= (file.offset + file.length)) && (file.offset <= endOffset))
@@ -271,20 +271,20 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal void FullyDownloadedTorrentBitfield(TorrentContext tc)
         {
-            UInt64 totalBytesToDownload = tc.TotalBytesToDownload;
+            Int64 totalBytesToDownload = (Int64) tc.TotalBytesToDownload;
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
             {
                 tc.MarkPieceLocal(pieceNumber, true);
                 tc.MarkPieceMissing(pieceNumber, false);
-                if (totalBytesToDownload - Constants.BlockSize > Constants.BlockSize)
+                if (totalBytesToDownload/tc.pieceLength != 0)
                 {
-                    tc.SetPieceLength(pieceNumber, Constants.BlockSize);
+                    tc.SetPieceLength(pieceNumber, tc.pieceLength);
                 }
                 else
                 {
                     tc.SetPieceLength(pieceNumber, (UInt32)totalBytesToDownload);
                 }
-                totalBytesToDownload -= Constants.BlockSize;
+                totalBytesToDownload -= tc.pieceLength;
             }
         }
     }
