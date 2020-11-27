@@ -19,7 +19,7 @@ namespace BitTorrentLibrary
 {
     public class Agent
     {
-        private readonly AgentNetwork _network;                                  // Network layer used by agent
+        private readonly IAgentNetwork _network;                                 // Network layer used by agent
         private readonly Manager _manager;                                       // Torrent context/dead peer manager
         private bool _agentRunning = false;                                      // == true while agent is up and running.
         private readonly Assembler _pieceAssembler;                              // Piece assembler for agent
@@ -27,7 +27,6 @@ namespace BitTorrentLibrary
         private readonly BlockingCollection<PeerDetails> _peerSwarmQeue;         // Queue of peers to add to swarm
         public bool Running { get => _agentRunning; }                            // == true then agent running
         public ICollection<TorrentContext> TorrentList => _manager.GetTorrentList();  // List of torrent contexts
-
         /// <summary>
         /// Add Peer to swarm if it connected, is not already present in the swarm 
         /// and there is room enough.
@@ -71,7 +70,7 @@ namespace BitTorrentLibrary
                     {
                         PeerDetails peerDetails = _peerSwarmQeue.Take(cancelTask);
                         _manager.AddToDeadPeerList(peerDetails.ip);
-                        _network.Connect(new PeerConnector()
+                        _network.Connect(new AgentConnector()
                         {
                             peerDetails = peerDetails,
                             callBack = AddConnectedToPeerToSpawn
@@ -103,7 +102,7 @@ namespace BitTorrentLibrary
             try
             {
                 Log.Logger.Info("Remote peer connected...");
-                PeerConnector connector = (PeerConnector)obj;
+                AgentConnector connector = (AgentConnector)obj;
                 connector.peerDetails = _network.GetConnectingPeerDetails(connector.socket);
                 _manager.AddToDeadPeerList(connector.peerDetails.ip);
                 remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, null, connector.socket);
@@ -128,7 +127,7 @@ namespace BitTorrentLibrary
             Peer remotePeer = null;
             try
             {
-                PeerConnector connector = (PeerConnector)obj;
+                AgentConnector connector = (AgentConnector)obj;
                 if (_manager.GetTorrentContext(connector.peerDetails.infoHash, out TorrentContext tc))
                 {
                     remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, tc, connector.socket);
@@ -148,8 +147,21 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Setup data and resources needed by agent.
         /// </summary>
-        /// <param name="manager">Torrent context manager</param>
-        /// <param name="downloadPath">Download path.</param>
+        /// <param name="manager"></param>
+        /// <param name="pieceAssembler"></param>
+        /// <param name="network"></param>
+        /// <param name="listenPort"></param>
+        /// <returns></returns>
+        internal Agent(Manager manager, Assembler pieceAssembler, IAgentNetwork network, int listenPort = Host.DefaultPort) :
+                     this(manager, pieceAssembler, listenPort)
+        {
+            _network = network;
+        }
+        /// <summary>
+        /// Setup data and resources needed by agent.
+        /// </summary>
+        /// <param name="manager"></param>
+        /// <param name="pieceAssembler"></param>
         /// <param name="listenPort"></param>
         public Agent(Manager manager, Assembler pieceAssembler, int listenPort = Host.DefaultPort)
         {
@@ -172,7 +184,7 @@ namespace BitTorrentLibrary
                     Log.Logger.Info("Starting up Torrent Agent...");
                     _agentRunning = true;
                     Task.Run(() => PeerConnectWorkerTask(_cancelWorkerTaskSource.Token));
-                    _network.StartListening(new PeerConnector
+                    _network.StartListening(new AgentConnector
                     {
                         callBack = AddRemotelyConnectingPeerToSpawn
                     });
