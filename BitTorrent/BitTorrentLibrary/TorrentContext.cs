@@ -325,9 +325,9 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <returns></returns>
         internal Int64 BytesPerSecond() {
-            int seconds = (int) assemblyData.averageAssemblyTime.Get()/1000;
+            double seconds = assemblyData.averageAssemblyTime.Get()/1000.0;
             if (seconds!=0) {
-                return pieceLength/seconds;
+                return (Int64) (pieceLength/seconds);
             }else {
                 return 0;
             }

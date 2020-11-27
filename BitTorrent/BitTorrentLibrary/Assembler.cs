@@ -224,8 +224,8 @@ namespace BitTorrentLibrary
                 }
                 // if we reach here then no eligable peers in swarm so sleep a bit.
                 Log.Logger.Debug($"Waiting for eligable peers to download peice from.");
+                cancelAssemblerTask.ThrowIfCancellationRequested();
                 Thread.Sleep(1000);
-
             }
         }
         /// <summary>
@@ -238,7 +238,6 @@ namespace BitTorrentLibrary
             WaitHandle[] waitHandles = new WaitHandle[] { cancelAssemblerTask.WaitHandle };
             foreach (var remotePeer in tc.peerSwarm.Values)
             {
-
                 try
                 {
                     PWP.Uninterested(remotePeer);
@@ -249,7 +248,6 @@ namespace BitTorrentLibrary
                     Log.Logger.Error(ex);
                     remotePeer.Close();
                 }
-
             }
             WaitHandle.WaitAll(waitHandles);
         }
