@@ -7,6 +7,7 @@
 //
 using System;
 using Xunit;
+All testsusing Moq;
 using BitTorrentLibrary;
 namespace BitTorrentLibraryTests
 {
@@ -15,30 +16,35 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestCreateAgentObjectNotNull()
         {
-            Agent agent = new Agent(new Manager(), new Assembler());
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             Assert.NotNull(agent);
         }
         [Fact]
         public void TestNullManagerPassedToConstructor()
         {
-            Assert.Throws<ArgumentNullException>(() => { Agent agent = new Agent(null, new Assembler()); });
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Assert.Throws<ArgumentNullException>(() => { Agent agent = new Agent(null, new Assembler(), networkMock.Object); });
         }
         [Fact]
         public void TestNullAssemblerPassedToConstructor()
         {
-            Assert.Throws<ArgumentNullException>(() => { Agent agent = new Agent(new Manager(), null); });
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Assert.Throws<ArgumentNullException>(() => { Agent agent = new Agent(new Manager(), null, networkMock.Object); });
         }
         [Fact]
         public void TestStartupAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6882);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             Assert.True(agent.Running);
         }
         [Fact]
         public void TestStartupThenShutDownAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6883);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             agent.ShutDown();
             Assert.False(agent.Running);
@@ -46,14 +52,16 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestStartupAlreadyStartedAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6884);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            BitTorrentException error = Assert.Throws<BitTorrentException>(() => { agent.Startup(); });            Assert.Equal("BitTorrent Error: Failure to startup agent.Agent is already running.", error.Message);
+            BitTorrentException error = Assert.Throws<BitTorrentException>(() => { agent.Startup(); }); Assert.Equal("BitTorrent Error: Failure to startup agent.Agent is already running.", error.Message);
         }
         [Fact]
         public void TestShutdownAlreadyShutdownAgent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6885);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             agent.ShutDown();
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { agent.ShutDown(); });
@@ -62,21 +70,24 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestNullPassedToAddTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6886);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             Assert.Throws<ArgumentNullException>(() => agent.AddTorrent(null));
         }
         [Fact]
         public void TestNullPassedToRemoveTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6887);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             Assert.Throws<ArgumentNullException>(() => agent.RemoveTorrent(null));
         }
         [Fact]
         public void TestNullPassedToCloseTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler(), 6888);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             Assert.Throws<ArgumentNullException>(() => agent.CloseTorrent(null));
         }
@@ -86,7 +97,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6889);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -100,7 +112,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6890);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -110,7 +123,8 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestNullTorrentContextPassedStartTorrent()
         {
-            Agent agent = new Agent(new Manager(), new Assembler()); ;
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             Assert.Throws<ArgumentNullException>(() => agent.StartTorrent(null));
         }
         [Fact]
@@ -119,7 +133,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6891);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -132,7 +147,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6892);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -145,7 +161,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6893);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -157,7 +174,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6894);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -170,7 +188,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6895);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -184,7 +203,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6896);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             _ = new Tracker(tc);
             agent.AddTorrent(tc);
@@ -197,7 +217,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6897);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             _ = new Tracker(tc);
@@ -211,7 +232,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6898);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.AddTorrent(tc));
@@ -223,7 +245,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6899);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -237,7 +260,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6900);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             _ = new Tracker(tc);
@@ -261,7 +285,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6891);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
@@ -274,7 +299,8 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            Agent agent = new Agent(new Manager(), new Assembler(), 6892);
+            Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
+            Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
             Tracker tracker = new Tracker(tc);
