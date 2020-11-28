@@ -74,7 +74,7 @@ namespace BitTorrentLibrary
                 }
                 else if (_bytesRead == PacketLength)
                 {
-                    remotePeer.protocolHandler(remotePeer);
+                    remotePeer.ProtocolHandler(remotePeer);
                     _lengthRead = false;
                     _bytesRead = 0;
                     PacketLength = Constants.SizeOfUInt32;

@@ -252,10 +252,10 @@ namespace BitTorrentLibrary
             UInt32 blockOffset = Util.UnPackUInt32(remotePeer.ReadBuffer, 5);
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX PIECE {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}");
             remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
-            if (remotePeer.packetResponseTimer.IsRunning)
+            if (remotePeer.PacketResponseTimer.IsRunning)
             {
-                remotePeer.packetResponseTimer.Stop();
-                remotePeer.averagePacketResponse.Add(remotePeer.packetResponseTimer.ElapsedMilliseconds);
+                remotePeer.PacketResponseTimer.Stop();
+                remotePeer.AveragePacketResponse.Add(remotePeer.PacketResponseTimer.ElapsedMilliseconds);
             }
         }
         /// <summary>
@@ -466,9 +466,9 @@ namespace BitTorrentLibrary
                 requestPacket.AddRange(Util.PackUInt32(blockOffset));
                 requestPacket.AddRange(Util.PackUInt32(blockSize));
                 remotePeer.Write(requestPacket.ToArray());
-                if (!remotePeer.packetResponseTimer.IsRunning)
+                if (!remotePeer.PacketResponseTimer.IsRunning)
                 {
-                    remotePeer.packetResponseTimer.Start();
+                    remotePeer.PacketResponseTimer.Start();
                 }
             }
         }

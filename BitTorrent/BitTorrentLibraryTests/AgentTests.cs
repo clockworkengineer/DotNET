@@ -7,7 +7,7 @@
 //
 using System;
 using Xunit;
-All testsusing Moq;
+using Moq;
 using BitTorrentLibrary;
 namespace BitTorrentLibraryTests
 {

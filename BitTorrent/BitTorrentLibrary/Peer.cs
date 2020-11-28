@@ -18,27 +18,38 @@ namespace BitTorrentLibrary
     internal delegate void ProtocolHandler(Peer remotePeer);
     internal class Peer
     {
-        private PeerNetwork _network;                                    // Network layer
+        private IPeerNetwork _network;                                   // Network layer
         private readonly Mutex _closeGuardMutex;                         // Peer close guard
-        internal readonly Stopwatch packetResponseTimer;                 // Packet reponse timer
-        internal Average averagePacketResponse;                          // Average packet reponse time
-        internal BlockingCollection<Peer> peerCloseQueue;                // Peer close queue
-        internal ProtocolHandler protocolHandler;                        // Wire Procol handler for peer
+        public Stopwatch PacketResponseTimer { get; }                    // Packet reponse timer
+        public Average AveragePacketResponse { get; }                   // Average packet reponse time
+        public ProtocolHandler ProtocolHandler { get; }                  // Wire Procol handler for peer
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
         public TorrentContext Tc { get; set; }                           // Torrent torrent context
         public byte[] RemotePieceBitfield { get; set; }                  // Remote peer piece map
         public string Ip { get; }                                        // Remote peer ip
-        public int Port { get; }                                        // peer Port
+        public int Port { get; }                                         // peer Port
         public bool AmInterested { get; set; } = false;                  // == true then client interested in remote peer
         public bool AmChoking { get; set; } = true;                      // == true then client is choking remote peer.
         public ManualResetEvent PeerChoking { get; }                     // == true (set) then remote peer is choking client (local host)
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
-        public ManualResetEvent BitfieldReceived { get; }                // When event set then peer has recieved bitfield from remote peer
         public int NumberOfMissingPieces { get; set; }                   // Number of missing pieces from a remote peers torrent
-        public byte[] ReadBuffer => _network?.ReadBuffer;                 // Network read buffer
+        public byte[] ReadBuffer => _network?.ReadBuffer;                // Network read buffer
         public int PacketLength => (int)_network?.PacketLength;          // Current read packet length
+        /// <summary>
+        /// Setup data and resources needed by peer.
+        /// </summary>
+        /// <param name="ip">Ip.</param>
+        /// <param name="port">Port.</param>
+        /// <param name="infoHash">Info hash.</param>
+        /// <param name="tc">torrent context.</param>
+        /// <param name="network">peer network layer.</param>
+        /// 
+        internal Peer(string ip, int port, TorrentContext tc, Socket socket, IPeerNetwork network) : this(ip, port, tc, socket)
+        {
+            _network = network;
+        }
         /// <summary>
         /// Setup data and resources needed by peer.
         /// </summary>
@@ -53,10 +64,10 @@ namespace BitTorrentLibrary
             Port = port;
             _network = new PeerNetwork(socket);
             _closeGuardMutex = new Mutex();
-            packetResponseTimer = new Stopwatch();
+            PacketResponseTimer = new Stopwatch();
             PeerChoking = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
-            protocolHandler = PWP.MessageProcess;
+            ProtocolHandler = PWP.MessageProcess;
             if (tc != null)
             {
                 SetTorrentContext(tc);
@@ -166,13 +177,11 @@ namespace BitTorrentLibrary
         /// <param name="blockOffset">Block offset.</param>
         public void PlaceBlockIntoPiece(UInt32 pieceNumber, UInt32 blockOffset)
         {
-
             if (pieceNumber == Tc.assemblyData.pieceBuffer.Number)
             {
                 Tc.assemblyData.guardMutex.WaitOne();
                 try
                 {
-
                     Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
                     UInt32 blockNumber = blockOffset / Constants.BlockSize;
                     if (!Tc.assemblyData.pieceBuffer.IsBlockPresent(blockNumber))
@@ -200,7 +209,6 @@ namespace BitTorrentLibrary
             {
                 Log.Logger.Debug($"PIECE {pieceNumber} DISCARDED.");
             }
-
         }
     }
 }

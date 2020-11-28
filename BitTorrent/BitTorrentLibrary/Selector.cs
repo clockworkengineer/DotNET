@@ -97,7 +97,7 @@ namespace BitTorrentLibrary
                     peers.Add(peer);
                 }
             }
-            return peers.OrderBy(peer => peer.averagePacketResponse.Get()).ToList().Take(maxPeers).ToArray();
+            return peers.OrderBy(peer => peer.AveragePacketResponse.Get()).ToList().Take(maxPeers).ToArray();
         }
     }
 }
