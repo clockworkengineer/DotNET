@@ -83,8 +83,12 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Error(ex);
-                Log.Logger.Error("Error (Ignored): " + ex.Message);
+                // Only report error when socket hasnt been closed
+                if (_socket != null)
+                {
+                    Log.Logger.Error(ex);
+                    Log.Logger.Error("Error (Ignored): " + ex.Message);
+                }
                 Log.Logger.Info($"Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
                 remotePeer.Close();
             }

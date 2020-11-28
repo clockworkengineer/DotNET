@@ -125,58 +125,57 @@ namespace BitTorrentLibrary
         private bool GetPieceFromPeers(TorrentContext tc, UInt32 pieceNumber, WaitHandle[] waitHandles)
         {
             Peer[] remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
-            if (remotePeers.Length == 0)
+            if (remotePeers.Length != 0)
             {
-                Log.Logger.Debug($"Zero peers to assemble piece {pieceNumber}.");
+                var stopwatch = new Stopwatch();
+                Log.Logger.Debug($"Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
+                tc.assemblyData.pieceBuffer = new PieceBuffer(tc, tc.PieceLength(pieceNumber))
+                {
+                    Number = pieceNumber
+                };
+                tc.assemblyData.pieceFinished.Reset();
+                tc.assemblyData.blockRequestsDone.Reset();
+                tc.MarkPieceMissing(pieceNumber, false);
+                while (GetMoreBlocks(tc, pieceNumber, remotePeers))
+                {
+                    //
+                    // Wait for blocks to arrive
+                    //
+                    stopwatch.Start();
+                    switch (WaitHandle.WaitAny(waitHandles, _assemberTimeout * 1000))
+                    {
+                        // Any outstanding requests have been completed
+                        case 0:
+                            tc.assemblyData.blockRequestsDone.Reset();
+                            continue;
+                        //  Piece has been fully assembled
+                        case 1:
+                            stopwatch.Stop();
+                            tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
+                            Log.Logger.Info($"Download speed {tc.BytesPerSecond()} bytes/sec");
+                            return tc.assemblyData.pieceBuffer.AllBlocksThere;
+                        // Assembly has been cancelled by external source
+                        case 2:
+                            return false;
+                        // Timeout so re-request blocks not returned
+                        // Note: can result in blocks having to be discarded
+                        case WaitHandle.WaitTimeout:
+                            Log.Logger.Debug($"Timeout assembling piece {pieceNumber}.");
+                            tc.assemblyData.totalTimeouts++;
+                            Log.Logger.Debug($"Reconfiguring peer list because of timeout.");
+                            Log.Logger.Debug($"Total piece assembly timeourt { tc.assemblyData.totalTimeouts}.");
+                            remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
+                            if (remotePeers.Length == 0)
+                            {
+                                Log.Logger.Debug($"Zero peers to assemble piece {pieceNumber}.");
+                                return false;
+                            }
+                            continue;
+                    }
+                }
                 return false;
             }
-            var stopwatch = new Stopwatch();
-            Log.Logger.Debug($"Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
-            tc.assemblyData.pieceBuffer = new PieceBuffer(tc, tc.PieceLength(pieceNumber))
-            {
-                Number = pieceNumber
-            };
-            tc.assemblyData.pieceFinished.Reset();
-            tc.assemblyData.blockRequestsDone.Reset();
-            tc.MarkPieceMissing(pieceNumber, false);
-            while (GetMoreBlocks(tc, pieceNumber, remotePeers))
-            {
-                //
-                // Wait for blocks to arrive
-                //
-                stopwatch.Start();
-                switch (WaitHandle.WaitAny(waitHandles, _assemberTimeout * 1000))
-                {
-                    // Any outstanding requests have been completed
-                    case 0:
-                        tc.assemblyData.blockRequestsDone.Reset();
-                        continue;
-                    //  Piece has been fully assembled
-                    case 1:
-                        stopwatch.Stop();
-                        tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
-                        Log.Logger.Debug($"Average time {tc.assemblyData.averageAssemblyTime.Get()} ms.");
-                        Log.Logger.Info($"Download speed {tc.BytesPerSecond()} bytes/sec");
-                        return tc.assemblyData.pieceBuffer.AllBlocksThere;
-                    // Assembly has been cancelled by external source
-                    case 2:
-                        return false;
-                    // Timeout so re-request blocks not returned
-                    // Note: can result in blocks having to be discarded
-                    case WaitHandle.WaitTimeout:
-                        Log.Logger.Debug($"Timeout assembling piece {pieceNumber}.");
-                        tc.assemblyData.totalTimeouts++;
-                        Log.Logger.Debug($"Reconfiguring peer list because of timeout.");
-                        Log.Logger.Debug($"Total piece assembly timeourt { tc.assemblyData.totalTimeouts}.");
-                        remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
-                        if (remotePeers.Length == 0)
-                        {
-                            Log.Logger.Debug($"Zero peers to assemble piece {pieceNumber}.");
-                            return false;
-                        }
-                        continue;
-                }
-            }
+            Log.Logger.Debug($"Zero peers to assemble piece {pieceNumber}.");
             return false;
         }
         /// <summary>
@@ -197,7 +196,7 @@ namespace BitTorrentLibrary
             };
             while (!tc.downloadFinished.WaitOne(0))
             {
-                while (tc.selector.NextPiece(tc, ref nextPiece, cancelAssemblerTask))
+                while ((tc.peerSwarm.Count>0) && tc.selector.NextPiece(tc, ref nextPiece, cancelAssemblerTask))
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
