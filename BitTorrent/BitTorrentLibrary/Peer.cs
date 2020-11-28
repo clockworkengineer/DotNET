@@ -21,7 +21,7 @@ namespace BitTorrentLibrary
         private IPeerNetwork _network;                                   // Network layer
         private readonly Mutex _closeGuardMutex;                         // Peer close guard
         public Stopwatch PacketResponseTimer { get; }                    // Packet reponse timer
-        public Average AveragePacketResponse { get; }                   // Average packet reponse time
+        public Average AveragePacketResponse { get; }                    // Average packet reponse time
         public ProtocolHandler ProtocolHandler { get; }                  // Wire Procol handler for peer
         public bool Connected { get; set; }                              // == true connected to remote peer
         public byte[] RemotePeerID { get; set; }                         // Id of remote peer
@@ -38,7 +38,7 @@ namespace BitTorrentLibrary
         public byte[] ReadBuffer => _network?.ReadBuffer;                // Network read buffer
         public int PacketLength => (int)_network?.PacketLength;          // Current read packet length
         /// <summary>
-        /// Setup data and resources needed by peer.
+        /// Internal constructor Setup data and resources needed by peer for unit tests.
         /// </summary>
         /// <param name="ip">Ip.</param>
         /// <param name="port">Port.</param>
@@ -51,14 +51,15 @@ namespace BitTorrentLibrary
             _network = network;
         }
         /// <summary>
-        /// Setup data and resources needed by peer.
+        /// Setup data and resources needed by peer. No torrent context
+        /// passed as it is hooked up when the remote connecting peer has
+        /// done a successful intial handshake.
         /// </summary>
         /// <param name="ip">Ip.</param>
         /// <param name="port">Port.</param>
         /// <param name="infoHash">Info hash.</param>
-        /// <param name="tc">torrent context.</param>
         /// 
-        public Peer(string ip, int port, TorrentContext tc, Socket socket)
+        public Peer(string ip, int port, Socket socket)
         {
             Ip = ip;
             Port = port;
@@ -68,10 +69,18 @@ namespace BitTorrentLibrary
             PeerChoking = new ManualResetEvent(false);
             CancelTaskSource = new CancellationTokenSource();
             ProtocolHandler = PWP.MessageProcess;
-            if (tc != null)
-            {
-                SetTorrentContext(tc);
-            }
+        }
+        /// <summary>
+        /// Setup data and resources needed by peer.
+        /// </summary>
+        /// <param name="ip">Ip.</param>
+        /// <param name="port">Port.</param>
+        /// <param name="infoHash">Info hash.</param>
+        /// <param name="tc">torrent context.</param>
+        /// 
+        public Peer(string ip, int port, TorrentContext tc, Socket socket) : this(ip, port, socket)
+        {
+            SetTorrentContext(tc);
         }
         /// <summary>
         /// Set torrent context and dependant fields.

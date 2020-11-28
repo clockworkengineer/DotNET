@@ -105,7 +105,7 @@ namespace BitTorrentLibrary
                 AgentConnector connector = (AgentConnector)obj;
                 connector.peerDetails = _network.GetConnectingPeerDetails(connector.socket);
                 _manager.AddToDeadPeerList(connector.peerDetails.ip);
-                remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, null, connector.socket);
+                remotePeer = new Peer(connector.peerDetails.ip, connector.peerDetails.port, connector.socket);
                 AddPeerToSwarm(remotePeer);
             }
             catch (Exception ex)
