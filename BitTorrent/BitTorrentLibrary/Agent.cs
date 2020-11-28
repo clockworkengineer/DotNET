@@ -35,8 +35,7 @@ namespace BitTorrentLibrary
         private void AddPeerToSwarm(Peer remotePeer)
         {
             remotePeer.Handshake(_manager);
-            if (!remotePeer.Connected ||
-                !remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip) ||
+            if (!remotePeer.Tc.IsSpaceInSwarm(remotePeer.Ip) ||
                 !remotePeer.Tc.peerSwarm.TryAdd(remotePeer.Ip, remotePeer))
             {
                 throw new Exception($"Failure peer [{remotePeer.Ip}] not added to swarm.");

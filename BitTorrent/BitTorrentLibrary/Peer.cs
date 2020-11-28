@@ -139,14 +139,11 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(manager));
             }
-            ValueTuple<bool, byte[]> peerResponse = PWP.Handshake(this, manager);
-            if (peerResponse.Item1)
-            {
-                Connected = true;
-                RemotePeerID = peerResponse.Item2;
-                _network.StartReads(this);
-                PWP.Bitfield(this, Tc.Bitfield);
-            }
+            RemotePeerID = PWP.Handshake(this, manager);
+            Connected = true;
+            _network.StartReads(this);
+            PWP.Bitfield(this, Tc.Bitfield);
+
         }
         /// <summary>
         /// Release  any peer class resources.

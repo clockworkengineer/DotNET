@@ -279,8 +279,8 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="remotePeer"></param>
         /// <param name="manager"></param>
-        /// <returns>Tuple<bbol, byte[]> indicating connection succucess and the ID of the remote client.</returns>
-        public static ValueTuple<bool, byte[]> Handshake(Peer remotePeer, Manager manager)
+        /// <returns>On successful connect remote client ID</returns>
+        public static  byte[] Handshake(Peer remotePeer, Manager manager)
         {
             List<byte> localPacket = null;
             if (remotePeer.Tc != null)
@@ -310,16 +310,16 @@ namespace BitTorrentLibrary
                         break;
                     }
                 }
-                if (!connected)
-                {
-                    throw new Exception($"Remote peer [{remotePeer.Ip}] has the incorrect infohash.");
-                }
             }
             else
             {
                 connected = ValidatePeerConnect(localPacket.ToArray(), remotePacket, out remotePeerID);
             }
-            return (connected, remotePeerID);
+            if (!connected)
+            {
+                throw new Exception($"Remote peer [{remotePeer.Ip}] has the incorrect infohash.");
+            }
+            return remotePeerID;
         }
         /// <summary>
         /// Route the peer message to process.

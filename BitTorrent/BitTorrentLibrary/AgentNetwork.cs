@@ -70,7 +70,6 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
-                Log.Logger.Error(ex);
                 Log.Logger.Error("Error (Ignored): " + ex.Message);
                 connector.socket?.Close(); ;
             }
@@ -93,7 +92,6 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Error(ex);
-                Log.Logger.Debug("Error (Ignored): " + ex.Message);
                 Log.Logger.Info("Port connection listener terminated.");
             }
         }
