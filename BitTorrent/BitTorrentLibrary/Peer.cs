@@ -61,6 +61,16 @@ namespace BitTorrentLibrary
         /// 
         public Peer(string ip, int port, Socket socket)
         {
+            if (string.IsNullOrEmpty(ip))
+            {
+                throw new ArgumentException($"'{nameof(ip)}' cannot be null or empty", nameof(ip));
+            }
+
+            if (socket is null)
+            {
+                throw new ArgumentNullException(nameof(socket));
+            }
+
             Ip = ip;
             Port = port;
             _network = new PeerNetwork(socket);
@@ -80,6 +90,11 @@ namespace BitTorrentLibrary
         /// 
         public Peer(string ip, int port, TorrentContext tc, Socket socket) : this(ip, port, socket)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
+
             SetTorrentContext(tc);
         }
         /// <summary>
@@ -88,7 +103,7 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         public void SetTorrentContext(TorrentContext tc)
         {
-            Tc = tc;
+            Tc = tc ?? throw new ArgumentNullException(nameof(tc));
             NumberOfMissingPieces = (int)Tc.numberOfPieces;
             RemotePieceBitfield = new byte[tc.Bitfield.Length];
         }
@@ -98,6 +113,11 @@ namespace BitTorrentLibrary
         /// <param name="buffer">Buffer.</param>
         public void Write(byte[] buffer)
         {
+            if (buffer is null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
             _network.Write(buffer);
         }
         /// <summary>
@@ -105,10 +125,14 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <returns>The read.</returns>
         /// <param name="buffer">Buffer.</param>
-        /// <param name="length">Length.</param>
-        public int Read(byte[] buffer, int length)
+        public int Read(byte[] buffer)
         {
-            return _network.Read(buffer, length);
+            if (buffer is null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            return _network.Read(buffer, buffer.Length);
         }
         /// <summary>
         ///  Perform intial handsake with remote peer.
@@ -116,6 +140,11 @@ namespace BitTorrentLibrary
         /// <param name="manager"></param>
         public void Handshake(Manager manager)
         {
+            if (manager is null)
+            {
+                throw new ArgumentNullException(nameof(manager));
+            }
+
             ValueTuple<bool, byte[]> peerResponse = PWP.Handshake(this, manager);
             if (peerResponse.Item1)
             {
@@ -164,7 +193,11 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
         {
+            if (RemotePieceBitfield != null) {
             return (RemotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+            } else {
+                throw new Exception("Torrent context needs to be set for peer.");
+            }
         }
         /// <summary>
         /// Sets piece bit in local bitfield to signify its presence.

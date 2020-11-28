@@ -210,9 +210,7 @@ namespace BitTorrentLibraryTests
             {
                 Assert.True(false, "Should not throw execption here but it did. " + ex.Message);
             }
-
             Assert.True(true);
-
         }
     }
 }

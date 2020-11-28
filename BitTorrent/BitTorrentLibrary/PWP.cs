@@ -285,7 +285,7 @@ namespace BitTorrentLibrary
                 remotePeer.Write(localPacket.ToArray());
             }
             byte[] remotePacket = new byte[Constants.IntialHandshakeLength];
-            Int32 bytesRead = remotePeer.Read(remotePacket, remotePacket.Length);
+            Int32 bytesRead = remotePeer.Read(remotePacket);
             if (bytesRead != remotePacket.Length)
             {
                 throw new Exception("Invalid length read for intial packet exchange.");
