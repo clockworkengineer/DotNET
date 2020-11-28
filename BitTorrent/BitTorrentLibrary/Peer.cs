@@ -65,12 +65,10 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentException($"'{nameof(ip)}' cannot be null or empty", nameof(ip));
             }
-
             if (socket is null)
             {
                 throw new ArgumentNullException(nameof(socket));
             }
-
             Ip = ip;
             Port = port;
             _network = new PeerNetwork(socket);
@@ -94,7 +92,6 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(tc));
             }
-
             SetTorrentContext(tc);
         }
         /// <summary>
@@ -117,7 +114,6 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(buffer));
             }
-
             _network.Write(buffer);
         }
         /// <summary>
@@ -131,7 +127,6 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(buffer));
             }
-
             return _network.Read(buffer, buffer.Length);
         }
         /// <summary>
@@ -144,7 +139,6 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(manager));
             }
-
             ValueTuple<bool, byte[]> peerResponse = PWP.Handshake(this, manager);
             if (peerResponse.Item1)
             {
@@ -193,9 +187,12 @@ namespace BitTorrentLibrary
         /// <param name="pieceNumber">Piece number.</param>
         public bool IsPieceOnRemotePeer(UInt32 pieceNumber)
         {
-            if (RemotePieceBitfield != null) {
-            return (RemotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
-            } else {
+            if (RemotePieceBitfield != null)
+            {
+                return (RemotePieceBitfield[pieceNumber >> 3] & 0x80 >> (Int32)(pieceNumber & 0x7)) != 0;
+            }
+            else
+            {
                 throw new Exception("Torrent context needs to be set for peer.");
             }
         }
@@ -249,7 +246,7 @@ namespace BitTorrentLibrary
             }
             else
             {
-                Log.Logger.Debug($"PIECE {pieceNumber} DISCARDED.");
+                Log.Logger.Debug($"PIECE {pieceNumber} REQUEST DISCARDED AS IT HAS BEEN ASSEMBLED.");
             }
         }
     }

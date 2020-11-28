@@ -83,5 +83,12 @@ namespace BitTorrentLibraryTests
             Exception error = Assert.Throws<Exception>(() => peer.IsPieceOnRemotePeer(0));
             Assert.Equal("Torrent context needs to be set for peer.", error.Message);
         }
+        [Fact]
+        public void TestCallSetPieceOnRemotePeerWhenNoTorrentContextHasBeenSet()
+        {
+            Peer peer = new Peer("127.0.0.1", 6881, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
+            Exception error = Assert.Throws<Exception>(() => peer.SetPieceOnRemotePeer(0));
+            Assert.Equal("Torrent context needs to be set for peer.", error.Message);
+        }
     }
 }
