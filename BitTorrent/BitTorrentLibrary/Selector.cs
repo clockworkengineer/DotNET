@@ -5,10 +5,10 @@
 //
 // Description: Contains code and data to implement a specific piece and
 // peer selection methods for piece download. For piece selection it just starts
-// at beginning of the missing pieces bitfield and stops when it finds
-// the first piece as flagged missing and returns its ordinal position within
-// the bitfield. For peers selection it is just all those that are currently active 
-// (not choked) and have the required piece.
+// at a random piece and sequentially moves through the missing pieces bitfield and 
+// stops when it finds the first piece as flagged missing and returns its ordinal 
+// position within the bitfield. For peers selection it is just all those that 
+// are currently active (not choked) and have the required piece.
 //
 // Copyright 2020.
 //
@@ -30,17 +30,17 @@ namespace BitTorrentLibrary
             _pieceRandmizer = new Random();
         }
         /// <summary>
-        /// Select the next piece to be downloaded. At present this is just return the next sequentially
-        /// missing piece but may change in the future.
+        /// Select the next piece to be downloaded. It does this by randomly generating a start
+        /// piece and sequentially moving a long until ot finds a missing piece.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="nextPiece"></param>
         /// <param name="startPiece"></param>
         /// <param name="_"></param>
         /// <returns></returns>
-        internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece, UInt32 startPiece, CancellationToken _)
+        internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece, CancellationToken _)
         {
-
+            UInt32 startPiece = (UInt32) _pieceRandmizer.Next(0, tc.numberOfPieces);
             (var pieceSuggested, var pieceNumber) = tc.FindNextMissingPiece(startPiece);
             nextPiece = pieceNumber;
             return pieceSuggested;

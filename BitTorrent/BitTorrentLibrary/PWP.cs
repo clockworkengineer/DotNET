@@ -221,9 +221,13 @@ namespace BitTorrentLibrary
         private static void HandleBITFIELD(Peer remotePeer)
         {
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX BITFIELD");
-            Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, (Int32)remotePeer.PacketLength - 1);
-            DumpBitfield(remotePeer.RemotePieceBitfield);
-            remotePeer.Tc.MergePieceBitfield(remotePeer);
+            int bitfieldLength = remotePeer.PacketLength - 1;
+            if (bitfieldLength > 0)
+            {
+                Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, bitfieldLength);
+                DumpBitfield(remotePeer.RemotePieceBitfield);
+                remotePeer.Tc.MergePieceBitfield(remotePeer);
+            }
         }
         /// <summary>
         /// Handles request command from remote peer.
@@ -250,7 +254,7 @@ namespace BitTorrentLibrary
         {
             UInt32 pieceNumber = Util.UnPackUInt32(remotePeer.ReadBuffer, 1);
             UInt32 blockOffset = Util.UnPackUInt32(remotePeer.ReadBuffer, 5);
-            Log.Logger.Info($"{RemotePeerID(remotePeer)}RX PIECE {pieceNumber} Block Offset {blockOffset} Data Size {(Int32)remotePeer.PacketLength - 9}");
+            Log.Logger.Info($"{RemotePeerID(remotePeer)}RX PIECE {pieceNumber} Block Offset {blockOffset}");
             remotePeer.PlaceBlockIntoPiece(pieceNumber, blockOffset);
             if (remotePeer.PacketResponseTimer.IsRunning)
             {
@@ -278,7 +282,7 @@ namespace BitTorrentLibrary
         /// <returns>Tuple<bbol, byte[]> indicating connection succucess and the ID of the remote client.</returns>
         public static ValueTuple<bool, byte[]> Handshake(Peer remotePeer, Manager manager)
         {
-            List<byte> localPacket=null; 
+            List<byte> localPacket = null;
             if (remotePeer.Tc != null)
             {
                 localPacket = BuildInitialHandshake(remotePeer.Tc.infoHash);

@@ -197,7 +197,7 @@ namespace BitTorrentLibrary
             };
             while (!tc.downloadFinished.WaitOne(0))
             {
-                while (tc.selector.NextPiece(tc, ref nextPiece, nextPiece, cancelAssemblerTask))
+                while (tc.selector.NextPiece(tc, ref nextPiece, cancelAssemblerTask))
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
