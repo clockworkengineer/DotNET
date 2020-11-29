@@ -332,5 +332,13 @@ namespace BitTorrentLibrary
                 return 0;
             }
         }
+        /// <summary>
+        /// Is peer in swarm. 
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <returns></returns>
+        internal bool IsPeerInSwarm(string ip) {
+            return peerSwarm.ContainsKey(ip);
+        }
     }
 }

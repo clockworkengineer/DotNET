@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 //
 // Author: Robert Tizzard
 //
@@ -90,7 +91,8 @@ namespace BitTorrentLibrary
                             int peerThreshHold = tracker._tc.maximumSwarmSize;
                             foreach (var peerDetails in tracker.lastResponse.peerList ?? Enumerable.Empty<PeerDetails>())
                             {
-                                if (!tracker._tc.manager.IsPeerDead(peerDetails.ip))
+                                if (!tracker._tc.manager.IsPeerDead(peerDetails.ip)&&
+                                    !tracker._tc.IsPeerInSwarm(peerDetails.ip))
                                 {
                                     tracker.peerSwarmQueue?.Add(peerDetails);
                                     if (peerThreshHold-- == 0) break;
