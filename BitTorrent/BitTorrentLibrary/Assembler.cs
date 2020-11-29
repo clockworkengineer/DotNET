@@ -119,7 +119,6 @@ namespace BitTorrentLibrary
                 {
                     Number = pieceNumber
                 };
-                tc.assemblyData.pieceFinished.Reset();
                 tc.assemblyData.blockRequestsDone.Reset();
                 tc.MarkPieceMissing(pieceNumber, false);
                 while (GetMoreBlocks(tc, pieceNumber, remotePeers))
@@ -133,15 +132,16 @@ namespace BitTorrentLibrary
                         // Any outstanding requests have been completed
                         case 0:
                             tc.assemblyData.blockRequestsDone.Reset();
+                            if (tc.assemblyData.pieceBuffer.AllBlocksThere)
+                            {
+                                stopwatch.Stop();
+                                tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
+                                Log.Logger.Info($"Download speed {tc.BytesPerSecond()} bytes/sec");
+                                return true;
+                            }
                             break;
-                        //  Piece has been fully assembled
-                        case 1:
-                            stopwatch.Stop();
-                            tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
-                            Log.Logger.Info($"Download speed {tc.BytesPerSecond()} bytes/sec");
-                            return tc.assemblyData.pieceBuffer.AllBlocksThere;
                         // Assembly has been cancelled by external source
-                        case 2:
+                        case 1:
                             return false;
                         // Timeout so bailout and try again
                         // Note: can result in blocks having to be discarded
@@ -179,7 +179,6 @@ namespace BitTorrentLibrary
             WaitHandle[] waitHandles = new WaitHandle[]
             {
                 tc.assemblyData.blockRequestsDone,
-                tc.assemblyData.pieceFinished,
                 cancelAssemblerTask.WaitHandle
             };
             while (!tc.downloadFinished.WaitOne(0))

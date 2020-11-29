@@ -30,7 +30,6 @@ namespace BitTorrentLibrary
     {
         internal PieceBuffer pieceBuffer;                   // Assembled piece buffer
         internal Task task;                                 // Torrent piece assembly task
-        internal ManualResetEvent pieceFinished;            // When event set then piece has been fully assembled
         internal ManualResetEvent blockRequestsDone;        // When event set then piece has been fully assembled
         internal CancellationTokenSource cancelTaskSource;  // Cancel assembler task source
         internal Average averageAssemblyTime;               // Average assembly time in milliseconds
@@ -108,7 +107,6 @@ namespace BitTorrentLibrary
             _piecesMissing = new byte[Bitfield.Length];
             selector = pieceSelector;
             peerSwarm = new ConcurrentDictionary<string, Peer>();
-            assemblyData.pieceFinished = new ManualResetEvent(false);
             assemblyData.blockRequestsDone = new ManualResetEvent(false);
             assemblyData.cancelTaskSource = new CancellationTokenSource();
             assemblyData.guardMutex = new Mutex();

@@ -12,7 +12,6 @@ using System.Text;
 using System.Net.Sockets;
 using System.Threading;
 using System.Diagnostics;
-using System.Collections.Concurrent;
 namespace BitTorrentLibrary
 {
     internal delegate void ProtocolHandler(Peer remotePeer);
@@ -35,9 +34,8 @@ namespace BitTorrentLibrary
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
         public int NumberOfMissingPieces { get; set; }                   // Number of missing pieces from a remote peers torrent
-        public int OutstandingRequestsCount { get; set; }               // Current number of outstanding reqests
+        public int OutstandingRequestsCount { get; set; }                // Current number of outstanding reqests
         public byte[] ReadBuffer => _network?.ReadBuffer;                // Network read buffer
-        public int PacketLength => _network != null ? (int)_network.PacketLength : 0; // Packet Length
         /// <summary>
         /// Internal constructor Setup data and resources needed by peer for unit tests.
         /// </summary>
@@ -144,7 +142,6 @@ namespace BitTorrentLibrary
             Connected = true;
             _network.StartReads(this);
             PWP.Bitfield(this, Tc.Bitfield);
-
         }
         /// <summary>
         /// Release  any peer class resources.
@@ -208,7 +205,9 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Place a block into the current piece being assembled.
+        /// Place a block into the current piece being assembled. Any request
+        /// that comes down the wire not for the current piece being assembled
+        /// is discarded.
         /// </summary>
         /// <param name="pieceNumber">Piece number.</param>
         /// <param name="blockOffset">Block offset.</param>
@@ -226,11 +225,6 @@ namespace BitTorrentLibrary
                         Tc.assemblyData.currentBlockRequests--;
                     }
                     Tc.assemblyData.pieceBuffer.AddBlockFromPacket(_network.ReadBuffer, blockNumber);
-                    if (Tc.assemblyData.pieceBuffer.AllBlocksThere)
-                    {
-                        Tc.assemblyData.pieceBuffer.Number = pieceNumber;
-                        Tc.assemblyData.pieceFinished.Set();
-                    }
                     if (Tc.assemblyData.currentBlockRequests == 0)
                     {
                         Tc.assemblyData.blockRequestsDone.Set();
@@ -243,10 +237,14 @@ namespace BitTorrentLibrary
                 OutstandingRequestsCount--;
                 Tc.assemblyData.guardMutex.ReleaseMutex();
             }
-            else
-            {
-                Log.Logger.Debug($"PIECE {pieceNumber} REQUEST DISCARDED AS IT HAS BEEN ASSEMBLED.");
-            }
+        }
+        /// <summary>
+        /// Get length of command packet read.
+        /// </summary>
+        /// <returns></returns>
+        public int GetPacketLength()
+        {
+            return _network != null ? (int)_network.PacketLength : 0; // Packet Length
         }
     }
 }

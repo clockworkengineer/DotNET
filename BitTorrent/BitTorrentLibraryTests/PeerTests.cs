@@ -90,5 +90,44 @@ namespace BitTorrentLibraryTests
             Exception error = Assert.Throws<Exception>(() => peer.SetPieceOnRemotePeer(0));
             Assert.Equal("Torrent context needs to be set for peer.", error.Message);
         }
+        [Fact]
+        public void TestSucessfullyCreatePeer()
+        {
+            try
+            {
+                MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+                file.Parse();
+                Manager manager = new Manager();
+                TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+                Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
+            }
+            catch (Exception ex)
+            {
+                Assert.True(false, "Should not throw execption here but it did. " + ex.Message);
+            }
+            Assert.True(true);
+        }
+        [Fact]
+        public void TestCheckPropertiesSucessfullyCreatePeer()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
+            Assert.Equal("127.0.0.1", peer.Ip);
+            Assert.Equal(6881, peer.Port);
+            Assert.Equal(22, peer.NumberOfMissingPieces);
+        }
+        [Fact]
+        public void SetPieceOnRemotePeerWithInvalidPieceNumber()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
+            Assert.Throws<IndexOutOfRangeException>(() => peer.SetPieceOnRemotePeer(1000));
+        }
     }
 }

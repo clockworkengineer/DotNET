@@ -221,7 +221,7 @@ namespace BitTorrentLibrary
         private static void HandleBITFIELD(Peer remotePeer)
         {
             Log.Logger.Info($"{RemotePeerID(remotePeer)}RX BITFIELD");
-            int bitfieldLength = remotePeer.PacketLength - 1;
+            int bitfieldLength = remotePeer.GetPacketLength() - 1;
             if (bitfieldLength > 0)
             {
                 Buffer.BlockCopy(remotePeer.ReadBuffer, 1, remotePeer.RemotePieceBitfield, 0, bitfieldLength);
