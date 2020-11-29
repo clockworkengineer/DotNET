@@ -18,6 +18,8 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Runtime.CompilerServices;
+using System.Linq;
+
 namespace BitTorrentLibrary
 {
     public delegate void DownloadCompleteCallBack(Object callbackData);  // Download completed callback
@@ -324,11 +326,15 @@ namespace BitTorrentLibrary
         /// Calculate bytes per second of torrent download
         /// </summary>
         /// <returns></returns>
-        internal Int64 BytesPerSecond() {
-            double seconds = assemblyData.averageAssemblyTime.Get()/1000.0;
-            if (seconds!=0) {
-                return (Int64) (pieceLength/seconds);
-            }else {
+        internal Int64 BytesPerSecond()
+        {
+            double seconds = assemblyData.averageAssemblyTime.Get() / 1000.0;
+            if (seconds != 0)
+            {
+                return (Int64)(pieceLength / seconds);
+            }
+            else
+            {
                 return 0;
             }
         }
@@ -337,8 +343,19 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
-        internal bool IsPeerInSwarm(string ip) {
+        internal bool IsPeerInSwarm(string ip)
+        {
             return peerSwarm.ContainsKey(ip);
+        }
+        /// <summary>
+        /// Get the number of currently unchoked peers
+        /// </summary>
+        /// <returns></returns>
+        internal int NumberOfUnchokedPeers()
+        {
+            return (from peer in peerSwarm.Values
+                    where !peer.PeerChoking.WaitOne(0)
+                    select peer).Count();
         }
     }
 }

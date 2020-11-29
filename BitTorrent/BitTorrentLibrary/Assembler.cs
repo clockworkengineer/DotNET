@@ -68,6 +68,7 @@ namespace BitTorrentLibrary
         /// <param name="stopwatch"></param>
         private bool GetMoreBlocks(TorrentContext tc, UInt32 pieceNumber, Peer[] remotePeers)
         {
+            bool success=true;
             tc.assemblyData.guardMutex.WaitOne();
             try
             {
@@ -80,25 +81,7 @@ namespace BitTorrentLibrary
                     if (!blockThere)
                     {
                         remotePeers[currentPeer].CancelTaskSource.Token.ThrowIfCancellationRequested();
-                        try
-                        {
-                            PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
-                        }
-                        catch (Exception ex)
-                        {
-                            // Peer has an error so remove it
-                            Log.Logger.Error(ex);
-                            Log.Logger.Info("Peer exception so removing it.");
-                            remotePeers[currentPeer].Close();
-                            remotePeers = remotePeers.Except(new Peer[] { remotePeers[currentPeer] }).ToArray();
-                            if (remotePeers.Length == 0)
-                            {
-                                tc.assemblyData.guardMutex.ReleaseMutex();
-                                return false;
-                            }
-                            currentPeer %= (int)remotePeers.Length;
-                            continue;
-                        }
+                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
                         if (++currentBlockRequests == _maximumBlockRequests) break;
                         currentPeer++;
                         currentPeer %= (int)remotePeers.Length;
@@ -111,9 +94,10 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Error(ex);
+                success=false;
             }
             tc.assemblyData.guardMutex.ReleaseMutex();
-            return true;
+            return success;
         }
         /// <summary>
         /// Request a piece block by block and wait for it to be assembled.
@@ -147,7 +131,7 @@ namespace BitTorrentLibrary
                         // Any outstanding requests have been completed
                         case 0:
                             tc.assemblyData.blockRequestsDone.Reset();
-                            continue;
+                            break;
                         //  Piece has been fully assembled
                         case 1:
                             stopwatch.Stop();
@@ -157,24 +141,17 @@ namespace BitTorrentLibrary
                         // Assembly has been cancelled by external source
                         case 2:
                             return false;
-                        // Timeout so re-request blocks not returned
+                        // Timeout so bailout and try again
                         // Note: can result in blocks having to be discarded
                         case WaitHandle.WaitTimeout:
                             Log.Logger.Debug($"Timeout assembling piece {pieceNumber}.");
                             tc.assemblyData.totalTimeouts++;
-                            Log.Logger.Debug($"Reconfiguring peer list because of timeout.");
-                            Log.Logger.Debug($"Total piece assembly timeourt { tc.assemblyData.totalTimeouts}.");
-                            remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
-                            if (remotePeers.Length == 0)
-                            {
-                                Log.Logger.Debug($"Zero peers to assemble piece {pieceNumber}.");
-                                return false;
-                            }
-                            continue;
+                            return false;
                     }
                 }
                 return false;
             }
+            Thread.Sleep(1000);
             Log.Logger.Debug($"Zero peers to assemble piece {pieceNumber}.");
             return false;
         }
@@ -196,7 +173,7 @@ namespace BitTorrentLibrary
             };
             while (!tc.downloadFinished.WaitOne(0))
             {
-                while ((tc.peerSwarm.Count>0) && tc.selector.NextPiece(tc, ref nextPiece, cancelAssemblerTask))
+                while ((tc.NumberOfUnchokedPeers() > 0) && tc.selector.NextPiece(tc, ref nextPiece, cancelAssemblerTask))
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
@@ -207,10 +184,6 @@ namespace BitTorrentLibrary
                             tc.pieceWriteQueue.Add(tc.assemblyData.pieceBuffer);
                             tc.MarkPieceLocal(nextPiece, true);
                             SignalHaveToSwarm(tc, nextPiece);
-                        }
-                        else
-                        {
-                            Log.Logger.Debug($"InfoHash for piece {nextPiece} corrupt.");
                         }
                     }
                     // Signal piece to be requested in unsucessful download
