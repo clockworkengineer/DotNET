@@ -35,6 +35,7 @@ namespace BitTorrentLibrary
         public bool PeerInterested { get; set; } = false;                // == true then remote peer interested in client (local host)
         public CancellationTokenSource CancelTaskSource { get; set; }    // Cancelation token source for cancel task request token
         public int NumberOfMissingPieces { get; set; }                   // Number of missing pieces from a remote peers torrent
+        public int OutstandingRequestsCount { get; set; }               // Current number of outstanding reqests
         public byte[] ReadBuffer => _network?.ReadBuffer;                // Network read buffer
         public int PacketLength => _network != null ? (int)_network.PacketLength : 0; // Packet Length
         /// <summary>
@@ -239,6 +240,7 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Error(ex);
                 }
+                OutstandingRequestsCount--;
                 Tc.assemblyData.guardMutex.ReleaseMutex();
             }
             else
