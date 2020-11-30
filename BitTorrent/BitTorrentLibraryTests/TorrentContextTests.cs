@@ -134,5 +134,29 @@ namespace BitTorrentLibraryTests
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
             Assert.Throws<IndexOutOfRangeException>(() => tc.IncrementPeerCount(Constants.InvalidPieceNumber));
         }
+        [Fact]
+        public void TestInvalidPieceNumberPassedToFindNextMissingPiece()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            Assert.Throws<IndexOutOfRangeException>(() => tc.FindNextMissingPiece(Constants.InvalidPieceNumber));
+        }
+        [Fact]
+        public void TestNullPassedToIsPeerSwarm()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            Assert.Throws<ArgumentException>(() => tc.IsPeerInSwarm(null));
+        }
+        [Fact]
+        public void TestEmptyStringPassedToIsPeerInSwarm()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            Assert.Throws<ArgumentException>(() => tc.IsPeerInSwarm(""));
+        }
     }
 }

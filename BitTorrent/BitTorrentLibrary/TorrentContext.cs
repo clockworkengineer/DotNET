@@ -330,7 +330,6 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal (bool, UInt32) FindNextMissingPiece(UInt32 startPiece)
         {
-            startPiece %= (UInt32)numberOfPieces;
             UInt32 currentPiece = startPiece;
             do
             {
@@ -366,6 +365,11 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool IsPeerInSwarm(string ip)
         {
+            if (string.IsNullOrEmpty(ip))
+            {
+                throw new ArgumentException($"'{nameof(ip)}' cannot be null or empty", nameof(ip));
+            }
+
             return peerSwarm.ContainsKey(ip);
         }
         /// <summary>

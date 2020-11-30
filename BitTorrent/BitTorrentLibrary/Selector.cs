@@ -40,7 +40,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece, CancellationToken _)
         {
-            UInt32 startPiece = (UInt32) _pieceRandmizer.Next(0, tc.numberOfPieces);
+            UInt32 startPiece = (UInt32) _pieceRandmizer.Next(0, tc.numberOfPieces-1);
             (var pieceSuggested, var pieceNumber) = tc.FindNextMissingPiece(startPiece);
             nextPiece = pieceNumber;
             return pieceSuggested;
@@ -57,7 +57,7 @@ namespace BitTorrentLibrary
         internal UInt32[] LocalPieceSuggestions(Peer remotePeer, int numberOfSuggestions)
         {
             HashSet<UInt32> suggestions = new HashSet<UInt32>();
-            UInt32 startPiece = (UInt32)_pieceRandmizer.Next(0, remotePeer.Tc.numberOfPieces);
+            UInt32 startPiece = (UInt32)_pieceRandmizer.Next(0, remotePeer.Tc.numberOfPieces-1);
             numberOfSuggestions = Math.Min(remotePeer.NumberOfMissingPieces, numberOfSuggestions);
             if (numberOfSuggestions > 0)
             {
