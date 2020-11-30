@@ -19,7 +19,6 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Runtime.CompilerServices;
 using System.Linq;
-
 namespace BitTorrentLibrary
 {
     public delegate void DownloadCompleteCallBack(Object callbackData);  // Download completed callback
@@ -88,6 +87,18 @@ namespace BitTorrentLibrary
         /// <param name="seeding"></param>
         public TorrentContext(MetaInfoFile torrentMetaInfo, Selector pieceSelector, DiskIO diskIO, string downloadPath, bool seeding = false)
         {
+            if (torrentMetaInfo is null)
+            {
+                throw new ArgumentNullException(nameof(torrentMetaInfo));
+            }
+            if (diskIO is null)
+            {
+                throw new ArgumentNullException(nameof(diskIO));
+            }
+            if (string.IsNullOrEmpty(downloadPath))
+            {
+                throw new ArgumentException($"'{nameof(downloadPath)}' cannot be null or empty", nameof(downloadPath));
+            }
             FileName = torrentMetaInfo.TorrentFileName;
             Status = TorrentStatus.Initialised;
             infoHash = torrentMetaInfo.GetInfoHash();
@@ -105,7 +116,7 @@ namespace BitTorrentLibrary
             downloadFinished = new ManualResetEvent(false);
             Bitfield = new byte[(int)Math.Ceiling((double)numberOfPieces / (double)8)];
             _piecesMissing = new byte[Bitfield.Length];
-            selector = pieceSelector;
+            selector = pieceSelector ?? throw new ArgumentNullException(nameof(pieceSelector));
             peerSwarm = new ConcurrentDictionary<string, Peer>();
             assemblyData.blockRequestsDone = new ManualResetEvent(false);
             assemblyData.cancelTaskSource = new CancellationTokenSource();
@@ -235,7 +246,7 @@ namespace BitTorrentLibrary
         {
             if ((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded < 0)
             {
-                throw new BitTorrentException("Bytes left to download turned negative.");
+                throw new Exception("Bytes left to download turned negative.");
             }
             return (UInt64)((Int64)TotalBytesToDownload - (Int64)TotalBytesDownloaded);
         }
