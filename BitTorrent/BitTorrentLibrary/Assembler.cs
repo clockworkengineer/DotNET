@@ -72,25 +72,20 @@ namespace BitTorrentLibrary
             tc.assemblyData.guardMutex.WaitOne();
             try
             {
-                int currentBlockRequests = 0;
                 UInt32 blockOffset = 0;
-                UInt32 bytesToTransfer = tc.PieceLength(pieceNumber);
                 int currentPeer = 0;
+                tc.assemblyData.currentBlockRequests = 0;
                 foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
                 {
                     if (!blockThere)
                     {
-                        remotePeers[currentPeer].CancelTaskSource.Token.ThrowIfCancellationRequested();
-                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, bytesToTransfer));
+                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, tc.PieceLength(pieceNumber)-blockOffset));
                         remotePeers[currentPeer].OutstandingRequestsCount++;
-                        if (++currentBlockRequests == _maximumBlockRequests) break;
-                        currentPeer++;
-                        currentPeer %= (int)remotePeers.Length;
+                        if (++tc.assemblyData.currentBlockRequests == _maximumBlockRequests) break;
+                        currentPeer = (currentPeer + 1) % (int)remotePeers.Length;
                     }
                     blockOffset += Constants.BlockSize;
-                    bytesToTransfer -= Constants.BlockSize;
                 }
-                tc.assemblyData.currentBlockRequests = currentBlockRequests;
             }
             catch (Exception ex)
             {
