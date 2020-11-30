@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Agent network I/O layer (WIP).
+// Description: Agent network I/O layer.
 //
 // Copyright 2020.
 //
@@ -70,8 +70,8 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
+                connector.socket?.Close();
                 Log.Logger.Error("Error (Ignored): " + ex.Message);
-                connector.socket?.Close(); ;
             }
         }
         /// <summary>
@@ -91,6 +91,7 @@ namespace BitTorrentLibrary
             }
             catch (Exception ex)
             {
+                connector.socket?.Close();
                 Log.Logger.Error(ex);
                 Log.Logger.Info("Port connection listener terminated.");
             }
@@ -129,33 +130,19 @@ namespace BitTorrentLibrary
         /// <param name="port"></param>
         public void StartListening(AgentConnector connector)
         {
-            try
-            {
-                _listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
-                _listenerSocket.Listen(100);
-                _listenerSocket.BeginAccept(new AsyncCallback(AcceptAsyncHandler), connector);
-                Log.Logger.Info("Port connection listener started...");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error:" + ex);
-            }
+            Log.Logger.Info("Port connection listener starting...");
+            _listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            _listenerSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
+            _listenerSocket.Listen(100);
+            _listenerSocket.BeginAccept(new AsyncCallback(AcceptAsyncHandler), connector);
         }
         /// <summary>
         /// Connect to listen port to shutdown listener task.
         /// </summary>
         public void ShutdownListener()
         {
-            try
-            {
-                _listenerSocket?.Close();
-                _listenerSocket = null;
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error(ex);
-            }
+            _listenerSocket?.Close();
+            _listenerSocket = null;
         }
     }
 }

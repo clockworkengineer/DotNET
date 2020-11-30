@@ -35,15 +35,16 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <param name="errorReported"></param>
         /// <param name="socketError"></param>
-        void ThrowOnError(string message, bool errorReported, SocketError socketError)
+        void ThrowOnError(bool errorReported, SocketError socketError)
         {
             if (errorReported || socketError != SocketError.Success)
             {
+                string errorMessage = ("Connection to remote peer has been closed down.");
                 if (socketError != SocketError.Success)
                 {
-                    message += "Socket Error: " + socketError.ToString();
+                    errorMessage += "Socket Error: " + socketError.ToString();
                 }
-                throw new Exception(message);
+                throw new Exception(errorMessage);
             }
         }
         /// <summary>
@@ -55,9 +56,10 @@ namespace BitTorrentLibrary
             Peer remotePeer = (Peer)readAsyncState.AsyncState;
             try
             {
-                int bytesRead = _socket.EndReceive(readAsyncState, out SocketError socketError);
-                ThrowOnError("Socket recieve error.", (bytesRead <= 0) || !_socket.Connected, socketError);
-                _bytesRead += bytesRead;
+                SocketError socketError = SocketError.Success;
+                int? bytesRead = _socket?.EndReceive(readAsyncState, out socketError);
+                ThrowOnError((_socket is null) || (bytesRead <= 0) || !_socket.Connected, socketError);
+                _bytesRead += (int) bytesRead;
                 if (!_lengthRead)
                 {
                     if (_bytesRead == Constants.SizeOfUInt32)
@@ -79,16 +81,12 @@ namespace BitTorrentLibrary
                     _bytesRead = 0;
                     PacketLength = Constants.SizeOfUInt32;
                 }
-                _socket.BeginReceive(ReadBuffer, _bytesRead, (PacketLength - _bytesRead), SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
+                _socket?.BeginReceive(ReadBuffer, _bytesRead, (PacketLength - _bytesRead), SocketFlags.None, new AsyncCallback(ReadAsyncHandler), remotePeer);
+                ThrowOnError((_socket is null) || (bytesRead <= 0) || !_socket.Connected, socketError);
             }
             catch (Exception ex)
             {
-                // Only report error when socket hasnt been closed
-                if (_socket != null)
-                {
-                    Log.Logger.Error(ex);
-                    Log.Logger.Error("Error (Ignored): " + ex.Message);
-                }
+                Log.Logger.Debug("Error (Ignored): " + ex.Message);
                 Log.Logger.Info($"Read packet handler {Encoding.ASCII.GetString(remotePeer.RemotePeerID)} terminated.");
                 remotePeer.Close();
             }
@@ -108,8 +106,9 @@ namespace BitTorrentLibrary
         /// <param name="buffer">Buffer.</param>
         public void Write(byte[] buffer)
         {
-            int bytesWritten = _socket.Send(buffer, 0, buffer.Length, SocketFlags.None, out SocketError socketError);
-            ThrowOnError("Socket send error.", (bytesWritten <= 0) || !_socket.Connected, socketError);
+            SocketError socketError = SocketError.Success;
+            int?  bytesWritten = _socket?.Send(buffer, 0, buffer.Length, SocketFlags.None, out socketError);
+            ThrowOnError((_socket is null) || (bytesWritten <= 0) || !_socket.Connected, socketError);
         }
         /// <summary>
         /// Read direct packet from remote peer. Note this only used in the initial handshake with a peer
@@ -120,9 +119,10 @@ namespace BitTorrentLibrary
         /// <param name="length">Length.</param>
         public int Read(byte[] buffer, int length)
         {
-            int bytesRead = _socket.Receive(buffer, 0, length, SocketFlags.None, out SocketError socketError);
-            ThrowOnError("Socket recieve error.", (bytesRead <= 0) || !_socket.Connected, socketError);
-            return bytesRead;
+            SocketError socketError = SocketError.Success;
+            int? bytesRead = _socket?.Receive(buffer, 0, length, SocketFlags.None, out socketError);
+            ThrowOnError((_socket is null) || (bytesRead <= 0) || !_socket.Connected, socketError);
+            return (int)bytesRead;
         }
         /// <summary>
         /// Start Async reading of network socket.

@@ -114,7 +114,7 @@ namespace BitTorrentLibrary
         /// Remove peer from dead list. 
         /// </summary>
         /// <param name="ip"></param>
-        public void RemoFromDeadPeerList(string ip)
+        public void RemoveFromDeadPeerList(string ip)
         {
             _deadPeers.Remove(ip);
         }
