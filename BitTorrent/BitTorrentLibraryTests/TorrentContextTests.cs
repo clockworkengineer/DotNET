@@ -59,7 +59,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
-            Assert.Throws<IndexOutOfRangeException>(() => tc.MarkPieceLocal(1000, true));
+            Assert.Throws<IndexOutOfRangeException>(() => tc.MarkPieceLocal(Constants.InvalidPieceNumber, true));
         }
         [Fact]
         public void TestIsPieceLocalWithInvalidPieceNumber()
@@ -67,7 +67,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
-            Assert.Throws<IndexOutOfRangeException>(() => tc.IsPieceLocal(1000));
+            Assert.Throws<IndexOutOfRangeException>(() => tc.IsPieceLocal(Constants.InvalidPieceNumber));
         }
         [Fact]
         public void TestMarkPieceMissingWithInvalidPieceNumber()
@@ -75,7 +75,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
-            Assert.Throws<IndexOutOfRangeException>(() => tc.MarkPieceMissing(1000, true));
+            Assert.Throws<IndexOutOfRangeException>(() => tc.MarkPieceMissing(Constants.InvalidPieceNumber, true));
         }
         [Fact]
         public void TestIsPieceMissingWithInvalidPieceNumber()
@@ -83,7 +83,56 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
-            Assert.Throws<IndexOutOfRangeException>(() => tc.IsPieceMissing(1000));
+            Assert.Throws<IndexOutOfRangeException>(() => tc.IsPieceMissing(Constants.InvalidPieceNumber));
+        }
+        [Fact]
+        public void TestGetPieceLengthWithInvalidPieceNumber()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            Assert.Throws<IndexOutOfRangeException>(() => tc.GetPieceLength(Constants.InvalidPieceNumber));
+        }
+        [Fact]
+        public void TestSetPieceLengthWithInvalidPieceNumber()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            Assert.Throws<IndexOutOfRangeException>(() => tc.SetPieceLength(Constants.InvalidPieceNumber, 0));
+        }
+        [Fact]
+        public void TestSetPieceLengthLargerThanDefaultPieceSize()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            BitTorrentException error = Assert.Throws<BitTorrentException>(() => tc.SetPieceLength(0, UInt32.MaxValue));
+            Assert.Equal("BitTorrent Error: Piece length larger than maximum for torrent.", error.Message);
+        }
+        [Fact]
+        public void TestNullPassedToIsSpaceInSwarm()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            Assert.Throws<ArgumentException>(() => tc.IsSpaceInSwarm(null));
+        }
+        [Fact]
+        public void TestEmptyStringPassedToIsSpaceInSwarm()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            Assert.Throws<ArgumentException>(() => tc.IsSpaceInSwarm(""));
+        }
+        [Fact]
+        public void TestInvalidPieceNumberPassedToIncrementPieceCount()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            Assert.Throws<IndexOutOfRangeException>(() => tc.IncrementPeerCount(Constants.InvalidPieceNumber));
         }
     }
 }

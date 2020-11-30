@@ -56,7 +56,7 @@ namespace BitTorrentLibrary
                             stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % tc.pieceLength), (Int32)(endTransfer - startTransfer));
                         }
                         bytesTransferred += (Int32)(endTransfer - startTransfer);
-                        if (bytesTransferred == tc.PieceLength(transferBuffer.Number))
+                        if (bytesTransferred == tc.GetPieceLength(transferBuffer.Number))
                         {
                             break;
                         }
@@ -94,7 +94,7 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         private PieceBuffer GetPieceFromTorrent(Peer remotePeer, UInt32 pieceNumber)
         {
-            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.Tc, pieceNumber, remotePeer.Tc.PieceLength(pieceNumber));
+            PieceBuffer pieceBuffer = new PieceBuffer(remotePeer.Tc, pieceNumber, remotePeer.Tc.GetPieceLength(pieceNumber));
             Log.Logger.Debug($"Read piece ({pieceBuffer.Number}) from file.");
             TransferPiece(remotePeer.Tc, pieceBuffer, true);
             Log.Logger.Debug($"Piece ({pieceBuffer.Number}) read from file.");
@@ -118,7 +118,7 @@ namespace BitTorrentLibrary
                     if (!pieceBuffer.Tc.downloadFinished.WaitOne(0))
                     {
                         TransferPiece(pieceBuffer.Tc, pieceBuffer, false);
-                        pieceBuffer.Tc.TotalBytesDownloaded += pieceBuffer.Tc.PieceLength((pieceBuffer.Number));
+                        pieceBuffer.Tc.TotalBytesDownloaded += pieceBuffer.Tc.GetPieceLength((pieceBuffer.Number));
                         Log.Logger.Info((pieceBuffer.Tc.TotalBytesDownloaded / (double)pieceBuffer.Tc.TotalBytesToDownload).ToString("0.00%"));
                         Log.Logger.Debug($"Piece ({pieceBuffer.Number}) written to file.");
                         if (pieceBuffer.Tc.BytesLeftToDownload() == 0)

@@ -79,7 +79,7 @@ namespace BitTorrentLibrary
                 {
                     if (!blockThere)
                     {
-                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, tc.PieceLength(pieceNumber)-blockOffset));
+                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, tc.GetPieceLength(pieceNumber)-blockOffset));
                         remotePeers[currentPeer].OutstandingRequestsCount++;
                         if (++tc.assemblyData.currentBlockRequests == _maximumBlockRequests) break;
                         currentPeer = (currentPeer + 1) % (int)remotePeers.Length;
@@ -110,7 +110,7 @@ namespace BitTorrentLibrary
             {
                 var stopwatch = new Stopwatch();
                 Log.Logger.Debug($"Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
-                tc.assemblyData.pieceBuffer = new PieceBuffer(tc, tc.PieceLength(pieceNumber))
+                tc.assemblyData.pieceBuffer = new PieceBuffer(tc, tc.GetPieceLength(pieceNumber))
                 {
                     Number = pieceNumber
                 };
@@ -182,7 +182,7 @@ namespace BitTorrentLibrary
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
-                        if (tc.CheckPieceHash(nextPiece, tc.assemblyData.pieceBuffer.Buffer, tc.PieceLength(nextPiece)))
+                        if (tc.CheckPieceHash(nextPiece, tc.assemblyData.pieceBuffer.Buffer, tc.GetPieceLength(nextPiece)))
                         {
                             Log.Logger.Debug($"All blocks for piece {nextPiece} received");
                             tc.pieceWriteQueue.Add(tc.assemblyData.pieceBuffer);

@@ -276,7 +276,7 @@ namespace BitTorrentLibrary
         /// <param name="peiceNumber"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal UInt32 PieceLength(UInt32 peiceNumber)
+        internal UInt32 GetPieceLength(UInt32 peiceNumber)
         {
             return _pieceData[peiceNumber].pieceLength;
         }
@@ -288,7 +288,14 @@ namespace BitTorrentLibrary
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void SetPieceLength(UInt32 pieceNumber, UInt32 pieceLength)
         {
-            _pieceData[pieceNumber].pieceLength = pieceLength;
+            if (pieceLength <= this.pieceLength)
+            {
+                _pieceData[pieceNumber].pieceLength = pieceLength;
+            }
+            else
+            {
+                throw new BitTorrentException("Piece length larger than maximum for torrent.");
+            }
         }
         /// <summary>
         /// Check that ip not already in swarm and that maximum size hasnt been reached.
@@ -298,6 +305,11 @@ namespace BitTorrentLibrary
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool IsSpaceInSwarm(string ip)
         {
+            if (string.IsNullOrEmpty(ip))
+            {
+                throw new ArgumentException($"'{nameof(ip)}' cannot be null or empty", nameof(ip));
+            }
+
             return !peerSwarm.ContainsKey(ip) && (peerSwarm.Count < maximumSwarmSize);
         }
         /// <summary>
