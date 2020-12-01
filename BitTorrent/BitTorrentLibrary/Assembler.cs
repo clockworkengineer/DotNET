@@ -199,7 +199,7 @@ namespace BitTorrentLibrary
                     tc.paused.WaitOne(cancelAssemblerTask);
                 }
                 // if we reach here then no eligable peers in swarm so sleep a bit.
-                Log.Logger.Debug($"Waiting for eligable peers to download peice from.");
+                Log.Logger.Debug($"Waiting for eligable peers to download piece from.");
                 cancelAssemblerTask.ThrowIfCancellationRequested();
                 Thread.Sleep(1000);
             }

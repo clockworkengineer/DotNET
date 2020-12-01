@@ -6,7 +6,7 @@
 // Description: BitTorrent Bencoding encoding/decoding support that reads
 // torrent file data to be processed.
 // 
-// TODO: Conatins a fair bit of duplication that can be refactored at somme point.
+// TODO: Conatains a fair bit of duplication that can be refactored at somme point.
 //
 // Copyright 2020.
 //
@@ -243,7 +243,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("Failure on decoding torrent file into BNode tree."+ex.Message);
+                throw new Exception("Failure on decoding torrent file into BNode tree."+ex.Message);
             }
             return bNodeRoot;
         }
@@ -291,7 +291,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("Failure to encode BNode Tree."+ex.Message);
+                throw new Exception("Failure to encode BNode Tree."+ex.Message);
             }
             return result.ToArray();
         }
@@ -331,7 +331,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("Could not get dictionary from BNode tree."+ex.Message);
+                throw new Exception("Could not get dictionary from BNode tree."+ex.Message);
             }
             return bNodeEntry;
         }
@@ -362,7 +362,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new BitTorrentException("Could not get string from BNode tree."+ex.Message);
+                throw new Exception("Could not get string from BNode tree."+ex.Message);
             }
             return "";
         }

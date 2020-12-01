@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Peer to peer network I/O layer (WIP).
+// Description: Peer to peer network I/O layer.
 //
 // Copyright 2020.
 //

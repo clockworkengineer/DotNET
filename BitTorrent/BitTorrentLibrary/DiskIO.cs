@@ -135,10 +135,6 @@ namespace BitTorrentLibrary
                             Log.Logger.Error(ex);
                         }
                     }
-                    else
-                    {
-                        Log.Logger.Debug("Extra piece buffer removed after download finished.");
-                    }
                 }
             }
             catch (Exception ex)
@@ -196,9 +192,8 @@ namespace BitTorrentLibrary
             _cancelTaskSource = new CancellationTokenSource();
             pieceWriteQueue = new BlockingCollection<PieceBuffer>();
             pieceRequestQueue = new BlockingCollection<PieceRequest>();
-            CancellationToken cancelTask = _cancelTaskSource.Token;
-            Task.Run(() => PieceBufferDiskWriter(cancelTask));
-            Task.Run(() => PieceRequestProcessing(cancelTask));
+            Task.Run(() => PieceBufferDiskWriter(_cancelTaskSource.Token));
+            Task.Run(() => PieceRequestProcessing(_cancelTaskSource.Token));
         }
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the

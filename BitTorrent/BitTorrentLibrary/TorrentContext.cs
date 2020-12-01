@@ -273,12 +273,12 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Get piece length in bytes
         /// </summary>
-        /// <param name="peiceNumber"></param>
+        /// <param name="pieceNumber"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal UInt32 GetPieceLength(UInt32 peiceNumber)
+        internal UInt32 GetPieceLength(UInt32 pieceNumber)
         {
-            return _pieceData[peiceNumber].pieceLength;
+            return _pieceData[pieceNumber].pieceLength;
         }
         /// <summary>
         /// Set piece length in bytes.
