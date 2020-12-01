@@ -5,8 +5,6 @@
 //
 // Description: BitTorrent Bencoding encoding/decoding support that reads
 // torrent file data to be processed.
-// 
-// TODO: Conatains a fair bit of duplication that can be refactored at somme point.
 //
 // Copyright 2020.
 //
@@ -144,21 +142,7 @@ namespace BitTorrentLibrary
             position++;
             while (buffer[position] != (byte)'e')
             {
-                switch ((char)buffer[position])
-                {
-                    case 'd':
-                        bNode.list.Add(DecodeDictionary(buffer, ref position));
-                        break;
-                    case 'l':
-                        bNode.list.Add(DecodeList(buffer, ref position));
-                        break;
-                    case 'i':
-                        bNode.list.Add(DecodeNumber(buffer, ref position));
-                        break;
-                    default:
-                        bNode.list.Add(DecodeString(buffer, ref position));
-                        break;
-                }
+                bNode.list.Add(DecodeBNode(buffer, ref position));
                 if (position == buffer.Length) break;
             }
             position++;
@@ -177,21 +161,7 @@ namespace BitTorrentLibrary
             while (buffer[position] != (byte)'e')
             {
                 string key = DecodeKey(buffer, ref position);
-                switch ((char)buffer[position])
-                {
-                    case 'd':
-                        bNode.dict[key] = DecodeDictionary(buffer, ref position);
-                        break;
-                    case 'l':
-                        bNode.dict[key] = DecodeList(buffer, ref position);
-                        break;
-                    case 'i':
-                        bNode.dict[key] = DecodeNumber(buffer, ref position);
-                        break;
-                    default:
-                        bNode.dict[key] = DecodeString(buffer, ref position);
-                        break;
-                }
+                bNode.dict[key] = DecodeBNode(buffer, ref position);
                 if (position == buffer.Length) break;
             }
             position++;
@@ -203,27 +173,23 @@ namespace BitTorrentLibrary
         /// <returns>Root of Bnode tree.</returns>
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
         /// <param name="position">position - Position in buffer. SHould be at end of buffer on exit.</param>
-        static private BNodeBase DecodeBNodes(byte[] buffer, ref int position)
+        static private BNodeBase DecodeBNode(byte[] buffer, ref int position)
         {
-            BNodeBase bNode = null;
-            while (buffer[position] != (byte)'e')
+            BNodeBase bNode;
+            switch ((char)buffer[position])
             {
-                switch ((char)buffer[position])
-                {
-                    case 'd':
-                        bNode = DecodeDictionary(buffer, ref position);
-                        break;
-                    case 'l':
-                        bNode = DecodeList(buffer, ref position);
-                        break;
-                    case 'i':
-                        bNode = DecodeNumber(buffer, ref position);
-                        break;
-                    default:
-                        bNode = DecodeString(buffer, ref position);
-                        break;
-                }
-                if (position == buffer.Length) break;
+                case 'd':
+                    bNode = DecodeDictionary(buffer, ref position);
+                    break;
+                case 'l':
+                    bNode = DecodeList(buffer, ref position);
+                    break;
+                case 'i':
+                    bNode = DecodeNumber(buffer, ref position);
+                    break;
+                default:
+                    bNode = DecodeString(buffer, ref position);
+                    break;
             }
             return bNode;
         }
@@ -234,18 +200,22 @@ namespace BitTorrentLibrary
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
         static public BNodeBase Decode(byte[] buffer)
         {
-            BNodeBase bNodeRoot;
+            BNodeBase bNodeRoot = null;
             try
             {
                 int position = 0;
-                bNodeRoot = DecodeBNodes(buffer, ref position);
+                while (buffer[position] != (byte)'e')
+                {
+                    bNodeRoot = DecodeBNode(buffer, ref position);
+                    if (position == buffer.Length) break;
+                }
+                return bNodeRoot;
             }
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Exception("Failure on decoding torrent file into BNode tree."+ex.Message);
+                throw new Exception("Failure on decoding torrent file into BNode tree." + ex.Message);
             }
-            return bNodeRoot;
         }
         /// <summary>
         /// Produce Bencoded output given a root BNode.
@@ -291,7 +261,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Exception("Failure to encode BNode Tree."+ex.Message);
+                throw new Exception("Failure to encode BNode Tree." + ex.Message);
             }
             return result.ToArray();
         }
@@ -331,7 +301,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Exception("Could not get dictionary from BNode tree."+ex.Message);
+                throw new Exception("Could not get dictionary from BNode tree." + ex.Message);
             }
             return bNodeEntry;
         }
@@ -362,7 +332,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Exception("Could not get string from BNode tree."+ex.Message);
+                throw new Exception("Could not get string from BNode tree." + ex.Message);
             }
             return "";
         }
