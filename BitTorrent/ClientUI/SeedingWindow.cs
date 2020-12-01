@@ -53,7 +53,7 @@ namespace ClientUI
             return true;
         }
         /// <summary>
-        /// 
+        /// Initialise seeder list view window
         /// </summary>
         /// <param name="main"></param>
         /// <param name="title"></param>

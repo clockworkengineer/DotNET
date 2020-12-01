@@ -25,8 +25,9 @@ namespace ClientUI
         private readonly StatusItem _toggleSeedInformation; // Item toggle seeding/seed information sub-window
         private TorrentContext _seedingInformation;         // Selected seeder torrent context
         /// <summary>
-        /// Update download information. This is used as the tracker callback to be invoked
-        /// when the next announce response is recieved back.
+        /// Update seeder information. This is used as the tracker callback to be invoked
+        /// when the next announce response is recieved back for the seeder torrent context
+        /// currently selected.
         /// </summary>
         /// <param name="obj"></param>
         private void UpdateSeederInformation(Object obj)
@@ -48,11 +49,19 @@ namespace ClientUI
                 }
             });
         }
+        /// <summary>
+        /// Start torrent download.
+        /// </summary>
+        /// <param name="main"></param>
         private void ActionDownload(DemoTorrentApplication main)
         {
             main.MainWindow.Torrent = new Torrent(main.MainWindow.TorrentFileText.Text.ToString());
             Task.Run(() => main.MainWindow.Torrent.Download(main));
         }
+        /// <summary>
+        /// Stop currently downloading torrent.
+        /// </summary>
+        /// <param name="main"></param>
         private void ActionShutdown(DemoTorrentApplication main)
         {
             main.TorrentAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
@@ -60,6 +69,10 @@ namespace ClientUI
             main.MainWindow.InfoWindow.ClearData();
             main.MainStatusBar.Display(Status.Shutdown);
         }
+        /// <summary>
+        /// Toggle seeder list and main torrent information window.
+        /// </summary>
+        /// <param name="main"></param>
         private void ActionToggleSeeding(DemoTorrentApplication main)
         {
             if (main.MainWindow.DisplayInformationWindow)
@@ -91,6 +104,10 @@ namespace ClientUI
             }
             Items = _statusBarItems.ToArray();
         }
+        /// <summary>
+        /// Toggle seeding list window and selected seeder information window.
+        /// </summary>
+        /// <param name="main"></param>
         private void ActionToggleSeedInformation(DemoTorrentApplication main)
         {
             if (main.MainWindow.DisplaySeederInformationWindow)
@@ -106,7 +123,7 @@ namespace ClientUI
             }
             else
             {
-               _seedingInformation = main.TorrentAgent.TorrentList.ToArray()[main.MainWindow.SeederListWindow.SeederListView.SelectedItem];
+                _seedingInformation = main.TorrentAgent.TorrentList.ToArray()[main.MainWindow.SeederListWindow.SeederListView.SelectedItem];
                 main.MainWindow.SeedingInfoWindow.TrackerText.Text = _seedingInformation.MainTracker.TrackerURL;
                 main.MainWindow.Remove(main.MainWindow.SeederListWindow);
                 main.MainWindow.Add(main.MainWindow.SeedingInfoWindow);
@@ -117,13 +134,17 @@ namespace ClientUI
                 _seedingInformation.MainTracker.CallBackData = main;
             }
         }
+        /// <summary>
+        /// Quit application.
+        /// </summary>
+        /// <param name="main"></param>
         private void ActionQuit(DemoTorrentApplication main)
         {
             main.TorrentAgent.ShutDown();
             Application.Top.Running = false;
         }
         /// <summary>
-        /// 
+        /// Intialise main application status bar
         /// </summary>
         /// <param name="main"></param>
         public MainStatusBar(DemoTorrentApplication main)

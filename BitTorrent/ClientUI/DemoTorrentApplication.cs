@@ -28,7 +28,7 @@ namespace ClientUI
         public Manager TorrentManager { get; set; }              // Manager for all torrents
         public Selector TorrentSelector { get; set; }            // Selector for all torrents
         public DiskIO TorrentDiskIO { get; set; }                // DiskIO for all torrents
-        public Agent TorrentAgent { get; set; }                 // Agent for handling all torrents
+        public Agent TorrentAgent { get; set; }                  // Agent for handling all torrents
         public MainStatusBar MainStatusBar { get; set; }         // Main status bar
         public Config Configuration { get; set; }                // Configuration data
         // 

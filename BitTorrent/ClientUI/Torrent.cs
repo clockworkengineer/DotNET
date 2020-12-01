@@ -26,7 +26,7 @@ namespace ClientUI
         public Tracker TorrentTracker { get; set; } // Torrent tracker
         /// <summary>
         /// Update download information. This is used as the tracker callback to be invoked
-        /// when the next announce response is recieved back.
+        /// when the next announce response is recieved back for the torrent being downloaded.
         /// </summary>
         /// <param name="obj"></param>
         private void UpdateDownloadInformation(Object obj)
@@ -49,7 +49,7 @@ namespace ClientUI
             });
         }
         /// <summary>
-        /// Update torrent download progress bar. Thie is the diskio progress callback.
+        /// Update torrent download progress bar. This is the torrent context progress callback.
         /// </summary>
         /// <param name="obj"></param>
         private void UpdateDownloadProgress(Object obj)
