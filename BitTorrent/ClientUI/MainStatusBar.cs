@@ -7,9 +7,12 @@
 //
 // Copyright 2020.
 //
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Terminal.Gui;
+using BitTorrentLibrary;
 namespace ClientUI
 {
     public class MainStatusBar : StatusBar
@@ -19,6 +22,106 @@ namespace ClientUI
         private readonly StatusItem _shutdown;              // Item shutwdown
         private readonly StatusItem _quit;                  // Items quit
         private readonly StatusItem _toggleSeeding;         // Item toggle information/seeding sub-window
+        private readonly StatusItem _toggleSeedInformation; // Item toggle seeding/seed information sub-window
+        private TorrentContext _seedingInformation;         // Selected seeder torrent context
+        /// <summary>
+        /// Update download information. This is used as the tracker callback to be invoked
+        /// when the next announce response is recieved back.
+        /// </summary>
+        /// <param name="obj"></param>
+        private void UpdateSeederInformation(Object obj)
+        {
+            DemoTorrentApplication main = (DemoTorrentApplication)obj;
+            TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(_seedingInformation);
+            List<string> peers = new List<string>();
+            foreach (var peer in torrentDetails.peers)
+            {
+                peers.Add(peer.ip + ":" + peer.port.ToString());
+            }
+            Application.MainLoop.Invoke(() =>
+            {
+                main.MainWindow.SeedingInfoWindow.UpdatePeers(peers.ToArray());
+                main.MainWindow.SeedingInfoWindow.UpdateInformation(torrentDetails);
+                if (torrentDetails.trackerStatus == TrackerStatus.Stalled)
+                {
+                    MessageBox.Query("Error", torrentDetails.trackerStatusMessage, "Ok");
+                }
+            });
+        }
+        private void ActionDownload(DemoTorrentApplication main)
+        {
+            main.MainWindow.Torrent = new Torrent(main.MainWindow.TorrentFileText.Text.ToString());
+            Task.Run(() => main.MainWindow.Torrent.Download(main));
+        }
+        private void ActionShutdown(DemoTorrentApplication main)
+        {
+            main.TorrentAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
+            main.TorrentAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
+            main.MainWindow.InfoWindow.ClearData();
+            main.MainStatusBar.Display(Status.Shutdown);
+        }
+        private void ActionToggleSeeding(DemoTorrentApplication main)
+        {
+            if (main.MainWindow.DisplayInformationWindow)
+            {
+                main.MainWindow.Remove(main.MainWindow.InfoWindow);
+                main.MainWindow.Add(main.MainWindow.SeederListWindow);
+                main.MainWindow.DisplayInformationWindow = false;
+                main.MainWindow.SeederListWindow.SetFocus();
+                _statusBarItems.Add(_toggleSeedInformation);
+            }
+            else
+            {
+                if (main.MainWindow.DisplaySeederInformationWindow)
+                {
+                    main.MainWindow.Remove(main.MainWindow.SeedingInfoWindow);
+                    main.MainWindow.DisplaySeederInformationWindow = false;
+                    _seedingInformation.MainTracker.CallBack = null;
+                    _seedingInformation.MainTracker.CallBack = null;
+                }
+                else
+                {
+                    main.MainWindow.Remove(main.MainWindow.SeederListWindow);
+                }
+                main.MainWindow.Add(main.MainWindow.InfoWindow);
+                main.MainWindow.DisplayInformationWindow = true;
+                main.MainWindow.TorrentFileText.SetFocus();
+                _statusBarItems.Remove(_toggleSeedInformation);
+                Items = _statusBarItems.ToArray();
+            }
+            Items = _statusBarItems.ToArray();
+        }
+        private void ActionToggleSeedInformation(DemoTorrentApplication main)
+        {
+            if (main.MainWindow.DisplaySeederInformationWindow)
+            {
+                main.MainWindow.SeedingInfoWindow.ClearData();
+                _seedingInformation.MainTracker.SetSeedingInterval(60000 * 30);
+                _seedingInformation.MainTracker.CallBack = null;
+                _seedingInformation.MainTracker.CallBack = null;
+                main.MainWindow.Remove(main.MainWindow.SeedingInfoWindow);
+                main.MainWindow.Add(main.MainWindow.SeederListWindow);
+                main.MainWindow.DisplaySeederInformationWindow = false;
+                main.MainWindow.SeederListWindow.SetFocus();
+            }
+            else
+            {
+               _seedingInformation = main.TorrentAgent.TorrentList.ToArray()[main.MainWindow.SeederListWindow.SeederListView.SelectedItem];
+                main.MainWindow.SeedingInfoWindow.TrackerText.Text = _seedingInformation.MainTracker.TrackerURL;
+                main.MainWindow.Remove(main.MainWindow.SeederListWindow);
+                main.MainWindow.Add(main.MainWindow.SeedingInfoWindow);
+                main.MainWindow.DisplaySeederInformationWindow = true;
+                main.MainWindow.SeedingInfoWindow.SetFocus();
+                _seedingInformation.MainTracker.SetSeedingInterval(2 * 1000);
+                _seedingInformation.MainTracker.CallBack = UpdateSeederInformation;
+                _seedingInformation.MainTracker.CallBackData = main;
+            }
+        }
+        private void ActionQuit(DemoTorrentApplication main)
+        {
+            main.TorrentAgent.ShutDown();
+            Application.Top.Running = false;
+        }
         /// <summary>
         /// 
         /// </summary>
@@ -28,37 +131,23 @@ namespace ClientUI
             _statusBarItems = new List<StatusItem>();
             _download = new StatusItem(Key.ControlD, "~^D~ Download", () =>
             {
-                main.MainWindow.Torrent = new Torrent(main.MainWindow.TorrentFileText.Text.ToString());
-                Task.Run(() => main.MainWindow.Torrent.Download(main));
+                ActionDownload(main);
             });
             _shutdown = new StatusItem(Key.ControlS, "~^S~ shutdown", () =>
             {
-                main.TorrentAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
-                main.TorrentAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
-                main.MainWindow.InfoWindow.ClearData();
-                main.MainStatusBar.Display(Status.Shutdown);
+                ActionShutdown(main);
             });
             _toggleSeeding = new StatusItem(Key.ControlT, "~^T~ Toggle Seeding", () =>
             {
-                if (main.MainWindow.DisplayInformationWindow)
-                {
-                    main.MainWindow.Remove(main.MainWindow.InfoWindow);
-                    main.MainWindow.Add(main.MainWindow.SeederListWindow);
-                    main.MainWindow.DisplayInformationWindow = false;
-                    main.MainWindow.SeederListWindow.SetFocus();
-                }
-                else
-                {
-                    main.MainWindow.Remove(main.MainWindow.SeederListWindow);
-                    main.MainWindow.Add(main.MainWindow.InfoWindow);
-                    main.MainWindow.DisplayInformationWindow = true;
-                    main.MainWindow.TorrentFileText.SetFocus();
-                }
+                ActionToggleSeeding(main);
+            });
+            _toggleSeedInformation = new StatusItem(Key.ControlJ, "~^J~ Seed Information", () =>
+            {
+                ActionToggleSeedInformation(main);
             });
             _quit = new StatusItem(Key.ControlQ, "~^Q~ Quit", () =>
             {
-                main.TorrentAgent.ShutDown();
-                Application.Top.Running = false;
+                ActionQuit(main);
             });
             _statusBarItems.Add(_download);
             _statusBarItems.Add(_toggleSeeding);
@@ -71,25 +160,24 @@ namespace ClientUI
         /// <param name="status"></param>
         public void Display(Status status)
         {
-            if (status == Status.Starting)
+            switch (status)
             {
-                _statusBarItems.Clear();
-                _statusBarItems.Add(_quit);
-                Items = _statusBarItems.ToArray();
-            }
-            else if (status == Status.Downloading)
-            {
-                _statusBarItems.Clear();
-                _statusBarItems.Add(_toggleSeeding);
-                _statusBarItems.Add(_shutdown);
-                _statusBarItems.Add(_quit); ;
-            }
-            else if (status == Status.Shutdown)
-            {
-                _statusBarItems.Clear();
-                _statusBarItems.Add(_toggleSeeding);
-                _statusBarItems.Add(_download);
-                _statusBarItems.Add(_quit);
+                case Status.Starting:
+                    _statusBarItems.Clear();
+                    _statusBarItems.Add(_quit);
+                    break;
+                case Status.Downloading:
+                    _statusBarItems.Clear();
+                    _statusBarItems.Add(_toggleSeeding);
+                    _statusBarItems.Add(_shutdown);
+                    _statusBarItems.Add(_quit); ;
+                    break;
+                case Status.Shutdown:
+                    _statusBarItems.Clear();
+                    _statusBarItems.Add(_toggleSeeding);
+                    _statusBarItems.Add(_download);
+                    _statusBarItems.Add(_quit);
+                    break;
             }
             Items = _statusBarItems.ToArray();
         }

@@ -17,8 +17,9 @@ namespace ClientUI
 {
     public class SeedingWindow : Window
     {
-        private readonly ListView _seederListView;       // List view to displat seeding torrent information
         private Agent _agent;                            // Main torrent agent
+        public ListView SeederListView { get; }          // List view to displat seeding torrent information
+
         /// <summary>
         /// Build seeder display line for listview.
         /// </summary>
@@ -45,9 +46,9 @@ namespace ClientUI
                                         select BuildSeederDisplayLine(seederDetails)).ToList();
             if (seederLines.Count > 0)
             {
-                var item = _seederListView.SelectedItem;
-                _seederListView.SetSource(seederLines.ToArray());
-                _seederListView.SelectedItem = item;
+                var item = SeederListView.SelectedItem;
+                SeederListView.SetSource(seederLines.ToArray());
+                SeederListView.SelectedItem = item;
             }
             return true;
         }
@@ -59,7 +60,7 @@ namespace ClientUI
         /// <returns></returns>
         public SeedingWindow(string title) : base(title)
         {
-            _seederListView = new ListView()
+            SeederListView = new ListView()
             {
                 X = 0,
                 Y = 0,
@@ -67,7 +68,7 @@ namespace ClientUI
                 Height = Dim.Fill(),
                 CanFocus = true
             };
-            Add(_seederListView);
+            Add(SeederListView);
         }
         /// <summary>
         /// Load torrents in the seeding list.

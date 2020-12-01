@@ -68,8 +68,8 @@ namespace BitTorrentLibrary
         internal int missingPiecesCount = 0;                         // Missing piece count
         internal int maximumSwarmSize = Constants.MaximumSwarmSize;  // Maximim swarm size
         internal ConcurrentDictionary<string, Peer> peerSwarm;       // Current peer swarm
-        internal Tracker MainTracker;                                // Main tracker assigned to torrent
         internal AssemblerData assemblyData;                         // Torrent piece assemblage data
+        public Tracker MainTracker { get; set; }                    // Main tracker assigned to torrent
         public ProgessCallBack CallBack { get; set; }                // Download progress function
         public Object CallBackData { get; set; }                     // Download progress function data
         public TorrentStatus Status { get; set; }                    // Torrent status
