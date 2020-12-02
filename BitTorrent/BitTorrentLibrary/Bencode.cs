@@ -73,7 +73,7 @@ namespace BitTorrentLibrary
         /// <returns>The bytes for the string.</returns>
         private byte[] ExtractString()
         {
-             _workBuffer.Clear();
+            _workBuffer.Clear();
             while (char.IsDigit((char)_buffer[_position]))
             {
                 _workBuffer.Add(_buffer[_position++]);
@@ -157,7 +157,7 @@ namespace BitTorrentLibrary
             return bNode;
         }
         /// <summary>
-        /// Recursively parse a Bencoded string and return its BNode tree.
+        /// Recursively parse a Bencoded buffer and return its BNode tree.
         /// </summary>
         /// <returns>Root of Bnode tree.</returns>
         private BNodeBase DecodeBNode()
@@ -180,15 +180,66 @@ namespace BitTorrentLibrary
             }
             return bNode;
         }
-        public Bencode(byte[] buffer = null) {
+        /// <summary>
+        /// Recursively parse BNode structure to produce Bencoding for it.
+        /// </summary>
+        /// <returns>Bencoded representation of BNode tree.</returns>
+        /// <param name="bNode">Root <paramref name="bNode"/>.</param>
+        private void EncodeFromBNode(BNodeBase bNode)
+        {
+            try
+            {
+                if (bNode is BNodeDictionary bNodeDictionary)
+                {
+                    _workBuffer.Add((byte)'d');
+                    foreach (var key in (bNodeDictionary).dict.Keys)
+                    {
+                        _workBuffer.AddRange(Encoding.ASCII.GetBytes($"{key.Length}:{key}"));
+                        EncodeFromBNode((bNodeDictionary).dict[key]);
+                    }
+                    _workBuffer.Add((byte)'e');
+                }
+                else if (bNode is BNodeList bNodeList)
+                {
+                    _workBuffer.Add((byte)'l');
+                    foreach (var node in (bNodeList).list)
+                    {
+                        EncodeFromBNode(node);
+                    }
+                    _workBuffer.Add((byte)'e');
+                }
+                else if (bNode is BNodeNumber bNodeNumber)
+                {
+                    _workBuffer.Add((byte)'i');
+                    _workBuffer.AddRange((bNodeNumber).number);
+                    _workBuffer.Add((byte)'e');
+                }
+                else if (bNode is BNodeString bNodeString)
+                {
+                    _workBuffer.AddRange(Encoding.ASCII.GetBytes($"{(bNodeString).str.Length}:"));
+                    _workBuffer.AddRange((bNodeString).str);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Debug(ex);
+                throw new Exception("Failure to encode BNode Tree." + ex.Message);
+            }
+        }
+        /// <summary>
+        /// Initialise Bencode data and resources.
+        /// </summary>
+        /// <param name="buffer"></param>
+        public Bencode(byte[] buffer = null)
+        {
             _buffer = buffer;
         }
         /// <summary>
-        /// Decode the specified Bendcoded buffer.
+        /// Produce BNode tree from a Bencoded buffer.
         /// </summary>
         /// <returns>The root BNode.</returns>
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
-        public BNodeBase Decode(byte[] buffer=null)
+        public BNodeBase Decode(byte[] buffer = null)
         {
             try
             {
@@ -206,50 +257,13 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Produce Bencoded output given a root BNode.
         /// </summary>
-        /// <returns>Bencoded representation of BNode tree.</returns>
-        /// <param name="bNode">Root <paramref name="bNode"/>.</param>
+        /// <param name="bNode"></param>
+        /// <returns></returns>
         public byte[] Encode(BNodeBase bNode)
         {
-            List<byte> result = new List<byte>();
-            try
-            {
-                if (bNode is BNodeDictionary bNodeDictionary)
-                {
-                    result.Add((byte)'d');
-                    foreach (var key in (bNodeDictionary).dict.Keys)
-                    {
-                        result.AddRange(Encoding.ASCII.GetBytes($"{key.Length}:{key}"));
-                        result.AddRange(Encode((bNodeDictionary).dict[key]));
-                    }
-                    result.Add((byte)'e');
-                }
-                else if (bNode is BNodeList bNodeList)
-                {
-                    result.Add((byte)'l');
-                    foreach (var node in (bNodeList).list)
-                    {
-                        result.AddRange(Encode(node));
-                    }
-                    result.Add((byte)'e');
-                }
-                else if (bNode is BNodeNumber bNodeNumber)
-                {
-                    result.Add((byte)'i');
-                    result.AddRange((bNodeNumber).number);
-                    result.Add((byte)'e');
-                }
-                else if (bNode is BNodeString bNodeString)
-                {
-                    result.AddRange(Encoding.ASCII.GetBytes($"{(bNodeString).str.Length}:"));
-                    result.AddRange((bNodeString).str);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Debug(ex);
-                throw new Exception("Failure to encode BNode Tree." + ex.Message);
-            }
-            return result.ToArray();
+            _workBuffer.Clear();
+            EncodeFromBNode(bNode);
+            return _workBuffer.ToArray();
         }
         /// <summary>
         /// Get a BNode entry for a given dictionary key. Note that it recursively searches
