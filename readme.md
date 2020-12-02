@@ -1,4 +1,4 @@
-#.NET C# Projects #
+#.NET Projects #
 
 ## Introduction ##
 
