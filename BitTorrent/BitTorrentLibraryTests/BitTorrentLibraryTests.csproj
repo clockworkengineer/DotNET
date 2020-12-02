@@ -14,16 +14,16 @@
     <ProjectReference Include="..\BitTorrentLibrary\BitTorrentLibrary.csproj"/>
   </ItemGroup>
   <ItemGroup>
-    <None Update="singlefile.torrent">
+    <None Update="./files/singlefile.torrent">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="multifile.torrent">
+    <None Update="./files/multifile.torrent">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="singlefileerror.torrent">
+    <None Update="./files/singlefileerror.torrent">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="multifileerror.torrent">
+    <None Update="./files/multifileerror.torrent">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

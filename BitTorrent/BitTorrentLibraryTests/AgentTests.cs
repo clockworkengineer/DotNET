@@ -1,3 +1,4 @@
+Moveusing System.Reflection.Metadata;
 //
 // Author: Robert Tizzard
 //
@@ -269,7 +270,7 @@ namespace BitTorrentLibraryTests
             TorrentDetails details = agent.GetTorrentDetails(tc);
             Assert.Equal(0, details.deadPeers);
             Assert.Equal(0, (int)details.downloadedBytes);
-            Assert.Equal("singlefile.torrent", details.fileName);
+            Assert.Equal(Constants.SingleFileTorrent, details.fileName);
             Assert.Equal(file.GetInfoHash(), details.infoHash);
             Assert.Equal(22, details.missingPiecesCount);
             Assert.Equal(0, (int)details.peers.Count);
