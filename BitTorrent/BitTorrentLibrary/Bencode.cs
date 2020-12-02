@@ -65,26 +65,26 @@ namespace BitTorrentLibrary
     internal class Bencode
     {
         private readonly List<byte> _workBuffer = new List<byte>();
+        private int _position;
+        private byte[] _buffer;
         /// <summary>
         /// Extracts a Bencoded string and returns its bytes.
         /// </summary>
         /// <returns>The bytes for the string.</returns>
-        /// <param name="buffer">buffer - Bencoded string input buffer.</param>
-        /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
-        private byte[] ExtractString(byte[] buffer, ref int position)
+        private byte[] ExtractString()
         {
              _workBuffer.Clear();
-            while (char.IsDigit((char)buffer[position]))
+            while (char.IsDigit((char)_buffer[_position]))
             {
-                _workBuffer.Add(buffer[position++]);
+                _workBuffer.Add(_buffer[_position++]);
             }
-            position++;
+            _position++;
             int lengthBytes = int.Parse(Encoding.ASCII.GetString(_workBuffer.ToArray()));
             _workBuffer.Clear();
             while (lengthBytes-- > 0)
             {
-                _workBuffer.Add(buffer[position++]);
-                if (position == buffer.Length) break;
+                _workBuffer.Add(_buffer[_position++]);
+                if (_position == _buffer.Length) break;
             }
             return _workBuffer.ToArray();
         }
@@ -92,16 +92,14 @@ namespace BitTorrentLibrary
         /// Extracts a Bencoded number and returns its bytes.
         /// </summary>
         /// <returns>The bytes(characters) for the number.</returns>
-        /// <param name="buffer">buffer - Bencoded number input buffer.</param>
-        /// <param name="position">position - Position in buffer. Updated to character after number on exit.</param>
-        private BNodeBase DecodeNumber(byte[] buffer, ref int position)
+        private BNodeBase DecodeNumber()
         {
             _workBuffer.Clear();
-            while (buffer[++position] != (byte)'e')
+            while (_buffer[++_position] != (byte)'e')
             {
-                _workBuffer.Add(buffer[position]);
+                _workBuffer.Add(_buffer[_position]);
             }
-            position++;
+            _position++;
             return new BNodeNumber(_workBuffer.ToArray());
         }
         /// <summary>
@@ -109,12 +107,11 @@ namespace BitTorrentLibrary
         /// </summary>
         /// <returns>A string BNode.</returns>
         /// <param name="buffer">buffer - Bencoded string input buffer.</param>
-        /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
-        private BNodeBase DecodeString(byte[] buffer, ref int position)
+        private BNodeBase DecodeString()
         {
             BNodeString bNode = new BNodeString
             {
-                str = ExtractString(buffer, ref position)
+                str = ExtractString()
             };
             return bNode;
         }
@@ -122,86 +119,83 @@ namespace BitTorrentLibrary
         /// Decodes a dictionary string key.
         /// </summary>
         /// <returns>String value of the key.</returns>
-        /// <param name="buffer">buffer - Bencoded string input buffer.</param>
-        /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
-        private string DecodeKey(byte[] buffer, ref int position)
+        private string DecodeKey()
         {
-            string key = Encoding.ASCII.GetString(ExtractString(buffer, ref position));
+            string key = Encoding.ASCII.GetString(ExtractString());
             return key;
         }
         /// <summary>
         /// Create a list BNode.
         /// </summary>
         /// <returns>A list BNode.</returns>
-        /// <param name="buffer">buffer - Bencoded list input buffer.</param>
-        /// <param name="position">position - Position in buffer. Updated to character after list on exit.</param>
-        private BNodeBase DecodeList(byte[] buffer, ref int position)
+        private BNodeBase DecodeList()
         {
             BNodeList bNode = new BNodeList();
-            position++;
-            while (buffer[position] != (byte)'e')
+            _position++;
+            while (_buffer[_position] != (byte)'e')
             {
-                bNode.list.Add(DecodeBNode(buffer, ref position));
+                bNode.list.Add(DecodeBNode());
             }
-            position++;
+            _position++;
             return bNode;
         }
         /// <summary>
         /// Create a dictionary BNode.
         /// </summary>
         /// <returns>A dictionary BNode.</returns>
-        /// <param name="buffer">buffer - Bencoded dictionary input buffer.</param>
-        /// <param name="position">position - Position in buffer. Updated to character after dictionary on exit.</param>
-        private BNodeBase DecodeDictionary(byte[] buffer, ref int position)
+        private BNodeBase DecodeDictionary()
         {
             BNodeDictionary bNode = new BNodeDictionary();
-            position++;
-            while (buffer[position] != (byte)'e')
+            _position++;
+            while (_buffer[_position] != (byte)'e')
             {
-                string key = DecodeKey(buffer, ref position);
-                bNode.dict[key] = DecodeBNode(buffer, ref position);
-                if (position == buffer.Length) break;
+                string key = DecodeKey();
+                bNode.dict[key] = DecodeBNode();
+                if (_position == _buffer.Length) break;
             }
-            position++;
+            _position++;
             return bNode;
         }
         /// <summary>
         /// Recursively parse a Bencoded string and return its BNode tree.
         /// </summary>
         /// <returns>Root of Bnode tree.</returns>
-        /// <param name="buffer">buffer - Bencoded input buffer.</param>
-        /// <param name="position">position - Position in buffer. SHould be at end of buffer on exit.</param>
-        private BNodeBase DecodeBNode(byte[] buffer, ref int position)
+        private BNodeBase DecodeBNode()
         {
             BNodeBase bNode;
-            switch ((char)buffer[position])
+            switch ((char)_buffer[_position])
             {
                 case 'd':
-                    bNode = DecodeDictionary(buffer, ref position);
+                    bNode = DecodeDictionary();
                     break;
                 case 'l':
-                    bNode = DecodeList(buffer, ref position);
+                    bNode = DecodeList();
                     break;
                 case 'i':
-                    bNode = DecodeNumber(buffer, ref position);
+                    bNode = DecodeNumber();
                     break;
                 default:
-                    bNode = DecodeString(buffer, ref position);
+                    bNode = DecodeString();
                     break;
             }
             return bNode;
+        }
+        public Bencode(byte[] buffer = null) {
+            _buffer = buffer;
         }
         /// <summary>
         /// Decode the specified Bendcoded buffer.
         /// </summary>
         /// <returns>The root BNode.</returns>
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
-        public BNodeBase Decode(byte[] buffer)
+        public BNodeBase Decode(byte[] buffer=null)
         {
             try
             {
-                int position = 0;
-                return DecodeBNode(buffer, ref position);
+                _position = 0;
+                _buffer = buffer;
+                _workBuffer.Clear();
+                return DecodeBNode();
             }
             catch (Exception ex)
             {
