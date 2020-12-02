@@ -71,7 +71,7 @@ namespace BitTorrentLibrary
             int end = position;
             while (buffer[end] != ':')
             {
-                end++;
+                if (++end == buffer.Length) break;
             }
             byte[] lengthBytes = new byte[end - position];
             Buffer.BlockCopy(buffer, position, lengthBytes, 0, end - position);
@@ -98,7 +98,7 @@ namespace BitTorrentLibrary
             int end = position;
             while (buffer[end] != (byte)'e')
             {
-                end++;
+                if (++end == buffer.Length) break;
             }
             bNode.number = new byte[end - position];
             Buffer.BlockCopy(buffer, position, bNode.number, 0, end - position);
@@ -200,16 +200,10 @@ namespace BitTorrentLibrary
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
         static public BNodeBase Decode(byte[] buffer)
         {
-            BNodeBase bNodeRoot = null;
             try
             {
                 int position = 0;
-                while (buffer[position] != (byte)'e')
-                {
-                    bNodeRoot = DecodeBNode(buffer, ref position);
-                    if (position == buffer.Length) break;
-                }
-                return bNodeRoot;
+                return DecodeBNode(buffer, ref position);
             }
             catch (Exception ex)
             {
