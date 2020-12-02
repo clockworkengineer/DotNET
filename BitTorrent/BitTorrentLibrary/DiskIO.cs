@@ -4,9 +4,9 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: The DiskIO class encapsulates all code and
-// data relating to the readining/writing of the local torrent files
-// to determine which pieces are missing and need downloading and
-// written to the correct positions.It also handles requests from
+// data relating to the readining/writing of the local files in a
+// torrent to determine which pieces are missing and need downloading 
+// and written to the correct positions.It also handles requests from
 // remote peers for pieces and reads them the from torrent image 
 // before sending on the remote peer.
 //
@@ -55,11 +55,11 @@ namespace BitTorrentLibrary
                         {
                             stream.Write(transferBuffer.Buffer, (Int32)(startTransfer % tc.pieceLength), (Int32)(endTransfer - startTransfer));
                         }
-                        bytesTransferred += (Int32)(endTransfer - startTransfer);
-                        if (bytesTransferred == tc.GetPieceLength(transferBuffer.Number))
-                        {
-                            break;
-                        }
+                    }
+                    bytesTransferred += (Int32)(endTransfer - startTransfer);
+                    if (bytesTransferred == tc.GetPieceLength(transferBuffer.Number))
+                    {
+                        break;
                     }
                 }
             }
@@ -266,12 +266,12 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal void FullyDownloadedTorrentBitfield(TorrentContext tc)
         {
-            Int64 totalBytesToDownload = (Int64) tc.TotalBytesToDownload;
+            Int64 totalBytesToDownload = (Int64)tc.TotalBytesToDownload;
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
             {
                 tc.MarkPieceLocal(pieceNumber, true);
                 tc.MarkPieceMissing(pieceNumber, false);
-                if (totalBytesToDownload/tc.pieceLength != 0)
+                if (totalBytesToDownload / tc.pieceLength != 0)
                 {
                     tc.SetPieceLength(pieceNumber, tc.pieceLength);
                 }
