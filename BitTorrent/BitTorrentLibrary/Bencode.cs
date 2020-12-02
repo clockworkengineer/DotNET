@@ -3,7 +3,7 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: BitTorrent BEncoding format encoding/decoding support 
+// Description: BitTorrent Bencode format encoding/decoding support 
 // for the reading of torrent files and tracker replies.
 //
 // Copyright 2020.
@@ -62,8 +62,9 @@ namespace BitTorrentLibrary
     /// <summary>
     /// Support methods for Bencoding.
     /// </summary>
-    internal class BEncoding
+    internal class Bencode
     {
+        private readonly List<byte> _workBuffer = new List<byte>();
         /// <summary>
         /// Extracts a Bencoded string and returns its bytes.
         /// </summary>
@@ -72,20 +73,20 @@ namespace BitTorrentLibrary
         /// <param name="position">position - Position in buffer. Updated to character after string on exit.</param>
         private byte[] ExtractString(byte[] buffer, ref int position)
         {
-            List<byte> stringBuffer = new List<byte>();
+             _workBuffer.Clear();
             while (char.IsDigit((char)buffer[position]))
             {
-                stringBuffer.Add(buffer[position++]);
+                _workBuffer.Add(buffer[position++]);
             }
             position++;
-            int lengthBytes = int.Parse(Encoding.ASCII.GetString(stringBuffer.ToArray()));
-            stringBuffer.Clear();
+            int lengthBytes = int.Parse(Encoding.ASCII.GetString(_workBuffer.ToArray()));
+            _workBuffer.Clear();
             while (lengthBytes-- > 0)
             {
-                stringBuffer.Add(buffer[position++]);
+                _workBuffer.Add(buffer[position++]);
                 if (position == buffer.Length) break;
             }
-            return stringBuffer.ToArray();
+            return _workBuffer.ToArray();
         }
         /// <summary>
         /// Extracts a Bencoded number and returns its bytes.
@@ -95,13 +96,13 @@ namespace BitTorrentLibrary
         /// <param name="position">position - Position in buffer. Updated to character after number on exit.</param>
         private BNodeBase DecodeNumber(byte[] buffer, ref int position)
         {
-            List<byte> number = new List<byte>();
+            _workBuffer.Clear();
             while (buffer[++position] != (byte)'e')
             {
-                number.Add(buffer[position]);
+                _workBuffer.Add(buffer[position]);
             }
             position++;
-            return new BNodeNumber(number.ToArray());
+            return new BNodeNumber(_workBuffer.ToArray());
         }
         /// <summary>
         /// Creates a BNode string node.

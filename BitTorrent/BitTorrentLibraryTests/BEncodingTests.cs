@@ -15,34 +15,34 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestSingleFileTorrentDecodeEncodeCheckTheSameAfter()
         {
-            BEncoding bEncoding = new BEncoding();
+            Bencode bEncode = new Bencode();
             byte[] expected = System.IO.File.ReadAllBytes(Constants.SingleFileTorrent);
-            BNodeBase torrentBase = bEncoding.Decode(expected);
-            byte[] actual = bEncoding.Encode(torrentBase);
+            BNodeBase torrentBase = bEncode.Decode(expected);
+            byte[] actual = bEncode.Encode(torrentBase);
             Assert.Equal(expected, actual);
         }
         [Fact]
         public void TestMultiFileTorrentDecodeEncodeCheckTheSameAfter()
         {
-            BEncoding bEncoding = new BEncoding();
+            Bencode bEncode = new Bencode();
             byte[] expected = System.IO.File.ReadAllBytes(Constants.MultiFileTorrent);
-            BNodeBase torrentBase = bEncoding.Decode(expected);
-            byte[] actual = bEncoding.Encode(torrentBase);
+            BNodeBase torrentBase = bEncode.Decode(expected);
+            byte[] actual = bEncode.Encode(torrentBase);
             Assert.Equal(expected, actual);
         }
         [Fact]
         public void TestSingleFileTorrentWithErrorDecode()
         {
-            BEncoding bEncoding = new BEncoding();
+            Bencode bEncode = new Bencode();
             byte[] expected = System.IO.File.ReadAllBytes(Constants.SingleFileWithErrorTorrent);
-            Assert.Throws<Exception>(() => { BNodeBase torrentBase = bEncoding.Decode(expected); });
+            Assert.Throws<Exception>(() => { BNodeBase torrentBase = bEncode.Decode(expected); });
         }
         [Fact]
         public void TestMultiFileTorrentWithErrorDecode()
         {
-            BEncoding bEncoding = new BEncoding();
+            Bencode bEncode = new Bencode();
             byte[] expected = System.IO.File.ReadAllBytes(Constants.MultiFileWithErrorTorrent);
-            Assert.Throws<Exception>(() => { BNodeBase torrentBase = bEncoding.Decode(expected); });
+            Assert.Throws<Exception>(() => { BNodeBase torrentBase = bEncode.Decode(expected); });
         }
     }
 }

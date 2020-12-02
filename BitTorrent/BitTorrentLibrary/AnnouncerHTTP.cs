@@ -16,7 +16,7 @@ namespace BitTorrentLibrary
     internal class AnnouncerHTTP : IAnnouncer
     {
         private readonly IWeb _web;             // Web Layer
-        private readonly BEncoding _BEncoding;  // BEncoding encode/decode
+        private readonly Bencode _Bencode;      // Bencode encode/decode
 
         /// <summary>
         /// Decodes the announce request BEncoded response recieved from a tracker.
@@ -27,16 +27,16 @@ namespace BitTorrentLibrary
         {
             if (announceResponse.Length != 0)
             {
-                BNodeBase decodedAnnounce = _BEncoding.Decode(announceResponse);
-                decodedResponse.statusMessage = _BEncoding.GetDictionaryEntryString(decodedAnnounce, "failure reason");
+                BNodeBase decodedAnnounce = _Bencode.Decode(announceResponse);
+                decodedResponse.statusMessage = _Bencode.GetDictionaryEntryString(decodedAnnounce, "failure reason");
                 if (decodedResponse.statusMessage != "")
                 {
                     decodedResponse.failure = true;
                     return; // If failure present then ignore rest of reply.
                 }
-                int.TryParse(_BEncoding.GetDictionaryEntryString(decodedAnnounce, "complete"), out decodedResponse.complete);
-                int.TryParse(_BEncoding.GetDictionaryEntryString(decodedAnnounce, "incomplete"), out decodedResponse.incomplete);
-                BNodeBase field = _BEncoding.GetDictionaryEntry(decodedAnnounce, "peers");
+                int.TryParse(_Bencode.GetDictionaryEntryString(decodedAnnounce, "complete"), out decodedResponse.complete);
+                int.TryParse(_Bencode.GetDictionaryEntryString(decodedAnnounce, "incomplete"), out decodedResponse.incomplete);
+                BNodeBase field = _Bencode.GetDictionaryEntry(decodedAnnounce, "peers");
                 if (field != null)
                 {
                     decodedResponse.peerList = new List<PeerDetails>();
@@ -55,7 +55,7 @@ namespace BitTorrentLibrary
                                     infoHash = tracker.InfoHash
                                 };
                                 BNodeBase peerDictionaryItem = (bNodeDictionary);
-                                BNodeBase peerField = _BEncoding.GetDictionaryEntry(peerDictionaryItem, "ip");
+                                BNodeBase peerField = _Bencode.GetDictionaryEntry(peerDictionaryItem, "ip");
                                 if (peerField != null)
                                 {
                                     peer.ip = Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeString)peerField).str);
@@ -64,7 +64,7 @@ namespace BitTorrentLibrary
                                 {
                                     peer.ip = peer.ip.Substring(peer.ip.LastIndexOf(":", StringComparison.Ordinal) + 1);
                                 }
-                                peerField = _BEncoding.GetDictionaryEntry(peerDictionaryItem, "port");
+                                peerField = _Bencode.GetDictionaryEntry(peerDictionaryItem, "port");
                                 if (peerField != null)
                                 {
                                     peer.port = int.Parse(Encoding.ASCII.GetString(((BitTorrentLibrary.BNodeNumber)peerField).number));
@@ -78,10 +78,10 @@ namespace BitTorrentLibrary
                         }
                     }
                 }
-                int.TryParse(_BEncoding.GetDictionaryEntryString(decodedAnnounce, "interval"), out decodedResponse.interval);
-                int.TryParse(_BEncoding.GetDictionaryEntryString(decodedAnnounce, "min interval"), out decodedResponse.minInterval);
-                decodedResponse.trackerID = _BEncoding.GetDictionaryEntryString(decodedAnnounce, "tracker id");
-                decodedResponse.statusMessage = _BEncoding.GetDictionaryEntryString(decodedAnnounce, "warning message");
+                int.TryParse(_Bencode.GetDictionaryEntryString(decodedAnnounce, "interval"), out decodedResponse.interval);
+                int.TryParse(_Bencode.GetDictionaryEntryString(decodedAnnounce, "min interval"), out decodedResponse.minInterval);
+                decodedResponse.trackerID = _Bencode.GetDictionaryEntryString(decodedAnnounce, "tracker id");
+                decodedResponse.statusMessage = _Bencode.GetDictionaryEntryString(decodedAnnounce, "warning message");
                 decodedResponse.announceCount++;
             }
         }
@@ -113,7 +113,7 @@ namespace BitTorrentLibrary
         public AnnouncerHTTP(string _, IWeb web)
         {
             _web = web;
-            _BEncoding = new BEncoding();
+            _Bencode = new Bencode();
         }
         /// <summary>
         /// Perform an HTTP announce request to tracker and return any response.
