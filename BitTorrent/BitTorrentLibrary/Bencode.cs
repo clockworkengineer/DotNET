@@ -89,33 +89,6 @@ namespace BitTorrentLibrary
             return _workBuffer.ToArray();
         }
         /// <summary>
-        /// Extracts a Bencoded number and returns its bytes.
-        /// </summary>
-        /// <returns>The bytes(characters) for the number.</returns>
-        private BNodeBase DecodeNumber()
-        {
-            _workBuffer.Clear();
-            while (_buffer[++_position] != (byte)'e')
-            {
-                _workBuffer.Add(_buffer[_position]);
-            }
-            _position++;
-            return new BNodeNumber(_workBuffer.ToArray());
-        }
-        /// <summary>
-        /// Creates a BNode string node.
-        /// </summary>
-        /// <returns>A string BNode.</returns>
-        /// <param name="buffer">buffer - Bencoded string input buffer.</param>
-        private BNodeBase DecodeString()
-        {
-            BNodeString bNode = new BNodeString
-            {
-                str = ExtractString()
-            };
-            return bNode;
-        }
-        /// <summary>
         /// Decodes a dictionary string key.
         /// </summary>
         /// <returns>String value of the key.</returns>
@@ -125,60 +98,43 @@ namespace BitTorrentLibrary
             return key;
         }
         /// <summary>
-        /// Create a list BNode.
-        /// </summary>
-        /// <returns>A list BNode.</returns>
-        private BNodeBase DecodeList()
-        {
-            BNodeList bNode = new BNodeList();
-            _position++;
-            while (_buffer[_position] != (byte)'e')
-            {
-                bNode.list.Add(DecodeBNode());
-            }
-            _position++;
-            return bNode;
-        }
-        /// <summary>
-        /// Create a dictionary BNode.
-        /// </summary>
-        /// <returns>A dictionary BNode.</returns>
-        private BNodeBase DecodeDictionary()
-        {
-            BNodeDictionary bNode = new BNodeDictionary();
-            _position++;
-            while (_buffer[_position] != (byte)'e')
-            {
-                string key = DecodeKey();
-                bNode.dict[key] = DecodeBNode();
-                if (_position == _buffer.Length) break;
-            }
-            _position++;
-            return bNode;
-        }
-        /// <summary>
         /// Recursively parse a Bencoded buffer and return its BNode tree.
         /// </summary>
         /// <returns>Root of Bnode tree.</returns>
         private BNodeBase DecodeBNode()
         {
-            BNodeBase bNode;
             switch ((char)_buffer[_position])
             {
                 case 'd':
-                    bNode = DecodeDictionary();
-                    break;
+                    BNodeDictionary bNodeDictionary = new BNodeDictionary();
+                    _position++;
+                    while (_buffer[_position] != (byte)'e')
+                    {
+                        bNodeDictionary.dict[DecodeKey()] = DecodeBNode();
+                        if (_position == _buffer.Length) break;
+                    }
+                    _position++;
+                    return bNodeDictionary;
                 case 'l':
-                    bNode = DecodeList();
-                    break;
+                    BNodeList bNodeList = new BNodeList();
+                    _position++;
+                    while (_buffer[_position] != (byte)'e')
+                    {
+                        bNodeList.list.Add(DecodeBNode());
+                    }
+                    _position++;
+                    return bNodeList;
                 case 'i':
-                    bNode = DecodeNumber();
-                    break;
+                    _workBuffer.Clear();
+                    while (_buffer[++_position] != (byte)'e')
+                    {
+                        _workBuffer.Add(_buffer[_position]);
+                    }
+                    _position++;
+                    return new BNodeNumber(_workBuffer.ToArray());
                 default:
-                    bNode = DecodeString();
-                    break;
+                    return new BNodeString { str = ExtractString() };
             }
-            return bNode;
         }
         /// <summary>
         /// Recursively parse BNode structure to produce Bencoding for it.
