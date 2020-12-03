@@ -10,5 +10,5 @@ This is just a version of conways game of life https://en.wikipedia.org/wiki/Con
 A simple contacts database written in C#/Gtk# on monodevelop. It currently supports backend storage of either SQLite or a simple CSV file and may be easily adapted to any other database that is required.
 
 ### BitTorrent
-This is a from the grounds up BitTorrent client written in C#/.NET using visual studio code under linux.
+This is a from the grounds up BitTorrent client written in C#/.NET using visual studio code under linux. Its contains a core class library BitTorrentLibrary that supports the downloading and uploading of torrents, a suite of unit tests BitTorrentLibraryTests for it and a text based client that makes use of the library to download and seed torrent files.
 
