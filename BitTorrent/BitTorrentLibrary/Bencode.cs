@@ -71,7 +71,7 @@ namespace BitTorrentLibrary
         /// Extracts a Bencoded string and returns its bytes.
         /// </summary>
         /// <returns>The bytes for the string.</returns>
-        private byte[] ExtractString()
+        private byte[] DecodeString()
         {
             _workBuffer.Clear();
             while (char.IsDigit((char)_buffer[_position]))
@@ -94,7 +94,7 @@ namespace BitTorrentLibrary
         /// <returns>String value of the key.</returns>
         private string DecodeKey()
         {
-            string key = Encoding.ASCII.GetString(ExtractString());
+            string key = Encoding.ASCII.GetString(DecodeString());
             return key;
         }
         /// <summary>
@@ -111,7 +111,6 @@ namespace BitTorrentLibrary
                     while (_buffer[_position] != (byte)'e')
                     {
                         bNodeDictionary.dict[DecodeKey()] = DecodeBNode();
-                        if (_position == _buffer.Length) break;
                     }
                     _position++;
                     return bNodeDictionary;
@@ -133,7 +132,7 @@ namespace BitTorrentLibrary
                     _position++;
                     return new BNodeNumber(_workBuffer.ToArray());
                 default:
-                    return new BNodeString { str = ExtractString() };
+                    return new BNodeString { str = DecodeString() };
             }
         }
         /// <summary>
