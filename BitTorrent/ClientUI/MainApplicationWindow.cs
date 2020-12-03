@@ -27,7 +27,7 @@ namespace ClientUI
         public SeedingWindow SeederListWindow { get; set; }         // Seeding torrents sub-window (overlays information)
         public Torrent Torrent { get; set; }                        // Currently active downloading torrent
         public bool DisplayInformationWindow { get; set; } = true;  // == true information window displayed
-        public bool DisplaySeederInformationWindow { get; set; } = false;  // == true seeder information window displayed
+        public bool DisplaySeederInformationWindow { get; set; } = true;  // == true seeder information window displayed
         /// <summary>
         /// Build main application window including the information
         /// and seeding windows which overlay each other depending which

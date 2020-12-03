@@ -4,7 +4,7 @@
 // Library: C# class library to implement the BitTorrent protocol.
 //
 // Description: BitTorrent Bencode format encoding/decoding support 
-// for the reading of torrent files and tracker replies.
+// for the reading of torrent files and decoding HTTP tracker replies.
 //
 // Copyright 2020.
 //
@@ -14,7 +14,7 @@ using System.Text;
 namespace BitTorrentLibrary
 {
     /// <summary>
-    /// Base for BNode Tree.
+    /// Base for BNode structure.
     /// </summary>
     internal class BNodeBase
     {
@@ -60,15 +60,15 @@ namespace BitTorrentLibrary
         public byte[] str;
     }
     /// <summary>
-    /// Support methods for Bencoding.
+    /// Class for Bencode encode/decode.
     /// </summary>
     internal class Bencode
     {
-        private readonly List<byte> _workBuffer = new List<byte>();
-        private int _position;
-        private byte[] _buffer;
+        private readonly List<byte> _workBuffer = new List<byte>(); // Temporary work buffer
+        private int _position;                                      // Current deoce buffer postion
+        private byte[] _buffer;                                     // Decode buffer
         /// <summary>
-        /// Extracts a Bencoded string and returns its bytes.
+        /// Decode Bencode string in buffer.
         /// </summary>
         /// <returns>The bytes for the string.</returns>
         private byte[] DecodeString()
@@ -98,9 +98,9 @@ namespace BitTorrentLibrary
             return key;
         }
         /// <summary>
-        /// Recursively parse a Bencoded buffer and return its BNode tree.
+        /// Recursively parse a Bencoded buffer and return its BNode structure.
         /// </summary>
-        /// <returns>Root of Bnode tree.</returns>
+        /// <returns>Root of BNode structure.</returns>
         private BNodeBase DecodeBNode()
         {
             switch ((char)_buffer[_position])
@@ -138,7 +138,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Recursively parse BNode structure to produce Bencoding for it.
         /// </summary>
-        /// <returns>Bencoded representation of BNode tree.</returns>
+        /// <returns>Bencoded representation of BNode structure.</returns>
         /// <param name="bNode">Root <paramref name="bNode"/>.</param>
         private void EncodeFromBNode(BNodeBase bNode)
         {
@@ -178,7 +178,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Exception("Failure to encode BNode Tree." + ex.Message);
+                throw new Exception("Failure to encode BNode structure." + ex.Message);
             }
         }
         /// <summary>
@@ -190,7 +190,7 @@ namespace BitTorrentLibrary
             _buffer = buffer;
         }
         /// <summary>
-        /// Produce BNode tree from a Bencoded buffer.
+        /// Produce BNode structure from a Bencoded buffer.
         /// </summary>
         /// <returns>The root BNode.</returns>
         /// <param name="buffer">buffer - Bencoded input buffer.</param>
@@ -206,11 +206,11 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Exception("Failure on decoding torrent file into BNode tree." + ex.Message);
+                throw new Exception("Failure on decoding torrent file into BNode structure." + ex.Message);
             }
         }
         /// <summary>
-        /// Produce Bencoded output given a root BNode.
+        /// Produce Bencoded output given the root of a BNode structure.
         /// </summary>
         /// <param name="bNode"></param>
         /// <returns></returns>
@@ -222,7 +222,7 @@ namespace BitTorrentLibrary
         }
         /// <summary>
         /// Get a BNode entry for a given dictionary key. Note that it recursively searches
-        /// until the key is found in the BNode tree structure.
+        /// until the key is found in the BNode structure structure.
         /// </summary>
         /// <returns>BNode entry for dictionary key.</returns>
         /// <param name="bNode">bNode - Bnode root of dictionary.</param>
@@ -256,7 +256,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Exception("Could not get dictionary from BNode tree." + ex.Message);
+                throw new Exception("Could not get dictionary from BNode structure." + ex.Message);
             }
             return bNodeEntry;
         }
@@ -287,7 +287,7 @@ namespace BitTorrentLibrary
             catch (Exception ex)
             {
                 Log.Logger.Debug(ex);
-                throw new Exception("Could not get string from BNode tree." + ex.Message);
+                throw new Exception("Could not get string from BNode structure." + ex.Message);
             }
             return "";
         }

@@ -85,17 +85,11 @@ namespace ClientUI
             }
             else
             {
-                if (main.MainWindow.DisplaySeederInformationWindow)
+                if (!main.MainWindow.DisplaySeederInformationWindow)
                 {
-                    main.MainWindow.Remove(main.MainWindow.SeedingInfoWindow);
-                    main.MainWindow.DisplaySeederInformationWindow = false;
-                    _seedingInformation.MainTracker.CallBack = null;
-                    _seedingInformation.MainTracker.CallBack = null;
+                    ActionToggleSeedInformation(main);
                 }
-                else
-                {
-                    main.MainWindow.Remove(main.MainWindow.SeederListWindow);
-                }
+                main.MainWindow.Remove(main.MainWindow.SeederListWindow);
                 main.MainWindow.Add(main.MainWindow.InfoWindow);
                 main.MainWindow.DisplayInformationWindow = true;
                 main.MainWindow.TorrentFileText.SetFocus();
@@ -112,26 +106,43 @@ namespace ClientUI
         {
             if (main.MainWindow.DisplaySeederInformationWindow)
             {
-                main.MainWindow.SeedingInfoWindow.ClearData();
-                _seedingInformation.MainTracker.SetSeedingInterval(60000 * 30);
-                _seedingInformation.MainTracker.CallBack = null;
-                _seedingInformation.MainTracker.CallBack = null;
-                main.MainWindow.Remove(main.MainWindow.SeedingInfoWindow);
-                main.MainWindow.Add(main.MainWindow.SeederListWindow);
+                main.MainWindow.Remove(main.MainWindow.SeederListWindow);
+                main.MainWindow.Add(main.MainWindow.SeedingInfoWindow);
                 main.MainWindow.DisplaySeederInformationWindow = false;
-                main.MainWindow.SeederListWindow.SetFocus();
+                main.MainWindow.SeedingInfoWindow.SetFocus();
+                List<TorrentContext> seeders = new List<TorrentContext>();
+                foreach (var torrent in main.TorrentAgent.TorrentList)
+                {
+                    if (torrent.Status == TorrentStatus.Seeding)
+                    {
+                        seeders.Add(torrent);
+                    }
+                }
+                if (seeders.Count > 0)
+                {
+                    _seedingInformation = main.TorrentAgent.TorrentList.ToArray()[main.MainWindow.SeederListWindow.SeederListView.SelectedItem];
+                    main.MainWindow.SeedingInfoWindow.TrackerText.Text = _seedingInformation.MainTracker.TrackerURL;
+                    _seedingInformation.MainTracker.SetSeedingInterval(2 * 1000);
+                    _seedingInformation.MainTracker.CallBack = UpdateSeederInformation;
+                    _seedingInformation.MainTracker.CallBackData = main;
+                }
+
+
             }
             else
             {
-                _seedingInformation = main.TorrentAgent.TorrentList.ToArray()[main.MainWindow.SeederListWindow.SeederListView.SelectedItem];
-                main.MainWindow.SeedingInfoWindow.TrackerText.Text = _seedingInformation.MainTracker.TrackerURL;
-                main.MainWindow.Remove(main.MainWindow.SeederListWindow);
-                main.MainWindow.Add(main.MainWindow.SeedingInfoWindow);
+                if (_seedingInformation != null)
+                {
+                    main.MainWindow.SeedingInfoWindow.ClearData();
+                    _seedingInformation.MainTracker.SetSeedingInterval(60000 * 30);
+                    _seedingInformation.MainTracker.CallBack = null;
+                    _seedingInformation.MainTracker.CallBack = null;
+                    main.MainWindow.Remove(main.MainWindow.SeedingInfoWindow);
+                    _seedingInformation = null;
+                }
+                main.MainWindow.Add(main.MainWindow.SeederListWindow);
                 main.MainWindow.DisplaySeederInformationWindow = true;
-                main.MainWindow.SeedingInfoWindow.SetFocus();
-                _seedingInformation.MainTracker.SetSeedingInterval(2 * 1000);
-                _seedingInformation.MainTracker.CallBack = UpdateSeederInformation;
-                _seedingInformation.MainTracker.CallBackData = main;
+                main.MainWindow.SeederListWindow.SetFocus();
             }
         }
         /// <summary>
