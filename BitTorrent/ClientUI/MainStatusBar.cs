@@ -7,47 +7,34 @@
 //
 // Copyright 2020.
 //
-using System;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Terminal.Gui;
-using BitTorrentLibrary;
 namespace ClientUI
 {
     public class MainStatusBar : StatusBar
     {
         private readonly List<StatusItem> _statusBarItems;  // Status bat item list
         private readonly StatusItem _download;              // Item download 
-        private readonly StatusItem _shutdown;              // Item shutwdown
+        private readonly StatusItem _shutdown;              // Item shutdown
         private readonly StatusItem _quit;                  // Items quit
         private readonly StatusItem _toggleSeeding;         // Item toggle information/seeding sub-window
         private readonly StatusItem _toggleSeedInformation; // Item toggle seeding/seed information sub-window
-        private TorrentContext _seedingInformation;         // Selected seeder torrent context
         /// <summary>
-        /// Update seeder information. This is used as the tracker callback to be invoked
-        /// when the next announce response is recieved back for the seeder torrent context
-        /// currently selected.
+        /// Toggle seeding status bar item
         /// </summary>
-        /// <param name="obj"></param>
-        private void UpdateSeederInformation(Object obj)
+        /// <param name="main"></param>
+        private void ToggleSeeding(bool on)
         {
-            TorrentClient main = (TorrentClient)obj;
-            TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(_seedingInformation);
-            List<string> peers = new List<string>();
-            foreach (var peer in torrentDetails.peers)
+            if (on)
             {
-                peers.Add(peer.ip + ":" + peer.port.ToString());
+                _statusBarItems.Add(_toggleSeedInformation);
             }
-            Application.MainLoop.Invoke(() =>
+            else
             {
-                main.MainWindow.SeedingInfoWindow.UpdatePeers(peers.ToArray());
-                main.MainWindow.SeedingInfoWindow.UpdateInformation(torrentDetails);
-                if (torrentDetails.trackerStatus == TrackerStatus.Stalled)
-                {
-                    MessageBox.Query("Error", torrentDetails.trackerStatusMessage, "Ok");
-                }
-            });
+                _statusBarItems.Remove(_toggleSeedInformation);
+            }
+            Items = _statusBarItems.ToArray();
         }
         /// <summary>
         /// Start torrent download.
@@ -55,8 +42,8 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionDownload(TorrentClient main)
         {
-            main.MainWindow.Torrent = new Torrent(main.MainWindow.TorrentFileText.Text.ToString());
-            Task.Run(() => main.MainWindow.Torrent.Download(main));
+            main.MainAppicationWindow.Torrent = new Torrent(main.MainAppicationWindow.TorrentFileText.Text.ToString());
+            Task.Run(() => main.MainAppicationWindow.Torrent.Download(main));
         }
         /// <summary>
         /// Stop currently downloading torrent.
@@ -64,9 +51,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionShutdown(TorrentClient main)
         {
-            main.TorrentAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
-            main.TorrentAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
-            main.MainWindow.InfoWindow.ClearData();
+            main.MainAppicationWindow.CloseDownTorrent(main);
             main.MainStatusBar.Display(Status.Shutdown);
         }
         /// <summary>
@@ -75,27 +60,8 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionToggleSeeding(TorrentClient main)
         {
-            if (main.MainWindow.DisplayInformationWindow)
-            {
-                main.MainWindow.Remove(main.MainWindow.InfoWindow);
-                main.MainWindow.Add(main.MainWindow.SeederListWindow);
-                main.MainWindow.DisplayInformationWindow = false;
-                main.MainWindow.SeederListWindow.SetFocus();
-                _statusBarItems.Add(_toggleSeedInformation);
-            }
-            else
-            {
-                if (!main.MainWindow.DisplaySeederInformationWindow)
-                {
-                    ActionToggleSeedInformation(main);
-                }
-                main.MainWindow.Remove(main.MainWindow.SeederListWindow);
-                main.MainWindow.Add(main.MainWindow.InfoWindow);
-                main.MainWindow.DisplayInformationWindow = true;
-                main.MainWindow.TorrentFileText.SetFocus();
-                _statusBarItems.Remove(_toggleSeedInformation);
-            }
-            Items = _statusBarItems.ToArray();
+            ToggleSeeding(main.MainAppicationWindow.DisplayInformationWindow);
+            main.MainAppicationWindow.ToggleSeedingList(main);
         }
         /// <summary>
         /// Toggle seeding list window and selected seeder information window.
@@ -103,45 +69,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionToggleSeedInformation(TorrentClient main)
         {
-            if (main.MainWindow.DisplaySeederInformationWindow)
-            {
-                main.MainWindow.Remove(main.MainWindow.SeederListWindow);
-                main.MainWindow.Add(main.MainWindow.SeedingInfoWindow);
-                main.MainWindow.DisplaySeederInformationWindow = false;
-
-                List<TorrentContext> seeders = new List<TorrentContext>();
-                foreach (var torrent in main.TorrentAgent.TorrentList)
-                {
-                    if (torrent.Status == TorrentStatus.Seeding)
-                    {
-                        seeders.Add(torrent);
-                    }
-                }
-                if (seeders.Count > 0)
-                {
-                    _seedingInformation = main.TorrentAgent.TorrentList.ToArray()[main.MainWindow.SeederListWindow.SeederListView.SelectedItem];
-                    main.MainWindow.SeedingInfoWindow.TrackerText.Text = _seedingInformation.MainTracker.TrackerURL;
-                    _seedingInformation.MainTracker.SetSeedingInterval(2 * 1000);
-                    _seedingInformation.MainTracker.CallBack = UpdateSeederInformation;
-                    _seedingInformation.MainTracker.CallBackData = main;
-                    main.MainWindow.SeedingInfoWindow.SetFocus();
-                }
-            }
-            else
-            {
-                if (_seedingInformation != null)
-                {
-                    main.MainWindow.SeedingInfoWindow.ClearData();
-                    _seedingInformation.MainTracker.SetSeedingInterval(60000 * 30);
-                    _seedingInformation.MainTracker.CallBack = null;
-                    _seedingInformation.MainTracker.CallBack = null;
-                    main.MainWindow.Remove(main.MainWindow.SeedingInfoWindow);
-                    _seedingInformation = null;
-                }
-                main.MainWindow.Add(main.MainWindow.SeederListWindow);
-                main.MainWindow.DisplaySeederInformationWindow = true;
-                main.MainWindow.SeederListWindow.SetFocus();
-            }
+            main.MainAppicationWindow.ToggleSeedinginformation(main);
         }
         /// <summary>
         /// Quit application.

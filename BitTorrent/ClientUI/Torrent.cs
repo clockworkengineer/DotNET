@@ -38,9 +38,9 @@ namespace ClientUI
             Tc.CallBack = null;
             Tc.CallBackData = null;
             Tc = null;
-            main.MainWindow.InfoWindow.ClearData();
+            main.MainAppicationWindow.InfoWindow.ClearData();
             main.MainStatusBar.Display(Status.Shutdown);
-            main.MainWindow.DownloadProgress.Fraction = 0;
+            main.MainAppicationWindow.DownloadProgress.Fraction = 0;
         }
         /// <summary>
         /// Update download information. This is used as the tracker callback to be invoked
@@ -50,7 +50,7 @@ namespace ClientUI
         private void UpdateDownloadInformation(Object obj)
         {
             TorrentClient main = (TorrentClient)obj;
-            TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(main.MainWindow.Torrent.Tc);
+            TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(main.MainAppicationWindow.Torrent.Tc);
             List<string> peers = new List<string>();
             foreach (var peer in torrentDetails.peers)
             {
@@ -58,8 +58,8 @@ namespace ClientUI
             }
             Application.MainLoop.Invoke(() =>
             {
-                main.MainWindow.InfoWindow.UpdatePeers(peers.ToArray());
-                main.MainWindow.InfoWindow.UpdateInformation(torrentDetails);
+                main.MainAppicationWindow.InfoWindow.UpdatePeers(peers.ToArray());
+                main.MainAppicationWindow.InfoWindow.UpdateInformation(torrentDetails);
                 if (torrentDetails.trackerStatus == TrackerStatus.Stalled)
                 {
                     MessageBox.Query("Error", torrentDetails.trackerStatusMessage, "Ok");
@@ -77,12 +77,12 @@ namespace ClientUI
             TorrentClient main = (TorrentClient)obj;
             Application.MainLoop.Invoke(() =>
             {
-                main.MainWindow.DownloadProgress.Fraction = (float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload);
+                main.MainAppicationWindow.DownloadProgress.Fraction = (float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload);
             });
             if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
-                File.Copy(main.MainWindow.Torrent.Tc.FileName, main.Configuration.SeedDirectory + 
-                          Path.GetFileName(main.MainWindow.Torrent.Tc.FileName));
+                File.Copy(main.MainAppicationWindow.Torrent.Tc.FileName, main.Configuration.SeedDirectory + 
+                          Path.GetFileName(main.MainAppicationWindow.Torrent.Tc.FileName));
                 RemoveDownloadingTorrentFromScreen(main);
             }
         }
@@ -112,8 +112,8 @@ namespace ClientUI
                 torrentFile.Parse();
                 Application.MainLoop.Invoke(() =>
                 {
-                    main.MainWindow.DownloadProgress.Fraction = 0;
-                    main.MainWindow.InfoWindow.TrackerText.Text = torrentFile.GetTracker();
+                    main.MainAppicationWindow.DownloadProgress.Fraction = 0;
+                    main.MainAppicationWindow.InfoWindow.TrackerText.Text = torrentFile.GetTracker();
                 });
                 // Create torrent context and tracker
                 Tc = new TorrentContext(torrentFile, main.TorrentSelector, main.TorrentDiskIO, main.Configuration.DestinationDirectory)

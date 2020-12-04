@@ -25,7 +25,7 @@ namespace ClientUI
     /// </summary>
     public class TorrentClient
     {
-        public MainApplicationWindow MainWindow { get; set; }    // Main application 
+        public MainWindow MainAppicationWindow { get; set; }     // Main application window 
         public Manager TorrentManager { get; set; }              // Manager for all torrents
         public Selector TorrentSelector { get; set; }            // Selector for all torrents
         public DiskIO TorrentDiskIO { get; set; }                // DiskIO for all torrents
@@ -49,7 +49,7 @@ namespace ClientUI
             {
                 Directory.CreateDirectory(Configuration.DestinationDirectory);
             }
-            MainWindow = new MainApplicationWindow(this, "BitTorrent Client Application")
+            MainAppicationWindow = new MainWindow(this, "BitTorrent Client Application")
             {
                 X = 0,
                 Y = 0,
@@ -57,8 +57,8 @@ namespace ClientUI
                 Height = Dim.Fill()
             };
             MainStatusBar = new MainStatusBar(this);
-            Application.Top.Add(MainWindow, MainStatusBar);
-            MainWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;
+            Application.Top.Add(MainAppicationWindow, MainStatusBar);
+            MainAppicationWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;
         }
         /// <summary>
         /// Startup torrent agent.
@@ -79,7 +79,7 @@ namespace ClientUI
             TorrentAgentStartup();
             if (Configuration.SeedingTorrents)
             {
-                Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents(TorrentAgent, TorrentSelector, TorrentDiskIO, Configuration));
+                Task.Run(() => MainAppicationWindow.SeederListWindow.LoadSeedingTorrents(TorrentAgent, TorrentSelector, TorrentDiskIO, Configuration));
             }
             Application.Run();
         }
