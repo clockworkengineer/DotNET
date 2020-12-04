@@ -55,12 +55,12 @@ namespace BitTorrentLibraryTests
         [InlineData("d6:Actorsld9:Birthdate12:July 3, 19627:Born At12:Syracuse, NY3:agei56e4:name10:Tom Cruise5:photo44:https://jsonformatter.org/img/tom-cruise.jpged9:Birthdate13:April 4, 19657:Born At17:New York City, NY3:agei53e4:name17:Robert Downey Jr.5:photo50:https://jsonformatter.org/img/Robert-Downey-Jr.jpgeee")]
         [InlineData("d3:agei22e5:classl10:JavaScript4:HTML3:CSSe5:hobbyd5:sport8:footballe4:name4:Johne")]
         [InlineData("d4:codei0e12:commentCounti0e9:createdAt27:2020-01-02T13:32:16.748000611:description3:ghj2:idi2140e3:lati0e11:likeDisliked8:dislikesi0e5:likesi0e10:userActioni2ee3:lngi0e8:location39:Hermannplatz 5-6, 10967 Berlin, Germany9:mediatypei0e10:multiMediald8:createAt19:0001-01-01T00:00:002:idi3240e9:likeCounti0e9:mediatypei2e4:name0:3:url40:http://www.youtube.com/embed/mPhboJR0Llcee4:name5:manoj14:profilePicture47:Images/9b291404-bc2e-4806-88c5-08d29e65a5ad.png5:title2:gj6:userIdi4051ee")]
-        public void TestDecodeThenEncodeTheSamString(string bencode)
+        public void TestDecodeThenEncodeTheSamString(string expected)
         {
             Bencode bEncode = new Bencode();
-            BNodeBase bNode = bEncode.Decode(Encoding.ASCII.GetBytes(bencode));
+            BNodeBase bNode = bEncode.Decode(Encoding.ASCII.GetBytes(expected));
             byte[] actual = bEncode.Encode(bNode);
-            Assert.Equal(Encoding.ASCII.GetBytes(bencode), actual);
+            Assert.Equal(Encoding.ASCII.GetBytes(expected), actual);
         }
     }
 }

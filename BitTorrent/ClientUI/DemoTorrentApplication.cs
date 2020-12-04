@@ -15,7 +15,7 @@ namespace ClientUI
     // Current application status
     public enum Status
     {
-        Starting,
+        StartingUp,
         Downloading,
         Shutdown
     };

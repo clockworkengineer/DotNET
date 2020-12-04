@@ -68,10 +68,9 @@ namespace BitTorrentLibrary
         private int _position;                                      // Current deoce buffer postion
         private byte[] _buffer;                                     // Decode buffer
         /// <summary>
-        /// Decode Bencode string in buffer.
+        /// Decode Integer digits from decode buffer into work buffer.
         /// </summary>
-        /// <returns>The bytes for the string.</returns>
-        private byte[] DecodeString()
+        private void DecodeInteger()
         {
             _workBuffer.Clear();
             while (char.IsDigit((char)_buffer[_position]))
@@ -79,6 +78,14 @@ namespace BitTorrentLibrary
                 _workBuffer.Add(_buffer[_position++]);
             }
             _position++;
+        }
+        /// <summary>
+        /// Decode Bencode string in buffer.
+        /// </summary>
+        /// <returns>The bytes for the string.</returns>
+        private byte[] DecodeString()
+        {
+            DecodeInteger();
             int lengthBytes = int.Parse(Encoding.ASCII.GetString(_workBuffer.ToArray()));
             _workBuffer.Clear();
             while (lengthBytes-- > 0)
@@ -89,15 +96,6 @@ namespace BitTorrentLibrary
             return _workBuffer.ToArray();
         }
         /// <summary>
-        /// Decodes a dictionary string key.
-        /// </summary>
-        /// <returns>String value of the key.</returns>
-        private string DecodeKey()
-        {
-            string key = Encoding.ASCII.GetString(DecodeString());
-            return key;
-        }
-        /// <summary>
         /// Recursively parse a Bencoded buffer and return its BNode structure.
         /// </summary>
         /// <returns>Root of BNode structure.</returns>
@@ -106,16 +104,17 @@ namespace BitTorrentLibrary
             switch ((char)_buffer[_position])
             {
                 case 'd':
-                    BNodeDictionary bNodeDictionary = new BNodeDictionary();
+                    var bNodeDictionary = new BNodeDictionary();
                     _position++;
                     while (_buffer[_position] != (byte)'e')
                     {
-                        bNodeDictionary.dict[DecodeKey()] = DecodeBNode();
+                        string key = Encoding.ASCII.GetString(DecodeString());
+                        bNodeDictionary.dict[key] = DecodeBNode();
                     }
                     _position++;
                     return bNodeDictionary;
                 case 'l':
-                    BNodeList bNodeList = new BNodeList();
+                    var bNodeList = new BNodeList();
                     _position++;
                     while (_buffer[_position] != (byte)'e')
                     {
@@ -124,12 +123,8 @@ namespace BitTorrentLibrary
                     _position++;
                     return bNodeList;
                 case 'i':
-                    _workBuffer.Clear();
-                    while (_buffer[++_position] != (byte)'e')
-                    {
-                        _workBuffer.Add(_buffer[_position]);
-                    }
                     _position++;
+                    DecodeInteger();
                     return new BNodeNumber(_workBuffer.ToArray());
                 default:
                     return new BNodeString { str = DecodeString() };
@@ -200,7 +195,6 @@ namespace BitTorrentLibrary
             {
                 _position = 0;
                 _buffer = buffer;
-                _workBuffer.Clear();
                 return DecodeBNode();
             }
             catch (Exception ex)

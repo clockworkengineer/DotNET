@@ -126,8 +126,6 @@ namespace ClientUI
                     _seedingInformation.MainTracker.CallBack = UpdateSeederInformation;
                     _seedingInformation.MainTracker.CallBackData = main;
                 }
-
-
             }
             else
             {
@@ -181,10 +179,7 @@ namespace ClientUI
             {
                 ActionQuit(main);
             });
-            _statusBarItems.Add(_download);
-            _statusBarItems.Add(_toggleSeeding);
-            _statusBarItems.Add(_quit);
-            Items = _statusBarItems.ToArray();
+            Display(Status.Shutdown);
         }
         /// <summary>
         /// Display program status bar.
@@ -194,7 +189,7 @@ namespace ClientUI
         {
             switch (status)
             {
-                case Status.Starting:
+                case Status.StartingUp:
                     _statusBarItems.Clear();
                     _statusBarItems.Add(_quit);
                     break;
