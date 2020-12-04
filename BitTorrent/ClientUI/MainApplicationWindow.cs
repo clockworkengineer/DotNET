@@ -1,7 +1,7 @@
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
-// Programs: Simple console application to use BitTorrent class library.
+// Programs: A simple console based torrent client.
 //
 // Description: Class that defines the layout of the applications main window.
 //
@@ -23,7 +23,7 @@ namespace ClientUI
         public TextField TorrentFileText { get; set; }              // Text field containing torrent file name
         public ProgressBar DownloadProgress { get; set; }           // Downloading progress bar
         public InformationWindow InfoWindow { get; set; }           // Torrent information sub-window
-        public InformationWindow SeedingInfoWindow { get; set; }    // Torrent information sub-window
+        public InformationWindow SeedingInfoWindow { get; set; }    // Seeding torrent information sub-window
         public SeedingWindow SeederListWindow { get; set; }         // Seeding torrents sub-window (overlays information)
         public Torrent Torrent { get; set; }                        // Currently active downloading torrent
         public bool DisplayInformationWindow { get; set; } = true;  // == true information window displayed
@@ -35,7 +35,7 @@ namespace ClientUI
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public MainApplicationWindow(DemoTorrentApplication _, string name) : base(name)
+        public MainApplicationWindow(TorrentClient _, string name) : base(name)
         {
             List<View> viewables = new List<View>();
             torrentFileLabel = new Label("Torrent File: ")

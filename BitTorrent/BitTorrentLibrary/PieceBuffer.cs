@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //

@@ -1,7 +1,7 @@
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
-// Programs: Simple console application to use BitTorrent class library.
+// Programs: A simple console based torrent client.
 //
 // Description: Seeders list window data and related methods.
 //
@@ -18,7 +18,7 @@ namespace ClientUI
     public class SeedingWindow : Window
     {
         private Agent _agent;                            // Main torrent agent
-        public ListView SeederListView { get; }          // List view to displat seeding torrent information
+        public ListView SeederListView { get; }          // List view to display seeding torrent information
 
         /// <summary>
         /// Build seeder display line for listview.
@@ -71,7 +71,7 @@ namespace ClientUI
             Add(SeederListView);
         }
         /// <summary>
-        /// Load torrents in the seeding list.
+        /// Load torrents in the seeding directory.
         /// </summary>
         public void LoadSeedingTorrents(Agent agent, Selector selector, DiskIO diskIO, Config config)
         {
@@ -99,6 +99,7 @@ namespace ClientUI
                         agent.CloseTorrent(tc);
                         agent.RemoveTorrent(tc);
                         tc = null;
+                        seederTracker = null;
                     }
                     continue;
                 }

@@ -1,12 +1,13 @@
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
-// Programs: Simple console application to use BitTorrent class library.
+// Programs: A simple console based torrent client.
 //
-// Description: Top level application.
+// Description: Top level application class.
 //
 // Copyright 2020.
 //
+using System.IO;
 using System.Threading.Tasks;
 using Terminal.Gui;
 using BitTorrentLibrary;
@@ -15,14 +16,14 @@ namespace ClientUI
     // Current application status
     public enum Status
     {
-        StartingUp,
-        Downloading,
-        Shutdown
+        StartingUp,     // Starting up a torrent download
+        Downloading,    // Downloading torrent
+        Shutdown        // Shutdown download ready for more
     };
     /// <summary>
     /// Torrent Demo Application.
     /// </summary>
-    public class DemoTorrentApplication
+    public class TorrentClient
     {
         public MainApplicationWindow MainWindow { get; set; }    // Main application 
         public Manager TorrentManager { get; set; }              // Manager for all torrents
@@ -35,12 +36,20 @@ namespace ClientUI
         /// <summary>
         /// Build and run application.
         /// </summary>
-        public DemoTorrentApplication()
+        public TorrentClient()
         {
             Application.Init();
             Configuration = new Config();
             Configuration.Load();
-            MainWindow = new MainApplicationWindow(this, "BitTorrent Demo Application")
+            if (!Directory.Exists(Configuration.SeedDirectory))
+            {
+                Directory.CreateDirectory(Configuration.SeedDirectory);
+            }
+            if (!Directory.Exists(Configuration.DestinationDirectory))
+            {
+                Directory.CreateDirectory(Configuration.DestinationDirectory);
+            }
+            MainWindow = new MainApplicationWindow(this, "BitTorrent Client Application")
             {
                 X = 0,
                 Y = 0,
@@ -49,21 +58,29 @@ namespace ClientUI
             };
             MainStatusBar = new MainStatusBar(this);
             Application.Top.Add(MainWindow, MainStatusBar);
+            MainWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;
+        }
+        /// <summary>
+        /// Startup torrent agent.
+        /// </summary>
+        public void TorrentAgentStartup() {
             TorrentSelector = new Selector();
             TorrentManager = new Manager();
             TorrentDiskIO = new DiskIO(TorrentManager);
             TorrentManager.AddToDeadPeerList("192.168.1.1");
             TorrentAgent = new Agent(TorrentManager, new Assembler());
             TorrentAgent.Startup();
+        }
+        /// <summary>
+        /// Run client.
+        /// </summary>
+        public void Run()
+        {
+            TorrentAgentStartup();
             if (Configuration.SeedingTorrents)
             {
                 Task.Run(() => MainWindow.SeederListWindow.LoadSeedingTorrents(TorrentAgent, TorrentSelector, TorrentDiskIO, Configuration));
             }
-            MainWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;
-        }
-        public void Run()
-        {
-            Application.Init();
             Application.Run();
         }
     }

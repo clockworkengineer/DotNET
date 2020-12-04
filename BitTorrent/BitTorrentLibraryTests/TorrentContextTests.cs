@@ -1,5 +1,5 @@
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
 // Description: XUnit tests for BiTorrent Torrent Context class.
 //

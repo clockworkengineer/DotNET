@@ -1,7 +1,7 @@
 using System.Net.Sockets;
 using System.Xml.Serialization;
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
 // Description: XUnit tests for BiTorrent Tracker class.
 //

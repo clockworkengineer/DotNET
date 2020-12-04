@@ -1,10 +1,12 @@
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
-// Programs: Simple console application to use BitTorrent class library.
+// Programs: A simple console based torrent client.
 //
 // Description: Information download window. This is includes  torrent information 
 // like a list of peers in its swarm, bytes uploaded, bytes downloaded and infohash.
+// Note this is used for the main download torrent and also for any seeding torrent
+// that is selected from the seed list.
 //
 // Copyright 2020.
 //

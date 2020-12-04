@@ -1,9 +1,10 @@
 ﻿//
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
-// Programs: Simple console application to use BitTorrent class library.
+// Programs: A simple console based torrent client.
 //
-// Description: Terminal.Gui intialisation and run framework.
+// Description: Terminal.Gui intialisation and run framework for torrent
+// client application.
 //
 // Copyright 2020.
 //
@@ -17,7 +18,7 @@ namespace ClientUI
         /// </summary>
         static void Main(string[] _)
         {
-            DemoTorrentApplication main = new DemoTorrentApplication();
+            TorrentClient main = new TorrentClient();
             main.Run();
         }
     }

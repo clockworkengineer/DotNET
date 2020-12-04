@@ -1,7 +1,7 @@
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
-// Programs: Simple console application to use BitTorrent class library.
+// Programs: A simple console based torrent client.
 //
 // Description: Class relating to the main torrent download window and the
 // associated resources/commands necessary to download the torrent.
@@ -25,11 +25,11 @@ namespace ClientUI
         public TorrentContext Tc { get; set; }      // Torrent download context
         public Tracker TorrentTracker { get; set; } // Torrent tracker
         /// <summary>
-        /// Unhookup update callback and set tracker and torrent context to null to
-        /// allow more downloads.
+        /// Unhookup update callback and set tracker, torrent context to null to
+        /// allow more downloads plus reset information window.
         /// </summary>
         /// <param name="main"></param>
-        private void RemoveDownloadingTorrentFromScreen(DemoTorrentApplication main)
+        private void RemoveDownloadingTorrentFromScreen(TorrentClient main)
         {
             TorrentTracker.CallBack = null;
             TorrentTracker.CallBackData = null;
@@ -48,7 +48,7 @@ namespace ClientUI
         /// <param name="obj"></param>
         private void UpdateDownloadInformation(Object obj)
         {
-            DemoTorrentApplication main = (DemoTorrentApplication)obj;
+            TorrentClient main = (TorrentClient)obj;
             TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(main.MainWindow.Torrent.Tc);
             List<string> peers = new List<string>();
             foreach (var peer in torrentDetails.peers)
@@ -68,12 +68,12 @@ namespace ClientUI
         /// <summary>
         /// Update torrent download progress bar (his is the torrent context progress callback).
         /// On completion of download copy torrent file to seeding directory and clear the main
-        /// download information screen to allow a noew torrent to be downloaded.
+        /// download information screen to allow a new torrent to be downloaded.
         /// </summary>
         /// <param name="obj"></param>
         private void UpdateDownloadProgress(Object obj)
         {
-            DemoTorrentApplication main = (DemoTorrentApplication)obj;
+            TorrentClient main = (TorrentClient)obj;
             Application.MainLoop.Invoke(() =>
             {
                 main.MainWindow.DownloadProgress.Fraction = (float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload);
@@ -85,7 +85,7 @@ namespace ClientUI
             }
         }
         /// <summary>
-        /// Initialise torrent
+        /// Initialise torrent related data and resources.
         /// </summary>
         /// <param name="torrentFileName"></param>
         public Torrent(string torrentFileName)
@@ -96,7 +96,7 @@ namespace ClientUI
         /// Initiate torrent download.
         /// </summary>
         /// <param name="mainWindow"></param>
-        public void Download(DemoTorrentApplication main)
+        public void Download(TorrentClient main)
         {
             try
             {

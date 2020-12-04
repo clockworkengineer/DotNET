@@ -1,10 +1,10 @@
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
-// Programs: Simple console application to use BitTorrent class library.
+// Programs: A simple console based torrent client.
 //
 // Description: Class containing all application configuration setting data
-// and functionality.
+// and related functionality.
 //
 // Copyright 2020.
 //
@@ -18,7 +18,7 @@ namespace ClientUI
         // Cofig values
         public string SeedDirectory { get; set; } = "";          // Directory containing torrent files that are seeding
         public string DestinationDirectory { get; set; } = "";   // Destination for torrents downloaded
-        public string TorrentFileDirectory { get; set; } = "";   // Default path for torrent field field
+        public string TorrentFileDirectory { get; set; } = "";   // Default path for torrent field
         public bool SeedingMode { get; set; } = true;            // == true dont check torrents disk inage on startup
         public bool SeedingTorrents { get; set; } = true;        // == true load seeding torrent
         /// <summary>

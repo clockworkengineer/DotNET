@@ -1,7 +1,7 @@
 //
-// Author: Robert Tizzard
+// Author: Rob Tizzard
 //
-// Programs: Simple console application to use BitTorrent class library.
+// Programs: A simple console based torrent client.
 //
 // Description: Main status bar data and related methods.
 //
@@ -32,7 +32,7 @@ namespace ClientUI
         /// <param name="obj"></param>
         private void UpdateSeederInformation(Object obj)
         {
-            DemoTorrentApplication main = (DemoTorrentApplication)obj;
+            TorrentClient main = (TorrentClient)obj;
             TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(_seedingInformation);
             List<string> peers = new List<string>();
             foreach (var peer in torrentDetails.peers)
@@ -53,7 +53,7 @@ namespace ClientUI
         /// Start torrent download.
         /// </summary>
         /// <param name="main"></param>
-        private void ActionDownload(DemoTorrentApplication main)
+        private void ActionDownload(TorrentClient main)
         {
             main.MainWindow.Torrent = new Torrent(main.MainWindow.TorrentFileText.Text.ToString());
             Task.Run(() => main.MainWindow.Torrent.Download(main));
@@ -62,7 +62,7 @@ namespace ClientUI
         /// Stop currently downloading torrent.
         /// </summary>
         /// <param name="main"></param>
-        private void ActionShutdown(DemoTorrentApplication main)
+        private void ActionShutdown(TorrentClient main)
         {
             main.TorrentAgent.CloseTorrent(main.MainWindow.Torrent.Tc);
             main.TorrentAgent.RemoveTorrent(main.MainWindow.Torrent.Tc);
@@ -73,7 +73,7 @@ namespace ClientUI
         /// Toggle seeder list and main torrent information window.
         /// </summary>
         /// <param name="main"></param>
-        private void ActionToggleSeeding(DemoTorrentApplication main)
+        private void ActionToggleSeeding(TorrentClient main)
         {
             if (main.MainWindow.DisplayInformationWindow)
             {
@@ -94,7 +94,6 @@ namespace ClientUI
                 main.MainWindow.DisplayInformationWindow = true;
                 main.MainWindow.TorrentFileText.SetFocus();
                 _statusBarItems.Remove(_toggleSeedInformation);
-                Items = _statusBarItems.ToArray();
             }
             Items = _statusBarItems.ToArray();
         }
@@ -102,14 +101,14 @@ namespace ClientUI
         /// Toggle seeding list window and selected seeder information window.
         /// </summary>
         /// <param name="main"></param>
-        private void ActionToggleSeedInformation(DemoTorrentApplication main)
+        private void ActionToggleSeedInformation(TorrentClient main)
         {
             if (main.MainWindow.DisplaySeederInformationWindow)
             {
                 main.MainWindow.Remove(main.MainWindow.SeederListWindow);
                 main.MainWindow.Add(main.MainWindow.SeedingInfoWindow);
                 main.MainWindow.DisplaySeederInformationWindow = false;
-                main.MainWindow.SeedingInfoWindow.SetFocus();
+
                 List<TorrentContext> seeders = new List<TorrentContext>();
                 foreach (var torrent in main.TorrentAgent.TorrentList)
                 {
@@ -125,6 +124,7 @@ namespace ClientUI
                     _seedingInformation.MainTracker.SetSeedingInterval(2 * 1000);
                     _seedingInformation.MainTracker.CallBack = UpdateSeederInformation;
                     _seedingInformation.MainTracker.CallBackData = main;
+                    main.MainWindow.SeedingInfoWindow.SetFocus();
                 }
             }
             else
@@ -147,7 +147,7 @@ namespace ClientUI
         /// Quit application.
         /// </summary>
         /// <param name="main"></param>
-        private void ActionQuit(DemoTorrentApplication main)
+        private void ActionQuit(TorrentClient main)
         {
             main.TorrentAgent.ShutDown();
             Application.Top.Running = false;
@@ -156,7 +156,7 @@ namespace ClientUI
         /// Intialise main application status bar
         /// </summary>
         /// <param name="main"></param>
-        public MainStatusBar(DemoTorrentApplication main)
+        public MainStatusBar(TorrentClient main)
         {
             _statusBarItems = new List<StatusItem>();
             _download = new StatusItem(Key.ControlD, "~^D~ Download", () =>
