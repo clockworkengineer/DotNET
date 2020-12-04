@@ -51,7 +51,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionShutdown(TorrentClient main)
         {
-            main.MainAppicationWindow.CloseDownTorrent(main);
+            main.MainAppicationWindow.CloseDownTorrent();
             main.MainStatusBar.Display(Status.Shutdown);
         }
         /// <summary>
@@ -61,7 +61,7 @@ namespace ClientUI
         private void ActionToggleSeeding(TorrentClient main)
         {
             ToggleSeeding(main.MainAppicationWindow.DisplayInformationWindow);
-            main.MainAppicationWindow.ToggleSeedingList(main);
+            main.MainAppicationWindow.ToggleSeedingList();
         }
         /// <summary>
         /// Toggle seeding list window and selected seeder information window.
@@ -69,7 +69,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionToggleSeedInformation(TorrentClient main)
         {
-            main.MainAppicationWindow.ToggleSeedinginformation(main);
+            main.MainAppicationWindow.ToggleSeedinginformation();
         }
         /// <summary>
         /// Quit application.

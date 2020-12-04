@@ -19,6 +19,7 @@ namespace ClientUI
     /// </summary>
     public class MainWindow : Window
     {
+        private readonly TorrentClient _main;                       // Main torrent client
         private readonly Label torrentFileLabel;                    // Torrent file field label
         private readonly Label _progressBarBeginText;               // Beginning of progress bar '['
         private readonly Label _progressBarEndText;                 // End of progress bar ']'
@@ -64,8 +65,9 @@ namespace ClientUI
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public MainWindow(TorrentClient _, string name) : base(name)
+        public MainWindow(TorrentClient main, string name) : base(name)
         {
+            _main = main;
             List<View> viewables = new List<View>();
             torrentFileLabel = new Label("Torrent File: ")
             {
@@ -134,17 +136,17 @@ namespace ClientUI
         /// <summary>
         /// Close down main torrent
         /// </summary>
-        /// <param name="main"></param>
-        public void CloseDownTorrent(TorrentClient main)
+        /// <param name="_main"></param>
+        public void CloseDownTorrent()
         {
-            main.TorrentAgent.CloseTorrent(Torrent.Tc);
-            main.TorrentAgent.RemoveTorrent(Torrent.Tc);
+            _main.TorrentAgent.CloseTorrent(Torrent.Tc);
+            _main.TorrentAgent.RemoveTorrent(Torrent.Tc);
             InfoWindow.ClearData();
         }
         /// <summary>
         /// Toggle seeding list and torrent information window
         /// </summary>
-        public void ToggleSeedingList(TorrentClient main)
+        public void ToggleSeedingList()
         {
             if (DisplayInformationWindow)
             {
@@ -157,7 +159,7 @@ namespace ClientUI
             {
                 if (!_displaySeederInformationWindow)
                 {
-                    ToggleSeedinginformation(main);
+                    ToggleSeedinginformation();
                 }
                 Remove(SeederListWindow);
                 Add(InfoWindow);
@@ -168,8 +170,8 @@ namespace ClientUI
         /// <summary>
         /// Toggle seeding list and seeder information window
         /// </summary>
-        /// <param name="main"></param>
-        public void ToggleSeedinginformation(TorrentClient main)
+        /// <param name="_main"></param>
+        public void ToggleSeedinginformation()
         {
             if (_displaySeederInformationWindow)
             {
@@ -177,7 +179,7 @@ namespace ClientUI
                 Add(_seedingInfoWindow);
                 _displaySeederInformationWindow = false;
                 List<TorrentContext> seeders = new List<TorrentContext>();
-                foreach (var torrent in main.TorrentAgent.TorrentList)
+                foreach (var torrent in _main.TorrentAgent.TorrentList)
                 {
                     if (torrent.Status == TorrentStatus.Seeding)
                     {
@@ -186,11 +188,11 @@ namespace ClientUI
                 }
                 if (seeders.Count > 0)
                 {
-                    _seedingInformation = main.TorrentAgent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
+                    _seedingInformation = _main.TorrentAgent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
                     _seedingInfoWindow.TrackerText.Text = _seedingInformation.MainTracker.TrackerURL;
                     _seedingInformation.MainTracker.SetSeedingInterval(2 * 1000);
                     _seedingInformation.MainTracker.CallBack = UpdateSeederInformation;
-                    _seedingInformation.MainTracker.CallBackData = main;
+                    _seedingInformation.MainTracker.CallBackData = _main;
                     _seedingInfoWindow.SetFocus();
                 }
             }
