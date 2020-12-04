@@ -1,4 +1,5 @@
-﻿//
+﻿using System;
+//
 // Author: Rob Tizzard
 //
 // Programs: A simple console based torrent client.
@@ -18,8 +19,18 @@ namespace ClientUI
         /// </summary>
         static void Main(string[] _)
         {
-            TorrentClient main = new TorrentClient();
-            main.Run();
+            try
+            {
+                TorrentClient main = new TorrentClient();
+                main.Run();
+            }
+            catch (Exception ex)
+            {
+                Application.MainLoop.Invoke(() =>
+              {
+                  MessageBox.Query("Error", ex.Message, "Ok");
+              });
+            }
         }
     }
 }

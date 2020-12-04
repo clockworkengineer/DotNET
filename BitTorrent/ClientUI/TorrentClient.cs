@@ -34,7 +34,7 @@ namespace ClientUI
         public Config Configuration { get; set; }                // Configuration data
         // 
         /// <summary>
-        /// Build and run application.
+        /// Build application.
         /// </summary>
         public TorrentClient()
         {

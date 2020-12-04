@@ -25,8 +25,9 @@ namespace ClientUI
         public TorrentContext Tc { get; set; }      // Torrent download context
         public Tracker TorrentTracker { get; set; } // Torrent tracker
         /// <summary>
-        /// Unhookup update callback and set tracker, torrent context to null to
-        /// allow more downloads plus reset information window.
+        /// Unhook update callback and set tracker, torrent context to null to
+        /// allow more downloads plus reset information window. The torrent is still
+        /// seeding and is accessible now view the seeder list window.
         /// </summary>
         /// <param name="main"></param>
         private void RemoveDownloadingTorrentFromScreen(TorrentClient main)
@@ -66,7 +67,7 @@ namespace ClientUI
             });
         }
         /// <summary>
-        /// Update torrent download progress bar (his is the torrent context progress callback).
+        /// Update torrent download progress bar (this is the torrent context progress callback).
         /// On completion of download copy torrent file to seeding directory and clear the main
         /// download information screen to allow a new torrent to be downloaded.
         /// </summary>
@@ -80,7 +81,8 @@ namespace ClientUI
             });
             if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
-                File.Copy(main.MainWindow.Torrent.Tc.FileName, main.Configuration.SeedDirectory + Path.GetFileName(main.MainWindow.Torrent.Tc.FileName));
+                File.Copy(main.MainWindow.Torrent.Tc.FileName, main.Configuration.SeedDirectory + 
+                          Path.GetFileName(main.MainWindow.Torrent.Tc.FileName));
                 RemoveDownloadingTorrentFromScreen(main);
             }
         }
