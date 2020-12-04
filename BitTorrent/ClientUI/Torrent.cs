@@ -22,8 +22,8 @@ namespace ClientUI
     public class Torrent
     {
         private readonly string _torrentFileName;   // Torrent filename
+        public Tracker _torrentTracker;             // Torrent tracker
         public TorrentContext Tc { get; set; }      // Torrent download context
-        public Tracker TorrentTracker { get; set; } // Torrent tracker
         /// <summary>
         /// Unhook update callback and set tracker, torrent context to null to
         /// allow more downloads plus reset information window. The torrent is still
@@ -32,9 +32,9 @@ namespace ClientUI
         /// <param name="main"></param>
         private void RemoveDownloadingTorrentFromScreen(TorrentClient main)
         {
-            TorrentTracker.CallBack = null;
-            TorrentTracker.CallBackData = null;
-            TorrentTracker = null;
+            _torrentTracker.CallBack = null;
+            _torrentTracker.CallBackData = null;
+            _torrentTracker = null;
             Tc.CallBack = null;
             Tc.CallBackData = null;
             Tc = null;
@@ -51,20 +51,7 @@ namespace ClientUI
         {
             TorrentClient main = (TorrentClient)obj;
             TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(main.MainAppicationWindow.Torrent.Tc);
-            List<string> peers = new List<string>();
-            foreach (var peer in torrentDetails.peers)
-            {
-                peers.Add(peer.ip + ":" + peer.port.ToString());
-            }
-            Application.MainLoop.Invoke(() =>
-            {
-                main.MainAppicationWindow.InfoWindow.UpdatePeers(peers.ToArray());
-                main.MainAppicationWindow.InfoWindow.UpdateInformation(torrentDetails);
-                if (torrentDetails.trackerStatus == TrackerStatus.Stalled)
-                {
-                    MessageBox.Query("Error", torrentDetails.trackerStatusMessage, "Ok");
-                }
-            });
+            main.MainAppicationWindow.InfoWindow.Update(torrentDetails);
         }
         /// <summary>
         /// Update torrent download progress bar (this is the torrent context progress callback).
@@ -81,7 +68,7 @@ namespace ClientUI
             });
             if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
-                File.Copy(main.MainAppicationWindow.Torrent.Tc.FileName, main.Configuration.SeedDirectory + 
+                File.Copy(main.MainAppicationWindow.Torrent.Tc.FileName, main.Configuration.SeedDirectory +
                           Path.GetFileName(main.MainAppicationWindow.Torrent.Tc.FileName));
                 RemoveDownloadingTorrentFromScreen(main);
             }
@@ -121,15 +108,15 @@ namespace ClientUI
                     CallBack = UpdateDownloadProgress,
                     CallBackData = main
                 };
-                TorrentTracker = new Tracker(Tc)
+                _torrentTracker = new Tracker(Tc)
                 {
                     CallBack = UpdateDownloadInformation,
                     CallBackData = main
                 };
                 // Hookup tracker to agent, add torrent and startup everyhing up
                 main.TorrentAgent.AddTorrent(Tc);
-                main.TorrentAgent.AttachPeerSwarmQueue(TorrentTracker);
-                TorrentTracker.StartAnnouncing();
+                main.TorrentAgent.AttachPeerSwarmQueue(_torrentTracker);
+                _torrentTracker.StartAnnouncing();
                 main.TorrentAgent.StartTorrent(Tc);
                 Application.MainLoop.Invoke(() =>
                 {

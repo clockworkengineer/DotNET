@@ -23,9 +23,9 @@ namespace ClientUI
         private readonly Label torrentFileLabel;                    // Torrent file field label
         private readonly Label _progressBarBeginText;               // Beginning of progress bar '['
         private readonly Label _progressBarEndText;                 // End of progress bar ']'
-        private TorrentContext _seedingInformation;                 // Selected seeder torrent context
+        private TorrentContext _selectedSeederTorrent;              // Selected seeder torrent context
         private bool _displaySeederInformationWindow = true;        // == true seeder information window 
-        public InformationWindow _seedingInfoWindow;                // Seeding torrent information sub-window
+        private readonly InformationWindow _seederInformationWindow;// Seeding torrent information sub-window
         public TextField TorrentFileText { get; set; }              // Text field containing torrent file name
         public ProgressBar DownloadProgress { get; set; }           // Downloading progress bar
         public InformationWindow InfoWindow { get; set; }           // Torrent information sub-window
@@ -42,21 +42,8 @@ namespace ClientUI
         private void UpdateSeederInformation(Object obj)
         {
             TorrentClient main = (TorrentClient)obj;
-            TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(_seedingInformation);
-            List<string> peers = new List<string>();
-            foreach (var peer in torrentDetails.peers)
-            {
-                peers.Add(peer.ip + ":" + peer.port.ToString());
-            }
-            Application.MainLoop.Invoke(() =>
-            {
-                _seedingInfoWindow.UpdatePeers(peers.ToArray());
-                _seedingInfoWindow.UpdateInformation(torrentDetails);
-                if (torrentDetails.trackerStatus == TrackerStatus.Stalled)
-                {
-                    MessageBox.Query("Error", torrentDetails.trackerStatusMessage, "Ok");
-                }
-            });
+            TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(_selectedSeederTorrent);
+            _seederInformationWindow.Update(torrentDetails);
         }
         /// <summary>
         /// Build main application window including the information
@@ -120,7 +107,7 @@ namespace ClientUI
                 Height = Dim.Fill(),
                 CanFocus = false
             };
-            _seedingInfoWindow = new InformationWindow("Seed Info")
+            _seederInformationWindow = new InformationWindow("Seed Info")
             {
                 X = Pos.Left(this),
                 Y = Pos.Bottom(_progressBarBeginText) + 1,
@@ -176,7 +163,7 @@ namespace ClientUI
             if (_displaySeederInformationWindow)
             {
                 Remove(SeederListWindow);
-                Add(_seedingInfoWindow);
+                Add(_seederInformationWindow);
                 _displaySeederInformationWindow = false;
                 List<TorrentContext> seeders = new List<TorrentContext>();
                 foreach (var torrent in _main.TorrentAgent.TorrentList)
@@ -188,24 +175,24 @@ namespace ClientUI
                 }
                 if (seeders.Count > 0)
                 {
-                    _seedingInformation = _main.TorrentAgent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
-                    _seedingInfoWindow.TrackerText.Text = _seedingInformation.MainTracker.TrackerURL;
-                    _seedingInformation.MainTracker.SetSeedingInterval(2 * 1000);
-                    _seedingInformation.MainTracker.CallBack = UpdateSeederInformation;
-                    _seedingInformation.MainTracker.CallBackData = _main;
-                    _seedingInfoWindow.SetFocus();
+                    _selectedSeederTorrent = _main.TorrentAgent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
+                    _seederInformationWindow.TrackerText.Text = _selectedSeederTorrent.MainTracker.TrackerURL;
+                    _selectedSeederTorrent.MainTracker.SetSeedingInterval(2 * 1000);
+                    _selectedSeederTorrent.MainTracker.CallBack = UpdateSeederInformation;
+                    _selectedSeederTorrent.MainTracker.CallBackData = _main;
+                    _seederInformationWindow.SetFocus();
                 }
             }
             else
             {
-                if (_seedingInformation != null)
+                if (_selectedSeederTorrent != null)
                 {
-                    _seedingInfoWindow.ClearData();
-                    _seedingInformation.MainTracker.SetSeedingInterval(60000 * 30);
-                    _seedingInformation.MainTracker.CallBack = null;
-                    _seedingInformation.MainTracker.CallBack = null;
-                    Remove(_seedingInfoWindow);
-                    _seedingInformation = null;
+                    _seederInformationWindow.ClearData();
+                    _selectedSeederTorrent.MainTracker.SetSeedingInterval(60000 * 30);
+                    _selectedSeederTorrent.MainTracker.CallBack = null;
+                    _selectedSeederTorrent.MainTracker.CallBack = null;
+                    Remove(_seederInformationWindow);
+                    _selectedSeederTorrent = null;
                 }
                 Add(SeederListWindow);
                 _displaySeederInformationWindow = true;

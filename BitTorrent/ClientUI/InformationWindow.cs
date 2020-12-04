@@ -65,6 +65,30 @@ namespace ClientUI
             return hex.ToString().ToLower();
         }
         /// <summary>
+        /// Update torrent information window.
+        /// </summary>
+        /// <param name="torrentDetails"></param>
+        private void UpdateInformation(TorrentDetails torrentDetails)
+        {
+            _infoTextFields[0].Text = InfoHashToString(torrentDetails.infoHash);
+            _infoTextFields[1].Text = torrentDetails.downloadedBytes.ToString();
+            _infoTextFields[2].Text = torrentDetails.uploadedBytes.ToString();
+            _infoTextFields[3].Text = torrentDetails.missingPiecesCount.ToString();
+            _infoTextFields[4].Text = torrentDetails.status.ToString();
+            _infoTextFields[5].Text = torrentDetails.swarmSize.ToString();
+            _infoTextFields[6].Text = torrentDetails.deadPeers.ToString();
+            _infoTextFields[7].Text = torrentDetails.trackerStatus.ToString();
+            _infoTextFields[8].Text = DownloadRate(torrentDetails.bytesPerSecond);
+        }
+        /// <summary>
+        /// Update peers in peer swarm listview.
+        /// </summary>
+        /// <param name="peersList"></param>
+        private void UpdatePeers(string[] peersList)
+        {
+            _peersListView.SetSource(peersList);
+        }
+        /// <summary>
         /// Build information window.
         /// </summary>
         /// <param name="name"></param>
@@ -130,22 +154,6 @@ namespace ClientUI
             }
         }
         /// <summary>
-        /// Update torrent information window.
-        /// </summary>
-        /// <param name="torrentDetails"></param>
-        public void UpdateInformation(TorrentDetails torrentDetails)
-        {
-            _infoTextFields[0].Text = InfoHashToString(torrentDetails.infoHash);
-            _infoTextFields[1].Text = torrentDetails.downloadedBytes.ToString();
-            _infoTextFields[2].Text = torrentDetails.uploadedBytes.ToString();
-            _infoTextFields[3].Text = torrentDetails.missingPiecesCount.ToString();
-            _infoTextFields[4].Text = torrentDetails.status.ToString();
-            _infoTextFields[5].Text = torrentDetails.swarmSize.ToString();
-            _infoTextFields[6].Text = torrentDetails.deadPeers.ToString();
-            _infoTextFields[7].Text = torrentDetails.trackerStatus.ToString();
-            _infoTextFields[8].Text = DownloadRate(torrentDetails.bytesPerSecond);
-        }
-        /// <summary>
         /// Clear information window.
         /// </summary>
         public void ClearData()
@@ -165,12 +173,25 @@ namespace ClientUI
                               });
         }
         /// <summary>
-        /// Update peers in peer swarm listview.
+        /// Update whole information window
         /// </summary>
-        /// <param name="peersList"></param>
-        public void UpdatePeers(string[] peersList)
+        /// <param name="torrentDetails"></param>
+        public void Update(TorrentDetails torrentDetails)
         {
-            _peersListView.SetSource(peersList);
+            List<string> peers = new List<string>();
+            foreach (var peer in torrentDetails.peers)
+            {
+                peers.Add(peer.ip + ":" + peer.port.ToString());
+            }
+            Application.MainLoop.Invoke(() =>
+            {
+                UpdatePeers(peers.ToArray());
+                UpdateInformation(torrentDetails);
+                if (torrentDetails.trackerStatus == TrackerStatus.Stalled)
+                {
+                    MessageBox.Query("Error", torrentDetails.trackerStatusMessage, "Ok");
+                }
+            });
         }
     }
 }
