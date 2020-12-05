@@ -261,7 +261,7 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Shutdown(close) any agent running resources used by the agent.
         /// </summary>
-        public void ShutDown()
+        public void Shutdown()
         {
             try
             {

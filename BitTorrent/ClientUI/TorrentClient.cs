@@ -25,8 +25,8 @@ namespace ClientUI
     public class TorrentClient
     {
         public MainWindow ClientWindow { get; set; }     // Main application window 
-        public MainStatusBar MainStatusBar { get; set; }     // Main status bar
-        public Config Configuration { get; set; }            // Configuration data
+        public MainStatusBar MainStatusBar { get; set; } // Main status bar
+        public Config Configuration { get; set; }        // Appication configuration data
         // 
         /// <summary>
         /// Build application.
@@ -64,8 +64,8 @@ namespace ClientUI
             ClientWindow.InfoWindow.ClearData();
             MainStatusBar.Display(Status.Shutdown);
             ClientWindow.UpdatProgressBar(0);
-            File.Copy(ClientWindow.MainTorrent.Tc.FileName, Configuration.SeedDirectory +
-                      Path.GetFileName(ClientWindow.MainTorrent.Tc.FileName));
+            File.Copy(ClientWindow.MainTorrent.GetDownloadTorrent(), Configuration.SeedDirectory +
+                      Path.GetFileName(ClientWindow.MainTorrent.GetDownloadTorrent()));
         }
         /// <summary>
         /// Run client.

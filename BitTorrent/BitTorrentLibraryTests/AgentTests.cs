@@ -46,7 +46,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            agent.ShutDown();
+            agent.Shutdown();
             Assert.False(agent.Running);
         }
         [Fact]
@@ -63,8 +63,8 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            agent.ShutDown();
-            BitTorrentException error = Assert.Throws<BitTorrentException>(() => { agent.ShutDown(); });
+            agent.Shutdown();
+            BitTorrentException error = Assert.Throws<BitTorrentException>(() => { agent.Shutdown(); });
             Assert.Equal("BitTorrent Error: Failed to shutdown agent.Agent already shutdown.", error.Message);
         }
         [Fact]

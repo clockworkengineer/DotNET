@@ -51,7 +51,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionShutdown(TorrentClient main)
         {
-            main.ClientWindow.CloseDownTorrent();
+            main.ClientWindow.ClosedownTorrent();
             main.MainStatusBar.Display(Status.Shutdown);
         }
         /// <summary>
@@ -77,7 +77,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionQuit(TorrentClient main)
         {
-            main.ClientWindow.MainTorrent.MainAgent.ShutDown();
+            main.ClientWindow.MainTorrent.Shutdown();
             Application.Top.Running = false;
         }
         /// <summary>

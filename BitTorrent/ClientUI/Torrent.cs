@@ -22,13 +22,14 @@ namespace ClientUI
     /// </summary>
     public class Torrent
     {
-        private string _fileName;                   // Torrent filename
+        private string _fileName;                   // Currently downloading torrent filename
         private Tracker _tracker;                   // Torrent tracker
-        private readonly Manager _manager;          // Manager for all torrents
-        public readonly Selector _selector;         // Selector for all torrents
-        public readonly DiskIO _diskIO;             // DiskIO for all torrents
-        public Agent MainAgent { get; set; }        // Agent for handling all torrents
-        public TorrentContext Tc { get; set; }      // Torrent download context
+        private readonly Manager _manager;          // Torrent manager
+        private readonly Selector _selector;        // Torrent selector
+        private readonly DiskIO _diskIO;            // Torrent diskIO
+        private readonly Agent _agent;              // Torrent agent
+        private TorrentContext _tc;                 // Currently downloading torrent context
+        public ICollection<TorrentContext> TorrentList => _agent.TorrentList;   // List of all managed torrents
         /// <summary>
         /// Update download information. This is used as the tracker callback to be invoked
         /// when the next announce response is recieved back for the torrent being downloaded.
@@ -37,7 +38,7 @@ namespace ClientUI
         private void UpdateDownloadInformation(Object obj)
         {
             TorrentClient main = (TorrentClient)obj;
-            TorrentDetails torrentDetails = MainAgent.GetTorrentDetails(Tc);
+            TorrentDetails torrentDetails = _agent.GetTorrentDetails(_tc);
             main.ClientWindow.InfoWindow.Update(torrentDetails);
         }
         /// <summary>
@@ -51,16 +52,16 @@ namespace ClientUI
             TorrentClient main = (TorrentClient)obj;
             Application.MainLoop.Invoke(() =>
             {
-                main.ClientWindow.UpdatProgressBar((float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload));
+                main.ClientWindow.UpdatProgressBar((float)((double)_tc.TotalBytesDownloaded / (double)_tc.TotalBytesToDownload));
             });
-            if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
+            if (_tc.TotalBytesToDownload - _tc.TotalBytesDownloaded == 0)
             {
                 _tracker.CallBack = null;
                 _tracker.CallBackData = null;
                 _tracker = null;
-                Tc.CallBack = null;
-                Tc.CallBackData = null;
-                Tc = null;
+                _tc.CallBack = null;
+                _tc.CallBackData = null;
+                _tc = null;
                 main.ResetWindowAndCopySeedingFile();
             }
         }
@@ -74,8 +75,8 @@ namespace ClientUI
             _manager = new Manager();
             _diskIO = new DiskIO(_manager);
             _manager.AddToDeadPeerList("192.168.1.1");
-            MainAgent = new Agent(_manager, new Assembler());
-            MainAgent.Startup();
+            _agent = new Agent(_manager, new Assembler());
+            _agent.Startup();
         }
         /// <summary>
         /// Initiate torrent download.
@@ -99,21 +100,21 @@ namespace ClientUI
                     main.ClientWindow.InfoWindow.SetTracker(torrentFile.GetTracker());
                 });
                 // Create torrent context and tracker
-                Tc = new TorrentContext(torrentFile, _selector, _diskIO, main.Configuration.DestinationDirectory)
+                _tc = new TorrentContext(torrentFile, _selector, _diskIO, main.Configuration.DestinationDirectory)
                 {
                     CallBack = UpdateDownloadProgress,
                     CallBackData = main
                 };
-                _tracker = new Tracker(Tc)
+                _tracker = new Tracker(_tc)
                 {
                     CallBack = UpdateDownloadInformation,
                     CallBackData = main
                 };
                 // Hookup tracker to agent, add torrent and startup everyhing up
-                MainAgent.AddTorrent(Tc);
-                MainAgent.AttachPeerSwarmQueue(_tracker);
+                _agent.AddTorrent(_tc);
+                _agent.AttachPeerSwarmQueue(_tracker);
                 _tracker.StartAnnouncing();
-                MainAgent.StartTorrent(Tc);
+                _agent.StartTorrent(_tc);
                 Application.MainLoop.Invoke(() =>
                 {
                     main.MainStatusBar.Display(Status.Downloading);
@@ -129,7 +130,7 @@ namespace ClientUI
             }
         }
         /// <summary>
-        /// 
+        /// Set download torrent file name
         /// </summary>
         /// <param name="fileName"></param>
         public void SetDownloadTorrent(string fileName)
@@ -137,18 +138,25 @@ namespace ClientUI
             _fileName = fileName;
         }
         /// <summary>
-        /// 
+        /// Get download torrent file name
+        /// </summary>
+        /// <returns></returns>
+        public string GetDownloadTorrent() {
+            return _fileName;
+        }
+        /// <summary>
+        /// Get details of all currently seeding torrents
         /// </summary>
         /// <returns></returns>
         public List<TorrentDetails> GetSeedingTorrentDetails()
         {
-            return (from torrent in MainAgent.TorrentList
-                    let torrentDetails = MainAgent.GetTorrentDetails(torrent)
+            return (from torrent in _agent.TorrentList
+                    let torrentDetails = _agent.GetTorrentDetails(torrent)
                     where torrentDetails.status == TorrentStatus.Seeding
                     select torrentDetails).ToList();
         }
         /// <summary>
-        /// 
+        /// Add seeding torrent to agent
         /// </summary>
         /// <param name="fileName"></param>
         /// <param name="config"></param>
@@ -161,19 +169,42 @@ namespace ClientUI
                 seederFile.Parse();
                 tc = new TorrentContext(seederFile, _selector, _diskIO, config.DestinationDirectory, config.SeedingMode);
                 Tracker tracker = new Tracker(tc);
-                MainAgent.AddTorrent(tc);
-                MainAgent.AttachPeerSwarmQueue(tracker);
+                _agent.AddTorrent(tc);
+                _agent.AttachPeerSwarmQueue(tracker);
                 tracker.StartAnnouncing();
-                MainAgent.StartTorrent(tc);
+                _agent.StartTorrent(tc);
             }
             catch (Exception)
             {
                 if (tc != null)
                 {
-                    MainAgent.CloseTorrent(tc);
-                    MainAgent.RemoveTorrent(tc);
+                    _agent.CloseTorrent(tc);
+                    _agent.RemoveTorrent(tc);
                 }
             }
+        }
+        /// <summary>
+        /// Shutdown torrent agent
+        /// </summary>
+        public void Shutdown()
+        {
+            _agent.Shutdown();
+        }
+        /// <summary>
+        /// Close and remove currently downloading torrent
+        /// </summary>
+        public void CloseDownloadingTorrent()
+        {
+            _agent.CloseTorrent(_tc);
+            _agent.RemoveTorrent(_tc);
+        }
+        /// <summary>
+        /// Get a torrents detaisl from its context
+        /// </summary>
+        /// <param name="tc"></param>
+        /// <returns></returns>
+        public TorrentDetails GetTorrentDetails(TorrentContext tc) {
+            return _agent.GetTorrentDetails(tc);
         }
     }
 }

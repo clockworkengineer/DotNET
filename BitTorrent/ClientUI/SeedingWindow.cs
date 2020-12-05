@@ -41,10 +41,10 @@ namespace ClientUI
         private bool UpdateSeederList(MainLoop main)
         {
             List<TorrentDetails> seeders = _torrent.GetSeedingTorrentDetails();
-            List<string> seederLines  = (from seeder in seeders
-                                         select BuildSeederDisplayLine(seeder)).ToList();
+            List<string> seederLines = (from seeder in seeders
+                                        select BuildSeederDisplayLine(seeder)).ToList();
             if (seederLines.Count > 0)
-            { 
+            {
                 var item = SeederListView.SelectedItem;
                 SeederListView.SetSource(seederLines.ToArray());
                 SeederListView.SelectedItem = item;
@@ -75,11 +75,11 @@ namespace ClientUI
         public void LoadSeedingTorrents(TorrentClient main)
         {
             _torrent = main.ClientWindow.MainTorrent;
-            Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
             foreach (var file in Directory.GetFiles(main.Configuration.SeedDirectory, "*.torrent"))
             {
                 main.ClientWindow.MainTorrent.AddSeedingTorrent(file, main.Configuration);
             }
+            Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
         }
     }
 }

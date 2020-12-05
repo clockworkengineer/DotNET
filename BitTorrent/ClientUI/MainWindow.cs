@@ -39,8 +39,8 @@ namespace ClientUI
         /// <param name="obj"></param>
         private void UpdateSeederInformation(Object obj)
         {
-            Agent agent = (Agent)obj;
-            TorrentDetails torrentDetails = agent.GetTorrentDetails(_selectedSeederTorrent);
+            Torrent torrent = (Torrent)obj;
+            TorrentDetails torrentDetails = torrent.GetTorrentDetails(_selectedSeederTorrent);
             _seederInformationWindow.Update(torrentDetails);
         }
         /// <summary>
@@ -122,10 +122,9 @@ namespace ClientUI
         /// Close down main torrent
         /// </summary>
         /// <param name="_main"></param>
-        public void CloseDownTorrent()
+        public void ClosedownTorrent()
         {
-            MainTorrent.MainAgent.CloseTorrent(MainTorrent.Tc);
-            MainTorrent.MainAgent.RemoveTorrent(MainTorrent.Tc);
+            MainTorrent.CloseDownloadingTorrent();
             InfoWindow.ClearData();
         }
         /// <summary>
@@ -164,7 +163,7 @@ namespace ClientUI
                 Add(_seederInformationWindow);
                 _displaySeederInformationWindow = false;
                 List<TorrentContext> seeders = new List<TorrentContext>();
-                foreach (var torrent in MainTorrent.MainAgent.TorrentList)
+                foreach (var torrent in MainTorrent.TorrentList)
                 {
                     if (torrent.Status == TorrentStatus.Seeding)
                     {
@@ -173,11 +172,11 @@ namespace ClientUI
                 }
                 if (seeders.Count > 0)
                 {
-                    _selectedSeederTorrent = MainTorrent.MainAgent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
+                    _selectedSeederTorrent = MainTorrent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
                     _seederInformationWindow.SetTracker(_selectedSeederTorrent.MainTracker.TrackerURL);
                     _selectedSeederTorrent.MainTracker.SetSeedingInterval(2 * 1000);
                     _selectedSeederTorrent.MainTracker.CallBack = UpdateSeederInformation;
-                    _selectedSeederTorrent.MainTracker.CallBackData = MainTorrent.MainAgent;
+                    _selectedSeederTorrent.MainTracker.CallBackData = MainTorrent;
                     _seederInformationWindow.SetFocus();
                 }
             }
