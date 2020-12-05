@@ -44,7 +44,7 @@ namespace ClientUI
             {
                 Directory.CreateDirectory(Configuration.DestinationDirectory);
             }
-            ClientWindow = new MainWindow(this, "BitTorrent Client Application")
+            ClientWindow = new MainWindow("BitTorrent Client Application")
             {
                 X = 0,
                 Y = 0,
@@ -64,8 +64,8 @@ namespace ClientUI
             ClientWindow.InfoWindow.ClearData();
             MainStatusBar.Display(Status.Shutdown);
             ClientWindow.UpdatProgressBar(0);
-            File.Copy(ClientWindow.MainTorrent.GetDownloadTorrent(), Configuration.SeedDirectory +
-                      Path.GetFileName(ClientWindow.MainTorrent.GetDownloadTorrent()));
+            File.Copy(ClientWindow.TorrentHandler.GetDownloadTorrent(), Configuration.SeedDirectory +
+                      Path.GetFileName(ClientWindow.TorrentHandler.GetDownloadTorrent()));
         }
         /// <summary>
         /// Run client.

@@ -9,8 +9,6 @@
 // Copyright 2020.
 //
 using System;
-using System.IO;
-using System.Text;
 using System.Collections.Generic;
 using BitTorrentLibrary;
 using Terminal.Gui;
@@ -158,28 +156,28 @@ namespace ClientUI
         /// <summary>
         /// Add seeding torrent to agent
         /// </summary>
-        /// <param name="fileName"></param>
+        /// <param name="seederFileName"></param>
         /// <param name="config"></param>
-        public void AddSeedingTorrent(string fileName, Config config)
+        public void AddSeedingTorrent(string seederFileName, Config config)
         {
-            TorrentContext tc = null;
+            TorrentContext seeder = null;
             try
             {
-                MetaInfoFile seederFile = new MetaInfoFile(fileName);
+                MetaInfoFile seederFile = new MetaInfoFile(seederFileName);
                 seederFile.Parse();
-                tc = new TorrentContext(seederFile, _selector, _diskIO, config.DestinationDirectory, config.SeedingMode);
-                Tracker tracker = new Tracker(tc);
-                _agent.AddTorrent(tc);
-                _agent.AttachPeerSwarmQueue(tracker);
-                tracker.StartAnnouncing();
-                _agent.StartTorrent(tc);
+                seeder = new TorrentContext(seederFile, _selector, _diskIO, config.DestinationDirectory, config.SeedingMode);
+                Tracker seederTracker = new Tracker(seeder);
+                _agent.AddTorrent(seeder);
+                _agent.AttachPeerSwarmQueue(seederTracker);
+                seederTracker.StartAnnouncing();
+                _agent.StartTorrent(seeder);
             }
             catch (Exception)
             {
-                if (tc != null)
+                if (seeder != null)
                 {
-                    _agent.CloseTorrent(tc);
-                    _agent.RemoveTorrent(tc);
+                    _agent.CloseTorrent(seeder);
+                    _agent.RemoveTorrent(seeder);
                 }
             }
         }
@@ -199,7 +197,7 @@ namespace ClientUI
             _agent.RemoveTorrent(_tc);
         }
         /// <summary>
-        /// Get a torrents detaisl from its context
+        /// Get a torrents details from its context
         /// </summary>
         /// <param name="tc"></param>
         /// <returns></returns>

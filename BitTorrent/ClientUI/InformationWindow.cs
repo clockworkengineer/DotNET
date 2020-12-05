@@ -25,7 +25,7 @@ namespace ClientUI
         private readonly ListView _peersListView;     // List view holding downloaded peer swarm
         private readonly Window _peersWindow;         // Peer swarm list sub-window
         private readonly TextField[] _infoTextFields; // Torrent information window text fields
-        private  readonly TextField _trackerURL;       // Torrent tracker text field
+        private  readonly TextField _trackerURL;      // Torrent tracker text field
         /// <summary>
         /// Create download rate display string
         /// </summary>

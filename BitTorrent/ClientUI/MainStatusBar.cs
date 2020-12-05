@@ -42,8 +42,8 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionDownload(TorrentClient main)
         {
-            main.ClientWindow.MainTorrent.SetDownloadTorrent(main.ClientWindow.TorrentFileText.Text.ToString());
-            Task.Run(() => main.ClientWindow.MainTorrent.Download(main));
+            main.ClientWindow.TorrentHandler.SetDownloadTorrent(main.ClientWindow.TorrentFileText.Text.ToString());
+            Task.Run(() => main.ClientWindow.TorrentHandler.Download(main));
         }
         /// <summary>
         /// Stop currently downloading torrent.
@@ -77,7 +77,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionQuit(TorrentClient main)
         {
-            main.ClientWindow.MainTorrent.Shutdown();
+            main.ClientWindow.TorrentHandler.Shutdown();
             Application.Top.Running = false;
         }
         /// <summary>
