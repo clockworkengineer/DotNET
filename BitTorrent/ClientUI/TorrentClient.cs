@@ -32,6 +32,18 @@ namespace ClientUI
         public Agent TorrentAgent { get; set; }                  // Agent for handling all torrents
         public MainStatusBar MainStatusBar { get; set; }         // Main status bar
         public Config Configuration { get; set; }                // Configuration data
+        /// <summary>
+        /// Startup torrent agent.
+        /// </summary>
+        private void TorrentAgentStartup()
+        {
+            TorrentSelector = new Selector();
+            TorrentManager = new Manager();
+            TorrentDiskIO = new DiskIO(TorrentManager);
+            TorrentManager.AddToDeadPeerList("192.168.1.1");
+            TorrentAgent = new Agent(TorrentManager, new Assembler());
+            TorrentAgent.Startup();
+        }
         // 
         /// <summary>
         /// Build application.
@@ -61,15 +73,16 @@ namespace ClientUI
             MainAppicationWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;
         }
         /// <summary>
-        /// Startup torrent agent.
+        /// Reset main window for when downlaod compete and copy torrent file to seeding directory
+        /// so that it starts seeding when the client next starts up.
         /// </summary>
-        public void TorrentAgentStartup() {
-            TorrentSelector = new Selector();
-            TorrentManager = new Manager();
-            TorrentDiskIO = new DiskIO(TorrentManager);
-            TorrentManager.AddToDeadPeerList("192.168.1.1");
-            TorrentAgent = new Agent(TorrentManager, new Assembler());
-            TorrentAgent.Startup();
+        public void ResetWindowAndCopySeedingFile()
+        {
+            MainAppicationWindow.InfoWindow.ClearData();
+            MainStatusBar.Display(Status.Shutdown);
+            MainAppicationWindow.UpdateDownloadProgress(0);
+            File.Copy(MainAppicationWindow.Torrent.Tc.FileName, Configuration.SeedDirectory +
+                      Path.GetFileName(MainAppicationWindow.Torrent.Tc.FileName));
         }
         /// <summary>
         /// Run client.

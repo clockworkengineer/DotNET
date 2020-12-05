@@ -22,26 +22,8 @@ namespace ClientUI
     public class Torrent
     {
         private readonly string _torrentFileName;   // Torrent filename
-        public Tracker _torrentTracker;             // Torrent tracker
+        private Tracker _torrentTracker;             // Torrent tracker
         public TorrentContext Tc { get; set; }      // Torrent download context
-        /// <summary>
-        /// Unhook update callback and set tracker, torrent context to null to
-        /// allow more downloads plus reset information window. The torrent is still
-        /// seeding and is accessible now view the seeder list window.
-        /// </summary>
-        /// <param name="main"></param>
-        private void RemoveDownloadingTorrentFromScreen(TorrentClient main)
-        {
-            _torrentTracker.CallBack = null;
-            _torrentTracker.CallBackData = null;
-            _torrentTracker = null;
-            Tc.CallBack = null;
-            Tc.CallBackData = null;
-            Tc = null;
-            main.MainAppicationWindow.InfoWindow.ClearData();
-            main.MainStatusBar.Display(Status.Shutdown);
-            main.MainAppicationWindow.DownloadProgress.Fraction = 0;
-        }
         /// <summary>
         /// Update download information. This is used as the tracker callback to be invoked
         /// when the next announce response is recieved back for the torrent being downloaded.
@@ -64,13 +46,17 @@ namespace ClientUI
             TorrentClient main = (TorrentClient)obj;
             Application.MainLoop.Invoke(() =>
             {
-                main.MainAppicationWindow.DownloadProgress.Fraction = (float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload);
+                main.MainAppicationWindow.UpdateDownloadProgress((float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload));
             });
             if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
-                File.Copy(main.MainAppicationWindow.Torrent.Tc.FileName, main.Configuration.SeedDirectory +
-                          Path.GetFileName(main.MainAppicationWindow.Torrent.Tc.FileName));
-                RemoveDownloadingTorrentFromScreen(main);
+                _torrentTracker.CallBack = null;
+                _torrentTracker.CallBackData = null;
+                _torrentTracker = null;
+                Tc.CallBack = null;
+                Tc.CallBackData = null;
+                Tc = null;
+                main.ResetWindowAndCopySeedingFile();
             }
         }
         /// <summary>
@@ -99,8 +85,8 @@ namespace ClientUI
                 torrentFile.Parse();
                 Application.MainLoop.Invoke(() =>
                 {
-                    main.MainAppicationWindow.DownloadProgress.Fraction = 0;
-                    main.MainAppicationWindow.InfoWindow.TrackerText.Text = torrentFile.GetTracker();
+                    main.MainAppicationWindow.UpdateDownloadProgress(0);
+                    main.MainAppicationWindow.InfoWindow.SetTracker(torrentFile.GetTracker());
                 });
                 // Create torrent context and tracker
                 Tc = new TorrentContext(torrentFile, main.TorrentSelector, main.TorrentDiskIO, main.Configuration.DestinationDirectory)

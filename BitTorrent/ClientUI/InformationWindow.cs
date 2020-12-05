@@ -25,7 +25,7 @@ namespace ClientUI
         private readonly ListView _peersListView;     // List view holding downloaded peer swarm
         private readonly Window _peersWindow;         // Peer swarm list sub-window
         private readonly TextField[] _infoTextFields; // Torrent information window text fields
-        public TextField TrackerText { get; }         // Torrent tracker text field
+        private  readonly TextField _trackerURL;       // Torrent tracker text field
         /// <summary>
         /// Create download rate display string
         /// </summary>
@@ -102,14 +102,14 @@ namespace ClientUI
                 Y = 1
             };
             viewables.Add(_trackerLabel);
-            TrackerText = new TextField()
+            _trackerURL = new TextField()
             {
                 X = Pos.Right(_trackerLabel),
                 Y = Pos.Top(_trackerLabel),
                 Width = 70,
                 CanFocus = false
             };
-            viewables.Add(TrackerText);
+            viewables.Add(_trackerURL);
             _peersWindow = new Window("Peers")
             {
                 X = Pos.Left(_trackerLabel),
@@ -192,6 +192,13 @@ namespace ClientUI
                     MessageBox.Query("Error", torrentDetails.trackerStatusMessage, "Ok");
                 }
             });
+        }
+        /// <summary>
+        /// Set tracker URL field
+        /// </summary>
+        /// <param name="trackerURL"></param>
+        public void SetTracker(string trackerURL) {
+            _trackerURL.Text = trackerURL;
         }
     }
 }

@@ -26,13 +26,12 @@ namespace ClientUI
         private TorrentContext _selectedSeederTorrent;              // Selected seeder torrent context
         private bool _displaySeederInformationWindow = true;        // == true seeder information window 
         private readonly InformationWindow _seederInformationWindow;// Seeding torrent information sub-window
+        private readonly ProgressBar _downloadProgress;             // Downloading progress bar
         public TextField TorrentFileText { get; set; }              // Text field containing torrent file name
-        public ProgressBar DownloadProgress { get; set; }           // Downloading progress bar
         public InformationWindow InfoWindow { get; set; }           // Torrent information sub-window
         public SeedingWindow SeederListWindow { get; set; }         // Seeding torrents sub-window (overlays information)
         public Torrent Torrent { get; set; }                        // Currently active downloading torrent
         public bool DisplayInformationWindow { get; set; } = true;  // == true information window displayed
-
         /// <summary>
         /// Update seeder information. This is used as the tracker callback to be invoked
         /// when the next announce response is recieved back for the seeder torrent context
@@ -76,17 +75,17 @@ namespace ClientUI
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
             viewables.Add(_progressBarBeginText);
-            DownloadProgress = new ProgressBar()
+            _downloadProgress = new ProgressBar()
             {
                 X = Pos.Right(_progressBarBeginText),
                 Y = Pos.Bottom(torrentFileLabel) + 1,
                 Width = 60,
                 Height = 1
             };
-            viewables.Add(DownloadProgress);
+            viewables.Add(_downloadProgress);
             _progressBarEndText = new Label("]")
             {
-                X = Pos.Right(DownloadProgress) - 1,
+                X = Pos.Right(_downloadProgress) - 1,
                 Y = Pos.Bottom(torrentFileLabel) + 1,
             };
             viewables.Add(_progressBarEndText);
@@ -176,7 +175,7 @@ namespace ClientUI
                 if (seeders.Count > 0)
                 {
                     _selectedSeederTorrent = _main.TorrentAgent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
-                    _seederInformationWindow.TrackerText.Text = _selectedSeederTorrent.MainTracker.TrackerURL;
+                    _seederInformationWindow.SetTracker(_selectedSeederTorrent.MainTracker.TrackerURL);
                     _selectedSeederTorrent.MainTracker.SetSeedingInterval(2 * 1000);
                     _selectedSeederTorrent.MainTracker.CallBack = UpdateSeederInformation;
                     _selectedSeederTorrent.MainTracker.CallBackData = _main;
@@ -198,6 +197,14 @@ namespace ClientUI
                 _displaySeederInformationWindow = true;
                 SeederListWindow.SetFocus();
             }
+        }
+        /// <summary>
+        /// Update download progress bar
+        /// </summary>
+        /// <param name="progress"></param>
+        public void UpdateDownloadProgress(float progress)
+        {
+            _downloadProgress.Fraction = progress;
         }
     }
 }
