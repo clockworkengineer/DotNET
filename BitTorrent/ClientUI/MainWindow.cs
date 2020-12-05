@@ -202,7 +202,7 @@ namespace ClientUI
         /// Update download progress bar
         /// </summary>
         /// <param name="progress"></param>
-        public void UpdateDownloadProgress(float progress)
+        public void UpdatProgressBar(float progress)
         {
             _downloadProgress.Fraction = progress;
         }

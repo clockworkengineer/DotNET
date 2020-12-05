@@ -80,7 +80,7 @@ namespace ClientUI
         {
             MainAppicationWindow.InfoWindow.ClearData();
             MainStatusBar.Display(Status.Shutdown);
-            MainAppicationWindow.UpdateDownloadProgress(0);
+            MainAppicationWindow.UpdatProgressBar(0);
             File.Copy(MainAppicationWindow.Torrent.Tc.FileName, Configuration.SeedDirectory +
                       Path.GetFileName(MainAppicationWindow.Torrent.Tc.FileName));
         }

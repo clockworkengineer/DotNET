@@ -46,7 +46,7 @@ namespace ClientUI
             TorrentClient main = (TorrentClient)obj;
             Application.MainLoop.Invoke(() =>
             {
-                main.MainAppicationWindow.UpdateDownloadProgress((float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload));
+                main.MainAppicationWindow.UpdatProgressBar((float)((double)Tc.TotalBytesDownloaded / (double)Tc.TotalBytesToDownload));
             });
             if (Tc.TotalBytesToDownload - Tc.TotalBytesDownloaded == 0)
             {
@@ -85,7 +85,7 @@ namespace ClientUI
                 torrentFile.Parse();
                 Application.MainLoop.Invoke(() =>
                 {
-                    main.MainAppicationWindow.UpdateDownloadProgress(0);
+                    main.MainAppicationWindow.UpdatProgressBar(0);
                     main.MainAppicationWindow.InfoWindow.SetTracker(torrentFile.GetTracker());
                 });
                 // Create torrent context and tracker
