@@ -19,7 +19,6 @@ namespace ClientUI
     /// </summary>
     public class MainWindow : Window
     {
-        private readonly TorrentClient _main;                       // Main torrent client
         private readonly Label torrentFileLabel;                    // Torrent file field label
         private readonly Label _progressBarBeginText;               // Beginning of progress bar '['
         private readonly Label _progressBarEndText;                 // End of progress bar ']'
@@ -30,7 +29,7 @@ namespace ClientUI
         public TextField TorrentFileText { get; set; }              // Text field containing torrent file name
         public InformationWindow InfoWindow { get; set; }           // Torrent information sub-window
         public SeedingWindow SeederListWindow { get; set; }         // Seeding torrents sub-window (overlays information)
-        public Torrent Torrent { get; set; }                        // Currently active downloading torrent
+        public Torrent MainTorrent { get; set; }                    // Currently active downloading torrent + seeders
         public bool DisplayInformationWindow { get; set; } = true;  // == true information window displayed
         /// <summary>
         /// Update seeder information. This is used as the tracker callback to be invoked
@@ -40,8 +39,8 @@ namespace ClientUI
         /// <param name="obj"></param>
         private void UpdateSeederInformation(Object obj)
         {
-            TorrentClient main = (TorrentClient)obj;
-            TorrentDetails torrentDetails = main.TorrentAgent.GetTorrentDetails(_selectedSeederTorrent);
+            Agent agent = (Agent)obj;
+            TorrentDetails torrentDetails = agent.GetTorrentDetails(_selectedSeederTorrent);
             _seederInformationWindow.Update(torrentDetails);
         }
         /// <summary>
@@ -53,7 +52,7 @@ namespace ClientUI
         /// <returns></returns>
         public MainWindow(TorrentClient main, string name) : base(name)
         {
-            _main = main;
+            MainTorrent = new Torrent();
             List<View> viewables = new List<View>();
             torrentFileLabel = new Label("Torrent File: ")
             {
@@ -125,8 +124,8 @@ namespace ClientUI
         /// <param name="_main"></param>
         public void CloseDownTorrent()
         {
-            _main.TorrentAgent.CloseTorrent(Torrent.Tc);
-            _main.TorrentAgent.RemoveTorrent(Torrent.Tc);
+            MainTorrent.MainAgent.CloseTorrent(MainTorrent.Tc);
+            MainTorrent.MainAgent.RemoveTorrent(MainTorrent.Tc);
             InfoWindow.ClearData();
         }
         /// <summary>
@@ -165,7 +164,7 @@ namespace ClientUI
                 Add(_seederInformationWindow);
                 _displaySeederInformationWindow = false;
                 List<TorrentContext> seeders = new List<TorrentContext>();
-                foreach (var torrent in _main.TorrentAgent.TorrentList)
+                foreach (var torrent in MainTorrent.MainAgent.TorrentList)
                 {
                     if (torrent.Status == TorrentStatus.Seeding)
                     {
@@ -174,11 +173,11 @@ namespace ClientUI
                 }
                 if (seeders.Count > 0)
                 {
-                    _selectedSeederTorrent = _main.TorrentAgent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
+                    _selectedSeederTorrent = MainTorrent.MainAgent.TorrentList.ToArray()[SeederListWindow.SeederListView.SelectedItem];
                     _seederInformationWindow.SetTracker(_selectedSeederTorrent.MainTracker.TrackerURL);
                     _selectedSeederTorrent.MainTracker.SetSeedingInterval(2 * 1000);
                     _selectedSeederTorrent.MainTracker.CallBack = UpdateSeederInformation;
-                    _selectedSeederTorrent.MainTracker.CallBackData = _main;
+                    _selectedSeederTorrent.MainTracker.CallBackData = MainTorrent.MainAgent;
                     _seederInformationWindow.SetFocus();
                 }
             }

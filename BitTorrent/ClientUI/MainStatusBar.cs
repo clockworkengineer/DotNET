@@ -42,8 +42,8 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionDownload(TorrentClient main)
         {
-            main.MainAppicationWindow.Torrent = new Torrent(main.MainAppicationWindow.TorrentFileText.Text.ToString());
-            Task.Run(() => main.MainAppicationWindow.Torrent.Download(main));
+            main.ClientWindow.MainTorrent.SetDownloadTorrent(main.ClientWindow.TorrentFileText.Text.ToString());
+            Task.Run(() => main.ClientWindow.MainTorrent.Download(main));
         }
         /// <summary>
         /// Stop currently downloading torrent.
@@ -51,7 +51,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionShutdown(TorrentClient main)
         {
-            main.MainAppicationWindow.CloseDownTorrent();
+            main.ClientWindow.CloseDownTorrent();
             main.MainStatusBar.Display(Status.Shutdown);
         }
         /// <summary>
@@ -60,8 +60,8 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionToggleSeeding(TorrentClient main)
         {
-            ToggleSeeding(main.MainAppicationWindow.DisplayInformationWindow);
-            main.MainAppicationWindow.ToggleSeedingList();
+            ToggleSeeding(main.ClientWindow.DisplayInformationWindow);
+            main.ClientWindow.ToggleSeedingList();
         }
         /// <summary>
         /// Toggle seeding list window and selected seeder information window.
@@ -69,7 +69,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionToggleSeedInformation(TorrentClient main)
         {
-            main.MainAppicationWindow.ToggleSeedinginformation();
+            main.ClientWindow.ToggleSeedinginformation();
         }
         /// <summary>
         /// Quit application.
@@ -77,7 +77,7 @@ namespace ClientUI
         /// <param name="main"></param>
         private void ActionQuit(TorrentClient main)
         {
-            main.TorrentAgent.ShutDown();
+            main.ClientWindow.MainTorrent.MainAgent.ShutDown();
             Application.Top.Running = false;
         }
         /// <summary>

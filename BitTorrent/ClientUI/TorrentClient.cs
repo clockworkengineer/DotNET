@@ -10,7 +10,6 @@
 using System.IO;
 using System.Threading.Tasks;
 using Terminal.Gui;
-using BitTorrentLibrary;
 namespace ClientUI
 {
     // Current application status
@@ -25,25 +24,9 @@ namespace ClientUI
     /// </summary>
     public class TorrentClient
     {
-        public MainWindow MainAppicationWindow { get; set; }     // Main application window 
-        public Manager TorrentManager { get; set; }              // Manager for all torrents
-        public Selector TorrentSelector { get; set; }            // Selector for all torrents
-        public DiskIO TorrentDiskIO { get; set; }                // DiskIO for all torrents
-        public Agent TorrentAgent { get; set; }                  // Agent for handling all torrents
-        public MainStatusBar MainStatusBar { get; set; }         // Main status bar
-        public Config Configuration { get; set; }                // Configuration data
-        /// <summary>
-        /// Startup torrent agent.
-        /// </summary>
-        private void TorrentAgentStartup()
-        {
-            TorrentSelector = new Selector();
-            TorrentManager = new Manager();
-            TorrentDiskIO = new DiskIO(TorrentManager);
-            TorrentManager.AddToDeadPeerList("192.168.1.1");
-            TorrentAgent = new Agent(TorrentManager, new Assembler());
-            TorrentAgent.Startup();
-        }
+        public MainWindow ClientWindow { get; set; }     // Main application window 
+        public MainStatusBar MainStatusBar { get; set; }     // Main status bar
+        public Config Configuration { get; set; }            // Configuration data
         // 
         /// <summary>
         /// Build application.
@@ -61,7 +44,7 @@ namespace ClientUI
             {
                 Directory.CreateDirectory(Configuration.DestinationDirectory);
             }
-            MainAppicationWindow = new MainWindow(this, "BitTorrent Client Application")
+            ClientWindow = new MainWindow(this, "BitTorrent Client Application")
             {
                 X = 0,
                 Y = 0,
@@ -69,8 +52,8 @@ namespace ClientUI
                 Height = Dim.Fill()
             };
             MainStatusBar = new MainStatusBar(this);
-            Application.Top.Add(MainAppicationWindow, MainStatusBar);
-            MainAppicationWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;
+            Application.Top.Add(ClientWindow, MainStatusBar);
+            ClientWindow.TorrentFileText.Text = Configuration.TorrentFileDirectory;
         }
         /// <summary>
         /// Reset main window for when downlaod compete and copy torrent file to seeding directory
@@ -78,21 +61,20 @@ namespace ClientUI
         /// </summary>
         public void ResetWindowAndCopySeedingFile()
         {
-            MainAppicationWindow.InfoWindow.ClearData();
+            ClientWindow.InfoWindow.ClearData();
             MainStatusBar.Display(Status.Shutdown);
-            MainAppicationWindow.UpdatProgressBar(0);
-            File.Copy(MainAppicationWindow.Torrent.Tc.FileName, Configuration.SeedDirectory +
-                      Path.GetFileName(MainAppicationWindow.Torrent.Tc.FileName));
+            ClientWindow.UpdatProgressBar(0);
+            File.Copy(ClientWindow.MainTorrent.Tc.FileName, Configuration.SeedDirectory +
+                      Path.GetFileName(ClientWindow.MainTorrent.Tc.FileName));
         }
         /// <summary>
         /// Run client.
         /// </summary>
         public void Run()
         {
-            TorrentAgentStartup();
             if (Configuration.SeedingTorrents)
             {
-                Task.Run(() => MainAppicationWindow.SeederListWindow.LoadSeedingTorrents(TorrentAgent, TorrentSelector, TorrentDiskIO, Configuration));
+                Task.Run(() => ClientWindow.SeederListWindow.LoadSeedingTorrents(this));
             }
             Application.Run();
         }
