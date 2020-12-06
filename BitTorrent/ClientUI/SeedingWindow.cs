@@ -72,12 +72,13 @@ namespace ClientUI
         /// </summary>
         public void LoadSeedingTorrents(TorrentClient main)
         {
+            Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
             _torrentHandler = main.ClientWindow.TorrentHandler;
             foreach (var file in Directory.GetFiles(main.Configuration.SeedDirectory, "*.torrent"))
             {
                 main.ClientWindow.TorrentHandler.AddSeedingTorrent(file, main.Configuration);
             }
-            Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(2), UpdateSeederList);
+
         }
     }
 }

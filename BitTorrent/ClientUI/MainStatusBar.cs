@@ -17,7 +17,7 @@ namespace ClientUI
         private readonly List<StatusItem> _statusBarItems;  // Status bat item list
         private readonly StatusItem _download;              // Item download 
         private readonly StatusItem _shutdown;              // Item shutdown
-        private readonly StatusItem _quit;                  // Items quit
+        private readonly StatusItem _quit;                  // Item quit
         private readonly StatusItem _toggleSeeding;         // Item toggle information/seeding sub-window
         private readonly StatusItem _toggleSeedInformation; // Item toggle seeding/seed information sub-window
         /// <summary>

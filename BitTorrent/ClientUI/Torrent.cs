@@ -166,10 +166,10 @@ namespace ClientUI
                 MetaInfoFile seederFile = new MetaInfoFile(seederFileName);
                 seederFile.Parse();
                 seeder = new TorrentContext(seederFile, _selector, _diskIO, config.DestinationDirectory, config.SeedingMode);
-                Tracker seederTracker = new Tracker(seeder);
+                Tracker tracker = new Tracker(seeder);
                 _agent.AddTorrent(seeder);
-                _agent.AttachPeerSwarmQueue(seederTracker);
-                seederTracker.StartAnnouncing();
+                _agent.AttachPeerSwarmQueue(tracker);
+                tracker.StartAnnouncing();
                 _agent.StartTorrent(seeder);
             }
             catch (Exception)
