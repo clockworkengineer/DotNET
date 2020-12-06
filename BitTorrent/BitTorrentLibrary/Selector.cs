@@ -61,6 +61,11 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal UInt32[] LocalPieceSuggestions(Peer remotePeer, int numberOfSuggestions)
         {
+            if (remotePeer is null)
+            {
+                throw new ArgumentNullException(nameof(remotePeer));
+            }
+
             HashSet<UInt32> suggestions = new HashSet<UInt32>();
             UInt32 startPiece = (UInt32)_pieceRandmizer.Next(0, remotePeer.Tc.numberOfPieces-1);
             numberOfSuggestions = Math.Min(remotePeer.NumberOfMissingPieces, numberOfSuggestions);
@@ -92,6 +97,11 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal Peer[] GetListOfPeers(TorrentContext tc, UInt32 pieceNumber, int maxPeers)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
+
             List<Peer> peers = new List<Peer>();
             foreach (var peer in tc.peerSwarm.Values)
             {

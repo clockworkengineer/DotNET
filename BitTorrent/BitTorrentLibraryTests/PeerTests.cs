@@ -120,7 +120,7 @@ namespace BitTorrentLibraryTests
             Assert.Equal(22, peer.NumberOfMissingPieces);
         }
         [Fact]
-        public void SetPieceOnRemotePeerWithInvalidPieceNumber()
+        public void TestSetPieceOnRemotePeerWithInvalidPieceNumber()
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
