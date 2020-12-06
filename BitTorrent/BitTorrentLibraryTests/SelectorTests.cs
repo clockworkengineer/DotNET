@@ -40,7 +40,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             UInt32 nextPiece = 0;
             Selector selector = new Selector();
             Assert.False(selector.NextPiece(tc, ref nextPiece));
@@ -51,7 +51,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             UInt32 nextPiece = 0;
             Selector selector = new Selector();
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
@@ -67,7 +67,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             UInt32 nextPiece = 0;
             Selector selector = new Selector();
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
@@ -88,7 +88,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             UInt32 actual = 0;
             Selector selector = new Selector();
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
@@ -106,7 +106,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             HashSet<UInt32> pieces = new HashSet<UInt32>();
             Selector selector = new Selector();
             UInt32 nextPiece = 0;
@@ -131,7 +131,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Selector selector = new Selector();
             Assert.Throws<ArgumentNullException>(() => selector.LocalPieceSuggestions(null, 10));
         }
@@ -141,7 +141,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Selector selector = new Selector();
             Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
@@ -158,7 +158,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Selector selector = new Selector();
             Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
@@ -175,7 +175,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Selector selector = new Selector();
             Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
@@ -192,7 +192,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Selector selector = new Selector();
             Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
             Assert.Throws<ArgumentNullException>(() => { Peer[] peers = selector.GetListOfPeers(null, 0, 10); });

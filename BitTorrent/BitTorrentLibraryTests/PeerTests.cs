@@ -98,7 +98,7 @@ namespace BitTorrentLibraryTests
                 MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
                 file.Parse();
                 Manager manager = new Manager();
-                TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+                TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
                 Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
             }
             catch (Exception ex)
@@ -113,7 +113,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
             Assert.Equal("127.0.0.1", peer.Ip);
             Assert.Equal(6881, peer.Port);
@@ -125,7 +125,7 @@ namespace BitTorrentLibraryTests
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
             Manager manager = new Manager();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
             Assert.Throws<IndexOutOfRangeException>(() => peer.SetPieceOnRemotePeer(1000));
         }

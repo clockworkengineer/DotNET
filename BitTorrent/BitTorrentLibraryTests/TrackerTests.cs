@@ -49,7 +49,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
             agent.AddTorrent(tc);
             agent.AttachPeerSwarmQueue(tracker);
@@ -66,7 +66,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Assert.Throws<ArgumentNullException>(() => { Tracker tracker = new Tracker(null); });
         }
         [Fact]
@@ -78,7 +78,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             Assert.Equal(1, tracker.Compact);
             Assert.Equal(TrackerEvent.None, tracker.Event);
@@ -108,7 +108,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
             agent.AddTorrent(tc); ;
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tracker.StartAnnouncing());
@@ -124,7 +124,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
             agent.AddTorrent(tc);
             agent.AttachPeerSwarmQueue(tracker);
@@ -141,7 +141,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
             agent.AddTorrent(tc);
             agent.AttachPeerSwarmQueue(tracker);
@@ -159,7 +159,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
             agent.AddTorrent(tc);
             agent.AttachPeerSwarmQueue(tracker);
@@ -178,7 +178,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
             agent.AddTorrent(tc);
             agent.AttachPeerSwarmQueue(tracker);
@@ -196,7 +196,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp", true);
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory, true);
             Tracker tracker = new Tracker(tc, mockAnnoucerFactory);
             agent.AddTorrent(tc);
             agent.AttachPeerSwarmQueue(tracker);

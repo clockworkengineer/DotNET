@@ -15,21 +15,21 @@ namespace BitTorrentLibraryTests
         [Fact]
         public void TestNullPassedForMetaInfoFileInCreationOfTorrentContext()
         {
-            Assert.Throws<ArgumentNullException>(() => { TorrentContext tc = new TorrentContext(null, new Selector(), new DiskIO(new Manager()), "/tmp"); });
+            Assert.Throws<ArgumentNullException>(() => { TorrentContext tc = new TorrentContext(null, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory); });
         }
         [Fact]
         public void TestNullPassedForSelectorInCreationOfTorrentContext()
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            Assert.Throws<ArgumentNullException>(() => { TorrentContext tc = new TorrentContext(file, null, new DiskIO(new Manager()), "/tmp"); });
+            Assert.Throws<ArgumentNullException>(() => { TorrentContext tc = new TorrentContext(file, null, new DiskIO(new Manager()), Constants.DestinationDirectory); });
         }
         [Fact]
         public void TestNullPassedForDiskIOInCreationOfTorrentContext()
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            Assert.Throws<ArgumentNullException>(() => { TorrentContext tc = new TorrentContext(file, new Selector(), null, "/tmp"); });
+            Assert.Throws<ArgumentNullException>(() => { TorrentContext tc = new TorrentContext(file, new Selector(), null, Constants.DestinationDirectory); });
         }
         [Fact]
         public void TestNullPassedForDestinationDirectoryInCreationOfTorrentContext()
@@ -49,7 +49,7 @@ namespace BitTorrentLibraryTests
         public void TestUnparsedMetInfoFilePassInCreationOfTorrentContext()
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
-            BitTorrentException error = Assert.Throws<BitTorrentException>(() => { TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp"); });
+            BitTorrentException error = Assert.Throws<BitTorrentException>(() => { TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory); });
             Assert.Equal("BitTorrent Error: File has not been parsed.", error.Message);
         }
         [Fact]
@@ -57,7 +57,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<IndexOutOfRangeException>(() => tc.MarkPieceLocal(Constants.InvalidPieceNumber, true));
         }
         [Fact]
@@ -65,7 +65,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<IndexOutOfRangeException>(() => tc.IsPieceLocal(Constants.InvalidPieceNumber));
         }
         [Fact]
@@ -73,7 +73,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<IndexOutOfRangeException>(() => tc.MarkPieceMissing(Constants.InvalidPieceNumber, true));
         }
         [Fact]
@@ -81,7 +81,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<IndexOutOfRangeException>(() => tc.IsPieceMissing(Constants.InvalidPieceNumber));
         }
         [Fact]
@@ -89,7 +89,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<IndexOutOfRangeException>(() => tc.GetPieceLength(Constants.InvalidPieceNumber));
         }
         [Fact]
@@ -97,7 +97,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<IndexOutOfRangeException>(() => tc.SetPieceLength(Constants.InvalidPieceNumber, 0));
         }
         [Fact]
@@ -105,7 +105,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => tc.SetPieceLength(0, UInt32.MaxValue));
             Assert.Equal("BitTorrent Error: Piece length larger than maximum for torrent.", error.Message);
         }
@@ -114,7 +114,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<ArgumentException>(() => tc.IsSpaceInSwarm(null));
         }
         [Fact]
@@ -122,7 +122,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<ArgumentException>(() => tc.IsSpaceInSwarm(""));
         }
         [Fact]
@@ -130,7 +130,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<IndexOutOfRangeException>(() => tc.IncrementPeerCount(Constants.InvalidPieceNumber));
         }
         [Fact]
@@ -138,7 +138,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<IndexOutOfRangeException>(() => tc.FindNextMissingPiece(Constants.InvalidPieceNumber));
         }
         [Fact]
@@ -146,7 +146,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<ArgumentException>(() => tc.IsPeerInSwarm(null));
         }
         [Fact]
@@ -154,7 +154,7 @@ namespace BitTorrentLibraryTests
         {
             MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
             file.Parse();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(new Manager()), Constants.DestinationDirectory);
             Assert.Throws<ArgumentException>(() => tc.IsPeerInSwarm(""));
         }
     }

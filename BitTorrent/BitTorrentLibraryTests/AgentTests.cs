@@ -100,7 +100,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             agent.AddTorrent(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.AddTorrent(tc));
@@ -115,7 +115,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.RemoveTorrent(tc));
             Assert.Equal("BitTorrent Error: Failed to remove torrent context.It probably has been removed alrady or never added.", error.Message);
@@ -136,7 +136,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.StartTorrent(tc));
             Assert.Equal("BitTorrent Error: Failure to start torrent context.Torrent hasnt been added to agent.", error.Message);
@@ -150,7 +150,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.CloseTorrent(tc));
             Assert.Equal("BitTorrent Error: Failure to close torrent context.Torrent hasnt been added to agent or may already have been closed.", error.Message);
@@ -164,7 +164,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             Assert.Throws<ArgumentNullException>(() => agent.PauseTorrent(null));
         }
@@ -177,7 +177,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.PauseTorrent(tc));
             Assert.Equal("BitTorrent Error: Failure to pause torrent context.Torrent hasnt been added to agent.", error.Message);
@@ -191,7 +191,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             agent.AddTorrent(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.PauseTorrent(tc));
@@ -205,7 +205,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             _ = new Tracker(tc);
             agent.AddTorrent(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.StartTorrent(tc));
@@ -220,7 +220,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             _ = new Tracker(tc);
             agent.AddTorrent(tc);
             agent.StartTorrent(tc);
@@ -235,7 +235,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.AddTorrent(tc));
             Assert.Equal("BitTorrent Error: Failed to add torrent context.Torrent does not have a tracker associated with it.", error.Message);
         }
@@ -248,7 +248,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             agent.AddTorrent(tc);
             agent.StartTorrent(tc);
@@ -263,7 +263,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             _ = new Tracker(tc);
             agent.AddTorrent(tc);
             TorrentDetails details = agent.GetTorrentDetails(tc);
@@ -288,7 +288,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => { TorrentDetails details = agent.GetTorrentDetails(tc); });
             Assert.Equal("BitTorrent Error: Failure to get torrent details.Torrent hasnt been added to agent.", error.Message);
@@ -302,7 +302,7 @@ namespace BitTorrentLibraryTests
             Mock<IAgentNetwork> networkMock = new Mock<IAgentNetwork>();
             Agent agent = new Agent(new Manager(), new Assembler(), networkMock.Object);
             agent.Startup();
-            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), "/tmp");
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Tracker tracker = new Tracker(tc);
             BitTorrentException error = Assert.Throws<BitTorrentException>(() => agent.RemoveTorrent(tc));
             Assert.Equal("BitTorrent Error: Failed to remove torrent context.It probably has been removed alrady or never added.", error.Message);
