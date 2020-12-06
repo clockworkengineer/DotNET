@@ -6,7 +6,6 @@
 // Copyright 2020.
 //
 using System;
-using System.Net.Sockets;
 using Xunit;
 using BitTorrentLibrary;
 namespace BitTorrentLibraryTests

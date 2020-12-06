@@ -38,8 +38,13 @@ namespace BitTorrentLibrary
         /// <param name="startPiece"></param>
         /// <param name="_"></param>
         /// <returns></returns>
-        internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece, CancellationToken _)
+        internal bool NextPiece(TorrentContext tc, ref UInt32 nextPiece)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
+
             UInt32 startPiece = (UInt32) _pieceRandmizer.Next(0, tc.numberOfPieces-1);
             (var pieceSuggested, var pieceNumber) = tc.FindNextMissingPiece(startPiece);
             nextPiece = pieceNumber;

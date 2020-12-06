@@ -178,7 +178,7 @@ namespace BitTorrentLibrary
             };
             while (!tc.downloadFinished.WaitOne(0))
             {
-                while ((tc.NumberOfUnchokedPeers() > 0) && tc.selector.NextPiece(tc, ref nextPiece, cancelAssemblerTask))
+                while ((tc.NumberOfUnchokedPeers() > 0) && tc.selector.NextPiece(tc, ref nextPiece))
                 {
                     if (GetPieceFromPeers(tc, nextPiece, waitHandles))
                     {
