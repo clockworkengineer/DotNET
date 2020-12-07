@@ -194,8 +194,38 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
             Selector selector = new Selector();
-            Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
             Assert.Throws<ArgumentNullException>(() => { Peer[] peers = selector.GetListOfPeers(null, 0, 10); });
+        }
+        [Fact]
+        public void TestEmptyPeerSwarmCallGetListOfPeers()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
+            Selector selector = new Selector();
+            Peer[] peers = selector.GetListOfPeers(tc, 0, 10);
+            Assert.Empty(peers);
+        }
+        [Fact]
+        public void TestOnePeerInSwarmCallGetListOfPeers()
+        {
+            MetaInfoFile file = new MetaInfoFile(Constants.SingleFileTorrent);
+            file.Parse();
+            Manager manager = new Manager();
+            TorrentContext tc = new TorrentContext(file, new Selector(), new DiskIO(manager), Constants.DestinationDirectory);
+            Selector selector = new Selector();
+            Peer peer = new Peer("127.0.0.1", 6881, tc, new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0));
+            tc.peerSwarm.TryAdd(peer.Ip, peer); // Peers eligible must  be connected, unchoked and have piece
+            peer.PeerChoking.Set();
+            peer.Connected = true;
+            peer.SetPieceOnRemotePeer(0);
+            Peer[] peers = selector.GetListOfPeers(tc, 0, 10);
+            Assert.Equal(1, (int)peers.Length);
+            peer.Connected = false;             // Make un-eligible then try again
+            peer.SetPieceOnRemotePeer(0);
+            peers = selector.GetListOfPeers(tc, 0, 10);
+            Assert.Empty(peers);
         }
     }
 }
