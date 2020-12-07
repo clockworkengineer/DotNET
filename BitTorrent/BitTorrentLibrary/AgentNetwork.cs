@@ -37,9 +37,7 @@ namespace BitTorrentLibrary
     }
     internal interface IAgentNetwork
     {
-        void AcceptAsyncHandler(IAsyncResult ar);
         void Connect(AgentConnector connector);
-        void ConnectionAsyncHandler(IAsyncResult ar);
         PeerDetails GetConnectingPeerDetails(Socket socket);
         void ShutdownListener();
         void StartListening(AgentConnector connector);
@@ -49,38 +47,12 @@ namespace BitTorrentLibrary
         private Socket _listenerSocket;                         // Connection listener socket
         internal static int listenPort = Host.DefaultPort;      // Listener port
         /// <summary>
-        ///  Setup data and resources needed by AgentNetwork.
-        /// </summary>
-        public AgentNetwork()
-        {
-        }
-        /// <summary>
-        /// Asynchronous peer connection callback. When a connection
-        /// is completed try to add it to the swarm via the connector 
-        /// passed as a parameter.
-        /// </summary>
-        /// <param name="ar"></param>
-        public void ConnectionAsyncHandler(IAsyncResult ar)
-        {
-            AgentConnector connector = (AgentConnector)ar.AsyncState;
-            try
-            {
-                connector.socket.EndConnect(ar);
-                connector.callBack(connector);
-            }
-            catch (Exception ex)
-            {
-                connector.socket?.Close();
-                Log.Logger.Error("Error (Ignored): " + ex.Message);
-            }
-        }
-        /// <summary>
         /// Asynchronous remote peer connection callback. When a remote connection
         /// arrives try to add it to the swarm via the connector passed then prime 
         /// the accept callback for the next peers connection attempt.
         /// </summary>
         /// <param name="ar"></param>
-        public void AcceptAsyncHandler(IAsyncResult ar)
+        private void AcceptAsyncHandler(IAsyncResult ar)
         {
             AgentConnector connector = (AgentConnector)ar.AsyncState;
             try
@@ -95,6 +67,32 @@ namespace BitTorrentLibrary
                 Log.Logger.Error(ex);
                 Log.Logger.Info("Port connection listener terminated.");
             }
+        }
+        /// <summary>
+        /// Asynchronous peer connection callback. When a connection
+        /// is completed try to add it to the swarm via the connector 
+        /// passed as a parameter.
+        /// </summary>
+        /// <param name="ar"></param>
+        private void ConnectionAsyncHandler(IAsyncResult ar)
+        {
+            AgentConnector connector = (AgentConnector)ar.AsyncState;
+            try
+            {
+                connector.socket.EndConnect(ar);
+                connector.callBack(connector);
+            }
+            catch (Exception ex)
+            {
+                connector.socket?.Close();
+                Log.Logger.Error("Error (Ignored): " + ex.Message);
+            }
+        }
+        /// <summary>
+        ///  Setup data and resources needed by AgentNetwork.
+        /// </summary>
+        public AgentNetwork()
+        {
         }
         /// <summary>
         /// Connect with remote peer and add it to the swarm when its callback handler is called.
