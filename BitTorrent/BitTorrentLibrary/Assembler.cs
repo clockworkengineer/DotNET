@@ -13,7 +13,6 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using System.Linq;
 namespace BitTorrentLibrary
 {
     internal static class ManualResetEventExtensions
@@ -108,7 +107,7 @@ namespace BitTorrentLibrary
             Peer[] remotePeers = tc.selector.GetListOfPeers(tc, pieceNumber, _maximumBlockRequests);
             if (remotePeers.Length != 0)
             {
-                var stopwatch = new Stopwatch();
+                var pieceAssemblyTimer = new Stopwatch();
                 Log.Logger.Debug($"Piece {pieceNumber} being assembled by {remotePeers.Length} peers.");
                 tc.assemblyData.pieceBuffer = new PieceBuffer(tc, tc.GetPieceLength(pieceNumber))
                 {
@@ -121,7 +120,7 @@ namespace BitTorrentLibrary
                     //
                     // Wait for blocks to arrive
                     //
-                    stopwatch.Start();
+                    pieceAssemblyTimer.Start();
                     switch (WaitHandle.WaitAny(waitHandles, _assemberTimeout * 1000))
                     {
                         // Any outstanding requests have been completed
@@ -129,8 +128,8 @@ namespace BitTorrentLibrary
                             tc.assemblyData.blockRequestsDone.Reset();
                             if (tc.assemblyData.pieceBuffer.AllBlocksThere)
                             {
-                                stopwatch.Stop();
-                                tc.assemblyData.averageAssemblyTime.Add(stopwatch.ElapsedMilliseconds);
+                                pieceAssemblyTimer.Stop();
+                                tc.assemblyData.averageAssemblyTime.Add(pieceAssemblyTimer.ElapsedMilliseconds);
                                 Log.Logger.Info($"Download speed {tc.BytesPerSecond()} bytes/sec");
                                 return true;
                             }
@@ -139,7 +138,7 @@ namespace BitTorrentLibrary
                         case 1:
                             return false;
                         // Timeout so bailout and try again
-                        // Note: can result in blocks having to be discarded
+                        // Note: Remove any peers that are not choked and had outstanding requests
                         case WaitHandle.WaitTimeout:
                             Log.Logger.Debug($"Timeout assembling piece {pieceNumber}.");
                             tc.assemblyData.totalTimeouts++;

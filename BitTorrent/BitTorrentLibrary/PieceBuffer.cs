@@ -1,5 +1,4 @@
-﻿using System.Threading;
-//
+﻿//
 // Author: Rob Tizzard
 //
 // Library: C# class library to implement the BitTorrent protocol.
@@ -10,7 +9,7 @@
 // Copyright 2020.
 //
 using System;
-using System.Linq;
+using System.Threading;
 namespace BitTorrentLibrary
 {
     internal class PieceBuffer
