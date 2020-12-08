@@ -1,7 +1,7 @@
 //
 // Author: Rob Tizzard
 //
-// Description: XUnit tests for BiTorrent Selector Context class.
+// Description: XUnit tests for BiTorrent Selector class.
 //
 // Copyright 2020.
 //

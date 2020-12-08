@@ -237,12 +237,17 @@ namespace BitTorrentLibrary
         /// <summary>
         /// Piece assembler task. If/once downboad is complete then start seeding the torrent until
         /// a cancel request is sent. Note: For seeding we only send announce requests every 30 minutes
-        /// to stop the local and remote peers from being swamped by alot of requests.
+        /// to stop the local and remote peers from being swamped by requests.
         /// </summary>
         /// <param name="tc"></param>
         /// <param name="cancelAssemblerTask"></param>
         internal void AssemblePieces(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
+
             Log.Logger.Debug($"Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
             try
             {

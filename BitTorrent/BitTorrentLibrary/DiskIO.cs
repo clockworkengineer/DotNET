@@ -188,7 +188,7 @@ namespace BitTorrentLibrary
         /// </summary>
         public DiskIO(Manager manager)
         {
-            _manager = manager;
+            _manager = manager ?? throw new ArgumentNullException(nameof(manager));
             _cancelTaskSource = new CancellationTokenSource();
             pieceWriteQueue = new BlockingCollection<PieceBuffer>();
             pieceRequestQueue = new BlockingCollection<PieceRequest>();
@@ -209,6 +209,10 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal void CreateLocalTorrentStructure(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
             Log.Logger.Debug("Creating empty files as placeholders for downloading ...");
             foreach (var file in tc.filesToDownload)
             {
@@ -230,6 +234,10 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal void CreateTorrentBitfield(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
             byte[] pieceBuffer = new byte[tc.pieceLength];
             UInt32 pieceNumber = 0;
             UInt32 bytesInBuffer = 0;
@@ -266,6 +274,10 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal void FullyDownloadedTorrentBitfield(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
             Int64 totalBytesToDownload = (Int64)tc.TotalBytesToDownload;
             for (UInt32 pieceNumber = 0; pieceNumber < tc.numberOfPieces; pieceNumber++)
             {
