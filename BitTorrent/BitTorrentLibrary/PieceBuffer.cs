@@ -21,13 +21,14 @@ namespace BitTorrentLibrary
         public byte[] Buffer { get; }                   // Piece Buffer
         public UInt32 Number { get; set; }              // Piece Number
         public bool AllBlocksThere => _blockCount == 0; // == true All blocks have been downloaded
+        public bool[] BlocksPresent => _blockPresent;   // == true then block is present
         /// <summary>
         /// Create an empty piece buffer.
         /// </summary>
         /// <param name="length">Length.</param>
         public PieceBuffer(TorrentContext tc, UInt32 length)
         {
-            Tc = tc;
+            Tc = tc ?? throw new ArgumentNullException(nameof(tc));
             Number = 0;
             Length = length;
             Buffer = new byte[Length];
@@ -50,6 +51,10 @@ namespace BitTorrentLibrary
         /// <param name="blockNumber"></param>
         public void AddBlockFromPacket(byte[] packetBuffer, UInt32 blockNumber)
         {
+            if (packetBuffer is null)
+            {
+                throw new ArgumentNullException(nameof(packetBuffer));
+            }
             int blockLength = (int)Math.Min(Length - blockNumber * Constants.BlockSize, Constants.BlockSize);
             System.Buffer.BlockCopy(packetBuffer, 9, Buffer, (Int32)blockNumber * Constants.BlockSize, blockLength);
             if (!_blockPresent[blockNumber])
@@ -57,23 +62,6 @@ namespace BitTorrentLibrary
                 _blockPresent[blockNumber] = true;
                 Interlocked.Decrement(ref _blockCount);
             }
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public bool[] BlocksPresent()
-        {
-            return _blockPresent;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="blockNumber"></param>
-        /// <returns></returns>
-        public bool IsBlockPresent(UInt32 blockNumber)
-        {
-            return _blockPresent[blockNumber];
         }
     }
 }

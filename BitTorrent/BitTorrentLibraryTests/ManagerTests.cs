@@ -87,7 +87,7 @@ namespace BitTorrentLibraryTests
             Manager manager = new Manager();
             Assert.Throws<ArgumentException>(() => { manager.RemoveFromDeadPeerList(""); });
         }
-                [Fact]
+        [Fact]
         public void TestPassNullIpToIsPeerDead()
         {
             Manager manager = new Manager();

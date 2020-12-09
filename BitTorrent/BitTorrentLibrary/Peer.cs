@@ -217,7 +217,7 @@ namespace BitTorrentLibrary
                 {
                     Log.Logger.Trace($"PlaceBlockIntoPiece({pieceNumber},{blockOffset},{_network.PacketLength - 9})");
                     UInt32 blockNumber = blockOffset / Constants.BlockSize;
-                    if (!Tc.assemblyData.pieceBuffer.IsBlockPresent(blockNumber))
+                    if (!Tc.assemblyData.pieceBuffer.BlocksPresent[blockNumber])
                     {
                         Tc.assemblyData.currentBlockRequests--;
                     }

@@ -74,7 +74,7 @@ namespace BitTorrentLibrary
                 UInt32 blockOffset = 0;
                 int currentPeer = 0;
                 tc.assemblyData.currentBlockRequests = 0;
-                foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent())
+                foreach (var blockThere in tc.assemblyData.pieceBuffer.BlocksPresent)
                 {
                     if (!blockThere)
                     {
