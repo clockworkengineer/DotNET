@@ -59,6 +59,10 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool GetTorrentContext(byte[] infohash, out TorrentContext tc)
         {
+            if (infohash is null)
+            {
+                throw new ArgumentNullException(nameof(infohash));
+            }
             if (_torrents.TryGetValue(Util.InfoHashToString(infohash), out tc))
             {
                 return true;
@@ -71,6 +75,10 @@ namespace BitTorrentLibrary
         /// <param name="tc"></param>
         internal bool AddTorrentContext(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
             return _torrents.TryAdd(Util.InfoHashToString(tc.infoHash), tc);
         }
         /// <summary>
@@ -80,6 +88,10 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool RemoveTorrentContext(TorrentContext tc)
         {
+            if (tc is null)
+            {
+                throw new ArgumentNullException(nameof(tc));
+            }
             return _torrents.TryRemove(Util.InfoHashToString(tc.infoHash), out TorrentContext _);
         }
         /// <summary>
@@ -91,6 +103,14 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         internal bool GetPeer(byte[] infoHash, string ip, out Peer remotePeer)
         {
+            if (infoHash is null)
+            {
+                throw new ArgumentNullException(nameof(infoHash));
+            }
+            if (string.IsNullOrEmpty(ip))
+            {
+                throw new ArgumentException($"'{nameof(ip)}' cannot be null or empty", nameof(ip));
+            }
             remotePeer = null;
             if (GetTorrentContext(infoHash, out TorrentContext tc))
             {
@@ -107,6 +127,10 @@ namespace BitTorrentLibrary
         /// <param name="ip"></param>
         public void AddToDeadPeerList(string ip)
         {
+            if (string.IsNullOrEmpty(ip))
+            {
+                throw new ArgumentException($"'{nameof(ip)}' cannot be null or empty", nameof(ip));
+            }
             _deadPeers.Add(ip);
         }
         /// <summary>
@@ -115,6 +139,10 @@ namespace BitTorrentLibrary
         /// <param name="ip"></param>
         public void RemoveFromDeadPeerList(string ip)
         {
+            if (string.IsNullOrEmpty(ip))
+            {
+                throw new ArgumentException($"'{nameof(ip)}' cannot be null or empty", nameof(ip));
+            }
             _deadPeers.Remove(ip);
         }
         /// <summary>
@@ -124,6 +152,10 @@ namespace BitTorrentLibrary
         /// <returns></returns>
         public bool IsPeerDead(string ip)
         {
+            if (string.IsNullOrEmpty(ip))
+            {
+                throw new ArgumentException($"'{nameof(ip)}' cannot be null or empty", nameof(ip));
+            }
             return _deadPeers.Contains(ip);
         }
     }
