@@ -78,7 +78,7 @@ namespace BitTorrentLibrary
                 {
                     if (!blockThere)
                     {
-                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, tc.GetPieceLength(pieceNumber)-blockOffset));
+                        PWP.Request(remotePeers[currentPeer], pieceNumber, blockOffset, Math.Min(Constants.BlockSize, tc.GetPieceLength(pieceNumber) - blockOffset));
                         remotePeers[currentPeer].OutstandingRequestsCount++;
                         if (++tc.assemblyData.currentBlockRequests == _maximumBlockRequests) break;
                         currentPeer = (currentPeer + 1) % (int)remotePeers.Length;
@@ -247,7 +247,6 @@ namespace BitTorrentLibrary
             {
                 throw new ArgumentNullException(nameof(tc));
             }
-
             Log.Logger.Debug($"Starting block assembler for InfoHash {Util.InfoHashToString(tc.infoHash)}.");
             try
             {

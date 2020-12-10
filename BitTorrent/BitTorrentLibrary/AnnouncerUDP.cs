@@ -6,7 +6,7 @@
 // Description: Perform UDP announce requests to remote tracker. Details on the protocol
 // can be found at https://libtorrent.org/udp_tracker_protocol.html or by seaching 
 // the net for "udp tracker protocol specification". Note: At present scraping and the 
-// security packet trailer are not supported.
+// security packet trailer extensions are not supported.
 //
 // Copyright 2020.
 //

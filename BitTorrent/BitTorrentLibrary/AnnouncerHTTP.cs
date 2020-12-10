@@ -17,7 +17,6 @@ namespace BitTorrentLibrary
     {
         private readonly IWeb _web;             // Web Layer
         private readonly Bencode _Bencode;      // Bencode encode/decode
-
         /// <summary>
         /// Decodes the announce request BEncoded response recieved from a tracker.
         /// </summary>
@@ -108,8 +107,6 @@ namespace BitTorrentLibrary
         /// Setup data and resources needed by HTTP tracker.
         /// </summary>
         /// <param name="trackerURL"></param>
-  
-
         public AnnouncerHTTP(string _, IWeb web)
         {
             _web = web;
@@ -127,7 +124,6 @@ namespace BitTorrentLibrary
             try
             {
                 _web.SetURL (BuildAnnouceURL(tracker));
-
                 if (_web.Get())
                 {
                     DecodeAnnounceResponse(tracker, _web.ResponseData, ref response);

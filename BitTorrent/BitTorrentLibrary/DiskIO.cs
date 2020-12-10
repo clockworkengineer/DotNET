@@ -5,8 +5,8 @@
 //
 // Description: The DiskIO class encapsulates all code and
 // data relating to the readining/writing of the local files in a
-// torrent to determine which pieces are missing and need downloading 
-// and written to the correct positions.It also handles requests from
+// torrent ie.determining which pieces are missing and need downloading 
+// and written to the correct positions, plus handling requests from
 // remote peers for pieces and reads them the from torrent image 
 // before sending on the remote peer.
 //
@@ -197,7 +197,7 @@ namespace BitTorrentLibrary
         }
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the
-        /// DISKIO class is reclaimed by garbage collection.
+        /// DiskIO class is reclaimed by garbage collection.
         /// </summary>
         ~DiskIO()
         {

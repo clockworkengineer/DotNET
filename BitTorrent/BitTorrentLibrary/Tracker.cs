@@ -1,4 +1,3 @@
-using System.Net.Sockets;
 //
 // Author: Rob Tizzard
 //

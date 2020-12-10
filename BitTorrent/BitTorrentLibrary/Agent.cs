@@ -3,10 +3,10 @@
 //
 // Library: C# class library to implement the BitTorrent protocol.
 //
-// Description: Class for adding peers to swarm and for the high level
-// control of torrent contexts which includes the creation of their
-// assembler task and for the starting of downloads/seeding.
-//
+// Description: Class for the management of peers and torrent contexts
+// that includes the adding/removing of correctly connected peers to a swarm, 
+// the creation of piece assembly tasks for torrent contexts to download blocks
+// for a piece fromremote peers and the starting/stopping of the assembler tasks.
 // Copyright 2020.
 //
 using System;
@@ -17,7 +17,22 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 namespace BitTorrentLibrary
 {
-    public class Agent
+    public interface IAgent
+    {
+        bool Running { get; }
+        ICollection<TorrentContext> TorrentList { get; }
+        void AddTorrent(TorrentContext tc);
+        void AttachPeerSwarmQueue(Tracker tracker);
+        void CloseTorrent(TorrentContext tc);
+        void DetachPeerSwarmQueue(Tracker tracker);
+        TorrentDetails GetTorrentDetails(TorrentContext tc);
+        void PauseTorrent(TorrentContext tc);
+        void RemoveTorrent(TorrentContext tc);
+        void Shutdown();
+        void StartTorrent(TorrentContext tc);
+        void Startup();
+    }
+    public class Agent : IAgent
     {
         private readonly IAgentNetwork _network;                                 // Network layer used by agent
         private readonly Manager _manager;                                       // Torrent context/dead peer manager
@@ -145,7 +160,7 @@ namespace BitTorrentLibrary
             }
         }
         /// <summary>
-        /// Setup data and resources needed by agent.
+        /// Setup data and resources needed by agent (inerternal constructor used for testing)
         /// </summary>
         /// <param name="manager"></param>
         /// <param name="pieceAssembler"></param>
